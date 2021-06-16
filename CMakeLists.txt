@@ -3,4 +3,4 @@ project(Popper)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(Popper main.cpp)
+add_executable(Popper src/main.cpp src/UciHandler.cpp src/UciHandler.h src/utils/StringTokenStream.cpp src/utils/StringTokenStream.h)
