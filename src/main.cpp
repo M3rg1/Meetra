@@ -22,8 +22,9 @@ int main(int argc, char *arv[]) {
 
     Move m = NewMove(A4, G6, PROMOTE_KNIGHT);
 
-    Board board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 50 1");
+    Board board("4k2r/6r1/8/8/8/8/3R4/R3K3 w Qk - 0 1");
     std::cout << board.PPBoard();
+
     //std::cout << TotalMoves(board.game_state) << std::endl;
     //std::cout << Ply(board.game_state) << std::endl;
 

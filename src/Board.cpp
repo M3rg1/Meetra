@@ -10,15 +10,17 @@
 namespace Popper {
 
     Board::Board(std::string fen) {
-        auto li = Popper::FenLoader::ParseFen(std::move(fen));
+        auto loadedInfo = Popper::FenLoader::ParseFen(std::move(fen));
         game_state = NEW_GAME_STATE;
-        SetColorToMove(li->color_to_move, game_state);
-        //SetCastlingRights();
-        SetEpSquare(li->ep_square, game_state);
-        SetPly(li->ply, game_state);
-        SetMoveNumber(li->full_move_count, game_state);
-        Piece * p;
-        std::memcpy(board, li->board_occ, sizeof(Piece) * SQUARE_NR);
+        SetColorToMove(loadedInfo->color_to_move, game_state);
+        if(loadedInfo->w_castle_short) { SetCastlingRights(WHITE_SHORT, game_state); }
+        if(loadedInfo->w_castle_long) { SetCastlingRights(WHITE_LONG, game_state); }
+        if(loadedInfo->b_castle_short) { SetCastlingRights(BLACK_SHORT, game_state); }
+        if(loadedInfo->b_castle_long) { SetCastlingRights(BLACK_LONG, game_state); }
+        SetEpSquare(loadedInfo->ep_square, game_state);
+        SetPly(loadedInfo->ply, game_state);
+        SetMoveNumber(loadedInfo->full_move_count, game_state);
+        std::memcpy(board, loadedInfo->board_occ, sizeof(Piece) * SQUARE_NR);
     }
 
     std::string Board::PPBoard() const {
@@ -35,7 +37,24 @@ namespace Popper {
             ret.append("\n");
         }
         ret.append("---------------------------\n");
-        ret.append("  | A  B  C  D  E  F  G  H");
+        ret.append("  | A  B  C  D  E  F  G  H\n\n");
+        ret.append("Player to move: ");
+        ColorToMove(game_state) == WHITE ? ret.append("white\n") : ret.append("black\n");
+        ret.append("Move count: ");
+        ret.append(std::to_string(TotalMoves(game_state)));
+        ret.append(" | Ply since last capture: ");
+        ret.append(std::to_string(Ply(game_state)));
+        ret.append("\nCastling rights: ");
+        bool castling_available = false;
+        if(CanWhiteShortCR(game_state)){ ret.push_back('K'); castling_available = true; }
+        if(CanWhiteLongCR(game_state)) { ret.push_back('Q'); castling_available = true; }
+        if(CanBlackShortCR(game_state)){ ret.push_back('k'); castling_available = true; }
+        if(CanBlackLongCR(game_state)) { ret.push_back('q'); castling_available = true; }
+        if(!castling_available){ ret.push_back('-'); }
+        ret.append("\nEP square: ");
+        if(EpSquare(game_state) != SQUARE_ZERO) { ret.append(std::to_string(EpSquare(game_state))); }
+        else{ ret.push_back('-'); }
+        ret.push_back('\n');
         return ret;
     }
 

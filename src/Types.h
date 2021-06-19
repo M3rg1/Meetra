@@ -191,15 +191,15 @@ inline T& operator/=(T& d, int i) { return d = T(int(d) / i); }
 
     // game state getters
     //inline constexpr CastlingRights GetCR(GameState &gs){ return CastlingRights (gs & 0x3C0); }
-    inline constexpr bool CanWhiteShortCR(GameState &gs) { return (gs & WHITE_SHORT) != 0; }
-    inline constexpr bool CanWhiteLongCR(GameState &gs) { return (gs & WHITE_LONG) != 0; }
-    inline constexpr bool CanBlackShortCR(GameState &gs) { return (gs & BLACK_SHORT) != 0; }
-    inline constexpr bool CanBlackLongCR(GameState &gs) { return (gs & BLACK_LONG) != 0; }
-    inline constexpr Square EpSquare(GameState &gs) { return Square(gs & 0x1F); }
-    inline constexpr Color ColorToMove(GameState &gs) { return Color(gs >> 10 & 0x1); }
-    inline constexpr Piece CapturedPiece(GameState &gs) { return Piece(gs >> 11 & 0x3F); }
-    inline constexpr int Ply(GameState &gs) { return int(gs >> 17 & 0x3F); }
-    inline constexpr int TotalMoves(GameState &gs) { return int(gs >> 24); }
+    inline constexpr bool CanWhiteShortCR(const GameState &gs) { return (gs & WHITE_SHORT) != 0; }
+    inline constexpr bool CanWhiteLongCR(const GameState &gs) { return (gs & WHITE_LONG) != 0; }
+    inline constexpr bool CanBlackShortCR(const GameState &gs) { return (gs & BLACK_SHORT) != 0; }
+    inline constexpr bool CanBlackLongCR(const GameState &gs) { return (gs & BLACK_LONG) != 0; }
+    inline constexpr Square EpSquare(const GameState &gs) { return Square(gs & 0x1F); }
+    inline constexpr Color ColorToMove(const GameState &gs) { return Color(gs >> 10 & 0x1); }
+    inline constexpr Piece CapturedPiece(const GameState &gs) { return Piece(gs >> 11 & 0x3F); }
+    inline constexpr int Ply(const GameState &gs) { return int(gs >> 17 & 0x3F); }
+    inline constexpr int TotalMoves(const GameState &gs) { return int(gs >> 24); }
 
     // changing existing, non-new game state
     inline constexpr void IncrementMoveNumber(GameState &gs) { gs += 1 << 23; }
