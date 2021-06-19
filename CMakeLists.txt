@@ -3,4 +3,6 @@ project(Popper)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(Popper src/main.cpp src/UciHandler.cpp src/UciHandler.h src/utils/StringTokenStream.cpp src/utils/StringTokenStream.h)
+set (CMAKE_CXX_FLAGS "-DDEBUG_BUILD")
+
+add_executable(Popper src/main.cpp src/UciHandler.cpp src/UciHandler.h src/StringTokenStream.cpp src/StringTokenStream.h src/Bitboards.cpp src/Bitboards.h src/Types.h src/Macros.h src/Board.cpp src/Board.h src/FenLoader.cpp src/FenLoader.h src/Misc.h)

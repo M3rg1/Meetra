@@ -1,22 +1,23 @@
 #ifndef POPPER_UCIHANDLER_H
 #define POPPER_UCIHANDLER_H
 
+#include <string>
 
 namespace Popper {
 
     class UciHandler {
 
     public:
-        static void listen();
+        void Listen();
 
     private:
-        static void uciCommand();
-        static void isReadyCommand();
-        static void goCommand();
-        static void uciNewGameCommand();
-        static void positionCommand();
-        static void stopCommand();
-        static void quitCommand();
+        void UciCommand();
+        void IsReadyCommand();
+        void GoCommand();
+        void UciNewGameCommand();
+        void PositionCommand();
+        void StopCommand();
+        void QuitCommand();
     };
 
 }

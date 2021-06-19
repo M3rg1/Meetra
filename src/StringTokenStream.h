@@ -12,12 +12,12 @@ namespace Popper {
     class StringTokenStream {
 
     public:
-        explicit StringTokenStream(std::string str);
-        std::string nextToken();
-        bool hasNext();
+        explicit StringTokenStream(std::string str, bool make_lower = false, char delimiter = ' ');
+        std::string NextToken();
+        bool HasNext();
 
     private:
-        std::deque<std::string> tokenHolder;
+        std::deque<std::string> token_holder;
 
     };
 
