@@ -5,6 +5,9 @@
 #include "Bitboards.h"
 #include "FenLoader.h"
 #include "Board.h"
+#include "Misc.h"
+#include "MoveGenerator.h"
+#include "MoveList.h"
 
 //  Variables: snake_case
 //  Function names: UpperCamelCase (unless its a accessor/mutator)
@@ -23,7 +26,12 @@ int main(int argc, char *arv[]) {
     Move m = NewMove(A4, G6, PROMOTE_KNIGHT);
 
     Board board("4k2r/6r1/8/8/8/8/3R4/R3K3 w Qk - 0 1");
+    std::cout << GetLogo() << std::endl;
     std::cout << board.PPBoard();
+
+    InitBitboards();
+    MoveGenerator mg;
+    //mg.DoStuff();
 
     //std::cout << TotalMoves(board.game_state) << std::endl;
     //std::cout << Ply(board.game_state) << std::endl;

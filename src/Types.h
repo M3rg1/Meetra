@@ -5,6 +5,11 @@
 
 namespace Popper {
 
+    enum GenPhase : int {
+        BEST_MOVE, CAPTURE, QUIET, END,
+        GEN_PHASE_NR
+    };
+
     typedef uint64_t Bitboard;
 
     enum Color : int {
@@ -34,10 +39,24 @@ namespace Popper {
         FILE_NR
     };
 
+    enum Direction : int{
+        NORTH = 8, NORTH_EAST = 9, EAST = 1, SOUTH_EAST = -9, SOUTH = -8, SOUTH_WEST = -7, WEST = -1, NORTH_WEST = 7,
+        DIRECTION_NR
+    };
+
+    enum DirectionIndex : int{
+        NORTH_IDX, NORTHEAST_IDX, EAST_IDX, SOUTHEAST_IDX, SOUTH_IDX, SOUTHWEST_IDX, WEST_IDX, NORTHWEST_IDX,
+        DIRECTION_IDX_NR
+    };
+
+    inline constexpr Direction Directions[8]{
+        NORTH, NORTH_EAST, EAST, SOUTH_EAST, SOUTH, SOUTH_WEST, WEST, NORTH_WEST
+    };
+
     /* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      *  Ten bitboard funguje DOBRE:
      *
-     *
+     * // ten binary -> hexa -> deci convertor online to docela zkresluje, tak se nenechat zmast
      *
      *  0 0 0 0 0 0 0 0
      *  0 0 0 0 0 0 0 0
@@ -76,33 +95,6 @@ namespace Popper {
     inline constexpr Square SquareFromFiRa(File f, Rank r) { return Square((r << 3) + f); }
 
 
-    enum GenPhase : int {
-        BEST_MOVE, CAPTURE, QUIET, END,
-        GEN_PHASE_NR
-    };
-
-    enum RankMask : Bitboard {
-        RANK_ONE_MASK = 0x00000000000000FFUL,
-        RANK_TWO_MASK = 0x000000000000FF00UL,
-        RANK_THREE_MASK = 0x0000000000FF0000UL,
-        RANK_FOUR_MASK = 0x00000000FF000000UL,
-        RANK_FIVE_MASK = 0x000000FF00000000UL,
-        RANK_SIX_MASK = 0x0000FF0000000000UL,
-        RANK_SEVEN_MASK = 0x00FF000000000000UL,
-        RANK_EIGHT_MASk = 0xFF00000000000000UL
-    };
-
-    enum FileMask : Bitboard {
-        FILE_A_MASK = 0x8080808080808080UL,
-        FILE_B_MASK = 0x4040404040404040UL,
-        FILE_C_MASK = 0x2020202020202020UL,
-        FILE_D_MASK = 0x1010101010101010UL,
-        FILE_E_MASK = 0x0808080808080808UL,
-        FILE_F_MASK = 0x0404040404040404UL,
-        FILE_G_MASK = 0x0202020202020202UL,
-        FILE_H_MASK = 0x0101010101010101UL
-    };
-
 #define ENABLE_BASE_OPERATORS_ON(T)                                \
 constexpr T operator+(T d1, int d2) { return T(int(d1) + d2); }    \
 constexpr T operator-(T d1, int d2) { return T(int(d1) - d2); }    \
@@ -130,10 +122,22 @@ inline T& operator/=(T& d, int i) { return d = T(int(d) / i); }
     ENABLE_INCR_OPERATORS_ON(Square)
     ENABLE_INCR_OPERATORS_ON(File)
     ENABLE_INCR_OPERATORS_ON(Rank)
+    ENABLE_INCR_OPERATORS_ON(DirectionIndex)
+
+    ENABLE_FULL_OPERATORS_ON(File);
+    ENABLE_FULL_OPERATORS_ON(Rank);
 
 #undef ENABLE_FULL_OPERATORS_ON
 #undef ENABLE_INCR_OPERATORS_ON
 #undef ENABLE_BASE_OPERATORS_ON
+
+
+    /// Additional operators to add a Direction to a Square
+    constexpr Square operator+(Square s, Direction d) { return Square(int(s) + int(d)); }
+    constexpr Square operator-(Square s, Direction d) { return Square(int(s) - int(d)); }
+    inline Square& operator+=(Square& s, Direction d) { return s = s + d; }
+    inline Square& operator-=(Square& s, Direction d) { return s = s - d; }
+
     /**
      * Move bits:
      * 0-5 from square
@@ -178,7 +182,7 @@ inline T& operator/=(T& d, int i) { return d = T(int(d) / i); }
     // bits 17-23 = ply since last capture/pawn moves - 50 move rule
     // bits 24+ - total moves made
     typedef uint_fast32_t GameState;
-#define NEW_GAME_STATE 0
+//#define NEW_GAME_STATE 0
 
     // game state setters
     // requires new game state

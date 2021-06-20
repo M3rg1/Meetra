@@ -11,7 +11,6 @@ namespace Popper {
 
     Board::Board(std::string fen) {
         auto loadedInfo = Popper::FenLoader::ParseFen(std::move(fen));
-        game_state = NEW_GAME_STATE;
         SetColorToMove(loadedInfo->color_to_move, game_state);
         if(loadedInfo->w_castle_short) { SetCastlingRights(WHITE_SHORT, game_state); }
         if(loadedInfo->w_castle_long) { SetCastlingRights(WHITE_LONG, game_state); }

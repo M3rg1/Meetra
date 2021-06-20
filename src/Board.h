@@ -22,8 +22,8 @@ namespace Popper {
         // empty
 
     //private:
-        GameState game_state;
-        Piece board[SQUARE_NR];
+        GameState game_state { 0 };
+        Piece board[SQUARE_NR] {};
         Bitboard piece_bbs[PIECE_NR];
         Bitboard color_bbs[COLOR_NR];
         Bitboard type_bbs[PIECE_TYPE_NR];
