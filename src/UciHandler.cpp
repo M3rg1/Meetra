@@ -1,9 +1,10 @@
 #include "UciHandler.h"
 #include "StringTokenStream.h"
+#include "Misc.h"
 
 #include <iostream>
 
-namespace Popper {
+namespace Meetra {
 
     void UciHandler::Listen() {
 
@@ -12,7 +13,7 @@ namespace Popper {
         do {
             std::string input;
             std::getline(std::cin, input);
-            Popper::StringTokenStream sts(input, true);
+            Meetra::StringTokenStream sts(input, true);
             token = sts.NextToken();
 
             if (token == "uci") UciHandler::UciCommand();
@@ -27,9 +28,9 @@ namespace Popper {
     }
 
     void UciHandler::UciCommand() {
-        std::cout << "id name Popper" << std::endl;
-        std::cout << "id author M3rg1" << std::endl;
-        std::cout << "options" << std::endl;
+        std::cout << "id name " << GetName() << " v. " << GetVersion() << std::endl;
+        std::cout << "id author " << GetAuthor() << std::endl;
+        std::cout << "options " << GetOptions() << std::endl;
     }
 
     void UciHandler::GoCommand() {

@@ -1,10 +1,10 @@
-#ifndef POPPER_FENLOADER_H
-#define POPPER_FENLOADER_H
+#ifndef MEETRA_FENLOADER_H
+#define MEETRA_FENLOADER_H
 
 #include "Types.h"
 #include <memory>
 
-namespace Popper {
+namespace Meetra {
 
     class FenLoader {
 
@@ -29,4 +29,4 @@ namespace Popper {
 }
 
 
-#endif //POPPER_FENLOADER_H
+#endif //MEETRA_FENLOADER_H

@@ -1,9 +1,9 @@
-#ifndef POPPER_MOVELIST_H
-#define POPPER_MOVELIST_H
+#ifndef MEETRA_MOVELIST_H
+#define MEETRA_MOVELIST_H
 
 #include "Types.h"
 
-namespace Popper {
+namespace Meetra {
 
     class MoveList {
 
@@ -24,4 +24,4 @@ namespace Popper {
 
 }
 
-#endif //POPPER_MOVELIST_H
+#endif //MEETRA_MOVELIST_H

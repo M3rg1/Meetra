@@ -7,7 +7,7 @@
 #include "StringTokenStream.h"
 #include "Misc.h"
 
-namespace Popper {
+namespace Meetra {
 
     std::unique_ptr<FenLoader::LoadedInfo> FenLoader::ParseFen(std::string fen) {
 

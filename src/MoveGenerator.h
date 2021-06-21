@@ -1,11 +1,11 @@
-#ifndef POPPER_MOVEGENERATOR_H
-#define POPPER_MOVEGENERATOR_H
+#ifndef MEETRA_MOVEGENERATOR_H
+#define MEETRA_MOVEGENERATOR_H
 
 #include "MoveList.h"
 #include "Types.h"
 #include "Board.h"
 
-namespace Popper {
+namespace Meetra {
 
     extern ulong RookMagic[SQUARE_NR];
     extern ulong BishopMagic[SQUARE_NR];
@@ -25,4 +25,4 @@ namespace Popper {
 }
 
 
-#endif //POPPER_MOVEGENERATOR_H
+#endif //MEETRA_MOVEGENERATOR_H

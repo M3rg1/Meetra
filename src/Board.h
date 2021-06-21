@@ -1,11 +1,11 @@
-#ifndef POPPER_BOARD_H
-#define POPPER_BOARD_H
+#ifndef MEETRA_BOARD_H
+#define MEETRA_BOARD_H
 
 
 #include <string>
 #include "Types.h"
 
-namespace Popper {
+namespace Meetra {
 
     class Board {
 
@@ -44,4 +44,4 @@ namespace Popper {
 }
 
 
-#endif //POPPER_BOARD_H
+#endif //MEETRA_BOARD_H

@@ -1,9 +1,9 @@
-#ifndef POPPER_UCIHANDLER_H
-#define POPPER_UCIHANDLER_H
+#ifndef MEETRA_UCIHANDLER_H
+#define MEETRA_UCIHANDLER_H
 
 #include <string>
 
-namespace Popper {
+namespace Meetra {
 
     class UciHandler {
 
@@ -22,4 +22,4 @@ namespace Popper {
 
 }
 
-#endif //POPPER_UCIHANDLER_H
+#endif //MEETRA_UCIHANDLER_H

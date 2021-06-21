@@ -1,10 +1,10 @@
-#ifndef POPPER_STRINGTOKENSTREAM_H
-#define POPPER_STRINGTOKENSTREAM_H
+#ifndef MEETRA_STRINGTOKENSTREAM_H
+#define MEETRA_STRINGTOKENSTREAM_H
 
 #include <string>
 #include <deque>
 
-namespace Popper {
+namespace Meetra {
 
     /**
      * Splits a string delimited by whitespace into tokens and converts them to lowercase.
@@ -24,4 +24,4 @@ namespace Popper {
 }
 
 
-#endif //POPPER_STRINGTOKENSTREAM_H
+#endif //MEETRA_STRINGTOKENSTREAM_H

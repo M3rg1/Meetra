@@ -7,10 +7,10 @@
 #include "Misc.h"
 #include <cstring>
 
-namespace Popper {
+namespace Meetra {
 
     Board::Board(std::string fen) {
-        auto loadedInfo = Popper::FenLoader::ParseFen(std::move(fen));
+        auto loadedInfo = Meetra::FenLoader::ParseFen(std::move(fen));
         SetColorToMove(loadedInfo->color_to_move, game_state);
         if(loadedInfo->w_castle_short) { SetCastlingRights(WHITE_SHORT, game_state); }
         if(loadedInfo->w_castle_long) { SetCastlingRights(WHITE_LONG, game_state); }

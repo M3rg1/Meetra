@@ -15,7 +15,7 @@
 //  Constants: kPrefixedCamelCase
 
 
-using namespace Popper;
+using namespace Meetra;
 
 
 int main(int argc, char *arv[]) {
@@ -27,6 +27,8 @@ int main(int argc, char *arv[]) {
 
     Board board("4k2r/6r1/8/8/8/8/3R4/R3K3 w Qk - 0 1");
     std::cout << GetLogo() << std::endl;
+    std::cout << " v. " << GetVersion() << std::endl;
+    std::cout << " Made by " << GetAuthor() << std::endl << std::endl;
     std::cout << board.PPBoard();
 
     InitBitboards();

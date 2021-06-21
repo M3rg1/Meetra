@@ -1,9 +1,9 @@
 #include "Bitboards.h"
 #include "Macros.h"
 
-using namespace Popper;
+using namespace Meetra;
 
-namespace Popper{
+namespace Meetra{
 
     inline Bitboard RankMasks[RANK_NR] {
             0x00000000000000FFUL,
@@ -52,6 +52,23 @@ namespace Popper{
         }
     }
 
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // pro vytvareni toho klice nezalezi na okupaci hran, protoze
+    // at uz je hrana okupovana nebo ne, tak vrati stejny attack square map
+    // ten tutorial na webu je debilni, attack mapy potrebuju vsechny,
+    // jen ten klic s occupied edge nebo neoccupied edge by racel stejnou mapu
+    // takze na nej se muzu vykaslat
+
+    //https://github.com/GunshipPenguin/shallow-blue/blob/c6d7e9615514a86533a9e0ffddfc96e058fc9cfd/src/attacks.cc
+    //https://rhysre.net/fast-chess-move-generation-with-magic-bitboards.html - good, source above ^
+
+    //http://pradu.us/old/Nov27_2008/Buzz/research/magic/Bitboards.pdf
+
+    //https://essays.jwatzman.org/essays/chess-move-generation-with-magic-bitboards.html - essay on magics
+
+    // https://www.chessprogramming.org/Looking_for_Magics#cite_note-2 - generator code
+
     inline void InitRays(){
         for (Rank r = RANK_1; r < RANK_NR; ++r) {
             for (File f = FILE_A; f < FILE_NR; ++f) {
@@ -65,6 +82,17 @@ namespace Popper{
                 Rays[s][WEST_IDX] = ray;
                 // TODO the other 6 directions
                 // = get the full line, then shift the unwanted bits out
+
+                // https://www.youtube.com/watch?v=eFlyjIlg6hA maks 4:50
+
+                // WHEN USING THESE RAYS TO GENERATE MAGIC BITBOARDS DONT FORGET TO MASK THE ENDING SQUARES AROUND
+                // THE BOARD
+                // IDK THIS IS KINDA SHIT TBH, HOW DO YOU THEN GET THE ATTACKS PROPERLY IF U MISISNG THE LAST
+                // ROW/COLUMN
+
+                // https://www.youtube.com/watch?v=pEPEWXiAqZs - 6:45
+                // yep, je to tak, proste se potom bude muset dopocitat, jestli je mozne utocit i na ty
+                // na konci radku/sloupce podle toho, kde jsou blockeri
             }
         }
     }

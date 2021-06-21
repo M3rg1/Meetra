@@ -2,7 +2,7 @@
 #include "Bitboards.h"
 #include <iostream>
 
-namespace Popper{
+namespace Meetra{
 
 
     template<Color Us, PieceType Pt>

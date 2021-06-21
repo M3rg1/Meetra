@@ -1,5 +1,5 @@
-#ifndef POPPER_MACROS_H
-#define POPPER_MACROS_H
+#ifndef MEETRA_MACROS_H
+#define MEETRA_MACROS_H
 
 
 #ifndef TIMER
@@ -21,4 +21,4 @@
 # define DEBUG_LOG(msg) do {} while (0)
 #endif // DEBUG_BUILD
 
-#endif //POPPER_MACROS_H
+#endif //MEETRA_MACROS_H

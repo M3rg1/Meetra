@@ -1,17 +1,40 @@
-#ifndef POPPER_MISC_H
-#define POPPER_MISC_H
+#ifndef MEETRA_MISC_H
+#define MEETRA_MISC_H
 
 #include "Types.h"
 
-namespace Popper{
+namespace Meetra{
 
-    inline std::string GetLogo(){
+/*    inline std::string GetLogo(){
         return " ___                       \n"
                "| . \\___ ___ ___ ___ _ _  \n"
                "|  _/ . | . | . / ._| '_>  \n"
                "|_| \\___|  _|  _\\___|_|  \n"
                "        |_| |_|            \n"
                "===========================\n";
+    }*/
+
+    inline std::string GetLogo(){
+        return "  __  __         _            \n"
+               " |  \\/  |___ ___| |_ _ _ __ _ \n"
+               " | |\\/| / -_) -_)  _| '_/ _  |\n"
+               " |_|  |_\\___\\___|\\__|_| \\__,_|";
+    }
+
+    inline std::string GetName(){
+        return "Meetra";
+    }
+
+    inline std::string GetVersion(){
+        return "0.0.1";
+    }
+
+    inline std::string GetAuthor(){
+        return "M3rg1";
+    }
+
+    inline std::string GetOptions(){
+        return "";
     }
 
     inline constexpr Piece CharToPiece(char c){
@@ -52,4 +75,4 @@ namespace Popper{
 
 }
 
-#endif //POPPER_MISC_H
+#endif //MEETRA_MISC_H

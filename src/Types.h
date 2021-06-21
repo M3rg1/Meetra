@@ -1,9 +1,9 @@
-#ifndef POPPER_TYPES_H
-#define POPPER_TYPES_H
+#ifndef MEETRA_TYPES_H
+#define MEETRA_TYPES_H
 
 #include <cinttypes>
 
-namespace Popper {
+namespace Meetra {
 
     enum GenPhase : int {
         BEST_MOVE, CAPTURE, QUIET, END,
@@ -216,4 +216,4 @@ inline T& operator/=(T& d, int i) { return d = T(int(d) / i); }
 
 }
 
-#endif //POPPER_TYPES_H
+#endif //MEETRA_TYPES_H

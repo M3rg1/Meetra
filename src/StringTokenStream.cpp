@@ -2,9 +2,9 @@
 #include <algorithm>
 #include "StringTokenStream.h"
 
-namespace Popper {
+namespace Meetra {
 
-    Popper::StringTokenStream::StringTokenStream(std::string str, bool make_lower, char delimiter) {
+    Meetra::StringTokenStream::StringTokenStream(std::string str, bool make_lower, char delimiter) {
 
         if(make_lower) {
             std::transform(str.begin(), str.end(), str.begin(), ::tolower);
@@ -17,13 +17,13 @@ namespace Popper {
         }
     }
 
-    std::string Popper::StringTokenStream::NextToken() {
+    std::string Meetra::StringTokenStream::NextToken() {
         std::string ret = token_holder.front();
         token_holder.pop_front();
         return ret;
     }
 
-    bool Popper::StringTokenStream::HasNext() {
+    bool Meetra::StringTokenStream::HasNext() {
         return !token_holder.empty();
     }
 }

@@ -1,12 +1,12 @@
-#ifndef POPPER_BITBOARDS_H
-#define POPPER_BITBOARDS_H
+#ifndef MEETRA_BITBOARDS_H
+#define MEETRA_BITBOARDS_H
 
 #include "Types.h"
 #include <bit>
 #include <string>
 #include <iostream>
 
-namespace Popper {
+namespace Meetra {
 
 
 /*    inline uint64_t BishopMagicNum[SQUARE_NR] = {
@@ -98,4 +98,4 @@ inline Square Msb(Bitboard b) {
 
 
 
-#endif //POPPER_BITBOARDS_H
+#endif //MEETRA_BITBOARDS_H

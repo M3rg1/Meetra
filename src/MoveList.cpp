@@ -1,7 +1,7 @@
 #include "MoveList.h"
 
 
-namespace Popper {
+namespace Meetra {
 
     // Maybe initialize whole array to 0s so we dont have to make the if quiet check and just return
     // the 0, which is Invalid move
@@ -11,7 +11,7 @@ namespace Popper {
 
     // oooor we just rely on move generator, to generate captures first, and then quiet, so we can have them
     // immediatelly after each other, having to do 0 checks (only adding invalid move all the way at the end)
-    inline constexpr Popper::Move Popper::MoveList::GetNextMove() {
+    inline constexpr Meetra::Move Meetra::MoveList::GetNextMove() {
         if(move_count > 0) return moves[--move_count];
         return INVALID_MOVE;
 
