@@ -53,7 +53,6 @@ namespace Meetra {
         ret.append("\nEP square: ");
         if(EpSquare(game_state) != SQUARE_ZERO) { ret.append(std::to_string(EpSquare(game_state))); }
         else{ ret.push_back('-'); }
-        ret.push_back('\n');
         return ret;
     }
 

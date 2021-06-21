@@ -29,7 +29,7 @@ int main(int argc, char *arv[]) {
     std::cout << GetLogo() << std::endl;
     std::cout << " v. " << GetVersion() << std::endl;
     std::cout << " Made by " << GetAuthor() << std::endl << std::endl;
-    std::cout << board.PPBoard();
+    std::cout << board.PPBoard() << std::endl;
 
     InitBitboards();
     MoveGenerator mg;
@@ -45,7 +45,7 @@ int main(int argc, char *arv[]) {
     std::cout << li->ep_square << std::endl;*/
 
     Bitboard b = 1231000023;
-    //std::cout << PPStringBitboard(b) << std::endl;
+    //std::cout << PPBitboard(b) << std::endl;
 
     //std::cout << (std::endian::native == std::endian::little) << std::endl;
 

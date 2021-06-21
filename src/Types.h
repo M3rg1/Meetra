@@ -40,12 +40,12 @@ namespace Meetra {
     };
 
     enum Direction : int{
-        NORTH = 8, NORTH_EAST = 9, EAST = 1, SOUTH_EAST = -9, SOUTH = -8, SOUTH_WEST = -7, WEST = -1, NORTH_WEST = 7,
+        NORTH = 8, NORTH_EAST = 9, EAST = 1, SOUTH_EAST = -7, SOUTH = -8, SOUTH_WEST = -9, WEST = -1, NORTH_WEST = 7,
         DIRECTION_NR
     };
 
     enum DirectionIndex : int{
-        NORTH_IDX, NORTHEAST_IDX, EAST_IDX, SOUTHEAST_IDX, SOUTH_IDX, SOUTHWEST_IDX, WEST_IDX, NORTHWEST_IDX,
+        NORTH_IDX, NORTH_EAST_IDX, EAST_IDX, SOUTH_EAST_IDX, SOUTH_IDX, SOUTH_WEST_IDX, WEST_IDX, NORTH_WEST_IDX,
         DIRECTION_IDX_NR
     };
 

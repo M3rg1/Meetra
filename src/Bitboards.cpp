@@ -3,9 +3,9 @@
 
 using namespace Meetra;
 
-namespace Meetra{
+namespace Meetra {
 
-    inline Bitboard RankMasks[RANK_NR] {
+    inline Bitboard RankMasks[RANK_NR]{
             0x00000000000000FFUL,
             0x000000000000FF00UL,
             0x0000000000FF0000UL,
@@ -16,38 +16,59 @@ namespace Meetra{
             0xFF00000000000000UL
     };
 
-    inline Bitboard FileMasks[FILE_NR] {
-            0x8080808080808080UL,
-            0x4040404040404040UL,
-            0x2020202020202020UL,
-            0x1010101010101010UL,
-            0x0808080808080808UL,
-            0x0404040404040404UL,
+    inline Bitboard FileMasks[FILE_NR]{
+            0x0101010101010101UL,
             0x0202020202020202UL,
-            0x0101010101010101UL
+            0x0404040404040404UL,
+            0x0808080808080808UL,
+            0x1010101010101010UL,
+            0x2020202020202020UL,
+            0x4040404040404040UL,
+            0x8080808080808080UL
     };
 
     inline uint64_t RookMagicNum[SQUARE_NR] = {
-            0xa8002c000108020ULL, 0x6c00049b0002001ULL, 0x100200010090040ULL, 0x2480041000800801ULL, 0x280028004000800ULL,
-            0x900410008040022ULL, 0x280020001001080ULL, 0x2880002041000080ULL, 0xa000800080400034ULL, 0x4808020004000ULL,
-            0x2290802004801000ULL, 0x411000d00100020ULL, 0x402800800040080ULL, 0xb000401004208ULL, 0x2409000100040200ULL,
+            0xa8002c000108020ULL, 0x6c00049b0002001ULL, 0x100200010090040ULL, 0x2480041000800801ULL,
+            0x280028004000800ULL,
+            0x900410008040022ULL, 0x280020001001080ULL, 0x2880002041000080ULL, 0xa000800080400034ULL,
+            0x4808020004000ULL,
+            0x2290802004801000ULL, 0x411000d00100020ULL, 0x402800800040080ULL, 0xb000401004208ULL,
+            0x2409000100040200ULL,
             0x1002100004082ULL, 0x22878001e24000ULL, 0x1090810021004010ULL, 0x801030040200012ULL, 0x500808008001000ULL,
             0xa08018014000880ULL, 0x8000808004000200ULL, 0x201008080010200ULL, 0x801020000441091ULL, 0x800080204005ULL,
             0x1040200040100048ULL, 0x120200402082ULL, 0xd14880480100080ULL, 0x12040280080080ULL, 0x100040080020080ULL,
-            0x9020010080800200ULL, 0x813241200148449ULL, 0x491604001800080ULL, 0x100401000402001ULL, 0x4820010021001040ULL,
-            0x400402202000812ULL, 0x209009005000802ULL, 0x810800601800400ULL, 0x4301083214000150ULL, 0x204026458e001401ULL,
-            0x40204000808000ULL, 0x8001008040010020ULL, 0x8410820820420010ULL, 0x1003001000090020ULL, 0x804040008008080ULL,
-            0x12000810020004ULL, 0x1000100200040208ULL, 0x430000a044020001ULL, 0x280009023410300ULL, 0xe0100040002240ULL,
+            0x9020010080800200ULL, 0x813241200148449ULL, 0x491604001800080ULL, 0x100401000402001ULL,
+            0x4820010021001040ULL,
+            0x400402202000812ULL, 0x209009005000802ULL, 0x810800601800400ULL, 0x4301083214000150ULL,
+            0x204026458e001401ULL,
+            0x40204000808000ULL, 0x8001008040010020ULL, 0x8410820820420010ULL, 0x1003001000090020ULL,
+            0x804040008008080ULL,
+            0x12000810020004ULL, 0x1000100200040208ULL, 0x430000a044020001ULL, 0x280009023410300ULL,
+            0xe0100040002240ULL,
             0x200100401700ULL, 0x2244100408008080ULL, 0x8000400801980ULL, 0x2000810040200ULL, 0x8010100228810400ULL,
-            0x2000009044210200ULL, 0x4080008040102101ULL, 0x40002080411d01ULL, 0x2005524060000901ULL, 0x502001008400422ULL,
+            0x2000009044210200ULL, 0x4080008040102101ULL, 0x40002080411d01ULL, 0x2005524060000901ULL,
+            0x502001008400422ULL,
             0x489a000810200402ULL, 0x1004400080a13ULL, 0x4000011008020084ULL, 0x26002114058042ULL
     };
 
 
-    void InitRookMasks(){
-        for(Rank r = RANK_1; r < RANK_8; ++r){
-            for(File f = FILE_A; f < FILE_H; ++f){
-                RookMasks[SquareFromFiRa(f, r)] = FileMasks[f] | RankMasks[r];
+    void InitRookMasks() {
+        for (Rank r = RANK_1; r <= RANK_8; ++r) {
+            for (File f = FILE_A; f <= FILE_H; ++f) {
+                Square s = SquareFromFiRa(f, r);
+                RookMasks[s] = Rays[s][NORTH_IDX] | Rays[s][EAST_IDX] | Rays[s][SOUTH_IDX] | Rays[s][WEST_IDX];
+            }
+        }
+
+        //std::cout << "Mask: " << RookMasks[B3] << std::endl;
+    }
+
+    void InitBishopMasks(){
+        for (Rank r = RANK_1; r <= RANK_8; ++r) {
+            for (File f = FILE_A; f <= FILE_H; ++f) {
+                Square s = SquareFromFiRa(f, r);
+                BishopMasks[s] = Rays[s][NORTH_WEST_IDX] | Rays[s][NORTH_EAST_IDX] |
+                        Rays[s][SOUTH_WEST_IDX] | Rays[s][SOUTH_EAST_IDX] ;
             }
         }
     }
@@ -69,41 +90,88 @@ namespace Meetra{
 
     // https://www.chessprogramming.org/Looking_for_Magics#cite_note-2 - generator code
 
-    inline void InitRays(){
+    inline void InitRays() {
         for (Rank r = RANK_1; r < RANK_NR; ++r) {
             for (File f = FILE_A; f < FILE_NR; ++f) {
                 Square s = SquareFromFiRa(f, r);
-                Bitboard ray = 0xFFFFFFFFFFFFFFFFULL;
-                ray &= RankMasks[r];
-                ray = (((ray & RankMasks[r]) ^ IndexToBB(s)) >> s) << s;
+
+                Bitboard ray = ((RankMasks[r] ^ SquareToBB(s)) >> s) << s;
                 Rays[s][EAST_IDX] = ray;
-                ray = 0xFFFFFFFFFFFFFFFFULL;
-                ray = (((ray & RankMasks[r]) ^ IndexToBB(s)) << (SQUARE_NR - (s + 1))) >> (SQUARE_NR - (s + 1));
+                ray = ((RankMasks[r] ^ SquareToBB(s)) << (SQUARE_NR - (s + 1))) >> (SQUARE_NR - (s + 1));
                 Rays[s][WEST_IDX] = ray;
-                // TODO the other 6 directions
-                // = get the full line, then shift the unwanted bits out
 
-                // https://www.youtube.com/watch?v=eFlyjIlg6hA maks 4:50
+                ray = ((FileMasks[f] ^ SquareToBB(s)) >> s) << s;
+                Rays[s][NORTH_IDX] = ray;
+                ray = ((FileMasks[f] ^ SquareToBB(s)) << (SQUARE_NR - (s + 1))) >> (SQUARE_NR - (s + 1));
+                Rays[s][SOUTH_IDX] = ray;
 
-                // WHEN USING THESE RAYS TO GENERATE MAGIC BITBOARDS DONT FORGET TO MASK THE ENDING SQUARES AROUND
-                // THE BOARD
-                // IDK THIS IS KINDA SHIT TBH, HOW DO YOU THEN GET THE ATTACKS PROPERLY IF U MISISNG THE LAST
-                // ROW/COLUMN
+                ray = 0UL;
+                Bitboard attack_square = SquareToBB(s);
+                Bitboard moved_files = attack_square;
+                do {
+                    attack_square >>= 9;
+                    moved_files >>= 1;
+                    if (moved_files & RankMasks[r]) {
+                        ray |= attack_square;
+                    } else {
+                        break;
+                    }
+                } while (attack_square);
+                Rays[s][SOUTH_WEST_IDX] = ray;
 
-                // https://www.youtube.com/watch?v=pEPEWXiAqZs - 6:45
-                // yep, je to tak, proste se potom bude muset dopocitat, jestli je mozne utocit i na ty
-                // na konci radku/sloupce podle toho, kde jsou blockeri
+                ray = 0UL;
+                attack_square = SquareToBB(s);
+                moved_files = attack_square;
+                do {
+                    attack_square >>= 7;
+                    moved_files <<= 1;
+                    if (moved_files & RankMasks[r]) {
+                        ray |= attack_square;
+                    } else {
+                        break;
+                    }
+                } while (attack_square);
+                Rays[s][SOUTH_EAST_IDX] = ray;
+
+                ray = 0UL;
+                attack_square = SquareToBB(s);
+                moved_files = attack_square;
+                do {
+                    attack_square <<= 9;
+                    moved_files <<= 1;
+                    if (moved_files & RankMasks[r]) {
+                        ray |= attack_square;
+                    } else {
+                        break;
+                    }
+                } while (attack_square);
+                Rays[s][NORTH_EAST_IDX] = ray;
+
+                ray = 0UL;
+                attack_square = SquareToBB(s);
+                moved_files = attack_square;
+                do {
+                    attack_square <<= 7;
+                    moved_files >>= 1;
+                    if (moved_files & RankMasks[r]) {
+                        ray |= attack_square;
+                    } else {
+                        break;
+                    }
+                } while (attack_square);
+                Rays[s][NORTH_WEST_IDX] = ray;
             }
         }
+
+        //std::cout << PPBitboard(Rays[H1][NORTH_WEST_IDX]) << std::endl;
     }
 
-    void InitBitboards(){
+    void InitBitboards() {
         // init the directions used for init masks for attacks
         InitRays();
-        //InitRookMasks();
 
         // init the masks for attacks
-        //InitBishopMasks();
+        InitBishopMasks();
         InitRookMasks();
 
         // init magic numbers (instead of hard-coded)
@@ -112,20 +180,22 @@ namespace Meetra{
 
     }
 
-    std::string PPStringBitboard(Bitboard b) {
+    std::string PPBitboard(Bitboard b) {
         std::string ret;
-        for (int i = 63; i >= 0; --i) {
-            if((b >> i) & 1){
-                ret.append(" x ");
+        for (Rank r = RANK_8; r >= RANK_1; --r) {
+            ret.append(std::to_string(r + 1));
+            ret.append(" |");
+            for (File f = FILE_A; f <= FILE_H; ++f) {
+                //DEBUG_LOG(board[SquareFromFiRa(f, r)]);
+                if ((b >> (r * 8) + f) & 1) {
+                    ret.append(" x ");
+                } else {
+                    ret.append(" o ");
+                }
             }
-            else {
-                ret.append(" o ");
-            }
-            if(i % 8 == 0){
-                ret.push_back('\n');
-            }
+            ret.append("\n");
         }
+        ret.append("    A  B  C  D  E  F  G  H");
         return ret;
     }
-
 }

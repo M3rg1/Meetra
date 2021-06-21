@@ -29,9 +29,10 @@ namespace Meetra {
     //inline Bitboard BishopAttackTable[64][1024];
 
     inline Bitboard RookMasks[64];
+    inline Bitboard BishopMasks[64];
     //inline Bitboard BishopMasks[64];
 
-    inline Bitboard Rays[SQUARE_NR][8];
+    inline Bitboard Rays[SQUARE_NR][DIRECTION_IDX_NR];
 
     void InitBitboards();
 
@@ -48,7 +49,7 @@ namespace Meetra {
     }*/
 
 
-    std::string PPStringBitboard(Bitboard b);
+    std::string PPBitboard(Bitboard b);
 
     // linux builtins
     inline constexpr Square Lsb(Bitboard b) {
@@ -69,8 +70,8 @@ namespace Meetra {
         return std::__popcount(b);
     }
 
-    inline constexpr Bitboard IndexToBB(int idx){
-        return 1UL << idx;
+    inline constexpr Bitboard SquareToBB(Square s){
+        return 1UL << s;
     }
 
 
