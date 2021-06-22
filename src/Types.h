@@ -40,46 +40,20 @@ namespace Meetra {
         FILE_NR
     };
 
-    enum Direction : int{
+    enum Direction : int {
         NORTH = 8, NORTH_EAST = 9, EAST = 1, SOUTH_EAST = -7, SOUTH = -8, SOUTH_WEST = -9, WEST = -1, NORTH_WEST = 7,
         DIRECTION_NR
     };
 
-    enum DirectionIndex : int{
+    enum DirectionIndex : int {
         NORTH_IDX, NORTH_EAST_IDX, EAST_IDX, SOUTH_EAST_IDX, SOUTH_IDX, SOUTH_WEST_IDX, WEST_IDX, NORTH_WEST_IDX,
         DIRECTION_IDX_NR
     };
 
-    inline constexpr Direction Directions[8]{
-        NORTH, NORTH_EAST, EAST, SOUTH_EAST, SOUTH, SOUTH_WEST, WEST, NORTH_WEST
+    constexpr Direction Directions[8]{
+            NORTH, NORTH_EAST, EAST, SOUTH_EAST, SOUTH, SOUTH_WEST, WEST, NORTH_WEST
     };
 
-    /* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-     *  Ten bitboard funguje DOBRE:
-     *
-     * // ten binary -> hexa -> deci convertor online to docela zkresluje, tak se nenechat zmast
-     *
-     *  0 0 0 0 0 0 0 0
-     *  0 0 0 0 0 0 0 0
-     *  ^
-     *  A1 = prvni cislo bitboardu kdyz dam LSB_POP
-     *
-     *  a potom H8 je posledni LSB pop
-     *  proste ten bitboard jde takhle
-     *
-     *  > > > > > > > >
-     *  > > > > > > > >
-     *  8 9 ....
-     *  0 1 2 3 4 5 6 7
-     *  = little endian
-     *  na miste s nejnizsi adresou (ten BAJT nejvic vpravo) je nejmene vyznamny bajn
-     *  tj proste klasika, prvni rada odspoda je prvni bajt, druha drhuhy atd.
-     *  a zleva dopraprava jsou jednotlive bity v tom bajtu
-     */
-
-
-    // potom v bitboardu
-    // A1 = 0, B1 = 1 ...
     enum Square : int {
         A1, B1, C1, D1, E1, F1, G1, H1,
         A2, B2, C2, D2, E2, F2, G2, H2,
@@ -93,9 +67,9 @@ namespace Meetra {
         SQUARE_ZERO = 0,
     };
 
-    inline constexpr Square SquareFromFiRa(File f, Rank r) { return Square((r << 3) + f); }
-    inline constexpr File FileFromSquare(Square s){ return File(s & 7); }
-    inline constexpr Rank RankFromSquare(Square s){ return Rank(s >> 3); }
+    constexpr Square SquareFromFiRa(File f, Rank r) { return Square((r << 3) + f); }
+    constexpr File FileFromSquare(Square s) { return File(s & 7); }
+    constexpr Rank RankFromSquare(Square s) { return Rank(s >> 3); }
 
 
 #define ENABLE_BASE_OPERATORS_ON(T)                                \
@@ -140,8 +114,8 @@ inline T& operator/=(T& d, int i) { return d = T(int(d) / i); }
     /// Additional operators to add a Direction to a Square
     constexpr Square operator+(Square s, Direction d) { return Square(int(s) + int(d)); }
     constexpr Square operator-(Square s, Direction d) { return Square(int(s) - int(d)); }
-    inline Square& operator+=(Square& s, Direction d) { return s = s + d; }
-    inline Square& operator-=(Square& s, Direction d) { return s = s - d; }
+    inline Square &operator+=(Square &s, Direction d) { return s = s + d; }
+    inline Square &operator-=(Square &s, Direction d) { return s = s - d; }
 
     /**
      * Move bits:
@@ -158,15 +132,15 @@ inline T& operator/=(T& d, int i) { return d = T(int(d) / i); }
         MOVE_TYPE_NR
     };
     // Move initializers
-    inline constexpr Move NewMove(Square from, Square to) { return from | to << 6; }
-    inline constexpr Move NewMove(Square from, Square to, MoveType flag) { return NewMove(from, to) | flag; }
+    constexpr Move NewMove(Square from, Square to) { return from | to << 6; }
+    constexpr Move NewMove(Square from, Square to, MoveType flag) { return NewMove(from, to) | flag; }
 
     // Move utils
-    inline constexpr Square FromSquare(Move m) { return Square(m & 0x3F); }
-    inline constexpr Square ToSquare(Move m) { return Square((m & 0xFC0) >> 6); }
-    inline constexpr bool IsPromotion(Move m) { return m >> 15 != 0; }
-    inline constexpr MoveType GetFlag(Move m) { return MoveType(m & 0xF000); }
-    inline constexpr bool IsValid(Move m) { return m != INVALID_MOVE; }
+    constexpr Square FromSquare(Move m) { return Square(m & 0x3F); }
+    constexpr Square ToSquare(Move m) { return Square((m & 0xFC0) >> 6); }
+    constexpr bool IsPromotion(Move m) { return m >> 15 != 0; }
+    constexpr MoveType GetFlag(Move m) { return MoveType(m & 0xF000); }
+    constexpr bool IsValid(Move m) { return m != INVALID_MOVE; }
     //inline constexpr bool IsValid(Move m) { return (m & 0x7FF) != 0; }
 
 
@@ -191,30 +165,30 @@ inline T& operator/=(T& d, int i) { return d = T(int(d) / i); }
 
     // game state setters
     // requires new game state
-    inline constexpr void SetEpSquare(Square s, GameState &gs) { gs |= s; }
-    inline constexpr void SetCastlingRights(CastlingRights cr, GameState &gs) { gs |= cr; }
-    inline constexpr void SetColorToMove(Color c, GameState &gs) { gs |= c << 10; }
-    inline constexpr void SetCapturedPiece(Color c, GameState &gs) { gs |= c << 11; }
-    inline constexpr void SetPly(int ply, GameState &gs) { gs |= ply << 17; }
-    inline constexpr void SetMoveNumber(int move_num, GameState &gs) { gs |= move_num << 24; }
+    constexpr void SetEpSquare(Square s, GameState &gs) { gs |= s; }
+    constexpr void SetCastlingRights(CastlingRights cr, GameState &gs) { gs |= cr; }
+    constexpr void SetColorToMove(Color c, GameState &gs) { gs |= c << 10; }
+    constexpr void SetCapturedPiece(Color c, GameState &gs) { gs |= c << 11; }
+    constexpr void SetPly(int ply, GameState &gs) { gs |= ply << 17; }
+    constexpr void SetMoveNumber(int move_num, GameState &gs) { gs |= move_num << 24; }
 
     // game state getters
     //inline constexpr CastlingRights GetCR(GameState &gs){ return CastlingRights (gs & 0x3C0); }
-    inline constexpr bool CanWhiteShortCR(const GameState &gs) { return (gs & WHITE_SHORT) != 0; }
-    inline constexpr bool CanWhiteLongCR(const GameState &gs) { return (gs & WHITE_LONG) != 0; }
-    inline constexpr bool CanBlackShortCR(const GameState &gs) { return (gs & BLACK_SHORT) != 0; }
-    inline constexpr bool CanBlackLongCR(const GameState &gs) { return (gs & BLACK_LONG) != 0; }
-    inline constexpr Square EpSquare(const GameState &gs) { return Square(gs & 0x1F); }
-    inline constexpr Color ColorToMove(const GameState &gs) { return Color(gs >> 10 & 0x1); }
-    inline constexpr Piece CapturedPiece(const GameState &gs) { return Piece(gs >> 11 & 0x3F); }
-    inline constexpr int Ply(const GameState &gs) { return int(gs >> 17 & 0x3F); }
-    inline constexpr int TotalMoves(const GameState &gs) { return int(gs >> 24); }
+    constexpr bool CanWhiteShortCR(const GameState &gs) { return (gs & WHITE_SHORT) != 0; }
+    constexpr bool CanWhiteLongCR(const GameState &gs) { return (gs & WHITE_LONG) != 0; }
+    constexpr bool CanBlackShortCR(const GameState &gs) { return (gs & BLACK_SHORT) != 0; }
+    constexpr bool CanBlackLongCR(const GameState &gs) { return (gs & BLACK_LONG) != 0; }
+    constexpr Square EpSquare(const GameState &gs) { return Square(gs & 0x1F); }
+    constexpr Color ColorToMove(const GameState &gs) { return Color(gs >> 10 & 0x1); }
+    constexpr Piece CapturedPiece(const GameState &gs) { return Piece(gs >> 11 & 0x3F); }
+    constexpr int Ply(const GameState &gs) { return int(gs >> 17 & 0x3F); }
+    constexpr int TotalMoves(const GameState &gs) { return int(gs >> 24); }
 
     // changing existing, non-new game state
-    inline constexpr void IncrementMoveNumber(GameState &gs) { gs += 1 << 23; }
-    inline constexpr void IncrementPly(GameState &gs) { gs += 1 << 17; }
-    inline constexpr void ClearCapturedPiece(GameState &gs) { gs &= ~0x1F800; }
-    inline constexpr void ChangeColorToMove(GameState &gs) {
+    constexpr void IncrementMoveNumber(GameState &gs) { gs += 1 << 23; }
+    constexpr void IncrementPly(GameState &gs) { gs += 1 << 17; }
+    constexpr void ClearCapturedPiece(GameState &gs) { gs &= ~0x1F800; }
+    constexpr void ChangeColorToMove(GameState &gs) {
         ColorToMove(gs) == WHITE ? gs += 1 << 10 : gs -= 1 << 10;
     }
 
