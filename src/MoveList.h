@@ -5,6 +5,8 @@
 
 namespace Meetra {
 
+    // TODO priority queue for move list?
+
     class MoveList {
 
     public:

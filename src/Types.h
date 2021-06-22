@@ -50,7 +50,7 @@ namespace Meetra {
         DIRECTION_IDX_NR
     };
 
-    constexpr Direction Directions[8]{
+    constexpr Direction Directions[DIRECTION_NR]{
             NORTH, NORTH_EAST, EAST, SOUTH_EAST, SOUTH, SOUTH_WEST, WEST, NORTH_WEST
     };
 
@@ -102,6 +102,7 @@ inline T& operator/=(T& d, int i) { return d = T(int(d) / i); }
     ENABLE_INCR_OPERATORS_ON(File)
     ENABLE_INCR_OPERATORS_ON(Rank)
     ENABLE_INCR_OPERATORS_ON(DirectionIndex)
+    ENABLE_INCR_OPERATORS_ON(Direction);
 
     ENABLE_FULL_OPERATORS_ON(File);
     ENABLE_FULL_OPERATORS_ON(Rank);

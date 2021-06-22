@@ -8,10 +8,14 @@
 
 namespace Meetra {
 
+    //https://www.youtube.com/watch?v=JJ_OJFM-z5E
+    // 4:25
+    // testing if a square is under attack TODO
+
     void InitBitboards();
 
-    inline Bitboard GetRookAttacks(Square s, Bitboard occ);
-    inline Bitboard GetBishopAttacks(Square s, Bitboard occ);
+    template<PieceType Pt>
+    inline Bitboard GetPseudoMoves(Square s, Bitboard occ);
 
     std::string PPBitboard(Bitboard b);
 
