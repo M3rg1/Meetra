@@ -11,6 +11,7 @@ namespace Meetra {
     };
 
     typedef uint64_t Bitboard;
+#define EMPTY_BB 0UL
 
     enum Color : int {
         WHITE, BLACK,
@@ -93,6 +94,8 @@ namespace Meetra {
     };
 
     inline constexpr Square SquareFromFiRa(File f, Rank r) { return Square((r << 3) + f); }
+    inline constexpr File FileFromSquare(Square s){ return File(s & 7); }
+    inline constexpr Rank RankFromSquare(Square s){ return Rank(s >> 3); }
 
 
 #define ENABLE_BASE_OPERATORS_ON(T)                                \
@@ -116,6 +119,8 @@ constexpr T operator/(T d, int i) { return T(int(d) / i); }        \
 constexpr int operator/(T d1, T d2) { return int(d1) / int(d2); }  \
 inline T& operator*=(T& d, int i) { return d = T(int(d) * i); }    \
 inline T& operator/=(T& d, int i) { return d = T(int(d) / i); }
+
+    ENABLE_BASE_OPERATORS_ON(Square);
 
     ENABLE_INCR_OPERATORS_ON(Piece)
     ENABLE_INCR_OPERATORS_ON(PieceType)

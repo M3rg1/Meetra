@@ -25,6 +25,16 @@ namespace Meetra {
             0x1000042304105ULL, 0x10008830412a00ULL, 0x2520081090008908ULL, 0x40102000a0a60140ULL,
     };*/
 
+    struct Magic{
+        Bitboard to_square[4096]; // how many possible blocker combinations can be made on this square
+        Bitboard inner_bb;
+        uint64_t magic;
+        uint16_t shift;
+    };
+
+    inline Magic bishop_tab[64];
+    inline Magic rook_tab[64];
+
     inline Bitboard RookAttackTable[64][4096];
     //inline Bitboard BishopAttackTable[64][1024];
 
@@ -32,7 +42,8 @@ namespace Meetra {
     inline Bitboard BishopMasks[64];
     //inline Bitboard BishopMasks[64];
 
-    inline Bitboard Rays[SQUARE_NR][DIRECTION_IDX_NR];
+    inline Bitboard rays[SQUARE_NR][DIRECTION_IDX_NR];
+    inline Bitboard inner_rays[SQUARE_NR][DIRECTION_IDX_NR];
 
     void InitBitboards();
 
@@ -72,6 +83,14 @@ namespace Meetra {
 
     inline constexpr Bitboard SquareToBB(Square s){
         return 1UL << s;
+    }
+
+    inline constexpr void SetBBSquareOne(Bitboard & b, Square s){
+        b |= SquareToBB(s);
+    }
+
+    inline constexpr void SetBBSquareZero(Bitboard & b, Square s){
+        b &= ~SquareToBB(s);
     }
 
 
