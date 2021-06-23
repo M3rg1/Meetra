@@ -10,7 +10,7 @@
 namespace Meetra {
 
     Board::Board(std::string fen) {
-        gs_history = std::deque<GameState>(80);
+        gs_history = std::deque<GameState>(100);
         game_state = NEW_GAME_STATE;
         auto loadedInfo = Meetra::FenLoader::ParseFen(std::move(fen));
         SetColorToMove(loadedInfo->color_to_move);
@@ -28,60 +28,163 @@ namespace Meetra {
 
         gs_history.push_back(game_state);
 
+        bool white_moved = ColorToMove() == WHITE;
+        ChangeColorToMove();
         ClearCapturedPiece();
+        ClearEpSquare();
 
         Square from = FromSquare(m);
         Square to = ToSquare(m);
 
+        Square capture_square = to;
         Piece captured_piece = board[to];
-        board[to] = board[from];
-        board[from] = NO_PIECE;
+        Piece moved_piece = board[from];
 
-        bool white_moved = ColorToMove() == WHITE;
+        if (white_moved) {
+            if (moved_piece == W_ROOK) {
+                if (from == A1) {
+                    RemoveCastlingRights(WHITE_LONG);
+                } else if (from == H1) {
+                    RemoveCastlingRights(WHITE_SHORT);
+                }
+            } else if (moved_piece == W_KING) {
+                RemoveCastlingRights(WHITE_ALL_CR);
+            }
+        } else {
+            IncrementMoveNumber();
 
-        if (!white_moved) IncrementMoveNumber();
-        ChangeColorToMove();
+            if (moved_piece == B_ROOK) {
+                if (from == A8) {
+                    RemoveCastlingRights(BLACK_LONG);
+                } else if (from == H8) {
+                    RemoveCastlingRights(BLACK_SHORT);
+                }
+            } else if (moved_piece == B_KING) {
+                RemoveCastlingRights(BLACK_ALL_CR);
+            }
+        }
 
         MoveType move_type = GetFlag(m);
-        switch (move_type) {
-            case NO_FLAG:
-                break;
-            case TWO_FORWARD:
-                SetEpSquare(white_moved ? to - 8 : to + 8);
-                break;
-            case CASTLING:
-                break;
-            case EN_PASSANT:
-                captured_piece = white_moved ? B_PAWN : W_PAWN;
-                board[white_moved ? to - 8 : to + 8] = NO_PIECE;
-                break;
-            case PROMOTE_QUEEN:
-                board[to] = white_moved ? W_QUEEN : B_QUEEN;
-                break;
-            case PROMOTE_ROOK:
-                board[to] = white_moved ? W_ROOK : B_ROOK;
-                break;
-            case PROMOTE_BISHOP:
-                board[to] = white_moved ? W_BISHOP : B_BISHOP;
-                break;
-            case PROMOTE_KNIGHT:
-                board[to] = white_moved ? W_KNIGHT : B_KNIGHT;
-                break;
-            default:
-                break;
+        if (move_type == EN_PASSANT) {
+            capture_square += white_moved ? -8 : 8;
+            captured_piece = white_moved ? B_PAWN : W_PAWN;
         }
 
-        if(captured_piece == NO_PIECE) {
+        if (captured_piece != NO_PIECE) {
+            RemovePiece(capture_square);
+            SetCapturedPiece(captured_piece);
+            ResetPly();
+        } else if (moved_piece != W_PAWN && moved_piece != B_PAWN) {
+            ResetPly();
+        } else {
             IncrementPly();
         }
-        else{
-            ResetPly();
-            SetCapturedPiece(captured_piece);
+        MovePiece(from, to);
+
+        if (move_type == TWO_FORWARD) {
+            SetEpSquare(white_moved ? to - 8 : to + 8);
+        } else if (move_type == CASTLING) {
+            if (white_moved) {
+                RemoveCastlingRights(WHITE_ALL_CR);
+                if (to == G1) {
+                    MovePiece(H1, F1);
+                } else {
+                    MovePiece(A1, D1);
+                }
+            } else {
+                RemoveCastlingRights(BLACK_ALL_CR);
+                if (to == G8) {
+                    MovePiece(H8, F8);
+                } else {
+                    MovePiece(A8, D8);
+                }
+            }
+        } else if (IsPromotion(m)) {
+            RemovePiece(to);
+            switch (move_type) {
+                case PROMOTE_QUEEN:
+                    PutPiece(to, white_moved ? W_QUEEN : B_QUEEN);
+                    break;
+                case PROMOTE_ROOK:
+                    PutPiece(to, white_moved ? W_ROOK : B_ROOK);
+                    break;
+                case PROMOTE_BISHOP:
+                    PutPiece(to, white_moved ? W_BISHOP : B_BISHOP);
+                    break;
+                case PROMOTE_KNIGHT:
+                    PutPiece(to, white_moved ? W_KNIGHT : B_KNIGHT);
+                    break;
+            }
         }
 
         // check if king in check, return false
 
         return true;
+    }
+
+
+    void Board::UnmakeMove(Move m) {
+
+        Square from = FromSquare(m);
+        Square to = ToSquare(m);
+
+        bool white_to_move = ColorToMove() == WHITE ? B_PAWN : W_PAWN;
+
+        if (IsPromotion(m)) {
+            RemovePiece(to);
+            PutPiece(to, white_to_move ? B_PAWN : W_PAWN);
+        }
+
+        Piece captured_piece = CapturedPiece();
+
+        MovePiece(to, from);
+        if (captured_piece != NO_PIECE) {
+            PutPiece(to, captured_piece);
+        } else if (GetFlag(m) == CASTLING) {
+            if (white_to_move) {
+                if (to == G8) {
+                    MovePiece(F8, H8);
+                } else {
+                    MovePiece(D8, A8);
+                }
+            } else {
+                if (to == G1) {
+                    MovePiece(F1, H1);
+                } else {
+                    MovePiece(D1, A1);
+                }
+            }
+        }
+
+        game_state = gs_history.back();
+        gs_history.pop_back();
+    }
+
+    inline void Board::RemovePiece(Square s) {
+        Piece p = board[s];
+        board[s] = NO_PIECE;
+        Bitboard pos = SquareToBB(s);
+        color_bbs[ColorOfPiece(p)] ^= pos;
+        type_bbs[TypeOfPiece(p)] ^= pos;
+        type_bbs[ALL_TYPES] ^= pos;
+    }
+
+    inline void Board::PutPiece(Square s, Piece p) {
+        board[s] = p;
+        Bitboard pos = SquareToBB(s);
+        color_bbs[ColorOfPiece(p)] |= pos;
+        type_bbs[TypeOfPiece(p)] |= pos;
+        type_bbs[ALL_TYPES] |= pos;
+    }
+
+    inline void Board::MovePiece(Square from, Square to) {
+        Piece p = board[from];
+        board[to] = p;
+        board[from] = NO_PIECE;
+        Bitboard from_to = SquareToBB(from) | SquareToBB(to);
+        color_bbs[ColorOfPiece(p)] ^= from_to;
+        type_bbs[TypeOfPiece(p)] ^= from_to;
+        type_bbs[ALL_TYPES] ^= from_to;
     }
 
     std::string Board::PPBoard() const {

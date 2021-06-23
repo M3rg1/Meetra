@@ -14,9 +14,12 @@ namespace Meetra {
         explicit Board(std::string Fen);
 
         bool MakeMove(Move m);
+        void UnmakeMove(Move m);
+        inline void MovePiece(Square from, Square to);
+        inline void RemovePiece(Square s);
+        inline void PutPiece(Square s, Piece p);
 
 #pragma region ===== Piece getters =====
-        [[nodiscard]] inline Bitboard GetPieces(Piece p) const { return piece_bbs[p]; }
         [[nodiscard]] inline Bitboard GetPieces(PieceType pt, Color c) const { return type_bbs[pt] & color_bbs[c]; }
         [[nodiscard]] inline Bitboard GetPieces(PieceType pt) const { return type_bbs[pt]; }
         [[nodiscard]] inline Bitboard GetPieces(Color c) const { return color_bbs[c]; }
@@ -77,13 +80,13 @@ namespace Meetra {
         inline void IncrementPly() { game_state += 1 << 15; }
         inline void ClearCapturedPiece() { game_state &= ~0x7800; }
         inline void ChangeColorToMove() { ColorToMove() == WHITE ? game_state += 1 << 10 : game_state -= 1 << 10; }
+        inline void ClearEpSquare() { game_state &= ~0x3F; }
 #pragma endregion
 
 #pragma region ===== Data =====
         std::deque<GameState> gs_history;
         GameState game_state{0};
         Piece board[SQUARE_NR]{};
-        Bitboard piece_bbs[PIECE_NR];
         Bitboard color_bbs[COLOR_NR];
         Bitboard type_bbs[PIECE_TYPE_NR];
 #pragma endregion

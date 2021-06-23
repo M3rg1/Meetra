@@ -22,7 +22,7 @@ int main(int argc, char *arv[]) {
 
     InitBitboards();
 
-    Board board("4k2r/6r1/8/8/8/8/3R4/R3K3 w Qk - 0 1");
+    Board board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     std::cout << GetLogo() << std::endl;
     std::cout << " v. " << GetVersion() << std::endl;
     std::cout << " Made by " << GetAuthor() << std::endl << std::endl;
@@ -30,9 +30,17 @@ int main(int argc, char *arv[]) {
 
 #ifdef DEBUG_BUILD
 
-    Move m = NewMove(E1, E3);
-    board.MakeMove(m);
+    Move m1 = NewMove(B2, B4);
+    board.MakeMove(m1);
+    Move m2 = NewMove(H7, D5);
+    board.MakeMove(m2);
 
+    DEBUG_LOG(board.PPBoard());
+
+    board.UnmakeMove(m2);
+    DEBUG_LOG(board.PPBoard());
+
+    board.UnmakeMove(m1);
     DEBUG_LOG(board.PPBoard());
 
 

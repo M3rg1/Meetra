@@ -15,8 +15,7 @@ namespace Meetra {
 
     public:
         template<Color Us, PieceType Pt>
-        MoveList * GenerateMoves(MoveList * move_list, PieceType piece_type, Board board);
-        void DoStuff();
+        MoveList * GenerateMoves(PieceType piece_type, const Board& board);
 
     private:
 

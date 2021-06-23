@@ -26,9 +26,12 @@ namespace Meetra {
     enum Piece : int {
         NO_PIECE,
         W_PAWN, W_KNIGHT, W_BISHOP, W_ROOK, W_QUEEN, W_KING,
-        B_PAWN, B_KNIGHT, B_BISHOP, B_ROOK, B_QUEEN, B_KING,
-        PIECE_NR
+        B_PAWN = 9, B_KNIGHT = 10, B_BISHOP = 11, B_ROOK = 12, B_QUEEN = 13, B_KING = 14,
+        PIECE_NR = 15
     };
+
+    constexpr Color ColorOfPiece(Piece p) { return Color(p >> 3); }
+    constexpr PieceType TypeOfPiece(Piece p) { return PieceType(p & 7); }
 
     enum Rank : int {
         RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8,
@@ -42,7 +45,7 @@ namespace Meetra {
 
     enum Direction : int {
         NORTH = 8, NORTH_EAST = 9, EAST = 1, SOUTH_EAST = -7, SOUTH = -8, SOUTH_WEST = -9, WEST = -1, NORTH_WEST = 7,
-        DIRECTION_NR
+        DIRECTION_NR = 8
     };
 
     enum DirectionIndex : int {
@@ -50,7 +53,7 @@ namespace Meetra {
         DIRECTION_IDX_NR
     };
 
-    constexpr Direction Directions[DIRECTION_NR]{
+    constexpr Direction Directions[DIRECTION_IDX_NR]{
             NORTH, NORTH_EAST, EAST, SOUTH_EAST, SOUTH, SOUTH_WEST, WEST, NORTH_WEST
     };
 
@@ -85,7 +88,7 @@ namespace Meetra {
     enum MoveType : int {
         INVALID_MOVE = 0, NO_FLAG = 0, EN_PASSANT = 1 << 12, CASTLING = 2 << 12, TWO_FORWARD = 3 << 12,
         PROMOTE_KNIGHT = 4 << 13, PROMOTE_BISHOP = 5 << 13, PROMOTE_ROOK = 6 << 13, PROMOTE_QUEEN = 7 << 13,
-        MOVE_TYPE_NR
+        MOVE_TYPE_NR = 9
     };
 
 #pragma region ===== Initialization =====
