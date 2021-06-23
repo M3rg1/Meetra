@@ -20,17 +20,20 @@ using namespace Meetra;
 
 int main(int argc, char *arv[]) {
 
+    InitBitboards();
+
     Board board("4k2r/6r1/8/8/8/8/3R4/R3K3 w Qk - 0 1");
     std::cout << GetLogo() << std::endl;
     std::cout << " v. " << GetVersion() << std::endl;
     std::cout << " Made by " << GetAuthor() << std::endl << std::endl;
     std::cout << board.PPBoard() << std::endl;
-    InitBitboards();
 
 #ifdef DEBUG_BUILD
 
-    DEBUG_LOG(PPBitboard(GetPawnOneForward<WHITE>(0xFF00UL, ~EMPTY_BB)));
-    DEBUG_LOG(PPBitboard(GetAttacksForPiece<KNIGHT>(G3, EMPTY_BB)));
+    Move m = NewMove(E1, E3);
+    board.MakeMove(m);
+
+    DEBUG_LOG(board.PPBoard());
 
 
 #endif

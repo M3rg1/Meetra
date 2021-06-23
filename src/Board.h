@@ -4,6 +4,7 @@
 
 #include <string>
 #include "Types.h"
+#include <deque>
 
 namespace Meetra {
 
@@ -26,11 +27,11 @@ namespace Meetra {
         [[nodiscard]] inline bool CanWhiteLongCR() const { return (game_state & WHITE_LONG) != 0; }
         [[nodiscard]] inline bool CanBlackShortCR() const { return (game_state & BLACK_SHORT) != 0; }
         [[nodiscard]] inline bool CanBlackLongCR() const { return (game_state & BLACK_LONG) != 0; }
-        [[nodiscard]] inline Square EpSquare() const { return Square(game_state & 0x1F); }
+        [[nodiscard]] inline Square EpSquare() const { return Square(game_state & 0x3F); }
         [[nodiscard]] inline Color ColorToMove() const { return Color(game_state >> 10 & 0x1); }
-        [[nodiscard]] inline Piece CapturedPiece() const { return Piece(game_state >> 11 & 0x3F); }
-        [[nodiscard]] inline int Ply() const { return int(game_state >> 17 & 0x3F); }
-        [[nodiscard]] inline int TotalMoves() const { return int(game_state >> 24); }
+        [[nodiscard]] inline Piece CapturedPiece() const { return Piece(game_state >> 11 & 0xF); }
+        [[nodiscard]] inline int Ply() const { return int(game_state >> 15 & 0x3F); }
+        [[nodiscard]] inline int TotalMoves() const { return int(game_state >> 21); }
 #pragma endregion
 
 #pragma region ===== Misc =====
@@ -45,9 +46,9 @@ namespace Meetra {
         // bits 6-7 = castling rights white
         // bits 7-9 = castling rights black
         // bit  10 = player to move
-        // bits 11-17 = captured piece (from last game state to this game state)
-        // bits 17-23 = ply since last capture/pawn moves - 50 move rule
-        // bits 24+ - total moves made
+        // bits 11-14 = captured piece (from last game state to this game state)
+        // bits 15-21 = ply since last capture/pawn moves - 50 move rule
+        // bits 21+ - total moves made
         typedef uint_fast32_t GameState;
 #define NEW_GAME_STATE 0
 
@@ -65,18 +66,21 @@ namespace Meetra {
         inline void SetEpSquare(Square s) { game_state |= s; }
         inline void SetCastlingRights(CastlingRights cr) { game_state |= cr; }
         inline void SetColorToMove(Color c) { game_state |= c << 10; }
-        inline void SetCapturedPiece(Color c) { game_state |= c << 11; }
-        inline void SetPly(int ply) { game_state |= ply << 17; }
-        inline void SetMoveNumber(int move_num) { game_state |= move_num << 24; }
+        inline void SetCapturedPiece(Piece p) { game_state |= p << 11; }
+        inline void SetPly(int ply) { game_state |= ply << 15; }
+        inline void SetMoveNumber(int move_num) { game_state |= move_num << 21; }
 
         // modify current game state
-        inline void IncrementMoveNumber() { game_state += 1 << 23; }
-        inline void IncrementPly() { game_state += 1 << 17; }
-        inline void ClearCapturedPiece() { game_state &= ~0x1F800; }
+        inline void ResetPly() { game_state &= ~0x3F8000; }
+        inline void RemoveCastlingRights(CastlingRights cr) { game_state &= ~cr; }
+        inline void IncrementMoveNumber() { game_state += 1 << 21; }
+        inline void IncrementPly() { game_state += 1 << 15; }
+        inline void ClearCapturedPiece() { game_state &= ~0x7800; }
         inline void ChangeColorToMove() { ColorToMove() == WHITE ? game_state += 1 << 10 : game_state -= 1 << 10; }
 #pragma endregion
 
 #pragma region ===== Data =====
+        std::deque<GameState> gs_history;
         GameState game_state{0};
         Piece board[SQUARE_NR]{};
         Bitboard piece_bbs[PIECE_NR];
