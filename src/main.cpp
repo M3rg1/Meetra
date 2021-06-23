@@ -29,17 +29,31 @@ int main(int argc, char *arv[]) {
     std::cout << board.PPBoard() << std::endl;
 
 #ifdef DEBUG_BUILD
+
+    MoveList moveList(board);
+    auto m = moveList.GetNextMove();
+
     Move m1 = NewMove(B2, B4);
     board.MakeMove(m1);
     Move m2 = NewMove(H7, D5);
     board.MakeMove(m2);
 
+    Move m3 = NewMove(D1, D7);
+    if(!board.MakeMove(m3)){
+        DEBUG_LOG("FALSE RETURNED");
+    }
 
+
+    board.UnmakeMove(m3);
     board.UnmakeMove(m2);
     board.UnmakeMove(m1);
-    DEBUG_LOG(PPBitboard(board.GetPieces(WHITE)));
-    DEBUG_LOG(PPBitboard(board.GetPieces(ALL_TYPES)));
+
+    DEBUG_LOG(board.GetCheckers());
     DEBUG_LOG(board.PPBoard());
+/*    DEBUG_LOG(PPBitboard(board.GetPieces(WHITE)));
+    DEBUG_LOG(PPBitboard(board.GetPieces(ALL_TYPES)));
+    DEBUG_LOG(board.PPBoard());*/
+
 
 /*    board.UnmakeMove(m1);
     DEBUG_LOG(board.PPBoard());*/

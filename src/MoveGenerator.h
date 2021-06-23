@@ -2,24 +2,15 @@
 #define MEETRA_MOVEGENERATOR_H
 
 #include "MoveList.h"
+#include "Bitboards.h"
 #include "Types.h"
 #include "Board.h"
+#include <deque>
 
 namespace Meetra {
 
-    extern ulong RookMagic[SQUARE_NR];
-    extern ulong BishopMagic[SQUARE_NR];
-
-
-    class MoveGenerator {
-
-    public:
-        template<Color Us, PieceType Pt>
-        MoveList * GenerateMoves(PieceType piece_type, const Board& board);
-
-    private:
-
-    };
+    template<GenPhase phase>
+    void GenMoves(const Board &board, std::deque<Move> &d);
 
 }
 

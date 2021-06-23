@@ -6,6 +6,7 @@
 #include "Types.h"
 #include <deque>
 
+
 namespace Meetra {
 
     class Board {
@@ -15,11 +16,13 @@ namespace Meetra {
 
         bool MakeMove(Move m);
         void UnmakeMove(Move m);
+        [[nodiscard]] Bitboard SquareAttackers(Square s, Color c, Bitboard occ) const;
 
 #pragma region ===== Piece getters =====
         [[nodiscard]] inline Bitboard GetPieces(PieceType pt, Color c) const { return type_bbs[pt] & color_bbs[c]; }
         [[nodiscard]] inline Bitboard GetPieces(PieceType pt) const { return type_bbs[pt]; }
         [[nodiscard]] inline Bitboard GetPieces(Color c) const { return color_bbs[c]; }
+        [[nodiscard]] inline Bitboard GetCheckers() const { return checkers; }
 #pragma endregion
 
 #pragma region ===== Game State info getters =====
@@ -80,18 +83,27 @@ namespace Meetra {
         inline void ClearEpSquare() { game_state &= ~0x3F; }
 #pragma endregion
 
-#pragma region ===== Movement on the board =====
+#pragma region ===== Update inner structures =====
         inline void MovePiece(Square from, Square to);
         inline void RemovePiece(Square s);
         inline void PutPiece(Square s, Piece p);
+        inline void InitCheckers();
 #pragma endregion
 
 #pragma region ===== Data =====
-        std::deque<GameState> gs_history;
+        struct BoardData {
+            GameState game_state;
+            // zobrist_key
+            Bitboard checkers;
+        };
+
+        std::deque<BoardData> gs_history;
         GameState game_state;
-        Piece board[SQUARE_NR]{};
+        Piece board[SQUARE_NR]{NO_PIECE};
         Bitboard color_bbs[COLOR_NR]{0};
         Bitboard type_bbs[PIECE_TYPE_NR]{0};
+        Bitboard checkers;
+
 #pragma endregion
     };
 }

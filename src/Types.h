@@ -6,8 +6,12 @@
 namespace Meetra {
 
     enum GenPhase : int {
-        BEST_MOVE, CAPTURE, QUIET, END,
+        BEST_MOVE, EVASION, CAPTURE, PROMOTION, QUIET, END,
         GEN_PHASE_NR
+    };
+
+    enum MoveListType : int {
+        NORMAL, QUIESCENCE
     };
 
     typedef uint64_t Bitboard;
@@ -17,6 +21,10 @@ namespace Meetra {
         WHITE, BLACK,
         COLOR_NR
     };
+
+    constexpr Color OtherColor(Color c){
+        return Color(c ^ BLACK);
+    }
 
     enum PieceType : int {
         NONE_PIECE_TYPE, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING, ALL_TYPES,
@@ -131,7 +139,7 @@ constexpr int operator/(T d1, T d2) { return int(d1) / int(d2); }  \
 inline T& operator*=(T& d, int i) { return d = T(int(d) * i); }    \
 inline T& operator/=(T& d, int i) { return d = T(int(d) / i); }
 
-    ENABLE_BASE_OPERATORS_ON(Square);
+    ENABLE_BASE_OPERATORS_ON(Square)
 
     ENABLE_INCR_OPERATORS_ON(Piece)
     ENABLE_INCR_OPERATORS_ON(PieceType)
@@ -139,10 +147,11 @@ inline T& operator/=(T& d, int i) { return d = T(int(d) / i); }
     ENABLE_INCR_OPERATORS_ON(File)
     ENABLE_INCR_OPERATORS_ON(Rank)
     ENABLE_INCR_OPERATORS_ON(DirectionIndex)
-    ENABLE_INCR_OPERATORS_ON(Direction);
+    ENABLE_INCR_OPERATORS_ON(Direction)
+    ENABLE_INCR_OPERATORS_ON(GenPhase)
 
-    ENABLE_FULL_OPERATORS_ON(File);
-    ENABLE_FULL_OPERATORS_ON(Rank);
+    ENABLE_FULL_OPERATORS_ON(File)
+    ENABLE_FULL_OPERATORS_ON(Rank)
 
     /// Additional operators to add a Direction to a Square
     constexpr Square operator+(Square s, Direction d) { return Square(int(s) + int(d)); }

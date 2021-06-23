@@ -20,11 +20,13 @@ namespace Meetra {
     extern Bitboard rank_masks[RANK_NR];
     extern Bitboard file_masks[FILE_NR];
 
-    extern Magic bishop_magics[64];
-    extern Magic rook_magics[64];
+    extern Magic bishop_magics[SQUARE_NR];
+    extern Magic rook_magics[SQUARE_NR];
 
-    extern Bitboard king_moves[64];
-    extern Bitboard knight_moves[64];
+    extern Bitboard king_moves[SQUARE_NR];
+    extern Bitboard knight_moves[SQUARE_NR];
+
+    extern Bitboard pawn_attacks[COLOR_NR][SQUARE_NR];
 
     inline Bitboard GetRookAttacks(Square s, Bitboard occ) {
         Magic m = rook_magics[s];
@@ -36,19 +38,15 @@ namespace Meetra {
         return m.attacks[((occ & m.inner_board_mask) * m.magic_num) >> m.shift];
     }
 
-    template<Color c>
-    inline Bitboard GetPawnAttacks(Square s) {
-        //return pawn_attacks[c][s];
-        return EMPTY_BB;
-    }
-
     //https://www.youtube.com/watch?v=JJ_OJFM-z5E
     // 4:25
     // testing if a square is under attack TODO
 
     template<PieceType pt>
-    inline Bitboard GetAttacksForPiece(Square s, Bitboard occ) {
+    inline Bitboard GetAttacksForPiece(Square s, Bitboard occ = EMPTY_BB, Color c = WHITE) {
         switch (pt) {
+            case PAWN:
+                return pawn_attacks[c][s];
             case BISHOP :
                 return GetBishopAttacks(s, occ);
             case ROOK :

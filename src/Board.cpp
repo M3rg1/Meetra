@@ -9,8 +9,12 @@
 
 namespace Meetra {
 
+
+    // TODO move the initialization from fen to SetPosition function, and make it more efficient (directly read into the
+    // bitboards, arrays, game state and such so we dont have to copy everything, this takes forever
+    // make LoadFen function that takes in game state and other arrays as arguments and fills them
     Board::Board(std::string fen) {
-        gs_history = std::deque<GameState>(100);
+        gs_history = std::deque<BoardData>(100);
         game_state = NEW_GAME_STATE;
         auto loadedInfo = Meetra::FenLoader::ParseFen(std::move(fen));
         SetColorToMove(loadedInfo->color_to_move);
@@ -23,20 +27,23 @@ namespace Meetra {
         SetMoveNumber(loadedInfo->full_move_count);
         std::memcpy(board, loadedInfo->board_occ, sizeof(Piece) * SQUARE_NR);
 
-        for(Square s = A1; s <= H8; ++s){
+        for (Square s = A1; s <= H8; ++s) {
             Piece p = board[s];
-            if(p != NO_PIECE){
+            if (p != NO_PIECE) {
                 Bitboard pos = SquareToBB(s);
                 color_bbs[ColorOfPiece(p)] |= pos;
                 type_bbs[TypeOfPiece(p)] |= pos;
                 type_bbs[ALL_TYPES] |= pos;
             }
         }
+
+        Square king_square = Lsb(GetPieces(KING, ColorToMove()));
+        checkers = SquareAttackers(king_square, ColorToMove() == WHITE ? BLACK : WHITE, GetPieces(ALL_TYPES));
     }
 
     bool Board::MakeMove(Move m) {
 
-        gs_history.push_back(game_state);
+        gs_history.push_back(BoardData{game_state, checkers});
 
         bool white_moved = ColorToMove() == WHITE;
         ChangeColorToMove();
@@ -94,6 +101,7 @@ namespace Meetra {
         if (move_type == TWO_FORWARD) {
             SetEpSquare(white_moved ? to - 8 : to + 8);
         } else if (move_type == CASTLING) {
+            // TODO check safety for castling
             if (white_moved) {
                 RemoveCastlingRights(WHITE_ALL_CR);
                 if (to == G1) {
@@ -127,18 +135,35 @@ namespace Meetra {
             }
         }
 
-        // check if king in check, return false
+        InitCheckers();
 
+        if (checkers) {
+            return false;
+        }
         return true;
     }
 
+    inline void Board::InitCheckers() {
+        Square king_square = Lsb(GetPieces(KING, ColorToMove()));
+        checkers = SquareAttackers(king_square, OtherColor(ColorToMove()), GetPieces(ALL_TYPES));
+    }
+
+
+    inline Bitboard Board::SquareAttackers(Square s, Color attacked_by, Bitboard occ) const {
+        return (GetAttacksForPiece<PAWN>(s, attacked_by) & GetPieces(PAWN, attacked_by)) |
+               (GetAttacksForPiece<KNIGHT>(s) & GetPieces(KNIGHT, attacked_by)) |
+               (GetAttacksForPiece<BISHOP>(s, occ) & GetPieces(BISHOP, attacked_by)) |
+               (GetAttacksForPiece<ROOK>(s, occ) & GetPieces(ROOK, attacked_by)) |
+               (GetAttacksForPiece<QUEEN>(s, occ) & GetPieces(QUEEN, attacked_by)) |
+               (GetAttacksForPiece<KING>(s) & GetPieces(KING, attacked_by));
+    }
 
     void Board::UnmakeMove(Move m) {
 
         Square from = FromSquare(m);
         Square to = ToSquare(m);
 
-        bool white_to_move = ColorToMove() == WHITE ? B_PAWN : W_PAWN;
+        bool white_to_move = ColorToMove() == WHITE;
 
         if (IsPromotion(m)) {
             RemovePiece(to);
@@ -166,8 +191,10 @@ namespace Meetra {
             }
         }
 
-        game_state = gs_history.back();
+        BoardData game_info = gs_history.back();
         gs_history.pop_back();
+        game_state = game_info.game_state;
+        checkers = game_info.checkers;
     }
 
     inline void Board::RemovePiece(Square s) {

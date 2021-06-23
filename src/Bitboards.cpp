@@ -25,11 +25,13 @@ namespace Meetra {
             0x8080808080808080UL
     };
 
-    Magic bishop_magics[64];
-    Magic rook_magics[64];
+    Magic bishop_magics[SQUARE_NR];
+    Magic rook_magics[SQUARE_NR];
 
-    Bitboard king_moves[64];
-    Bitboard knight_moves[64];
+    Bitboard king_moves[SQUARE_NR];
+    Bitboard knight_moves[SQUARE_NR];
+
+    Bitboard pawn_attacks[COLOR_NR][SQUARE_NR];
 
     Bitboard rays[SQUARE_NR][DIRECTION_IDX_NR];
     Bitboard inner_rays[SQUARE_NR][DIRECTION_IDX_NR];
@@ -139,7 +141,30 @@ namespace Meetra {
 #pragma endregion
 
 
-#pragma region ===== Precomputing king and knight moves =====
+#pragma region ===== Precomputing king, knight moves and pawn attacks =====
+
+    void InitPawnAttacks(){
+        int possible_moves[2] = {7, 9};
+        for(Square s = A1; s <= H8; ++s){
+            Bitboard attacks = EMPTY_BB;
+            for(int m : possible_moves){
+                if (s + m <= H8 && s + m >= A1) {
+                    SetBBSquareOne(attacks, s + m);
+                }
+            }
+            attacks &= (s & 7) > 3 ? ~file_masks[FILE_A] : ~file_masks[FILE_H];
+            pawn_attacks[WHITE][s] = attacks;
+
+            attacks = EMPTY_BB;
+            for(int m : possible_moves){
+                if (s - m <= H8 && s - m >= A1) {
+                    SetBBSquareOne(attacks, s - m);
+                }
+            }
+            attacks &= (s & 7) > 3 ? ~file_masks[FILE_A] : ~file_masks[FILE_H];
+            pawn_attacks[BLACK][s] = attacks;
+        }
+    };
 
     void InitKingMoves() {
         for (Square s = A1; s <= H8; ++s) {
@@ -261,6 +286,7 @@ namespace Meetra {
         InitMagic();
         InitKingMoves();
         InitKnightMoves();
+        InitPawnAttacks();
     }
 
     std::string PPBitboard(Bitboard b) {

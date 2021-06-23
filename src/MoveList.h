@@ -2,26 +2,28 @@
 #define MEETRA_MOVELIST_H
 
 #include "Types.h"
+#include "MoveGenerator.h"
+#include <deque>
+#include "Board.h"
 
 namespace Meetra {
 
     // TODO priority queue for move list?
 
+
     class MoveList {
 
     public:
-        inline constexpr Move GetNextMove();
-        inline constexpr void AddCapture(Move m);
-        inline constexpr void AddQuiet(Move m);
-        inline constexpr void AddMove(Move m);
+        MoveList(const Board &board, MoveListType t = NORMAL);
+        Move GetNextMove();
 
 
     private:
-        // first 128 for captures, next 128 for quiets
-        Move moves[256];
-        int move_count = 0;
-        //int captures_count = 0;
-        //int quiets_count = 128;
+        GenPhase genPhase;
+        std::deque<Move> moves;
+        const Board &board;
+
+        inline void GenNewMoves();
     };
 
 }
