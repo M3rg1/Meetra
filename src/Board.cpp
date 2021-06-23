@@ -22,6 +22,16 @@ namespace Meetra {
         SetPly(loadedInfo->ply);
         SetMoveNumber(loadedInfo->full_move_count);
         std::memcpy(board, loadedInfo->board_occ, sizeof(Piece) * SQUARE_NR);
+
+        for(Square s = A1; s <= H8; ++s){
+            Piece p = board[s];
+            if(p != NO_PIECE){
+                Bitboard pos = SquareToBB(s);
+                color_bbs[ColorOfPiece(p)] |= pos;
+                type_bbs[TypeOfPiece(p)] |= pos;
+                type_bbs[ALL_TYPES] |= pos;
+            }
+        }
     }
 
     bool Board::MakeMove(Move m) {

@@ -29,19 +29,20 @@ int main(int argc, char *arv[]) {
     std::cout << board.PPBoard() << std::endl;
 
 #ifdef DEBUG_BUILD
-
     Move m1 = NewMove(B2, B4);
     board.MakeMove(m1);
     Move m2 = NewMove(H7, D5);
     board.MakeMove(m2);
 
-    DEBUG_LOG(board.PPBoard());
 
     board.UnmakeMove(m2);
+    board.UnmakeMove(m1);
+    DEBUG_LOG(PPBitboard(board.GetPieces(WHITE)));
+    DEBUG_LOG(PPBitboard(board.GetPieces(ALL_TYPES)));
     DEBUG_LOG(board.PPBoard());
 
-    board.UnmakeMove(m1);
-    DEBUG_LOG(board.PPBoard());
+/*    board.UnmakeMove(m1);
+    DEBUG_LOG(board.PPBoard());*/
 
 
 #endif
