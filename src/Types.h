@@ -72,6 +72,40 @@ namespace Meetra {
     constexpr Rank RankFromSquare(Square s) { return Rank(s >> 3); }
 
 
+#pragma region ===== Move =====
+    /**
+     * Move bits:
+     * 0-5 from square
+     * 6-11 to square
+     * 12-15 MoveType flag
+     * if the last (15th) bit is 1, it's a promotion move
+     */
+    typedef uint16_t Move;
+
+    enum MoveType : int {
+        INVALID_MOVE = 0, EN_PASSANT = 1 << 12, CASTLING = 2 << 12, TWO_FORWARD = 3 << 12,
+        PROMOTE_KNIGHT = 4 << 13, PROMOTE_BISHOP = 5 << 13, PROMOTE_ROOK = 6 << 13, PROMOTE_QUEEN = 7 << 13,
+        MOVE_TYPE_NR
+    };
+
+#pragma region ===== Initialization =====
+    constexpr Move NewMove(Square from, Square to) { return from | to << 6; }
+    constexpr Move NewMove(Square from, Square to, MoveType flag) { return NewMove(from, to) | flag; }
+#pragma endregion
+
+#pragma region ===== Utils =====
+    constexpr Square FromSquare(Move m) { return Square(m & 0x3F); }
+    constexpr Square ToSquare(Move m) { return Square((m & 0xFC0) >> 6); }
+    constexpr bool IsPromotion(Move m) { return m >> 15 != 0; }
+    constexpr MoveType GetFlag(Move m) { return MoveType(m & 0xF000); }
+    constexpr bool IsValid(Move m) { return m != INVALID_MOVE; }
+    //inline constexpr bool IsValid(Move m) { return (m & 0x7FF) != INVALID_MOVE; }
+#pragma endregion
+#pragma endregion
+
+
+#pragma region ===== Operator overloading settings =====
+
 #define ENABLE_BASE_OPERATORS_ON(T)                                \
 constexpr T operator+(T d1, int d2) { return T(int(d1) + d2); }    \
 constexpr T operator-(T d1, int d2) { return T(int(d1) - d2); }    \
@@ -107,92 +141,17 @@ inline T& operator/=(T& d, int i) { return d = T(int(d) / i); }
     ENABLE_FULL_OPERATORS_ON(File);
     ENABLE_FULL_OPERATORS_ON(Rank);
 
-#undef ENABLE_FULL_OPERATORS_ON
-#undef ENABLE_INCR_OPERATORS_ON
-#undef ENABLE_BASE_OPERATORS_ON
-
-
     /// Additional operators to add a Direction to a Square
     constexpr Square operator+(Square s, Direction d) { return Square(int(s) + int(d)); }
     constexpr Square operator-(Square s, Direction d) { return Square(int(s) - int(d)); }
     inline Square &operator+=(Square &s, Direction d) { return s = s + d; }
     inline Square &operator-=(Square &s, Direction d) { return s = s - d; }
 
-    /**
-     * Move bits:
-     * 0-5 from square
-     * 6-11 to square
-     * 12-15 MoveType flag
-     * if the last (15th) bit is 1, it's a promotion move
-     */
-    typedef uint16_t Move;
+#undef ENABLE_FULL_OPERATORS_ON
+#undef ENABLE_INCR_OPERATORS_ON
+#undef ENABLE_BASE_OPERATORS_ON
 
-    enum MoveType : int {
-        INVALID_MOVE = 0, EN_PASSANT = 1 << 12, CASTLING = 2 << 12, TWO_FORWARD = 3 << 12,
-        PROMOTE_KNIGHT = 4 << 13, PROMOTE_BISHOP = 5 << 13, PROMOTE_ROOK = 6 << 13, PROMOTE_QUEEN = 7 << 13,
-        MOVE_TYPE_NR
-    };
-    // Move initializers
-    constexpr Move NewMove(Square from, Square to) { return from | to << 6; }
-    constexpr Move NewMove(Square from, Square to, MoveType flag) { return NewMove(from, to) | flag; }
-
-    // Move utils
-    constexpr Square FromSquare(Move m) { return Square(m & 0x3F); }
-    constexpr Square ToSquare(Move m) { return Square((m & 0xFC0) >> 6); }
-    constexpr bool IsPromotion(Move m) { return m >> 15 != 0; }
-    constexpr MoveType GetFlag(Move m) { return MoveType(m & 0xF000); }
-    constexpr bool IsValid(Move m) { return m != INVALID_MOVE; }
-    //inline constexpr bool IsValid(Move m) { return (m & 0x7FF) != 0; }
-
-
-    enum CastlingRights : int {
-        NO_CASTLING = 0, WHITE_SHORT = 1 << 6, WHITE_LONG = 1 << 7, BLACK_SHORT = 1 << 8, BLACK_LONG = 1 << 9,
-        WHITE_ALL_CR = WHITE_SHORT | WHITE_LONG,
-        BLACK_ALL_CR = BLACK_LONG | BLACK_SHORT,
-        ALL_CR = WHITE_SHORT | WHITE_LONG | BLACK_SHORT | BLACK_LONG,
-        CASTLING_RIGHTS_NR
-    };
-
-    // from right to left
-    // bits 0-5 = enpassant square index
-    // bits 6-7 = castling rights white
-    // bits 7-9 = castling rights black
-    // bit  10 = player to move
-    // bits 11-17 = captured piece (from last game state to this game state)
-    // bits 17-23 = ply since last capture/pawn moves - 50 move rule
-    // bits 24+ - total moves made
-    typedef uint_fast32_t GameState;
-//#define NEW_GAME_STATE 0
-
-    // game state setters
-    // requires new game state
-    constexpr void SetEpSquare(Square s, GameState &gs) { gs |= s; }
-    constexpr void SetCastlingRights(CastlingRights cr, GameState &gs) { gs |= cr; }
-    constexpr void SetColorToMove(Color c, GameState &gs) { gs |= c << 10; }
-    constexpr void SetCapturedPiece(Color c, GameState &gs) { gs |= c << 11; }
-    constexpr void SetPly(int ply, GameState &gs) { gs |= ply << 17; }
-    constexpr void SetMoveNumber(int move_num, GameState &gs) { gs |= move_num << 24; }
-
-    // game state getters
-    //inline constexpr CastlingRights GetCR(GameState &gs){ return CastlingRights (gs & 0x3C0); }
-    constexpr bool CanWhiteShortCR(const GameState &gs) { return (gs & WHITE_SHORT) != 0; }
-    constexpr bool CanWhiteLongCR(const GameState &gs) { return (gs & WHITE_LONG) != 0; }
-    constexpr bool CanBlackShortCR(const GameState &gs) { return (gs & BLACK_SHORT) != 0; }
-    constexpr bool CanBlackLongCR(const GameState &gs) { return (gs & BLACK_LONG) != 0; }
-    constexpr Square EpSquare(const GameState &gs) { return Square(gs & 0x1F); }
-    constexpr Color ColorToMove(const GameState &gs) { return Color(gs >> 10 & 0x1); }
-    constexpr Piece CapturedPiece(const GameState &gs) { return Piece(gs >> 11 & 0x3F); }
-    constexpr int Ply(const GameState &gs) { return int(gs >> 17 & 0x3F); }
-    constexpr int TotalMoves(const GameState &gs) { return int(gs >> 24); }
-
-    // changing existing, non-new game state
-    constexpr void IncrementMoveNumber(GameState &gs) { gs += 1 << 23; }
-    constexpr void IncrementPly(GameState &gs) { gs += 1 << 17; }
-    constexpr void ClearCapturedPiece(GameState &gs) { gs &= ~0x1F800; }
-    constexpr void ChangeColorToMove(GameState &gs) {
-        ColorToMove(gs) == WHITE ? gs += 1 << 10 : gs -= 1 << 10;
-    }
-
+#pragma endregion
 
 }
 

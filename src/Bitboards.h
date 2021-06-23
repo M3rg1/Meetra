@@ -8,14 +8,82 @@
 
 namespace Meetra {
 
+    void InitBitboards();
+
+    struct Magic {
+        Bitboard *attacks; // pointer into the rook/bishop table, where all the attacks are stored
+        Bitboard inner_board_mask;
+        uint64_t magic_num;
+        uint8_t shift;
+    };
+
+    extern Bitboard rank_masks[RANK_NR];
+    extern Bitboard file_masks[FILE_NR];
+
+    extern Magic bishop_magics[64];
+    extern Magic rook_magics[64];
+
+    extern Bitboard king_moves[64];
+    extern Bitboard knight_moves[64];
+
+    inline Bitboard GetRookAttacks(Square s, Bitboard occ) {
+        Magic m = rook_magics[s];
+        return m.attacks[((occ & m.inner_board_mask) * m.magic_num) >> m.shift];
+    }
+
+    inline Bitboard GetBishopAttacks(Square s, Bitboard occ) {
+        Magic m = bishop_magics[s];
+        return m.attacks[((occ & m.inner_board_mask) * m.magic_num) >> m.shift];
+    }
+
+    template<Color c>
+    inline Bitboard GetPawnAttacks(Square s) {
+        //return pawn_attacks[c][s];
+        return EMPTY_BB;
+    }
+
     //https://www.youtube.com/watch?v=JJ_OJFM-z5E
     // 4:25
     // testing if a square is under attack TODO
 
-    void InitBitboards();
+    template<PieceType pt>
+    inline Bitboard GetAttacksForPiece(Square s, Bitboard occ) {
+        switch (pt) {
+            case BISHOP :
+                return GetBishopAttacks(s, occ);
+            case ROOK :
+                return GetRookAttacks(s, occ);
+            case QUEEN :
+                return GetBishopAttacks(s, occ) | GetRookAttacks(s, occ);
+            case KNIGHT :
+                return knight_moves[s];
+            case KING :
+                return king_moves[s];
+        }
+    }
 
-    template<PieceType Pt>
-    inline Bitboard GetPseudoMoves(Square s, Bitboard occ);
+    template<Color c>
+    inline Bitboard GetPawnOneForward(Bitboard pawns, Bitboard empty_squares) {
+        switch (c) {
+            case WHITE:
+                return (pawns << 8) & empty_squares;
+            case BLACK:
+                return (pawns >> 8) & empty_squares;
+        }
+    }
+
+    template<Color c>
+    inline Bitboard GetPawnTwoForward(Bitboard pawns, Bitboard empty_squares) {
+        switch (c) {
+            case WHITE:
+                pawns &= rank_masks[RANK_2];
+                break;
+            case BLACK:
+                pawns &= rank_masks[RANK_7];
+                break;
+        }
+        return GetPawnOneForward<c>(GetPawnOneForward<c>(pawns, empty_squares), empty_squares);
+    }
 
     std::string PPBitboard(Bitboard b);
 

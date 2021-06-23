@@ -1,54 +1,9 @@
 #include "Bitboards.h"
 #include "MagicNumbers.h"
 
-using namespace Meetra;
-
 namespace Meetra {
 
-    struct Magic {
-        Bitboard *attacks; // pointer into the rook/bishop table, where all the attacks are stored
-        Bitboard inner_board_mask;
-        uint64_t magic_num;
-        uint8_t shift;
-    };
-
-    // https://www.chessprogramming.org/Pawn_Attacks_(Bitboards)#AttacksOfaSinglePawn TODO pawn
-
-    Magic bishop_magics[64];
-    Magic rook_magics[64];
-
-    Bitboard king_moves[64];
-    Bitboard knight_moves[64];
-
-    inline Bitboard GetRookAttacks(Square s, Bitboard occ) {
-        Magic m = rook_magics[s];
-        return m.attacks[((occ & m.inner_board_mask) * m.magic_num) >> m.shift];
-    }
-
-    inline Bitboard GetBishopAttacks(Square s, Bitboard occ) {
-        Magic m = bishop_magics[s];
-        return m.attacks[((occ & m.inner_board_mask) * m.magic_num) >> m.shift];
-    }
-
-    template<PieceType Pt>
-    inline Bitboard GetPseudoMoves(Square s, Bitboard occ) {
-        switch (Pt)
-        {
-            case BISHOP : return GetBishopAttacks(s, occ);
-            case ROOK : return GetRookAttacks(s, occ);
-            case QUEEN : return GetBishopAttacks(s, occ) | GetRookAttacks(s, occ);
-            case KNIGHT : return knight_moves[s];
-            case KING : return king_moves[s];
-        }
-    }
-
-    Bitboard rays[SQUARE_NR][DIRECTION_IDX_NR];
-    Bitboard inner_rays[SQUARE_NR][DIRECTION_IDX_NR];
-
-    Bitboard rook_table[102400];
-    Bitboard bishop_table[5248];
-
-    constexpr Bitboard rank_masks[RANK_NR]{
+    Bitboard rank_masks[RANK_NR]{
             0x00000000000000FFUL,
             0x000000000000FF00UL,
             0x0000000000FF0000UL,
@@ -59,7 +14,7 @@ namespace Meetra {
             0xFF00000000000000UL
     };
 
-    constexpr Bitboard file_masks[FILE_NR]{
+    Bitboard file_masks[FILE_NR]{
             0x0101010101010101UL,
             0x0202020202020202UL,
             0x0404040404040404UL,
@@ -70,8 +25,19 @@ namespace Meetra {
             0x8080808080808080UL
     };
 
-    // ===== Hyperbola Quintessence, Reverse Bitboards =====
-    // Generating sliding piece moves to initialize magic bitboards with
+    Magic bishop_magics[64];
+    Magic rook_magics[64];
+
+    Bitboard king_moves[64];
+    Bitboard knight_moves[64];
+
+    Bitboard rays[SQUARE_NR][DIRECTION_IDX_NR];
+    Bitboard inner_rays[SQUARE_NR][DIRECTION_IDX_NR];
+
+    Bitboard rook_table[102400];
+    Bitboard bishop_table[5248];
+
+#pragma region ===== Hyperbola Quintessence, Reverse Bitboards (for magics initialization) =====
 
     constexpr Bitboard ReverseBits(Bitboard b) {
         b = ((b >> 1) & 0x5555555555555555UL) | ((b & 0x5555555555555555UL) << 1);
@@ -117,12 +83,10 @@ namespace Meetra {
     Bitboard GetHorAndVertMoves(Square s, Bitboard occ) {
         return GetVerticalMoves(s, occ) | GetHorizontalMoves(s, occ);
     }
+#pragma endregion
 
-    // =================================================================================================================
 
-
-    // ===== Magic Bitboards =====
-    // "fancy" magic bitboards with fixed size tables, rook - 102400 positions, bishop - 5248 positions
+#pragma region ===== "Fancy" Magic Bitboards initialization =====
 
     void SetBlockersRecursive(Magic &m, Square origin, Bitboard blockers, Bitboard explore_occ,
                               Bitboard (*move_generator)(Square, Bitboard)) {
@@ -146,11 +110,9 @@ namespace Meetra {
     void FillMagics() {
         for (Square s = A1; s <= H8; ++s) {
             SetBlockersRecursive(rook_magics[s], s, EMPTY_BB,
-                    // rook_move_mask[s];
                                  rays[s][NORTH_IDX] | rays[s][EAST_IDX] | rays[s][SOUTH_IDX] | rays[s][WEST_IDX],
                                  GetHorAndVertMoves);
             SetBlockersRecursive(bishop_magics[s], s, EMPTY_BB,
-                    // bishop_move_mask[s];
                                  rays[s][NORTH_WEST_IDX] | rays[s][NORTH_EAST_IDX] | rays[s][SOUTH_WEST_IDX] |
                                  rays[s][SOUTH_EAST_IDX], GetDiagAndAntiDiagMoves);
         }
@@ -174,11 +136,10 @@ namespace Meetra {
 
         FillMagics();
     }
+#pragma endregion
 
-    // =================================================================================================================
 
-
-    // ===== Precomputed king and knight moves =====
+#pragma region ===== Precomputing king and knight moves =====
 
     void InitKingMoves() {
         for (Square s = A1; s <= H8; ++s) {
@@ -202,15 +163,15 @@ namespace Meetra {
                     SetBBSquareOne(moves, s + m);
                 }
             }
-            moves &= (s & 7) > 3 ? ~file_masks[FILE_A] & ~file_masks[FILE_B] : ~file_masks[FILE_H] & ~file_masks[FILE_G];
+            moves &=
+                    (s & 7) > 3 ? ~file_masks[FILE_A] & ~file_masks[FILE_B] : ~file_masks[FILE_H] & ~file_masks[FILE_G];
             knight_moves[s] = moves;
         }
     }
+#pragma endregion
 
-    // =================================================================================================================
 
-
-    // Init rays in all direction from square to the edge of the board
+    // Init rays in all direction from every square to the edge of the board
     void InitRays() {
         for (Rank r = RANK_1; r < RANK_NR; ++r) {
             for (File f = FILE_A; f < FILE_NR; ++f) {
@@ -233,69 +194,68 @@ namespace Meetra {
                 inner_rays[s][SOUTH_IDX] = ray & ~rank_masks[RANK_1];
 
                 ray = EMPTY_BB;
-                Bitboard attack_square = SquareToBB(s);
-                Bitboard moved_files = attack_square;
+                Bitboard files_to_move = SquareToBB(s);
+                Bitboard attacked_square = files_to_move;
                 do {
-                    attack_square >>= 9;
-                    moved_files >>= 1;
-                    if (moved_files & rank_masks[r]) {
-                        ray |= attack_square;
+                    attacked_square >>= 9;
+                    files_to_move >>= 1;
+                    if (files_to_move & rank_masks[r]) {
+                        ray |= attacked_square;
                     } else {
                         break;
                     }
-                } while (attack_square);
+                } while (attacked_square);
                 rays[s][SOUTH_WEST_IDX] = ray;
                 inner_rays[s][SOUTH_WEST_IDX] = ray & ~file_masks[FILE_A] & ~rank_masks[RANK_1];
 
                 ray = EMPTY_BB;
-                attack_square = SquareToBB(s);
-                moved_files = attack_square;
+                files_to_move = SquareToBB(s);
+                attacked_square = files_to_move;
                 do {
-                    attack_square >>= 7;
-                    moved_files <<= 1;
-                    if (moved_files & rank_masks[r]) {
-                        ray |= attack_square;
+                    attacked_square >>= 7;
+                    files_to_move <<= 1;
+                    if (files_to_move & rank_masks[r]) {
+                        ray |= attacked_square;
                     } else {
                         break;
                     }
-                } while (attack_square);
+                } while (attacked_square);
                 rays[s][SOUTH_EAST_IDX] = ray;
                 inner_rays[s][SOUTH_EAST_IDX] = ray & ~file_masks[FILE_H] & ~rank_masks[RANK_1];
 
                 ray = EMPTY_BB;
-                attack_square = SquareToBB(s);
-                moved_files = attack_square;
+                files_to_move = SquareToBB(s);
+                attacked_square = files_to_move;
                 do {
-                    attack_square <<= 9;
-                    moved_files <<= 1;
-                    if (moved_files & rank_masks[r]) {
-                        ray |= attack_square;
+                    attacked_square <<= 9;
+                    files_to_move <<= 1;
+                    if (files_to_move & rank_masks[r]) {
+                        ray |= attacked_square;
                     } else {
                         break;
                     }
-                } while (attack_square);
+                } while (attacked_square);
                 rays[s][NORTH_EAST_IDX] = ray;
                 inner_rays[s][NORTH_EAST_IDX] = ray & ~file_masks[FILE_H] & ~rank_masks[RANK_8];
 
                 ray = EMPTY_BB;
-                attack_square = SquareToBB(s);
-                moved_files = attack_square;
+                files_to_move = SquareToBB(s);
+                attacked_square = files_to_move;
                 do {
-                    attack_square <<= 7;
-                    moved_files >>= 1;
-                    if (moved_files & rank_masks[r]) {
-                        ray |= attack_square;
+                    attacked_square <<= 7;
+                    files_to_move >>= 1;
+                    if (files_to_move & rank_masks[r]) {
+                        ray |= attacked_square;
                     } else {
                         break;
                     }
-                } while (attack_square);
+                } while (attacked_square);
                 rays[s][NORTH_WEST_IDX] = ray;
                 inner_rays[s][NORTH_WEST_IDX] = ray & ~file_masks[FILE_A] & ~rank_masks[RANK_8];
             }
         }
     }
 
-    // Magic bitboards, rays, precomputed king and knight moves
     void InitBitboards() {
         InitRays();
         InitMagic();
@@ -309,7 +269,6 @@ namespace Meetra {
             ret.append(std::to_string(r + 1));
             ret.append(" |");
             for (File f = FILE_A; f <= FILE_H; ++f) {
-                //DEBUG_LOG(board[SquareFromFiRa(f, r)]);
                 if ((b >> (r * 8) + f) & 1) {
                     ret.append(" x ");
                 } else {

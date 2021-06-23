@@ -25,11 +25,12 @@ int main(int argc, char *arv[]) {
     std::cout << " v. " << GetVersion() << std::endl;
     std::cout << " Made by " << GetAuthor() << std::endl << std::endl;
     std::cout << board.PPBoard() << std::endl;
-
     InitBitboards();
 
 #ifdef DEBUG_BUILD
 
+    DEBUG_LOG(PPBitboard(GetPawnOneForward<WHITE>(0xFF00UL, ~EMPTY_BB)));
+    DEBUG_LOG(PPBitboard(GetAttacksForPiece<KNIGHT>(G3, EMPTY_BB)));
 
 
 #endif
