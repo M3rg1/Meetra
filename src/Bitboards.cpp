@@ -26,6 +26,17 @@ namespace Meetra {
             0x8080808080808080UL
     };
 
+    Bitboard diag_masks[15]{
+            0x1L, 0x102L, 0x10204L, 0x1020408L, 0x102040810L, 0x10204081020L, 0x1020408102040L,
+            0x102040810204080L, 0x204081020408000L, 0x408102040800000L, 0x810204080000000L,
+            0x1020408000000000L, 0x2040800000000000L, 0x4080000000000000L, 0x8000000000000000L
+    };
+    Bitboard anti_diag_masks[15]{
+            0x80L, 0x8040L, 0x804020L, 0x80402010L, 0x8040201008L, 0x804020100804L, 0x80402010080402L,
+            0x8040201008040201L, 0x4020100804020100L, 0x2010080402010000L, 0x1008040201000000L,
+            0x804020100000000L, 0x402010000000000L, 0x201000000000000L, 0x100000000000000L
+    };
+
     Magic bishop_magics[SQUARE_NR];
     Magic rook_magics[SQUARE_NR];
 
@@ -36,6 +47,8 @@ namespace Meetra {
 
     Bitboard rays[SQUARE_NR][DIRECTION_IDX_NR];
     Bitboard inner_rays[SQUARE_NR][DIRECTION_IDX_NR];
+
+    Bitboard rays_between_squares[SQUARE_NR][SQUARE_NR];
 
     Bitboard rook_table[102400];
     Bitboard bishop_table[5248];
@@ -144,11 +157,11 @@ namespace Meetra {
 
 #pragma region ===== Precomputing king, knight moves and pawn attacks =====
 
-    void InitPawnAttacks(){
+    void InitPawnAttacks() {
         int possible_moves[2] = {7, 9};
-        for(Square s = A1; s <= H8; ++s){
+        for (Square s = A1; s <= H8; ++s) {
             Bitboard attacks = EMPTY_BB;
-            for(int m : possible_moves){
+            for (int m : possible_moves) {
                 if (s + m <= H8 && s + m >= A1) {
                     SetBBSquareOne(attacks, s + m);
                 }
@@ -157,7 +170,7 @@ namespace Meetra {
             pawn_attacks[WHITE][s] = attacks;
 
             attacks = EMPTY_BB;
-            for(int m : possible_moves){
+            for (int m : possible_moves) {
                 if (s - m <= H8 && s - m >= A1) {
                     SetBBSquareOne(attacks, s - m);
                 }
@@ -282,6 +295,48 @@ namespace Meetra {
         }
     }
 
+    Bitboard GetRay(Square s1, Square s2) {
+
+        Square min, max;
+
+        if (s1 > s2) {
+            max = s1;
+            min = s2;
+        } else {
+            max = s2;
+            min = s1;
+        }
+
+        Bitboard mask = SquareToBB(max) - (SquareToBB(min) << 1);
+
+        Rank r_max = RankFromSquare(max);
+        File f_max = FileFromSquare(max);
+
+        Rank r_min = RankFromSquare(min);
+        File f_min = FileFromSquare(min);
+
+        Bitboard ray = mask;
+        if (r_max == r_min) {
+            ray &= rank_masks[r_max];
+        } else if (f_max == f_min) {
+            ray &= file_masks[f_max];
+        } else if (f_max < f_min) {
+            ray &= diag_masks[f_max + r_max];
+        } else {
+            ray &= anti_diag_masks[r_max + 7 - f_max];
+        }
+
+        return ray;
+    }
+
+    void InitRayesBetweenSquares() {
+        for (Square origin = A1; origin <= H8; ++origin) {
+            for (Square destination = A1; destination <= H8; ++destination) {
+                rays_between_squares[origin][destination] = GetRay(origin, destination);
+            }
+        }
+    }
+
     void InitBitboards() {
         InitRays();
         InitMagic();
@@ -291,6 +346,8 @@ namespace Meetra {
         InitKingMoves();
         InitKnightMoves();
         InitPawnAttacks();
+
+        InitRayesBetweenSquares();
     }
 
     std::string PPBitboard(Bitboard b) {

@@ -31,6 +31,7 @@ int main(int argc, char *arv[]) {
 
 #ifdef DEBUG_BUILD
 
+
     Move m1 = NewMove(B2, B4);
     board.MakeMove(m1);
     Move m2 = NewMove(H7, D5);
@@ -39,7 +40,7 @@ int main(int argc, char *arv[]) {
     board.MakeMove(m3);
 
     Move m4 = NewMove(A7, A6);
-    if(!board.MakeMove(m4)){
+    if (!board.MakeMove(m4)) {
         DEBUG_LOG("FALSE RETURNED");
     }
 
@@ -48,6 +49,12 @@ int main(int argc, char *arv[]) {
     board.UnmakeMove(m2);
     board.UnmakeMove(m1);
 
+    DEBUG_LOG(board.PPBoard());
+    MoveList moveList(board);
+    Move m;
+    while ((m = moveList.GetNextMove()) != INVALID_MOVE) {
+        DEBUG_LOG(GetMoveName(m));
+    }
 
 
 #endif

@@ -28,6 +28,8 @@ namespace Meetra {
 
     extern Bitboard pawn_attacks[COLOR_NR][SQUARE_NR];
 
+    extern Bitboard rays_between_squares[SQUARE_NR][SQUARE_NR];
+
     inline Bitboard GetRookAttacks(Square s, Bitboard occ) {
         Magic m = rook_magics[s];
         return m.attacks[((occ & m.inner_board_mask) * m.magic_num) >> m.shift];
