@@ -32,23 +32,10 @@ int main(int argc, char *arv[]) {
 #ifdef DEBUG_BUILD
 
 
-    Move m1 = NewMove(B2, B4);
+    Move m1 = NewMove(B2, B6);
     board.MakeMove(m1);
-    Move m2 = NewMove(H7, D5);
+    Move m2 = NewMove(H7, H5);
     board.MakeMove(m2);
-    Move m3 = NewMove(D1, D7);
-    board.MakeMove(m3);
-
-    Move m4 = NewMove(A7, A6);
-    if (!board.MakeMove(m4)) {
-        DEBUG_LOG("FALSE RETURNED");
-    }
-
-    board.UnmakeMove(m4);
-    board.UnmakeMove(m3);
-    board.UnmakeMove(m2);
-    board.UnmakeMove(m1);
-
     DEBUG_LOG(board.PPBoard());
     MoveList moveList(board);
     Move m;

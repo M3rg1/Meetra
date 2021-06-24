@@ -339,15 +339,11 @@ namespace Meetra {
 
     void InitBitboards() {
         InitRays();
+        InitRayesBetweenSquares();
         InitMagic();
-
-        //DEBUG_LOG(PPBitboard(GetAttacksForPiece<ROOK>(A1, EMPTY_BB)));
-
         InitKingMoves();
         InitKnightMoves();
         InitPawnAttacks();
-
-        InitRayesBetweenSquares();
     }
 
     std::string PPBitboard(Bitboard b) {
