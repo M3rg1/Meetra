@@ -14,7 +14,7 @@ namespace Meetra {
         Bitboard *attacks; // pointer into the rook/bishop table, where all the attacks are stored
         Bitboard inner_board_mask;
         uint64_t magic_num;
-        uint8_t shift;
+        uint16_t shift;
     };
 
     extern Bitboard rank_masks[RANK_NR];
@@ -38,12 +38,17 @@ namespace Meetra {
         return m.attacks[((occ & m.inner_board_mask) * m.magic_num) >> m.shift];
     }
 
+    constexpr Bitboard SquareToBB(Square s) { return 1UL << s; }
+    constexpr void SetBBSquareOne(Bitboard &b, Square s) { b |= SquareToBB(s); }
+    constexpr void SetBBSquareZero(Bitboard &b, Square s) { b &= ~SquareToBB(s); }
+
     //https://www.youtube.com/watch?v=JJ_OJFM-z5E
     // 4:25
     // testing if a square is under attack TODO
 
     template<PieceType pt>
     inline Bitboard GetAttacksForPiece(Square s, Bitboard occ = EMPTY_BB, Color c = WHITE) {
+        //occ &= ~SquareToBB(s);
         switch (pt) {
             case PAWN:
                 return pawn_attacks[c][s];
@@ -96,9 +101,6 @@ namespace Meetra {
         return s;
     }
 
-    constexpr Bitboard SquareToBB(Square s) { return 1UL << s; }
-    constexpr void SetBBSquareOne(Bitboard &b, Square s) { b |= SquareToBB(s); }
-    constexpr void SetBBSquareZero(Bitboard &b, Square s) { b &= ~SquareToBB(s); }
 
 // win64 https://www.chessprogramming.org/BitScan -> Processor Instructions for Bitscans
 /*inline Square Lsb(Bitboard b) {

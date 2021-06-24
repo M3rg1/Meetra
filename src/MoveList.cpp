@@ -6,15 +6,14 @@ namespace Meetra {
 
     MoveList::MoveList(const Board &board, MoveListType t) : board(board) {
         genPhase = BEST_MOVE;
-        moves = std::deque<Move>(20);
+        color = board.ColorToMove();
     }
 
     Move MoveList::GetNextMove() {
         while (moves.empty()) {
             GenNewMoves();
+            // sort moves
         }
-
-        // sort moves
 
         Move m = moves.front();
         moves.pop_front();
@@ -31,16 +30,16 @@ namespace Meetra {
                 // also null move? PV? etc.
                 break;
             case EVASION:
-                GenMoves<EVASION>(board, moves);
+                GenMoves<EVASION>(board, moves, color);
                 break;
             case PROMOTION:
-                GenMoves<PROMOTION>(board, moves);
+                GenMoves<PROMOTION>(board, moves, color);
                 break;
             case CAPTURE:
-                GenMoves<CAPTURE>(board, moves);
+                GenMoves<CAPTURE>(board, moves, color);
                 break;
             case QUIET:
-                GenMoves<QUIET>(board, moves);
+                GenMoves<QUIET>(board, moves, color);
                 break;
             default:
                 moves.push_back(INVALID_MOVE);

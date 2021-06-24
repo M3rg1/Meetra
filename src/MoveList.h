@@ -19,6 +19,7 @@ namespace Meetra {
 
 
     private:
+        Color color;
         GenPhase genPhase;
         std::deque<Move> moves;
         const Board &board;

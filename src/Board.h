@@ -87,7 +87,6 @@ namespace Meetra {
         inline void MovePiece(Square from, Square to);
         inline void RemovePiece(Square s);
         inline void PutPiece(Square s, Piece p);
-        inline void InitCheckers();
 #pragma endregion
 
 #pragma region ===== Data =====

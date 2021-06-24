@@ -102,6 +102,8 @@ namespace Meetra {
             SetEpSquare(white_moved ? to - 8 : to + 8);
         } else if (move_type == CASTLING) {
             // TODO check safety for castling
+            // do that in move generation
+            // too annoying having to deal with it here and having to unmake castling, just check castle validity in movegen
             if (white_moved) {
                 RemoveCastlingRights(WHITE_ALL_CR);
                 if (to == G1) {
@@ -135,17 +137,17 @@ namespace Meetra {
             }
         }
 
-        InitCheckers();
+        Square king_square = Lsb(GetPieces(KING, OtherColor(ColorToMove())));
+        auto invalid_move = SquareAttackers(king_square, ColorToMove(), GetPieces(ALL_TYPES));
 
-        if (checkers) {
+        if (invalid_move) {
             return false;
         }
-        return true;
-    }
 
-    inline void Board::InitCheckers() {
-        Square king_square = Lsb(GetPieces(KING, ColorToMove()));
+        king_square = Lsb(GetPieces(KING, ColorToMove()));
         checkers = SquareAttackers(king_square, OtherColor(ColorToMove()), GetPieces(ALL_TYPES));
+
+        return true;
     }
 
 

@@ -2,6 +2,7 @@
 #define MEETRA_TYPES_H
 
 #include <cinttypes>
+#include <string>
 
 namespace Meetra {
 
@@ -22,7 +23,7 @@ namespace Meetra {
         COLOR_NR
     };
 
-    constexpr Color OtherColor(Color c){
+    constexpr Color OtherColor(Color c) {
         return Color(c ^ BLACK);
     }
 
@@ -59,6 +60,13 @@ namespace Meetra {
     enum DirectionIndex : int {
         NORTH_IDX, NORTH_EAST_IDX, EAST_IDX, SOUTH_EAST_IDX, SOUTH_IDX, SOUTH_WEST_IDX, WEST_IDX, NORTH_WEST_IDX,
         DIRECTION_IDX_NR
+    };
+
+    constexpr char FileNames[FILE_NR]{
+            'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'
+    };
+    constexpr char RankNames[RANK_NR]{
+            '1', '2', '3', '4', '5', '6', '7', '8'
     };
 
     constexpr Direction Directions[DIRECTION_IDX_NR]{
@@ -110,6 +118,14 @@ namespace Meetra {
     constexpr bool IsPromotion(Move m) { return m >> 15 != 0; }
     constexpr MoveType GetFlag(Move m) { return MoveType(m & 0xF000); }
     constexpr bool IsValid(Move m) { return m != INVALID_MOVE; }
+    inline std::string GetMoveName(Move m) {
+        std::string ret;
+        ret.push_back(FileNames[FileFromSquare(FromSquare(m))]);
+        ret.push_back(RankNames[RankFromSquare(FromSquare(m))]);
+        ret.push_back(FileNames[FileFromSquare(ToSquare(m))]);
+        ret.push_back(RankNames[RankFromSquare(ToSquare(m))]);
+        return ret;
+    }
     //inline constexpr bool IsValid(Move m) { return (m & 0x7FF) != INVALID_MOVE; }
 #pragma endregion
 #pragma endregion

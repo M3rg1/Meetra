@@ -1,5 +1,6 @@
 #include "Bitboards.h"
 #include "MagicNumbers.h"
+#include "Macros.h"
 
 namespace Meetra {
 
@@ -126,14 +127,14 @@ namespace Meetra {
             rook_magics[s].inner_board_mask = inner_rays[s][NORTH_IDX] | inner_rays[s][EAST_IDX]
                                               | inner_rays[s][SOUTH_IDX] | inner_rays[s][WEST_IDX];
             rook_magics[s].magic_num = rook_magic_num[s];
-            rook_magics[s].attacks = s == A1 ? rook_table : rook_magics[s - 1].attacks + (1 << rook_magic_shift[s]);
+            rook_magics[s].attacks = s == A1 ? rook_table : rook_magics[s - 1].attacks + (1 << rook_magic_shift[s - 1]);
 
             bishop_magics[s].shift = 64 - bishop_magic_shift[s];
             bishop_magics[s].inner_board_mask = inner_rays[s][NORTH_WEST_IDX] | inner_rays[s][NORTH_EAST_IDX]
                                                 | inner_rays[s][SOUTH_EAST_IDX] | inner_rays[s][SOUTH_WEST_IDX];
             bishop_magics[s].magic_num = bishop_magic_num[s];
             bishop_magics[s].attacks =
-                    s == A1 ? bishop_table : bishop_magics[s - 1].attacks + (1 << bishop_magic_shift[s]);
+                    s == A1 ? bishop_table : bishop_magics[s - 1].attacks + (1 << bishop_magic_shift[s - 1]);
         }
 
         FillMagics();
@@ -284,6 +285,9 @@ namespace Meetra {
     void InitBitboards() {
         InitRays();
         InitMagic();
+
+        //DEBUG_LOG(PPBitboard(GetAttacksForPiece<ROOK>(A1, EMPTY_BB)));
+
         InitKingMoves();
         InitKnightMoves();
         InitPawnAttacks();
