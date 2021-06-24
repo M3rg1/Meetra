@@ -36,6 +36,8 @@ int main(int argc, char *arv[]) {
     board.MakeMove(m1);
     Move m2 = NewMove(H7, H5);
     board.MakeMove(m2);
+    Move m3 = NewMove(C2, C3);
+    board.MakeMove(m3);
     DEBUG_LOG(board.PPBoard());
     MoveList moveList(board);
     Move m;

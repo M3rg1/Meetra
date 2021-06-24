@@ -11,6 +11,10 @@ namespace Meetra {
             0x000000FF00000000UL, 0x00000000FF000000UL
     };
 
+    Bitboard two_forward_mask[COLOR_NR]{
+            0x000000000000FF00UL, 0x00FF000000000000UL
+    };
+
     template<PieceType PT>
     inline void GenMovesForPieceType(const Board &board, std::deque<Move> &d, Color to_move, Bitboard legality_mask) {
         Bitboard pieces = board.GetPieces(PT, to_move);
@@ -49,9 +53,9 @@ namespace Meetra {
 
         pawns = board.GetPieces(PAWN, to_move);
         if (to_move == WHITE) {
-            pawns &= (board.GetEmptySquares() >> 8) & (legality_mask >> 16);
+            pawns &= (board.GetEmptySquares() >> 8) & (legality_mask >> 16) & two_forward_mask[to_move];
         } else {
-            pawns &= (board.GetEmptySquares() << 8) & (legality_mask << 16);
+            pawns &= (board.GetEmptySquares() << 8) & (legality_mask << 16) & two_forward_mask[to_move];
         }
         while (pawns) {
             Square origin_s = PopLsb(pawns);
@@ -79,7 +83,7 @@ namespace Meetra {
                     enemy_pieces;
             while (possible_moves) {
                 Square destination_s = PopLsb(possible_moves);
-                if (destination_s & promotion_mask[to_move]) {
+                if (SquareToBB(destination_s) & promotion_mask[to_move]) {
                     d.push_back(NewMove(origin_s, destination_s, PROMOTE_QUEEN));
                     d.push_back(NewMove(origin_s, destination_s, PROMOTE_ROOK));
                     d.push_back(NewMove(origin_s, destination_s, PROMOTE_BISHOP));
