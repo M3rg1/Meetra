@@ -12,7 +12,6 @@ namespace Meetra {
     Move MoveList::GetNextMove() {
         while (moves.empty()) {
             GenNewMoves();
-            // sort moves
         }
 
         // https://www.chessprogramming.org/Move_Ordering -- "Typical move ordering"
@@ -31,6 +30,9 @@ namespace Meetra {
             case BEST_MOVE:
                 // return TT / killer move // or make case: Killer Move (also from history heuristic possible)
                 // also null move? PV? etc.
+                break;
+            case EVASION:
+                GenMoves<EVASION>(board, moves, color);
                 break;
             case CAPTURE:
                 GenMoves<CAPTURE>(board, moves, color);

@@ -1,5 +1,7 @@
 #include "MoveGenerator.h"
 #include "Bitboards.h"
+#include "Board.h"
+#include "Types.h"
 
 namespace Meetra {
 
@@ -29,6 +31,48 @@ namespace Meetra {
         }
     }
 
+    inline void GenCastlingMoves(const Board &board, std::deque<Move> &d, Color to_move) {
+        if (to_move == WHITE) {
+            if (board.CanWhiteShortCR()) {
+                Bitboard empty_squares = SquareToBB(F1) | SquareToBB(G1);
+                if ((empty_squares & board.GetPieces(ALL_TYPES)) == EMPTY_BB &&
+                    !board.SquareAttackers(F1, BLACK, board.GetPieces(ALL_TYPES)) &&
+                    !board.SquareAttackers(G1, BLACK, board.GetPieces(ALL_TYPES)) &&
+                    !board.SquareAttackers(E1, BLACK, board.GetPieces(ALL_TYPES))) {
+                    d.push_back(NewMove(E1, G1, CASTLING));
+                }
+            }
+            if (board.CanWhiteLongCR()) {
+                Bitboard empty_squares = SquareToBB(B1) | SquareToBB(C1) | SquareToBB(D1);
+                if ((empty_squares & board.GetPieces(ALL_TYPES)) == EMPTY_BB &&
+                    !board.SquareAttackers(C1, BLACK, board.GetPieces(ALL_TYPES)) &&
+                    !board.SquareAttackers(D1, BLACK, board.GetPieces(ALL_TYPES)) &&
+                    !board.SquareAttackers(E1, BLACK, board.GetPieces(ALL_TYPES))) {
+                    d.push_back(NewMove(E1, C1, CASTLING));
+                }
+            }
+        } else {
+            if (board.CanBlackShortCR()) {
+                Bitboard empty_squares = SquareToBB(F8) | SquareToBB(G8);
+                if ((empty_squares & board.GetPieces(ALL_TYPES)) == EMPTY_BB &&
+                    !board.SquareAttackers(F8, WHITE, board.GetPieces(ALL_TYPES)) &&
+                    !board.SquareAttackers(G8, WHITE, board.GetPieces(ALL_TYPES)) &&
+                    !board.SquareAttackers(E8, WHITE, board.GetPieces(ALL_TYPES))) {
+                    d.push_back(NewMove(E8, G8, CASTLING));
+                }
+            }
+            if (board.CanBlackLongCR()) {
+                Bitboard empty_squares = SquareToBB(B8) | SquareToBB(C8) | SquareToBB(D8);
+                if ((empty_squares & board.GetPieces(ALL_TYPES)) == EMPTY_BB &&
+                    !board.SquareAttackers(C8, WHITE, board.GetPieces(ALL_TYPES)) &&
+                    !board.SquareAttackers(D8, WHITE, board.GetPieces(ALL_TYPES)) &&
+                    !board.SquareAttackers(E8, WHITE, board.GetPieces(ALL_TYPES))) {
+                    d.push_back(NewMove(E8, C8, CASTLING));
+                }
+            }
+        }
+    }
+
     inline void GenPawnForwardMoves(const Board &board, std::deque<Move> &d, Color to_move, Bitboard legality_mask) {
         Bitboard pawns = board.GetPieces(PAWN, to_move);
         if (to_move == WHITE) {
@@ -53,23 +97,18 @@ namespace Meetra {
 
         pawns = board.GetPieces(PAWN, to_move);
         if (to_move == WHITE) {
-            pawns &= (board.GetEmptySquares() >> 8) & (legality_mask >> 16) & two_forward_mask[to_move];
+            pawns &= (board.GetEmptySquares() >> 8) & ((board.GetEmptySquares() & legality_mask) >> 16) &
+                     two_forward_mask[to_move];
         } else {
-            pawns &= (board.GetEmptySquares() << 8) & (legality_mask << 16) & two_forward_mask[to_move];
+            pawns &= (board.GetEmptySquares() << 8) & ((board.GetEmptySquares() & legality_mask) << 16) &
+                     two_forward_mask[to_move];
         }
         while (pawns) {
             Square origin_s = PopLsb(pawns);
             Bitboard dest_bb = SquareToBB(origin_s);
             dest_bb = to_move == WHITE ? dest_bb << 16 : dest_bb >> 16;
             Square destination_s = Lsb(dest_bb);
-            if (dest_bb & promotion_mask[to_move]) {
-                d.push_back(NewMove(origin_s, destination_s, PROMOTE_QUEEN));
-                d.push_back(NewMove(origin_s, destination_s, PROMOTE_ROOK));
-                d.push_back(NewMove(origin_s, destination_s, PROMOTE_BISHOP));
-                d.push_back(NewMove(origin_s, destination_s, PROMOTE_KNIGHT));
-            } else {
-                d.push_back(NewMove(origin_s, destination_s));
-            }
+            d.push_back(NewMove(origin_s, destination_s, TWO_FORWARD));
         }
     }
 
@@ -117,14 +156,15 @@ namespace Meetra {
 
         if (board.GetCheckers()) {
             if (PopCount(board.GetCheckers()) > 1) {
-                GenMovesForPieceType<KING>(board, d, to_move, board.GetPieces(OtherColor(to_move)));
-                GenMovesForPieceType<KING>(board, d, to_move, board.GetEmptySquares());
+                if (phase == EVASION) {
+                    GenMovesForPieceType<KING>(board, d, to_move,
+                                               board.GetPieces(OtherColor(to_move)) | board.GetEmptySquares());
+                }
                 return;
             }
             Square king_square = Lsb(board.GetPieces(KING, to_move));
             Bitboard capture_mask = board.GetCheckers();
             Square attacker_square = Lsb(capture_mask);
-            // if pawn is checking the king, the ray will be empty
             Bitboard block_mask = rays_between_squares[king_square][attacker_square];
             legal_moves = capture_mask | block_mask;
         }
@@ -139,21 +179,25 @@ namespace Meetra {
                 GenMovesForPieceType<BISHOP>(board, d, to_move, board.GetPieces(OtherColor(to_move)) & legal_moves);
                 GenMovesForPieceType<ROOK>(board, d, to_move, board.GetPieces(OtherColor(to_move)) & legal_moves);
                 GenMovesForPieceType<QUEEN>(board, d, to_move, board.GetPieces(OtherColor(to_move)) & legal_moves);
-                GenMovesForPieceType<KING>(board, d, to_move, board.GetPieces(OtherColor(to_move)) & legal_moves);
+                GenMovesForPieceType<KING>(board, d, to_move, board.GetPieces(OtherColor(to_move)));
                 break;
             case QUIET:
                 // no need to generate king moves anymore here ??
+                GenCastlingMoves(board, d, to_move);
                 GenPawnForwardMoves(board, d, to_move, legal_moves);
                 GenMovesForPieceType<KNIGHT>(board, d, to_move, board.GetEmptySquares() & legal_moves);
                 GenMovesForPieceType<BISHOP>(board, d, to_move, board.GetEmptySquares() & legal_moves);
                 GenMovesForPieceType<ROOK>(board, d, to_move, board.GetEmptySquares() & legal_moves);
                 GenMovesForPieceType<QUEEN>(board, d, to_move, board.GetEmptySquares() & legal_moves);
-                GenMovesForPieceType<KING>(board, d, to_move, board.GetEmptySquares() & legal_moves);
+                GenMovesForPieceType<KING>(board, d, to_move, board.GetEmptySquares());
                 break;
+            default:
+                return;
                 // case gen<all> - recursively all itself with all the possible generations - evasion, promotion etc.
         }
     }
 
+    template void GenMoves<EVASION>(const Board &board, std::deque<Move> &d, Color to_move);
     template void GenMoves<CAPTURE>(const Board &board, std::deque<Move> &d, Color to_move);
     template void GenMoves<QUIET>(const Board &board, std::deque<Move> &d, Color to_move);
 // gen moves all

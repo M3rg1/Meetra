@@ -40,7 +40,7 @@ namespace Meetra {
         return m.attacks[((occ & m.inner_board_mask) * m.magic_num) >> m.shift];
     }
 
-    constexpr Bitboard SquareToBB(Square s) { return 1UL << s; }
+    constexpr Bitboard SquareToBB(Square s) { return static_cast<Bitboard>(0x1) << s; }
     constexpr void SetBBSquareOne(Bitboard &b, Square s) { b |= SquareToBB(s); }
     constexpr void SetBBSquareZero(Bitboard &b, Square s) { b &= ~SquareToBB(s); }
 

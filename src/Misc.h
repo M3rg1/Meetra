@@ -5,15 +5,6 @@
 
 namespace Meetra{
 
-/*    inline std::string GetLogo(){
-        return " ___                       \n"
-               "| . \\___ ___ ___ ___ _ _  \n"
-               "|  _/ . | . | . / ._| '_>  \n"
-               "|_| \\___|  _|  _\\___|_|  \n"
-               "        |_| |_|            \n"
-               "===========================\n";
-    }*/
-
     inline std::string GetLogo(){
         return "  __  __         _            \n"
                " |  \\/  |___ ___| |_ _ _ __ _ \n"

@@ -31,11 +31,11 @@ namespace Meetra {
         [[nodiscard]] inline bool CanWhiteLongCR() const { return (game_state & WHITE_LONG) != 0; }
         [[nodiscard]] inline bool CanBlackShortCR() const { return (game_state & BLACK_SHORT) != 0; }
         [[nodiscard]] inline bool CanBlackLongCR() const { return (game_state & BLACK_LONG) != 0; }
-        [[nodiscard]] inline Square EpSquare() const { return Square(game_state & 0x3F); }
-        [[nodiscard]] inline Color ColorToMove() const { return Color(game_state >> 10 & 0x1); }
-        [[nodiscard]] inline Piece CapturedPiece() const { return Piece(game_state >> 11 & 0xF); }
-        [[nodiscard]] inline int Ply() const { return int(game_state >> 15 & 0x3F); }
-        [[nodiscard]] inline int TotalMoves() const { return int(game_state >> 21); }
+        [[nodiscard]] inline Square EpSquare() const { return static_cast<Square >(game_state & 0x3F); }
+        [[nodiscard]] inline Color ColorToMove() const { return static_cast<Color>(game_state >> 10 & 0x1); }
+        [[nodiscard]] inline Piece CapturedPiece() const { return static_cast<Piece>(game_state >> 11 & 0xF); }
+        [[nodiscard]] inline int Ply() const { return static_cast<int>(game_state >> 15 & 0x3F); }
+        [[nodiscard]] inline int TotalMoves() const { return static_cast<int>(game_state >> 21); }
 #pragma endregion
 
 #pragma region ===== Misc =====
@@ -67,21 +67,21 @@ namespace Meetra {
 
 #pragma region ===== Game State modifications =====
         // requires new game state
-        inline void SetEpSquare(Square s) { game_state |= s; }
-        inline void SetCastlingRights(CastlingRights cr) { game_state |= cr; }
-        inline void SetColorToMove(Color c) { game_state |= c << 10; }
-        inline void SetCapturedPiece(Piece p) { game_state |= p << 11; }
-        inline void SetPly(int ply) { game_state |= ply << 15; }
-        inline void SetMoveNumber(int move_num) { game_state |= move_num << 21; }
+        inline void SetEpSquare(Square s) { game_state |= static_cast<GameState>(s); }
+        inline void SetCastlingRights(CastlingRights cr) { game_state |= static_cast<GameState>(cr); }
+        inline void SetColorToMove(Color c) { game_state |= static_cast<GameState>(c << 10); }
+        inline void SetCapturedPiece(Piece p) { game_state |= static_cast<GameState>(p << 11); }
+        inline void SetPly(int ply) { game_state |= static_cast<GameState>(ply << 15); }
+        inline void SetMoveNumber(int move_num) { game_state |= static_cast<GameState>(move_num << 21); }
 
         // modify current game state
-        inline void ResetPly() { game_state &= ~0x3F8000; }
-        inline void RemoveCastlingRights(CastlingRights cr) { game_state &= ~cr; }
+        inline void ResetPly() { game_state &= static_cast<GameState>(~0x3F8000); }
+        inline void RemoveCastlingRights(CastlingRights cr) { game_state &= static_cast<GameState>(~cr); }
         inline void IncrementMoveNumber() { game_state += 1 << 21; }
         inline void IncrementPly() { game_state += 1 << 15; }
-        inline void ClearCapturedPiece() { game_state &= ~0x7800; }
+        inline void ClearCapturedPiece() { game_state &= static_cast<GameState>(~0x7800); }
         inline void ChangeColorToMove() { ColorToMove() == WHITE ? game_state += 1 << 10 : game_state -= 1 << 10; }
-        inline void ClearEpSquare() { game_state &= ~0x3F; }
+        inline void ClearEpSquare() { game_state &= static_cast<GameState>(~0x3F); }
 #pragma endregion
 
 #pragma region ===== Update inner structures =====

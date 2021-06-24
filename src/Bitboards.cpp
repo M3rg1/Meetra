@@ -1,6 +1,5 @@
 #include "Bitboards.h"
 #include "MagicNumbers.h"
-#include "Macros.h"
 
 namespace Meetra {
 
@@ -136,13 +135,13 @@ namespace Meetra {
 
     void InitMagic() {
         for (Square s = A1; s <= H8; ++s) {
-            rook_magics[s].shift = 64 - rook_magic_shift[s];
+            rook_magics[s].shift = static_cast<uint16_t>(64 - rook_magic_shift[s]);
             rook_magics[s].inner_board_mask = inner_rays[s][NORTH_IDX] | inner_rays[s][EAST_IDX]
                                               | inner_rays[s][SOUTH_IDX] | inner_rays[s][WEST_IDX];
             rook_magics[s].magic_num = rook_magic_num[s];
             rook_magics[s].attacks = s == A1 ? rook_table : rook_magics[s - 1].attacks + (1 << rook_magic_shift[s - 1]);
 
-            bishop_magics[s].shift = 64 - bishop_magic_shift[s];
+            bishop_magics[s].shift = static_cast<uint16_t>(64 - bishop_magic_shift[s]);
             bishop_magics[s].inner_board_mask = inner_rays[s][NORTH_WEST_IDX] | inner_rays[s][NORTH_EAST_IDX]
                                                 | inner_rays[s][SOUTH_EAST_IDX] | inner_rays[s][SOUTH_WEST_IDX];
             bishop_magics[s].magic_num = bishop_magic_num[s];
@@ -178,7 +177,7 @@ namespace Meetra {
             attacks &= (s & 7) > 3 ? ~file_masks[FILE_A] : ~file_masks[FILE_H];
             pawn_attacks[BLACK][s] = attacks;
         }
-    };
+    }
 
     void InitKingMoves() {
         for (Square s = A1; s <= H8; ++s) {
@@ -329,7 +328,7 @@ namespace Meetra {
         return ray;
     }
 
-    void InitRayesBetweenSquares() {
+    void InitRaysBetweenSquares() {
         for (Square origin = A1; origin <= H8; ++origin) {
             for (Square destination = A1; destination <= H8; ++destination) {
                 rays_between_squares[origin][destination] = GetRay(origin, destination);
@@ -339,7 +338,7 @@ namespace Meetra {
 
     void InitBitboards() {
         InitRays();
-        InitRayesBetweenSquares();
+        InitRaysBetweenSquares();
         InitMagic();
         InitKingMoves();
         InitKnightMoves();
@@ -352,7 +351,7 @@ namespace Meetra {
             ret.append(std::to_string(r + 1));
             ret.append(" |");
             for (File f = FILE_A; f <= FILE_H; ++f) {
-                if ((b >> (r * 8) + f) & 1) {
+                if ((b >> ((r * 8) + f)) & 1) {
                     ret.append(" x ");
                 } else {
                     ret.append(" o ");

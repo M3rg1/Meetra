@@ -1,9 +1,7 @@
 #include "Board.h"
-
 #include <utility>
 #include "Bitboards.h"
 #include "FenLoader.h"
-#include "Macros.h"
 #include "Misc.h"
 #include <cstring>
 
@@ -57,8 +55,15 @@ namespace Meetra {
         Piece captured_piece = board[to];
         Piece moved_piece = board[from];
 
+
         if (white_moved) {
-            if (moved_piece == W_ROOK) {
+            if(capture_square == A8){
+                RemoveCastlingRights(BLACK_LONG);
+            }
+            else if(capture_square == H8){
+                RemoveCastlingRights(BLACK_SHORT);
+            }
+            else if (moved_piece == W_ROOK) {
                 if (from == A1) {
                     RemoveCastlingRights(WHITE_LONG);
                 } else if (from == H1) {
@@ -70,7 +75,13 @@ namespace Meetra {
         } else {
             IncrementMoveNumber();
 
-            if (moved_piece == B_ROOK) {
+            if(capture_square == A1){
+                RemoveCastlingRights(WHITE_LONG);
+            }
+            else if(capture_square == H1){
+                RemoveCastlingRights(WHITE_SHORT);
+            }
+            else if (moved_piece == B_ROOK) {
                 if (from == A8) {
                     RemoveCastlingRights(BLACK_LONG);
                 } else if (from == H8) {
@@ -134,6 +145,8 @@ namespace Meetra {
                 case PROMOTE_KNIGHT:
                     PutPiece(to, white_moved ? W_KNIGHT : B_KNIGHT);
                     break;
+                default:
+                    break;
             }
         }
 
@@ -151,8 +164,8 @@ namespace Meetra {
     }
 
 
-    inline Bitboard Board::SquareAttackers(Square s, Color attacked_by, Bitboard occ) const {
-        return (GetAttacksForPiece<PAWN>(s, attacked_by) & GetPieces(PAWN, attacked_by)) |
+    Bitboard Board::SquareAttackers(Square s, Color attacked_by, Bitboard occ) const {
+        return (GetAttacksForPiece<PAWN>(s, occ, OtherColor(attacked_by)) & GetPieces(PAWN, attacked_by)) |
                (GetAttacksForPiece<KNIGHT>(s) & GetPieces(KNIGHT, attacked_by)) |
                (GetAttacksForPiece<BISHOP>(s, occ) & GetPieces(BISHOP, attacked_by)) |
                (GetAttacksForPiece<ROOK>(s, occ) & GetPieces(ROOK, attacked_by)) |
@@ -175,7 +188,11 @@ namespace Meetra {
         Piece captured_piece = CapturedPiece();
 
         MovePiece(to, from);
-        if (captured_piece != NO_PIECE) {
+
+        if(GetFlag(m) == EN_PASSANT){
+            PutPiece(white_to_move ? to + 8 : to - 8, captured_piece);
+        }
+        else if (captured_piece != NO_PIECE) {
             PutPiece(to, captured_piece);
         } else if (GetFlag(m) == CASTLING) {
             if (white_to_move) {
@@ -232,7 +249,6 @@ namespace Meetra {
             ret.append(std::to_string(r + 1));
             ret.append(" |");
             for (File f = FILE_A; f <= FILE_H; ++f) {
-                //DEBUG_LOG(board[SquareFromFiRa(f, r)]);
                 ret.push_back(' ');
                 ret.push_back(PieceToChar(board[SquareFromFiRa(f, r)]));
                 ret.push_back(' ');

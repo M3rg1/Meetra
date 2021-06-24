@@ -7,7 +7,7 @@
 namespace Meetra {
 
     enum GenPhase : int {
-        BEST_MOVE, CAPTURE, QUIET, END,
+        BEST_MOVE, EVASION, CAPTURE, QUIET, END,
         GEN_PHASE_NR
     };
 
@@ -86,9 +86,9 @@ namespace Meetra {
         SQUARE_ZERO = 0,
     };
 
-    constexpr Square SquareFromFiRa(File f, Rank r) { return Square((r << 3) + f); }
-    constexpr File FileFromSquare(Square s) { return File(s & 7); }
-    constexpr Rank RankFromSquare(Square s) { return Rank(s >> 3); }
+    constexpr Square SquareFromFiRa(File f, Rank r) { return static_cast<Square>((r << 3) + f); }
+    constexpr File FileFromSquare(Square s) { return static_cast<File>(s & 7); }
+    constexpr Rank RankFromSquare(Square s) { return static_cast<Rank>(s >> 3); }
 
 
 #pragma region ===== Move =====
@@ -108,15 +108,15 @@ namespace Meetra {
     };
 
 #pragma region ===== Initialization =====
-    constexpr Move NewMove(Square from, Square to) { return from | to << 6; }
-    constexpr Move NewMove(Square from, Square to, MoveType flag) { return NewMove(from, to) | flag; }
+    constexpr Move NewMove(Square from, Square to) { return static_cast<Move>(from | to << 6); }
+    constexpr Move NewMove(Square from, Square to, MoveType flag) { return static_cast<Move>(NewMove(from, to) | flag); }
 #pragma endregion
 
 #pragma region ===== Utils =====
-    constexpr Square FromSquare(Move m) { return Square(m & 0x3F); }
-    constexpr Square ToSquare(Move m) { return Square((m & 0xFC0) >> 6); }
+    constexpr Square FromSquare(Move m) { return static_cast<Square>(m & 0x3F); }
+    constexpr Square ToSquare(Move m) { return static_cast<Square>((m & 0xFC0) >> 6); }
     constexpr bool IsPromotion(Move m) { return m >> 15 != 0; }
-    constexpr MoveType GetFlag(Move m) { return MoveType(m & 0xF000); }
+    constexpr MoveType GetFlag(Move m) { return static_cast<MoveType>(m & 0xF000); }
     constexpr bool IsValid(Move m) { return m != INVALID_MOVE; }
     inline std::string GetMoveName(Move m) {
         std::string ret;
@@ -143,8 +143,6 @@ inline T& operator-=(T& d1, int d2) { return d1 = d1 - d2; }
 #define ENABLE_INCR_OPERATORS_ON(T)                                \
 inline T& operator++(T& d) { return d = T(int(d) + 1); }           \
 inline T& operator--(T& d) { return d = T(int(d) - 1); }           \
-//inline T operator++(T& d)(int) { return d = T(int(d) + 1); }           \
-//inline T& operator--(int)(T& d) { return d = T(int(d) - 1); }
 
 #define ENABLE_FULL_OPERATORS_ON(T)                                \
 ENABLE_BASE_OPERATORS_ON(T)                                        \
