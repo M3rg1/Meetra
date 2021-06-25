@@ -9,21 +9,12 @@ namespace Meetra {
             0xFF00000000000000UL, 0x00000000000000FFUL
     };
 
-    Bitboard ep_mask[COLOR_NR]{
-            0x000000FF00000000UL, 0x00000000FF000000UL
-    };
-
-    Bitboard two_forward_mask[COLOR_NR]{
-            0x000000000000FF00UL, 0x00FF000000000000UL
-    };
-
     template<PieceType PT>
-    inline void GenMovesForPieceType(const Board &board, std::deque<Move> &d, Color to_move, Bitboard legality_mask) {
+    inline void GenMovesForPieceType(const Board &board, Color to_move, Bitboard occ, std::deque<Move> &d, Bitboard legality_mask) {
         Bitboard pieces = board.GetPieces(PT, to_move);
         while (pieces) {
             Square origin_s = PopLsb(pieces);
-            Bitboard possible_moves = GetAttacksForPiece<PT>(origin_s, board.GetPieces(ALL_TYPES), to_move);
-            possible_moves &= legality_mask;
+            Bitboard possible_moves = GetAttacksForPiece<PT>(origin_s, occ) & legality_mask;
             while (possible_moves) {
                 Square destination_s = PopLsb(possible_moves);
                 d.push_back(NewMove(origin_s, destination_s));
@@ -73,48 +64,58 @@ namespace Meetra {
         }
     }
 
+/*    template<Direction D>
+    constexpr Bitboard shift(Bitboard b) {
+        return  D == NORTH ? b << 8 : D == SOUTH ? b >> 8 : D == NORTH+NORTH? b <<16 : D == SOUTH+SOUTH? b >>16 :
+        D == EAST ? (b & ~FileHBB) << 1 : D == WEST ? (b & ~FileABB) >> 1 : D == NORTH_EAST ? (b & ~FileHBB) << 9 :
+        D == NORTH_WEST ? (b & ~FileABB) << 7 : D == SOUTH_EAST ? (b & ~FileHBB) >> 7 : D == SOUTH_WEST ? (b & ~FileABB) >> 9 : 0;
+    }*/
+
+
     inline void GenPawnForwardMoves(const Board &board, std::deque<Move> &d, Color to_move, Bitboard legality_mask) {
-        Bitboard pawns = board.GetPieces(PAWN, to_move);
+
+        Bitboard pawns_one_fw, pawns_two_fw, pawn_prom;
+        Direction origin_dir;
+
         if (to_move == WHITE) {
-            pawns &= (board.GetEmptySquares() & legality_mask) >> 8;
+            origin_dir = SOUTH;
+            pawns_one_fw = (board.GetPieces(PAWN, to_move) << 8) & board.GetEmptySquares();
+            pawns_two_fw = (pawns_one_fw << 8) & board.GetEmptySquares() & 0x00000000FF000000UL & legality_mask;
+            pawn_prom = pawns_one_fw & legality_mask & 0xFF00000000000000UL;
+            pawns_one_fw &= legality_mask & ~0xFF00000000000000UL;
         } else {
-            pawns &= (board.GetEmptySquares() & legality_mask) << 8;
-        }
-        while (pawns) {
-            Square origin_s = PopLsb(pawns);
-            Bitboard dest_bb = SquareToBB(origin_s);
-            dest_bb = to_move == WHITE ? dest_bb << 8 : dest_bb >> 8;
-            Square destination_s = Lsb(dest_bb);
-            if (dest_bb & promotion_mask[to_move]) {
-                d.push_back(NewMove(origin_s, destination_s, PROMOTE_QUEEN));
-                d.push_back(NewMove(origin_s, destination_s, PROMOTE_ROOK));
-                d.push_back(NewMove(origin_s, destination_s, PROMOTE_BISHOP));
-                d.push_back(NewMove(origin_s, destination_s, PROMOTE_KNIGHT));
-            } else {
-                d.push_back(NewMove(origin_s, destination_s));
-            }
+            origin_dir = NORTH;
+            pawns_one_fw = (board.GetPieces(PAWN, to_move) >> 8) & board.GetEmptySquares();
+            pawns_two_fw = (pawns_one_fw >> 8) & board.GetEmptySquares() & 0x000000FF00000000UL & legality_mask;
+            pawn_prom = pawns_one_fw & legality_mask & 0x00000000000000FFUL;
+            pawns_one_fw &= legality_mask & ~0x00000000000000FFUL;
         }
 
-        pawns = board.GetPieces(PAWN, to_move);
-        if (to_move == WHITE) {
-            pawns &= (board.GetEmptySquares() >> 8) & ((board.GetEmptySquares() & legality_mask) >> 16) &
-                     two_forward_mask[to_move];
-        } else {
-            pawns &= (board.GetEmptySquares() << 8) & ((board.GetEmptySquares() & legality_mask) << 16) &
-                     two_forward_mask[to_move];
+        while (pawns_one_fw) {
+            Square dest_s = PopLsb(pawns_one_fw);
+            d.push_back(NewMove(dest_s + origin_dir, dest_s));
         }
-        while (pawns) {
-            Square origin_s = PopLsb(pawns);
-            Bitboard dest_bb = SquareToBB(origin_s);
-            dest_bb = to_move == WHITE ? dest_bb << 16 : dest_bb >> 16;
-            Square destination_s = Lsb(dest_bb);
-            d.push_back(NewMove(origin_s, destination_s, TWO_FORWARD));
+
+        while (pawn_prom) {
+            Square dest_s = PopLsb(pawn_prom);
+            Square origin_s = dest_s + origin_dir;
+            d.push_back(NewMove(origin_s, dest_s, PROMOTE_QUEEN));
+            d.push_back(NewMove(origin_s, dest_s, PROMOTE_ROOK));
+            d.push_back(NewMove(origin_s, dest_s, PROMOTE_BISHOP));
+            d.push_back(NewMove(origin_s, dest_s, PROMOTE_KNIGHT));
+        }
+
+        while (pawns_two_fw) {
+            Square dest_s = PopLsb(pawns_two_fw);
+            d.push_back(NewMove(dest_s + origin_dir + origin_dir, dest_s, TWO_FORWARD));
         }
     }
 
     inline void GenPawnCaptures(const Board &board, std::deque<Move> &d, Color to_move, Bitboard legality_mask) {
+
         Bitboard pawns = board.GetPieces(PAWN, to_move);
         Bitboard enemy_pieces = board.GetPieces(OtherColor(to_move));
+
         while (pawns) {
             Square origin_s = PopLsb(pawns);
             Bitboard possible_moves =
@@ -132,18 +133,15 @@ namespace Meetra {
                 }
             }
         }
+
         Square ep_s;
         if ((ep_s = board.EpSquare())) {
-            Bitboard ep_bb = SquareToBB(ep_s);
-            pawns = board.GetPieces(PAWN, to_move) & ep_mask[to_move];
-            while (pawns) {
-                Square origin_s = PopLsb(pawns);
-                Bitboard possible_moves =
-                        GetAttacksForPiece<PAWN>(origin_s, board.GetPieces(ALL_TYPES), to_move) & ep_bb;
-                if (possible_moves) {
-                    Square destination_s = Lsb(possible_moves);
-                    d.push_back(NewMove(origin_s, destination_s, EN_PASSANT));
-                }
+            Bitboard attackers =
+                    GetAttacksForPiece<PAWN>(ep_s, board.GetPieces(ALL_TYPES), OtherColor(to_move)) &
+                    board.GetPieces(PAWN, to_move);
+            while (attackers) {
+                Square origin_s = PopLsb(attackers);
+                d.push_back(NewMove(origin_s, ep_s, EN_PASSANT));
             }
         }
     }
@@ -153,11 +151,12 @@ namespace Meetra {
     inline void GenMoves(const Board &board, std::deque<Move> &d, Color to_move) {
 
         Bitboard legal_moves = 0xFFFFFFFFFFFFFFFFUL;
+        Bitboard occ = board.GetPieces(ALL_TYPES);
 
         if (board.GetCheckers()) {
             if (PopCount(board.GetCheckers()) > 1) {
                 if (phase == EVASION) {
-                    GenMovesForPieceType<KING>(board, d, to_move,
+                    GenMovesForPieceType<KING>(board, to_move, occ, d,
                                                board.GetPieces(OtherColor(to_move)) | board.GetEmptySquares());
                 }
                 return;
@@ -175,21 +174,22 @@ namespace Meetra {
                 // when calcing captures, do only those that would take the checker, if we are in check
                 // this should be easy enough -> moves & checkers in stead of moves & enemy pieces
                 GenPawnCaptures(board, d, to_move, legal_moves);
-                GenMovesForPieceType<KNIGHT>(board, d, to_move, board.GetPieces(OtherColor(to_move)) & legal_moves);
-                GenMovesForPieceType<BISHOP>(board, d, to_move, board.GetPieces(OtherColor(to_move)) & legal_moves);
-                GenMovesForPieceType<ROOK>(board, d, to_move, board.GetPieces(OtherColor(to_move)) & legal_moves);
-                GenMovesForPieceType<QUEEN>(board, d, to_move, board.GetPieces(OtherColor(to_move)) & legal_moves);
-                GenMovesForPieceType<KING>(board, d, to_move, board.GetPieces(OtherColor(to_move)));
+                // TODO we make our mask = enemy pieces mask here and then we call GenAll method that will call the other submethods
+                GenMovesForPieceType<KNIGHT>(board, to_move, occ, d, board.GetPieces(OtherColor(to_move)) & legal_moves);
+                GenMovesForPieceType<BISHOP>(board, to_move, occ, d, board.GetPieces(OtherColor(to_move)) & legal_moves);
+                GenMovesForPieceType<ROOK>(board, to_move, occ, d, board.GetPieces(OtherColor(to_move)) & legal_moves);
+                GenMovesForPieceType<QUEEN>(board, to_move, occ, d, board.GetPieces(OtherColor(to_move)) & legal_moves);
+                GenMovesForPieceType<KING>(board, to_move, occ, d, board.GetPieces(OtherColor(to_move)));
                 break;
             case QUIET:
                 // no need to generate king moves anymore here ??
                 GenCastlingMoves(board, d, to_move);
                 GenPawnForwardMoves(board, d, to_move, legal_moves);
-                GenMovesForPieceType<KNIGHT>(board, d, to_move, board.GetEmptySquares() & legal_moves);
-                GenMovesForPieceType<BISHOP>(board, d, to_move, board.GetEmptySquares() & legal_moves);
-                GenMovesForPieceType<ROOK>(board, d, to_move, board.GetEmptySquares() & legal_moves);
-                GenMovesForPieceType<QUEEN>(board, d, to_move, board.GetEmptySquares() & legal_moves);
-                GenMovesForPieceType<KING>(board, d, to_move, board.GetEmptySquares());
+                GenMovesForPieceType<KNIGHT>(board, to_move, occ, d, board.GetEmptySquares() & legal_moves);
+                GenMovesForPieceType<BISHOP>(board, to_move, occ, d, board.GetEmptySquares() & legal_moves);
+                GenMovesForPieceType<ROOK>(board, to_move, occ, d, board.GetEmptySquares() & legal_moves);
+                GenMovesForPieceType<QUEEN>(board, to_move, occ, d, board.GetEmptySquares() & legal_moves);
+                GenMovesForPieceType<KING>(board, to_move, occ, d, board.GetEmptySquares());
                 break;
             default:
                 return;

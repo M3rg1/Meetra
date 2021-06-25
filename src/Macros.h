@@ -9,9 +9,9 @@
                    auto end = std::chrono::high_resolution_clock::now();
 #define START_TIMER start = std::chrono::high_resolution_clock::now();
 #define STOP_TIMER end = std::chrono::high_resolution_clock::now();
-#define GET_TIME_NS std::chrono::duration_cast<std::chrono::nanoseconds>(end-start).count()
-#define GET_TIME_MS std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count()
-#define GET_TIME_SEC std::chrono::duration_cast<std::chrono::seconds>(end-start).count()
+#define TIMER_GET_TIME_NS std::chrono::duration_cast<std::chrono::nanoseconds>(end-start).count()
+#define TIMER_GET_TIME_MS std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count()
+#define TIMER_GET_TIME_SEC std::chrono::duration_cast<std::chrono::seconds>(end-start).count()
 #endif // TIMER
 
 #ifdef DEBUG_BUILD

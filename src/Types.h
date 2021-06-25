@@ -166,6 +166,7 @@ inline T& operator/=(T& d, int i) { return d = T(int(d) / i); }
 
     ENABLE_FULL_OPERATORS_ON(File)
     ENABLE_FULL_OPERATORS_ON(Rank)
+    ENABLE_FULL_OPERATORS_ON(Direction)
 
     /// Additional operators to add a Direction to a Square
     constexpr Square operator+(Square s, Direction d) { return Square(int(s) + int(d)); }

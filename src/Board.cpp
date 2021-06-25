@@ -4,6 +4,7 @@
 #include "FenLoader.h"
 #include "Misc.h"
 #include <cstring>
+#include <chrono>
 
 namespace Meetra {
 
@@ -39,14 +40,15 @@ namespace Meetra {
         checkers = SquareAttackers(king_square, ColorToMove() == WHITE ? BLACK : WHITE, GetPieces(ALL_TYPES));
     }
 
-    bool Board::MakeMove(Move m) {
 
+    bool Board::MakeMove(Move m) {
         gs_history.push_back(BoardData{game_state, checkers});
 
-        bool white_moved = ColorToMove() == WHITE;
         ChangeColorToMove();
         ClearCapturedPiece();
         ClearEpSquare();
+
+        bool white_moved = ColorToMove();
 
         Square from = FromSquare(m);
         Square to = ToSquare(m);
@@ -57,13 +59,11 @@ namespace Meetra {
 
 
         if (white_moved) {
-            if(capture_square == A8){
+            if (capture_square == A8) {
                 RemoveCastlingRights(BLACK_LONG);
-            }
-            else if(capture_square == H8){
+            } else if (capture_square == H8) {
                 RemoveCastlingRights(BLACK_SHORT);
-            }
-            else if (moved_piece == W_ROOK) {
+            } else if (moved_piece == W_ROOK) {
                 if (from == A1) {
                     RemoveCastlingRights(WHITE_LONG);
                 } else if (from == H1) {
@@ -75,13 +75,11 @@ namespace Meetra {
         } else {
             IncrementMoveNumber();
 
-            if(capture_square == A1){
+            if (capture_square == A1) {
                 RemoveCastlingRights(WHITE_LONG);
-            }
-            else if(capture_square == H1){
+            } else if (capture_square == H1) {
                 RemoveCastlingRights(WHITE_SHORT);
-            }
-            else if (moved_piece == B_ROOK) {
+            } else if (moved_piece == B_ROOK) {
                 if (from == A8) {
                     RemoveCastlingRights(BLACK_LONG);
                 } else if (from == H8) {
@@ -107,58 +105,56 @@ namespace Meetra {
         } else {
             IncrementPly();
         }
+
         MovePiece(from, to);
 
-        if (move_type == TWO_FORWARD) {
-            SetEpSquare(white_moved ? to - 8 : to + 8);
-        } else if (move_type == CASTLING) {
-            // TODO check safety for castling
-            // do that in move generation
-            // too annoying having to deal with it here and having to unmake castling, just check castle validity in movegen
-            if (white_moved) {
-                RemoveCastlingRights(WHITE_ALL_CR);
-                if (to == G1) {
-                    MovePiece(H1, F1);
+        if(move_type != NO_FLAG) {
+            if (move_type == TWO_FORWARD) {
+                SetEpSquare(white_moved ? to - 8 : to + 8);
+            } else if (move_type == CASTLING) {
+                if (white_moved) {
+                    RemoveCastlingRights(WHITE_ALL_CR);
+                    if (to == G1) {
+                        MovePiece(H1, F1);
+                    } else {
+                        MovePiece(A1, D1);
+                    }
                 } else {
-                    MovePiece(A1, D1);
+                    RemoveCastlingRights(BLACK_ALL_CR);
+                    if (to == G8) {
+                        MovePiece(H8, F8);
+                    } else {
+                        MovePiece(A8, D8);
+                    }
                 }
-            } else {
-                RemoveCastlingRights(BLACK_ALL_CR);
-                if (to == G8) {
-                    MovePiece(H8, F8);
-                } else {
-                    MovePiece(A8, D8);
+            } else if (IsPromotion(m)) {
+                RemovePiece(to);
+                switch (move_type) {
+                    case PROMOTE_QUEEN:
+                        PutPiece(to, white_moved ? W_QUEEN : B_QUEEN);
+                        break;
+                    case PROMOTE_ROOK:
+                        PutPiece(to, white_moved ? W_ROOK : B_ROOK);
+                        break;
+                    case PROMOTE_BISHOP:
+                        PutPiece(to, white_moved ? W_BISHOP : B_BISHOP);
+                        break;
+                    case PROMOTE_KNIGHT:
+                        PutPiece(to, white_moved ? W_KNIGHT : B_KNIGHT);
+                        break;
+                    default:
+                        break;
                 }
-            }
-        } else if (IsPromotion(m)) {
-            RemovePiece(to);
-            switch (move_type) {
-                case PROMOTE_QUEEN:
-                    PutPiece(to, white_moved ? W_QUEEN : B_QUEEN);
-                    break;
-                case PROMOTE_ROOK:
-                    PutPiece(to, white_moved ? W_ROOK : B_ROOK);
-                    break;
-                case PROMOTE_BISHOP:
-                    PutPiece(to, white_moved ? W_BISHOP : B_BISHOP);
-                    break;
-                case PROMOTE_KNIGHT:
-                    PutPiece(to, white_moved ? W_KNIGHT : B_KNIGHT);
-                    break;
-                default:
-                    break;
             }
         }
 
-        Square king_square = Lsb(GetPieces(KING, OtherColor(ColorToMove())));
-        auto invalid_move = SquareAttackers(king_square, ColorToMove(), GetPieces(ALL_TYPES));
-
-        if (invalid_move) {
+        Square king_square = Lsb(GetPieces(KING, static_cast<Color>(!white_moved)));
+        if (SquareAttackers(king_square, static_cast<Color>(white_moved), GetPieces(ALL_TYPES))) {
             return false;
         }
 
-        king_square = Lsb(GetPieces(KING, ColorToMove()));
-        checkers = SquareAttackers(king_square, OtherColor(ColorToMove()), GetPieces(ALL_TYPES));
+        king_square = Lsb(GetPieces(KING, static_cast<Color>(white_moved)));
+        checkers = SquareAttackers(king_square, static_cast<Color>(!white_moved), GetPieces(ALL_TYPES));
 
         return true;
     }
@@ -189,10 +185,9 @@ namespace Meetra {
 
         MovePiece(to, from);
 
-        if(GetFlag(m) == EN_PASSANT){
+        if (GetFlag(m) == EN_PASSANT) {
             PutPiece(white_to_move ? to + 8 : to - 8, captured_piece);
-        }
-        else if (captured_piece != NO_PIECE) {
+        } else if (captured_piece != NO_PIECE) {
             PutPiece(to, captured_piece);
         } else if (GetFlag(m) == CASTLING) {
             if (white_to_move) {

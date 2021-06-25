@@ -165,7 +165,7 @@ namespace Meetra {
                     SetBBSquareOne(attacks, s + m);
                 }
             }
-            attacks &= (s & 7) > 3 ? ~file_masks[FILE_A] : ~file_masks[FILE_H];
+            attacks &= FileFromSquare(s) > FILE_C ? ~file_masks[FILE_A] : ~file_masks[FILE_H];
             pawn_attacks[WHITE][s] = attacks;
 
             attacks = EMPTY_BB;
@@ -174,7 +174,7 @@ namespace Meetra {
                     SetBBSquareOne(attacks, s - m);
                 }
             }
-            attacks &= (s & 7) > 3 ? ~file_masks[FILE_A] : ~file_masks[FILE_H];
+            attacks &= FileFromSquare(s) > FILE_C ? ~file_masks[FILE_A] : ~file_masks[FILE_H];
             pawn_attacks[BLACK][s] = attacks;
         }
     }
