@@ -5,33 +5,33 @@
 
 namespace Meetra {
 
-    template <Color C>
-    constexpr Direction pawn_push_dir(){
+    template<Color C>
+    constexpr Direction pawn_push_dir() {
         return C == WHITE ? NORTH : SOUTH;
     }
 
-    template <Color C>
-    constexpr Direction pawn_capture_left_dir(){
+    template<Color C>
+    constexpr Direction pawn_capture_left_dir() {
         return C == WHITE ? NORTH_WEST : SOUTH_EAST;
     }
 
-    template <Color C>
-    constexpr Direction pawn_capture_right_dir(){
+    template<Color C>
+    constexpr Direction pawn_capture_right_dir() {
         return C == WHITE ? NORTH_EAST : SOUTH_WEST;
     }
 
-    template <Color C>
-    constexpr Bitboard promotion_rank(){
+    template<Color C>
+    constexpr Bitboard promotion_rank() {
         return C == WHITE ? 0xFF00000000000000UL : 0xFF000000000000FFUL;
     }
 
-    template <Color C>
-    constexpr Bitboard two_fwd_rank(){
+    template<Color C>
+    constexpr Bitboard two_fwd_rank() {
         return C == WHITE ? 0x00000000FF000000UL : 0x000000FF00000000UL;
     }
 
     template<PieceType PT, Color C>
-    inline void GenMovesForPieceType(const Board &board, Bitboard occ, std::deque<Move> &d, Bitboard legality_mask) {
+    void GenMovesForPieceType(const Board &board, Bitboard occ, std::deque<Move> &d, Bitboard legality_mask) {
         Bitboard pieces = board.GetPieces(PT, C);
         while (pieces) {
             Square origin_s = PopLsb(pieces);
@@ -43,8 +43,9 @@ namespace Meetra {
         }
     }
 
-    inline void GenCastlingMoves(const Board &board, std::deque<Move> &d, Color to_move) {
-        if (to_move == WHITE) {
+    template<Color C>
+    void GenCastlingMoves(const Board &board, std::deque<Move> &d) {
+        if (C == WHITE) {
             if (board.CanWhiteShortCR()) {
                 Bitboard empty_squares = SquareToBB(F1) | SquareToBB(G1);
                 if ((empty_squares & board.GetPieces(ALL_TYPES)) == EMPTY_BB &&
@@ -87,24 +88,21 @@ namespace Meetra {
 
     template<Direction D>
     constexpr Bitboard shift(Bitboard b) {
-        return  D == NORTH ? b << 8 : D == SOUTH ? b >> 8 : D == NORTH+NORTH? b <<16 : D == SOUTH+SOUTH? b >>16 :
-        D == EAST ? (b & ~file_masks[FILE_H]) << 1 : D == WEST ? (b & ~file_masks[FILE_A]) >> 1 : D == NORTH_EAST ? (b & ~file_masks[FILE_H]) << 9 :
-        D == NORTH_WEST ? (b & ~file_masks[FILE_A]) << 7 : D == SOUTH_EAST ? (b & ~file_masks[FILE_H]) >> 7 : D == SOUTH_WEST ? (b & ~file_masks[FILE_A]) >> 9 : 0;
+        return D == NORTH ? b << 8 : D == SOUTH ? b >> 8 : D == EAST ? (b & ~0x8080808080808080UL) << 1 :
+        D == WEST ? (b & ~0x0101010101010101UL) >> 1 : D == NORTH_EAST ? (b & ~0x8080808080808080UL) << 9 :
+        D == NORTH_WEST  ? (b & ~0x0101010101010101UL) << 7 : D == SOUTH_EAST ? (b & ~0x8080808080808080UL) >> 7 :
+        D == SOUTH_WEST ? (b & ~0x0101010101010101UL) >> 9: 0;
     }
 
     template<Color C>
-    inline void GenPawnForwardMoves(const Board &board, std::deque<Move> &d, Bitboard legality_mask) {
+    void GenPawnForwardMoves(const Board &board, std::deque<Move> &d, Bitboard legality_mask) {
 
         constexpr Direction push_dir = pawn_push_dir<C>();
         Bitboard pawns_one_fw = shift<push_dir>(board.GetPieces(PAWN, C)) & board.GetEmptySquares();
-        Bitboard pawns_two_fw = shift<push_dir>(pawns_one_fw) & board.GetEmptySquares() & two_fwd_rank<C>() & legality_mask;
+        Bitboard pawns_two_fw =
+                shift<push_dir>(pawns_one_fw) & board.GetEmptySquares() & two_fwd_rank<C>() & legality_mask;
         Bitboard pawn_prom = pawns_one_fw & legality_mask & promotion_rank<C>();
         pawns_one_fw &= legality_mask & ~promotion_rank<C>();
-
-        while (pawns_one_fw) {
-            Square dest_s = PopLsb(pawns_one_fw);
-            d.emplace_back(NewMove(dest_s - push_dir, dest_s));
-        }
 
         while (pawn_prom) {
             Square dest_s = PopLsb(pawn_prom);
@@ -119,10 +117,15 @@ namespace Meetra {
             Square dest_s = PopLsb(pawns_two_fw);
             d.emplace_back(NewMove(dest_s - push_dir - push_dir, dest_s, TWO_FORWARD));
         }
+
+        while (pawns_one_fw) {
+            Square dest_s = PopLsb(pawns_one_fw);
+            d.emplace_back(NewMove(dest_s - push_dir, dest_s));
+        }
     }
 
     template<Color C>
-    inline void GenPawnCaptures(const Board &board, std::deque<Move> &d, Bitboard legality_mask) {
+    void GenPawnCaptures(const Board &board, std::deque<Move> &d, Bitboard legality_mask) {
 
         Bitboard pawns = board.GetPieces(PAWN, C);
         Bitboard enemy_pieces = board.GetPieces(OtherColor(C));
@@ -138,16 +141,6 @@ namespace Meetra {
 
         left_captures &= ~promotion_rank<C>();
         right_captures &= ~promotion_rank<C>();
-
-        while (left_captures) {
-            Square dest_s = PopLsb(left_captures);
-            d.emplace_back(NewMove(dest_s - left_dir, dest_s));
-        }
-
-        while (right_captures) {
-            Square dest_s = PopLsb(right_captures);
-            d.emplace_back(NewMove(dest_s - right_dir, dest_s));
-        }
 
         while (left_prom) {
             Square dest_s = PopLsb(left_prom);
@@ -167,6 +160,16 @@ namespace Meetra {
             d.emplace_back(NewMove(origin_s, dest_s, PROMOTE_KNIGHT));
         }
 
+        while (left_captures) {
+            Square dest_s = PopLsb(left_captures);
+            d.emplace_back(NewMove(dest_s - left_dir, dest_s));
+        }
+
+        while (right_captures) {
+            Square dest_s = PopLsb(right_captures);
+            d.emplace_back(NewMove(dest_s - right_dir, dest_s));
+        }
+
         if (board.EpSquare()) {
             Square ep_s = board.EpSquare();
             Bitboard attackers =
@@ -181,15 +184,15 @@ namespace Meetra {
 
 // Ignoring pins, and king moving to attacked squares, and other quirky stuff like EP
     template<GenPhase phase, Color C>
-    inline void GenMoves(const Board &board, std::deque<Move> &d) {
+    void GenMoves(const Board &board, std::deque<Move> &d) {
 
         Bitboard legal_moves = 0xFFFFFFFFFFFFFFFFUL;
         Bitboard occ = board.GetPieces(ALL_TYPES);
 
         if (phase == EVASION) {
             if (PopCount(board.GetCheckers()) > 1) {
-                GenMovesForPieceType<KING, C>(board, occ, d,
-                                              board.GetPieces(OtherColor(C)) | board.GetEmptySquares());
+                GenMovesForPieceType<KING, C>(board, occ, d, board.GetPieces(OtherColor(C))
+                | board.GetEmptySquares());
             }
             return;
         }
@@ -205,7 +208,8 @@ namespace Meetra {
             legal_moves = capture_mask | block_mask;
         }
 
-        Bitboard phase_mask = phase == CAPTURE ? board.GetPieces(OtherColor(C)) : board.GetEmptySquares();
+        Bitboard phase_mask =
+                phase == CAPTURE ? board.GetPieces(OtherColor(C)) : board.GetEmptySquares();
 
         GenMovesForPieceType<KNIGHT, C>(board, occ, d, legal_moves & phase_mask);
         GenMovesForPieceType<BISHOP, C>(board, occ, d, legal_moves & phase_mask);
@@ -213,12 +217,11 @@ namespace Meetra {
         GenMovesForPieceType<QUEEN, C>(board, occ, d, legal_moves & phase_mask);
         GenMovesForPieceType<KING, C>(board, occ, d, phase_mask);
         if (phase == QUIET) {
-            GenCastlingMoves(board, d, C);
+            GenCastlingMoves<C>(board, d);
             GenPawnForwardMoves<C>(board, d, legal_moves);
         } else {
             GenPawnCaptures<C>(board, d, legal_moves);
         }
-
     }
 
     template void GenMoves<EVASION, WHITE>(const Meetra::Board &board, std::deque<Move> &d);

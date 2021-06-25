@@ -54,7 +54,7 @@ namespace Meetra {
 
 #pragma region ===== Hyperbola Quintessence, Reverse Bitboards (for magics initialization) =====
 
-    constexpr Bitboard ReverseBits(Bitboard b) {
+    inline Bitboard ReverseBits(Bitboard b) {
         b = ((b >> 1) & 0x5555555555555555UL) | ((b & 0x5555555555555555UL) << 1);
         b = ((b >> 2) & 0x3333333333333333UL) | ((b & 0x3333333333333333UL) << 2);
         b = ((b >> 4) & 0x0F0F0F0F0F0F0F0FUL) | ((b & 0x0F0F0F0F0F0F0F0FUL) << 4);

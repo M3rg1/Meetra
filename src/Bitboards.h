@@ -40,9 +40,9 @@ namespace Meetra {
         return m.attacks[((occ & m.inner_board_mask) * m.magic_num) >> m.shift];
     }
 
-    constexpr Bitboard SquareToBB(Square s) { return static_cast<Bitboard>(0x1) << s; }
-    constexpr void SetBBSquareOne(Bitboard &b, Square s) { b |= SquareToBB(s); }
-    constexpr void SetBBSquareZero(Bitboard &b, Square s) { b &= ~SquareToBB(s); }
+    inline Bitboard SquareToBB(Square s) { return static_cast<Bitboard>(0x1) << s; }
+    inline void SetBBSquareOne(Bitboard &b, Square s) { b |= SquareToBB(s); }
+    inline void SetBBSquareZero(Bitboard &b, Square s) { b &= ~SquareToBB(s); }
 
     //https://www.youtube.com/watch?v=JJ_OJFM-z5E
     // 4:25
@@ -68,16 +68,16 @@ namespace Meetra {
     }*/
 
     template<PieceType pt>
-    constexpr Bitboard GetAttacksForPiece(Square s, Bitboard occ = EMPTY_BB, Color c = WHITE) {
-        if constexpr (pt == PAWN) {
+    inline Bitboard GetAttacksForPiece(Square s, Bitboard occ = EMPTY_BB, Color c = WHITE) {
+        if (pt == PAWN) {
             return pawn_attacks[c][s];
-        } else if constexpr(pt == KNIGHT) {
+        } else if(pt == KNIGHT) {
             return knight_moves[s];
-        } else if constexpr(pt == BISHOP) {
+        } else if(pt == BISHOP) {
             return GetBishopAttacks(s, occ);
-        } else if constexpr(pt == ROOK) {
+        } else if(pt == ROOK) {
             return GetRookAttacks(s, occ);
-        } else if constexpr(pt == QUEEN) {
+        } else if(pt == QUEEN) {
             return GetBishopAttacks(s, occ) | GetRookAttacks(s, occ);
         } else {
             return king_moves[s];
@@ -109,11 +109,11 @@ namespace Meetra {
 
     std::string PPBitboard(Bitboard b);
 
-    constexpr int PopCount(Bitboard b) { return std::__popcount(b); }
+    inline int PopCount(Bitboard b) { return std::__popcount(b); }
     //linux builtins
-    constexpr Square Lsb(Bitboard b) { return Square(__builtin_ctzll(b)); }
+    inline Square Lsb(Bitboard b) { return Square(__builtin_ctzll(b)); }
 
-    constexpr Square PopLsb(Bitboard &b) {
+    inline Square PopLsb(Bitboard &b) {
         const Square s = Lsb(b);
         b &= b - 1;
         return s;

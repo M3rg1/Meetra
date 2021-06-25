@@ -23,7 +23,7 @@ namespace Meetra {
         COLOR_NR
     };
 
-    constexpr Color OtherColor(Color c) {
+    inline Color OtherColor(Color c) {
         return Color(c ^ BLACK);
     }
 
@@ -39,8 +39,9 @@ namespace Meetra {
         PIECE_NR = 15
     };
 
-    constexpr Color ColorOfPiece(Piece p) { return Color(p >> 3); }
-    constexpr PieceType TypeOfPiece(Piece p) { return PieceType(p & 7); }
+    inline Color ColorOfPiece(Piece p) { return Color(p >> 3); }
+    inline PieceType TypeOfPiece(Piece p) { return PieceType(p & 7); }
+    inline Piece NewPiece(PieceType pt, Color c) { return Piece((c << 3) + pt); }
 
     enum Rank : int8_t {
         RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8,
@@ -86,10 +87,11 @@ namespace Meetra {
         SQUARE_ZERO = 0,
     };
 
-    constexpr Square SquareFromFiRa(File f, Rank r) { return static_cast<Square>((r << 3) + f); }
-    constexpr File FileFromSquare(Square s) { return static_cast<File>(s & 7); }
-    constexpr Rank RankFromSquare(Square s) { return static_cast<Rank>(s >> 3); }
+    inline Square SquareFromFiRa(File f, Rank r) { return static_cast<Square>((r << 3) + f); }
+    inline File FileFromSquare(Square s) { return static_cast<File>(s & 7); }
+    inline Rank RankFromSquare(Square s) { return static_cast<Rank>(s >> 3); }
 
+#pragma region ===== Castling related stuff =====
     enum CastlingRights : uint16_t {
         NO_CASTLING = 0, WHITE_SHORT = 1 << 6, WHITE_LONG = 1 << 7, BLACK_SHORT = 1 << 8, BLACK_LONG = 1 << 9,
         WHITE_ALL_CR = WHITE_SHORT | WHITE_LONG,
@@ -108,6 +110,24 @@ namespace Meetra {
             BLACK_LONG, NO_CASTLING, NO_CASTLING, NO_CASTLING, BLACK_ALL_CR, NO_CASTLING, NO_CASTLING, BLACK_SHORT
     };
 
+    constexpr Square RookFromCastling(Square king_to) {
+        return king_to == G1 ? H1 : king_to == G8 ? H8 : king_to == C1 ? A1 : king_to == C8 ? A8 : SQUARE_ZERO;
+    }
+
+    constexpr Square RookToCastling(Square king_to) {
+        return king_to == G1 ? F1 : king_to == G8 ? F8 : king_to == C1 ? D1 : king_to == C8 ? D8 : SQUARE_ZERO;
+    }
+
+    constexpr Bitboard CastlingSafeSquares[2][2]{
+            {/* white_short,  white_long */ },
+            {/* black_short,  black_long */ }
+    };
+
+    constexpr Bitboard CastlingEmptySquares[2][2]{
+            {/* white_short,  white_long */ },
+            {/* black_short,  black_long */ }
+    };
+#pragma endregion
 
 #pragma region ===== Move =====
     /**
@@ -126,18 +146,18 @@ namespace Meetra {
     };
 
 #pragma region ===== Initialization =====
-    constexpr Move NewMove(Square from, Square to) { return static_cast<Move>(from | to << 6); }
-    constexpr Move NewMove(Square from, Square to, MoveType flag) {
+    inline Move NewMove(Square from, Square to) { return static_cast<Move>(from | to << 6); }
+    inline Move NewMove(Square from, Square to, MoveType flag) {
         return static_cast<Move>(NewMove(from, to) | flag);
     }
 #pragma endregion
 
 #pragma region ===== Utils =====
-    constexpr Square FromSquare(Move m) { return static_cast<Square>(m & 0x3F); }
-    constexpr Square ToSquare(Move m) { return static_cast<Square>((m & 0xFC0) >> 6); }
-    constexpr bool IsPromotion(Move m) { return m >> 15 != 0; }
-    constexpr MoveType GetFlag(Move m) { return static_cast<MoveType>(m & 0xF000); }
-    constexpr bool IsValid(Move m) { return m != INVALID_MOVE; }
+    inline Square FromSquare(Move m) { return static_cast<Square>(m & 0x3F); }
+    inline Square ToSquare(Move m) { return static_cast<Square>((m & 0xFC0) >> 6); }
+    inline bool IsPromotion(Move m) { return m >> 15 != 0; }
+    inline MoveType GetFlag(Move m) { return static_cast<MoveType>(m & 0xF000); }
+    inline bool IsValid(Move m) { return m != INVALID_MOVE; }
     inline std::string GetMoveName(Move m) {
         std::string ret;
         ret.push_back(FileNames[FileFromSquare(FromSquare(m))]);
@@ -154,9 +174,9 @@ namespace Meetra {
 #pragma region ===== Operator overloading settings =====
 
 #define ENABLE_BASE_OPERATORS_ON(T)                                \
-constexpr T operator+(T d1, int d2) { return T(int(d1) + d2); }    \
-constexpr T operator-(T d1, int d2) { return T(int(d1) - d2); }    \
-constexpr T operator-(T d) { return T(-int(d)); }                  \
+inline T operator+(T d1, int d2) { return T(int(d1) + d2); }    \
+inline T operator-(T d1, int d2) { return T(int(d1) - d2); }    \
+inline T operator-(T d) { return T(-int(d)); }                  \
 inline T& operator+=(T& d1, int d2) { return d1 = d1 + d2; }       \
 inline T& operator-=(T& d1, int d2) { return d1 = d1 - d2; }
 
@@ -166,10 +186,10 @@ inline T& operator--(T& d) { return d = T(int(d) - 1); }           \
 
 #define ENABLE_FULL_OPERATORS_ON(T)                                \
 ENABLE_BASE_OPERATORS_ON(T)                                        \
-constexpr T operator*(int i, T d) { return T(i * int(d)); }        \
-constexpr T operator*(T d, int i) { return T(int(d) * i); }        \
-constexpr T operator/(T d, int i) { return T(int(d) / i); }        \
-constexpr int operator/(T d1, T d2) { return int(d1) / int(d2); }  \
+inline T operator*(int i, T d) { return T(i * int(d)); }        \
+inline T operator*(T d, int i) { return T(int(d) * i); }        \
+inline T operator/(T d, int i) { return T(int(d) / i); }        \
+inline int operator/(T d1, T d2) { return int(d1) / int(d2); }  \
 inline T& operator*=(T& d, int i) { return d = T(int(d) * i); }    \
 inline T& operator/=(T& d, int i) { return d = T(int(d) / i); }
 
@@ -189,8 +209,8 @@ inline T& operator/=(T& d, int i) { return d = T(int(d) / i); }
     ENABLE_FULL_OPERATORS_ON(Direction)
 
     /// Additional operators to add a Direction to a Square
-    constexpr Square operator+(Square s, Direction d) { return Square(int(s) + int(d)); }
-    constexpr Square operator-(Square s, Direction d) { return Square(int(s) - int(d)); }
+    inline Square operator+(Square s, Direction d) { return Square(int(s) + int(d)); }
+    inline Square operator-(Square s, Direction d) { return Square(int(s) - int(d)); }
     inline Square &operator+=(Square &s, Direction d) { return s = s + d; }
     inline Square &operator-=(Square &s, Direction d) { return s = s - d; }
 

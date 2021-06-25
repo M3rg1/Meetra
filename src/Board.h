@@ -4,6 +4,7 @@
 
 #include <string>
 #include "Types.h"
+#include "Bitboards.h"
 #include <deque>
 #include <chrono>
 
@@ -37,7 +38,7 @@ namespace Meetra {
         [[nodiscard]] inline Color ColorToMove() const { return static_cast<Color>(game_state >> 10 & 0x1); }
         [[nodiscard]] inline Piece CapturedPiece() const { return static_cast<Piece>(game_state >> 11 & 0xF); }
         [[nodiscard]] inline int Ply() const { return static_cast<int>(game_state >> 15 & 0x3F); }
-        [[nodiscard]] inline int TotalMoves() const { return static_cast<int>(game_state >> 21); }
+        [[nodiscard]] inline int TotalMoves() const { return static_cast<int>(game_state >> 22); }
 #pragma endregion
 
 #pragma region ===== Misc =====
@@ -54,7 +55,7 @@ namespace Meetra {
         // bit  10 = player to move
         // bits 11-14 = captured piece (from last game state to this game state)
         // bits 15-21 = ply since last capture/pawn moves - 50 move rule
-        // bits 21+ - total moves made
+        // bits 22+ - total moves made
         typedef uint32_t GameState;
 #define NEW_GAME_STATE 0
 #pragma endregion
@@ -66,22 +67,45 @@ namespace Meetra {
         inline void SetColorToMove(Color c) { game_state |= static_cast<GameState>(c << 10); }
         inline void SetCapturedPiece(Piece p) { game_state |= static_cast<GameState>(p << 11); }
         inline void SetPly(int ply) { game_state |= static_cast<GameState>(ply << 15); }
-        inline void SetMoveNumber(int move_num) { game_state |= static_cast<GameState>(move_num << 21); }
+        inline void SetMoveNumber(int move_num) { game_state |= static_cast<GameState>(move_num << 22); }
 
         // modify current game state
         inline void ResetPly() { game_state &= static_cast<GameState>(~0x3F8000); }
         inline void RemoveCastlingRights(CastlingRights cr) { game_state &= static_cast<GameState>(~cr); }
-        inline void IncrementMoveNumber() { game_state += 1 << 21; }
+        inline void IncrementMoveNumber(uint32_t increment) { game_state += increment << 22; }
         inline void IncrementPly() { game_state += 1 << 15; }
         inline void ClearCapturedPiece() { game_state &= static_cast<GameState>(~0x7800); }
-        inline void ChangeColorToMove() { ColorToMove() == WHITE ? game_state += 1 << 10 : game_state -= 1 << 10; }
+        inline void ChangeColorToMove() { game_state ^= 1 << 10; }
         inline void ClearEpSquare() { game_state &= static_cast<GameState>(~0x3F); }
 #pragma endregion
 
 #pragma region ===== Update inner structures =====
-        inline void MovePiece(Square from, Square to);
-        inline void RemovePiece(Square s);
-        inline void PutPiece(Square s, Piece p);
+        inline void RemovePiece(Square s) {
+            Piece p = board[s];
+            board[s] = NO_PIECE;
+            Bitboard pos = SquareToBB(s);
+            color_bbs[ColorOfPiece(p)] ^= pos;
+            type_bbs[TypeOfPiece(p)] ^= pos;
+            type_bbs[ALL_TYPES] ^= pos;
+        }
+
+        inline void PutPiece(Square s, Piece p) {
+            board[s] = p;
+            Bitboard pos = SquareToBB(s);
+            color_bbs[ColorOfPiece(p)] |= pos;
+            type_bbs[TypeOfPiece(p)] |= pos;
+            type_bbs[ALL_TYPES] |= pos;
+        }
+
+        inline void MovePiece(Square from, Square to) {
+            Piece p = board[from];
+            board[to] = p;
+            board[from] = NO_PIECE;
+            Bitboard from_to = SquareToBB(from) | SquareToBB(to);
+            color_bbs[ColorOfPiece(p)] ^= from_to;
+            type_bbs[TypeOfPiece(p)] ^= from_to;
+            type_bbs[ALL_TYPES] ^= from_to;
+        }
 #pragma endregion
 
 #pragma region ===== Data =====
