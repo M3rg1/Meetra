@@ -28,6 +28,7 @@ namespace Meetra {
 #pragma endregion
 
 #pragma region ===== Game State info getters =====
+        [[nodiscard]] inline CastlingRights GetCR() const { return static_cast<CastlingRights>(game_state & ALL_CR); }
         [[nodiscard]] inline bool CanWhiteShortCR() const { return (game_state & WHITE_SHORT) != 0; }
         [[nodiscard]] inline bool CanWhiteLongCR() const { return (game_state & WHITE_LONG) != 0; }
         [[nodiscard]] inline bool CanBlackShortCR() const { return (game_state & BLACK_SHORT) != 0; }
@@ -54,16 +55,8 @@ namespace Meetra {
         // bits 11-14 = captured piece (from last game state to this game state)
         // bits 15-21 = ply since last capture/pawn moves - 50 move rule
         // bits 21+ - total moves made
-        typedef uint_fast32_t GameState;
+        typedef uint32_t GameState;
 #define NEW_GAME_STATE 0
-
-        enum CastlingRights : int {
-            NO_CASTLING = 0, WHITE_SHORT = 1 << 6, WHITE_LONG = 1 << 7, BLACK_SHORT = 1 << 8, BLACK_LONG = 1 << 9,
-            WHITE_ALL_CR = WHITE_SHORT | WHITE_LONG,
-            BLACK_ALL_CR = BLACK_LONG | BLACK_SHORT,
-            ALL_CR = WHITE_SHORT | WHITE_LONG | BLACK_SHORT | BLACK_LONG,
-            CASTLING_RIGHTS_NR
-        };
 #pragma endregion
 
 #pragma region ===== Game State modifications =====

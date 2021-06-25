@@ -4,14 +4,19 @@
 
 namespace Meetra {
 
+    // TODO template color + type of move list
+    // and then all the mnethods called by this mvoe list can be color templated as well
     MoveList::MoveList(const Board &board, MoveListType t) : board(board) {
         genPhase = BEST_MOVE;
-        color = board.ColorToMove();
     }
 
     Move MoveList::GetNextMove() {
         while (moves.empty()) {
-            GenNewMoves();
+            if (board.ColorToMove() == WHITE) {
+                GenNewMoves<WHITE>();
+            } else {
+                GenNewMoves<BLACK>();
+            }
         }
 
         // https://www.chessprogramming.org/Move_Ordering -- "Typical move ordering"
@@ -25,6 +30,7 @@ namespace Meetra {
     // TODO the whole class will be template, for either normal move list or quietsearch move list
     // TODO this function will be templated so that the switch is only
 
+    template<Color C>
     inline void MoveList::GenNewMoves() {
         switch (genPhase) {
             case BEST_MOVE:
@@ -32,16 +38,16 @@ namespace Meetra {
                 // also null move? PV? etc.
                 break;
             case EVASION:
-                GenMoves<EVASION>(board, moves, color);
+                GenMoves<EVASION, C>(board, moves);
                 break;
             case CAPTURE:
-                GenMoves<CAPTURE>(board, moves, color);
+                GenMoves<CAPTURE, C>(board, moves);
                 break;
             case QUIET:
-                GenMoves<QUIET>(board, moves, color);
+                GenMoves<QUIET, C>(board, moves);
                 break;
             default:
-                moves.push_back(INVALID_MOVE);
+                moves.emplace_back(INVALID_MOVE);
                 break;
         }
         ++genPhase;

@@ -30,7 +30,7 @@ int main(int argc, char *arv[]) {
     std::cout << " Made by " << GetAuthor() << std::endl << std::endl;
     std::cout << board.PPBoard() << std::endl;
 
-    INIT_TIMER
+/*    INIT_TIMER
     START_TIMER
     for (int i = 0; i < 10000000; i++) {
         MoveList ml(board);
@@ -49,7 +49,7 @@ int main(int argc, char *arv[]) {
         board.UnmakeMove(m);
     }
     STOP_TIMER
-    DEBUG_LOG(TIMER_GET_TIME_MS);
+    DEBUG_LOG(TIMER_GET_TIME_MS);*/
 
     RunPerft(5, board);
 

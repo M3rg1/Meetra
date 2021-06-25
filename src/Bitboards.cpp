@@ -64,38 +64,38 @@ namespace Meetra {
         return b;
     }
 
-    Bitboard GetDiagMoves(Square s, Bitboard occ) {
+    inline Bitboard GetDiagMoves(Square s, Bitboard occ) {
         ulong bitboard = SquareToBB(s);
         Bitboard move_mask = rays[s][NORTH_EAST_IDX] | rays[s][SOUTH_WEST_IDX];
         return (((occ & move_mask) - (bitboard << 1)) ^ ReverseBits(ReverseBits(occ & move_mask)
                                                                     - (ReverseBits(bitboard) << 1))) & move_mask;
     }
 
-    Bitboard GetAntiDiagMoves(Square s, Bitboard occ) {
+    inline Bitboard GetAntiDiagMoves(Square s, Bitboard occ) {
         Bitboard b = SquareToBB(s);
         Bitboard move_mask = rays[s][NORTH_WEST_IDX] | rays[s][SOUTH_EAST_IDX];
         return (((occ & move_mask) - (b << 1)) ^
                 ReverseBits(ReverseBits(occ & move_mask) - (ReverseBits(b) << 1))) & move_mask;
     }
 
-    Bitboard GetHorizontalMoves(Square s, Bitboard occ) {
+    inline Bitboard GetHorizontalMoves(Square s, Bitboard occ) {
         Bitboard b = SquareToBB(s);
         Rank r = RankFromSquare(s);
         return ((occ - (b << 1)) ^ ReverseBits(ReverseBits(occ) - (ReverseBits(b) << 1))) & rank_masks[r];
     }
 
-    Bitboard GetVerticalMoves(Square s, Bitboard occ) {
+    inline Bitboard GetVerticalMoves(Square s, Bitboard occ) {
         Bitboard b = SquareToBB(s);
         File f = FileFromSquare(s);
         return (((occ & file_masks[f]) - (b << 1)) ^
                 ReverseBits(ReverseBits(occ & file_masks[f]) - (ReverseBits(b) << 1))) & file_masks[f];
     }
 
-    Bitboard GetDiagAndAntiDiagMoves(Square s, Bitboard occ) {
+    inline Bitboard GetDiagAndAntiDiagMoves(Square s, Bitboard occ) {
         return GetAntiDiagMoves(s, occ) | GetDiagMoves(s, occ);
     }
 
-    Bitboard GetHorAndVertMoves(Square s, Bitboard occ) {
+    inline Bitboard GetHorAndVertMoves(Square s, Bitboard occ) {
         return GetVerticalMoves(s, occ) | GetHorizontalMoves(s, occ);
     }
 #pragma endregion
@@ -135,13 +135,13 @@ namespace Meetra {
 
     void InitMagic() {
         for (Square s = A1; s <= H8; ++s) {
-            rook_magics[s].shift = static_cast<uint16_t>(64 - rook_magic_shift[s]);
+            rook_magics[s].shift = static_cast<uint8_t>(64 - rook_magic_shift[s]);
             rook_magics[s].inner_board_mask = inner_rays[s][NORTH_IDX] | inner_rays[s][EAST_IDX]
                                               | inner_rays[s][SOUTH_IDX] | inner_rays[s][WEST_IDX];
             rook_magics[s].magic_num = rook_magic_num[s];
             rook_magics[s].attacks = s == A1 ? rook_table : rook_magics[s - 1].attacks + (1 << rook_magic_shift[s - 1]);
 
-            bishop_magics[s].shift = static_cast<uint16_t>(64 - bishop_magic_shift[s]);
+            bishop_magics[s].shift = static_cast<uint8_t>(64 - bishop_magic_shift[s]);
             bishop_magics[s].inner_board_mask = inner_rays[s][NORTH_WEST_IDX] | inner_rays[s][NORTH_EAST_IDX]
                                                 | inner_rays[s][SOUTH_EAST_IDX] | inner_rays[s][SOUTH_WEST_IDX];
             bishop_magics[s].magic_num = bishop_magic_num[s];

@@ -14,7 +14,7 @@ namespace Meetra {
         Bitboard *attacks; // pointer into the rook/bishop table, where all the attacks are stored
         Bitboard inner_board_mask;
         uint64_t magic_num;
-        uint16_t shift;
+        uint8_t shift;
     };
 
     extern Bitboard rank_masks[RANK_NR];
@@ -48,7 +48,7 @@ namespace Meetra {
     // 4:25
     // testing if a square is under attack TODO
 
-    template<PieceType pt>
+/*    template<PieceType pt>
     inline Bitboard GetAttacksForPiece(Square s, Bitboard occ = EMPTY_BB, Color c = WHITE) {
         //occ &= ~SquareToBB(s);
         switch (pt) {
@@ -64,6 +64,23 @@ namespace Meetra {
                 return knight_moves[s];
             case KING :
                 return king_moves[s];
+        }
+    }*/
+
+    template<PieceType pt>
+    constexpr Bitboard GetAttacksForPiece(Square s, Bitboard occ = EMPTY_BB, Color c = WHITE) {
+        if constexpr (pt == PAWN) {
+            return pawn_attacks[c][s];
+        } else if constexpr(pt == KNIGHT) {
+            return knight_moves[s];
+        } else if constexpr(pt == BISHOP) {
+            return GetBishopAttacks(s, occ);
+        } else if constexpr(pt == ROOK) {
+            return GetRookAttacks(s, occ);
+        } else if constexpr(pt == QUEEN) {
+            return GetBishopAttacks(s, occ) | GetRookAttacks(s, occ);
+        } else {
+            return king_moves[s];
         }
     }
 
@@ -95,7 +112,6 @@ namespace Meetra {
     constexpr int PopCount(Bitboard b) { return std::__popcount(b); }
     //linux builtins
     constexpr Square Lsb(Bitboard b) { return Square(__builtin_ctzll(b)); }
-    constexpr Square Msb(Bitboard b) { return Square(63 ^ __builtin_clzll(b)); }
 
     constexpr Square PopLsb(Bitboard &b) {
         const Square s = Lsb(b);

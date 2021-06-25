@@ -6,19 +6,19 @@
 
 namespace Meetra {
 
-    enum GenPhase : int {
+    enum GenPhase : uint8_t {
         BEST_MOVE, EVASION, CAPTURE, QUIET, END,
         GEN_PHASE_NR
     };
 
-    enum MoveListType : int {
+    enum MoveListType : uint8_t {
         NORMAL, QUIESCENCE
     };
 
     typedef uint64_t Bitboard;
 #define EMPTY_BB 0UL
 
-    enum Color : int {
+    enum Color : uint8_t {
         WHITE, BLACK,
         COLOR_NR
     };
@@ -27,12 +27,12 @@ namespace Meetra {
         return Color(c ^ BLACK);
     }
 
-    enum PieceType : int {
+    enum PieceType : uint8_t {
         NONE_PIECE_TYPE, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING, ALL_TYPES,
         PIECE_TYPE_NR
     };
 
-    enum Piece : int {
+    enum Piece : uint8_t {
         NO_PIECE,
         W_PAWN, W_KNIGHT, W_BISHOP, W_ROOK, W_QUEEN, W_KING,
         B_PAWN = 9, B_KNIGHT = 10, B_BISHOP = 11, B_ROOK = 12, B_QUEEN = 13, B_KING = 14,
@@ -42,22 +42,22 @@ namespace Meetra {
     constexpr Color ColorOfPiece(Piece p) { return Color(p >> 3); }
     constexpr PieceType TypeOfPiece(Piece p) { return PieceType(p & 7); }
 
-    enum Rank : int {
+    enum Rank : int8_t {
         RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8,
         RANK_NR
     };
 
-    enum File : int {
+    enum File : int8_t {
         FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H,
         FILE_NR
     };
 
-    enum Direction : int {
+    enum Direction : int8_t {
         NORTH = 8, NORTH_EAST = 9, EAST = 1, SOUTH_EAST = -7, SOUTH = -8, SOUTH_WEST = -9, WEST = -1, NORTH_WEST = 7,
         DIRECTION_NR = 8
     };
 
-    enum DirectionIndex : int {
+    enum DirectionIndex : uint8_t {
         NORTH_IDX, NORTH_EAST_IDX, EAST_IDX, SOUTH_EAST_IDX, SOUTH_IDX, SOUTH_WEST_IDX, WEST_IDX, NORTH_WEST_IDX,
         DIRECTION_IDX_NR
     };
@@ -73,7 +73,7 @@ namespace Meetra {
             NORTH, NORTH_EAST, EAST, SOUTH_EAST, SOUTH, SOUTH_WEST, WEST, NORTH_WEST
     };
 
-    enum Square : int {
+    enum Square : int8_t {
         A1, B1, C1, D1, E1, F1, G1, H1,
         A2, B2, C2, D2, E2, F2, G2, H2,
         A3, B3, C3, D3, E3, F3, G3, H3,
@@ -90,6 +90,24 @@ namespace Meetra {
     constexpr File FileFromSquare(Square s) { return static_cast<File>(s & 7); }
     constexpr Rank RankFromSquare(Square s) { return static_cast<Rank>(s >> 3); }
 
+    enum CastlingRights : uint16_t {
+        NO_CASTLING = 0, WHITE_SHORT = 1 << 6, WHITE_LONG = 1 << 7, BLACK_SHORT = 1 << 8, BLACK_LONG = 1 << 9,
+        WHITE_ALL_CR = WHITE_SHORT | WHITE_LONG,
+        BLACK_ALL_CR = BLACK_LONG | BLACK_SHORT,
+        ALL_CR = WHITE_SHORT | WHITE_LONG | BLACK_SHORT | BLACK_LONG
+    };
+
+    constexpr CastlingRights castling_mask[SQUARE_NR]{
+            WHITE_LONG, NO_CASTLING, NO_CASTLING, NO_CASTLING, WHITE_ALL_CR, NO_CASTLING, NO_CASTLING, WHITE_SHORT,
+            NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING,
+            NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING,
+            NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING,
+            NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING,
+            NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING,
+            NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING,
+            BLACK_LONG, NO_CASTLING, NO_CASTLING, NO_CASTLING, BLACK_ALL_CR, NO_CASTLING, NO_CASTLING, BLACK_SHORT
+    };
+
 
 #pragma region ===== Move =====
     /**
@@ -101,7 +119,7 @@ namespace Meetra {
      */
     typedef uint16_t Move;
 
-    enum MoveType : int {
+    enum MoveType : uint16_t {
         INVALID_MOVE = 0, NO_FLAG = 0, EN_PASSANT = 1 << 12, CASTLING = 2 << 12, TWO_FORWARD = 3 << 12,
         PROMOTE_KNIGHT = 4 << 13, PROMOTE_BISHOP = 5 << 13, PROMOTE_ROOK = 6 << 13, PROMOTE_QUEEN = 7 << 13,
         MOVE_TYPE_NR = 9
@@ -109,7 +127,9 @@ namespace Meetra {
 
 #pragma region ===== Initialization =====
     constexpr Move NewMove(Square from, Square to) { return static_cast<Move>(from | to << 6); }
-    constexpr Move NewMove(Square from, Square to, MoveType flag) { return static_cast<Move>(NewMove(from, to) | flag); }
+    constexpr Move NewMove(Square from, Square to, MoveType flag) {
+        return static_cast<Move>(NewMove(from, to) | flag);
+    }
 #pragma endregion
 
 #pragma region ===== Utils =====
@@ -177,6 +197,7 @@ inline T& operator/=(T& d, int i) { return d = T(int(d) / i); }
 #undef ENABLE_FULL_OPERATORS_ON
 #undef ENABLE_INCR_OPERATORS_ON
 #undef ENABLE_BASE_OPERATORS_ON
+
 
 #pragma endregion
 

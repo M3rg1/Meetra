@@ -8,10 +8,10 @@
 
 namespace Meetra {
 
-
     // TODO move the initialization from fen to SetPosition function, and make it more efficient (directly read into the
     // bitboards, arrays, game state and such so we dont have to copy everything, this takes forever
     // make LoadFen function that takes in game state and other arrays as arguments and fills them
+
     Board::Board(std::string fen) {
         gs_history = std::deque<BoardData>(100);
         game_state = NEW_GAME_STATE;
@@ -42,7 +42,8 @@ namespace Meetra {
 
 
     bool Board::MakeMove(Move m) {
-        gs_history.push_back(BoardData{game_state, checkers});
+
+        gs_history.emplace_back(BoardData{game_state, checkers});
 
         ChangeColorToMove();
         ClearCapturedPiece();
@@ -52,45 +53,18 @@ namespace Meetra {
 
         Square from = FromSquare(m);
         Square to = ToSquare(m);
+        MoveType move_type = GetFlag(m);
 
         Square capture_square = to;
         Piece captured_piece = board[to];
         Piece moved_piece = board[from];
 
+        RemoveCastlingRights(static_cast<CastlingRights>(castling_mask[from] | castling_mask[to]));
 
-        if (white_moved) {
-            if (capture_square == A8) {
-                RemoveCastlingRights(BLACK_LONG);
-            } else if (capture_square == H8) {
-                RemoveCastlingRights(BLACK_SHORT);
-            } else if (moved_piece == W_ROOK) {
-                if (from == A1) {
-                    RemoveCastlingRights(WHITE_LONG);
-                } else if (from == H1) {
-                    RemoveCastlingRights(WHITE_SHORT);
-                }
-            } else if (moved_piece == W_KING) {
-                RemoveCastlingRights(WHITE_ALL_CR);
-            }
-        } else {
+        if (!white_moved) {
             IncrementMoveNumber();
-
-            if (capture_square == A1) {
-                RemoveCastlingRights(WHITE_LONG);
-            } else if (capture_square == H1) {
-                RemoveCastlingRights(WHITE_SHORT);
-            } else if (moved_piece == B_ROOK) {
-                if (from == A8) {
-                    RemoveCastlingRights(BLACK_LONG);
-                } else if (from == H8) {
-                    RemoveCastlingRights(BLACK_SHORT);
-                }
-            } else if (moved_piece == B_KING) {
-                RemoveCastlingRights(BLACK_ALL_CR);
-            }
         }
 
-        MoveType move_type = GetFlag(m);
         if (move_type == EN_PASSANT) {
             capture_square += white_moved ? -8 : 8;
             captured_piece = white_moved ? B_PAWN : W_PAWN;

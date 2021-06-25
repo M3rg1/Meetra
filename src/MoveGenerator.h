@@ -9,8 +9,8 @@
 
 namespace Meetra {
 
-    template<GenPhase phase>
-    void GenMoves(const Board &board, std::deque<Move> &d, Color to_move);
+    template<GenPhase phase, Color c>
+    void GenMoves(const Board &board, std::deque<Move> &d);
 
 }
 
