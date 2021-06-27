@@ -62,6 +62,16 @@ namespace Meetra {
                GetAttacksForPiece<KING>(s) & GetPieces(KING, attacked_by);
     }
 
+    Bitboard Board::SquareAttackers(Square s, Color attacked_by, Bitboard occ) const {
+        return (GetAttacksForPiece<PAWN>(s, occ, OtherColor(attacked_by)) & GetPieces(PAWN, attacked_by)) |
+               (GetAttacksForPiece<KNIGHT>(s) & GetPieces(KNIGHT, attacked_by)) |
+               (GetAttacksForPiece<BISHOP>(s, occ) &
+                (GetPieces(BISHOP, attacked_by) | GetPieces(QUEEN, attacked_by))) |
+               (GetAttacksForPiece<ROOK>(s, occ) &
+                (GetPieces(ROOK, attacked_by) | GetPieces(QUEEN, attacked_by))) |
+               (GetAttacksForPiece<KING>(s) & GetPieces(KING, attacked_by));
+    }
+
     bool Board::MakeMove(Move m) {
 
         history[history_cnt++] = game_state;

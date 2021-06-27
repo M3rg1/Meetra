@@ -1,7 +1,6 @@
 #ifndef MEETRA_TYPES_H
 #define MEETRA_TYPES_H
 
-#include <cinttypes>
 #include <string>
 
 namespace Meetra {
@@ -116,16 +115,6 @@ namespace Meetra {
     constexpr Square RookToCastling(Square king_to) {
         return king_to == G1 ? F1 : king_to == G8 ? F8 : king_to == C1 ? D1 : king_to == C8 ? D8 : SQUARE_ZERO;
     }
-
-    constexpr Bitboard CastlingSafeSquares[2][2]{
-            {/* white_short,  white_long */ },
-            {/* black_short,  black_long */ }
-    };
-
-    constexpr Bitboard CastlingEmptySquares[2][2]{
-            {/* white_short,  white_long */ },
-            {/* black_short,  black_long */ }
-    };
 #pragma endregion
 
 #pragma region ===== Move =====

@@ -19,6 +19,7 @@ namespace Meetra {
         bool MakeMove(Move m);
         void UnmakeMove(Move m);
         [[nodiscard]] bool IsSquareAttacked(Square s, Color attacked_by, Bitboard occ) const;
+        [[nodiscard]] Bitboard SquareAttackers(Square s, Color attacked_by, Bitboard occ) const;
         [[nodiscard]] Bitboard PinnedPiecesForSquare(Square s, Color blockers_color) const;
 
 #pragma region ===== Piece getters =====
