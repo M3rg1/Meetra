@@ -15,7 +15,7 @@ namespace Meetra {
      */
 
     MoveGen::MoveGen(const Board &board, GenPhase start_phase) : board(board) {
-        genPhase = start_phase;
+
         moves_cnt = 0;
         enemy_pieces = board.GetPieces(OtherColor(board.ColorToMove()));
         all_pieces = board.GetPieces(ALL_TYPES);
@@ -36,6 +36,7 @@ namespace Meetra {
             Bitboard block_mask = rays_between_squares[king_square][attacker_square];
             legal_moves = capture_mask | block_mask;
         }
+        genPhase = start_phase;
     }
 
     Move MoveGen::GetNextMove() {

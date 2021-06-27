@@ -108,11 +108,11 @@ namespace Meetra {
             BLACK_LONG, NO_CASTLING, NO_CASTLING, NO_CASTLING, BLACK_ALL_CR, NO_CASTLING, NO_CASTLING, BLACK_SHORT
     };
 
-    constexpr Square RookFromCastling(Square king_to) {
+    inline Square RookFromCastling(Square king_to) {
         return king_to == G1 ? H1 : king_to == G8 ? H8 : king_to == C1 ? A1 : king_to == C8 ? A8 : SQUARE_ZERO;
     }
 
-    constexpr Square RookToCastling(Square king_to) {
+    inline Square RookToCastling(Square king_to) {
         return king_to == G1 ? F1 : king_to == G8 ? F8 : king_to == C1 ? D1 : king_to == C8 ? D8 : SQUARE_ZERO;
     }
 #pragma endregion

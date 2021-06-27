@@ -14,14 +14,12 @@ namespace Meetra {
 
 
     private:
-
-        // TODO when doing the selection and "removing" moves from the list, just mark that entry as INVALID MOVE
-        // and when going thru it do while(i =0; i < cnt;i++){if(move is valid){}}
-        Move moves[256];
-
-        uint8_t moves_cnt;
-        GenPhase genPhase;
         const Board &board;
+        GenPhase genPhase;
+
+        Move moves[256];
+        uint8_t moves_cnt;
+
         Bitboard checkers;
         Bitboard legal_moves;
         Bitboard phase_mask;
@@ -55,7 +53,7 @@ namespace Meetra {
         void GenPawnForwardMoves();
 
         template<Color C>
-        inline void GenCastlingMoves();
+        void GenCastlingMoves();
 
         template<Color C>
         inline bool IsSafeToCastle(bool castle_short);
