@@ -1,9 +1,89 @@
-#include "MoveGenerator.h"
-#include "Bitboards.h"
-#include "Board.h"
-#include "Types.h"
+#include "MoveGen.h"
+#include <iostream>
+
 
 namespace Meetra {
+
+    /**
+     In Joker (and qperft) I use only a partial legal-move generator. It will not generate moves with pinned pieces that leave
+     you in check, by first determining which pieces are pinned, and then temporarily remove them from the piece list, and generate
+     their moves along the pin line. This saves time in two ways: you don't waste time on generating invalid moves for the pinned pieces
+     , and you don't have to test all other moves for King exposure.
+
+    The King moves (incl. castlings) and e.p. captures that are generated are still pseudo-legal, though. Their legality was most
+     efficiently checked only after the move was made (to prevent the King from stepping 'into its own shadow', and detecting
+     the famous e.p. double-pin).
+     */
+
+    MoveGen::MoveGen(const Board &board, GenPhase start_phase) : board(board) {
+        genPhase = start_phase;
+
+        checkers = SquareAttackers(Lsb(board.GetPieces(KING, board.ColorToMove())),
+                                   OtherColor(board.ColorToMove()), board.GetPieces(ALL_TYPES));
+
+        legal_moves = 0xFFFFFFFFFFFFFFFFUL;
+        if(PopCount(checkers) > 1){
+            genPhase = EVASION;
+        }
+        else if (checkers) {
+            Square king_square = Lsb(board.GetPieces(KING, board.ColorToMove()));
+            Bitboard capture_mask = checkers;
+            Square attacker_square = Lsb(capture_mask);
+            Bitboard block_mask = rays_between_squares[king_square][attacker_square];
+            legal_moves = capture_mask | block_mask;
+        }
+    }
+
+    Move MoveGen::GetNextMove() {
+        while (moves.empty()) {
+            if (board.ColorToMove() == WHITE) {
+                GenNewMoves<WHITE>();
+            } else {
+                GenNewMoves<BLACK>();
+            }
+        }
+
+        // https://www.chessprogramming.org/Move_Ordering -- "Typical move ordering"
+        // selection sort to pick the best move - pass through the whole list once and pick move with highest score
+
+        Move m = moves.front();
+        moves.pop_front();
+        return m;
+    }
+
+    inline Bitboard MoveGen::SquareAttackers(Square s, Color attacked_by, Bitboard occ) const {
+        return (GetAttacksForPiece<PAWN>(s, occ, OtherColor(attacked_by)) & board.GetPieces(PAWN, attacked_by)) |
+               (GetAttacksForPiece<KNIGHT>(s) & board.GetPieces(KNIGHT, attacked_by)) |
+               (GetAttacksForPiece<BISHOP>(s, occ) & (board.GetPieces(BISHOP, attacked_by) | board.GetPieces(QUEEN, attacked_by))) |
+               (GetAttacksForPiece<ROOK>(s, occ) & (board.GetPieces(ROOK, attacked_by) | board.GetPieces(QUEEN, attacked_by))) |
+               (GetAttacksForPiece<KING>(s) & board.GetPieces(KING, attacked_by));
+    }
+
+    template<Color C>
+    inline void MoveGen::GenNewMoves() {
+        switch (genPhase) {
+            case BEST_MOVE:
+                ++genPhase;
+                // return TT / killer move // or make case: Killer Move (also from history heuristic possible)
+                // also null move? PV? etc.
+                break;
+            case CAPTURE:
+                GenMoves<CAPTURE, C>(board, moves, legal_moves);
+                ++genPhase;
+                break;
+            case QUIET:
+                GenMoves<QUIET, C>(board, moves, legal_moves);
+                ++genPhase;
+                break;
+            case END:
+                moves.emplace_back(INVALID_MOVE);
+                break;
+            case EVASION:
+                GenMoves<EVASION, C>(board, moves, legal_moves);
+                genPhase = END;
+                break;
+        }
+    }
 
     template<Color C>
     constexpr Direction pawn_push_dir() {
@@ -89,9 +169,9 @@ namespace Meetra {
     template<Direction D>
     constexpr Bitboard shift(Bitboard b) {
         return D == NORTH ? b << 8 : D == SOUTH ? b >> 8 : D == EAST ? (b & ~0x8080808080808080UL) << 1 :
-        D == WEST ? (b & ~0x0101010101010101UL) >> 1 : D == NORTH_EAST ? (b & ~0x8080808080808080UL) << 9 :
-        D == NORTH_WEST  ? (b & ~0x0101010101010101UL) << 7 : D == SOUTH_EAST ? (b & ~0x8080808080808080UL) >> 7 :
-        D == SOUTH_WEST ? (b & ~0x0101010101010101UL) >> 9: 0;
+                                                           D == WEST ? (b & ~0x0101010101010101UL) >> 1 : D == NORTH_EAST ? (b & ~0x8080808080808080UL) << 9 :
+                                                                                                          D == NORTH_WEST  ? (b & ~0x0101010101010101UL) << 7 : D == SOUTH_EAST ? (b & ~0x8080808080808080UL) >> 7 :
+                                                                                                                                                                D == SOUTH_WEST ? (b & ~0x0101010101010101UL) >> 9: 0;
     }
 
     template<Color C>
@@ -184,7 +264,7 @@ namespace Meetra {
 
 // Ignoring pins, and king moving to attacked squares, and other quirky stuff like EP
     template<GenPhase phase, Color C>
-    void GenMoves(const Board &board, std::deque<Move> &d, Bitboard checkers, Bitboard legal_move_mask) {
+    void GenMoves(const Board &board, std::deque<Move> &d, Bitboard legal_move_mask) {
 
         // rovnou bych tomu mohl rikat legal moves per square a initializovat to na legal_moves ( a az potom spocitat
         // piny a & s nima)
@@ -193,12 +273,10 @@ namespace Meetra {
         Bitboard occ = board.GetPieces(ALL_TYPES);
 
         if (phase == EVASION) {
-                GenMovesForPieceType<KING, C>(board, occ, d, board.GetPieces(OtherColor(C))
-                                                             | board.GetEmptySquares());
-
+            GenMovesForPieceType<KING, C>(board, occ, d, board.GetPieces(OtherColor(C))
+                                                         | board.GetEmptySquares());
             return;
         }
-
 
         Bitboard phase_mask =
                 phase == CAPTURE ? board.GetPieces(OtherColor(C)) : board.GetEmptySquares();
@@ -216,13 +294,11 @@ namespace Meetra {
         }
     }
 
-    template void GenMoves<EVASION, WHITE>(const Meetra::Board &board, std::deque<Move> &d, Bitboard checkers, Bitboard legal_move_mask);
+/*    template void GenMoves<EVASION, WHITE>(const Meetra::Board &board, std::deque<Move> &d, Bitboard checkers, Bitboard legal_move_mask);
     template void GenMoves<CAPTURE, WHITE>(const Board &board, std::deque<Move> &d, Bitboard checkers, Bitboard legal_move_mask);
     template void GenMoves<QUIET, WHITE>(const Board &board, std::deque<Move> &d, Bitboard checkers, Bitboard legal_move_mask);
     template void GenMoves<EVASION, BLACK>(const Board &board, std::deque<Move> &d, Bitboard checkers, Bitboard legal_move_mask);
     template void GenMoves<CAPTURE, BLACK>(const Board &board, std::deque<Move> &d, Bitboard checkers, Bitboard legal_move_mask);
-    template void GenMoves<QUIET, BLACK>(const Board &board, std::deque<Move> &d, Bitboard checkers, Bitboard legal_move_mask);
-
-// gen moves all
+    template void GenMoves<QUIET, BLACK>(const Board &board, std::deque<Move> &d, Bitboard checkers, Bitboard legal_move_mask);*/
 
 }

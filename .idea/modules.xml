@@ -3,7 +3,6 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/Meetra.iml" filepath="$PROJECT_DIR$/.idea/Meetra.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/Popper.iml" filepath="$PROJECT_DIR$/.idea/Popper.iml" />
     </modules>
   </component>
 </project>

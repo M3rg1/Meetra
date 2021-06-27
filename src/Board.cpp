@@ -37,7 +37,7 @@ namespace Meetra {
         }
     }
 
-    Bitboard Board::PinnedPiecesForSquare(Square s, Color blockers_color) const{
+    Bitboard Board::PinnedPiecesForSquare(Square s, Color blockers_color) const {
 
         Bitboard pinned_pieces = EMPTY_BB;
         Color attackers_color = OtherColor(blockers_color);
@@ -47,21 +47,19 @@ namespace Meetra {
         while (attackers) {
             Square attacker_s = PopLsb(attackers);
             Bitboard blockers = rays_between_squares[attacker_s][s] & potential_blockers;
-            if(PopCount(blockers) == 1){
+            if (PopCount(blockers) == 1) {
                 pinned_pieces |= blockers;
             }
         }
         return pinned_pieces;
     }
 
-    bool Board::IsSquareAttacked(Square s, Color attacked_by, Bitboard occ) const{
-        if((GetAttacksForPiece<ROOK>(s, occ) & (GetPieces(ROOK, attacked_by) | GetPieces(QUEEN, attacked_by))) ||
-           (GetAttacksForPiece<BISHOP>(s, occ) & (GetPieces(BISHOP, attacked_by) | GetPieces(QUEEN, attacked_by)))  ||
-           (GetAttacksForPiece<KNIGHT>(s) & GetPieces(KNIGHT, attacked_by)) ||
-           (GetAttacksForPiece<PAWN>(s, occ, OtherColor(attacked_by)) & GetPieces(PAWN, attacked_by)) ||
-           (GetAttacksForPiece<KING>(s) & GetPieces(KING, attacked_by)))
-            return true;
-        return false;
+    bool Board::IsSquareAttacked(Square s, Color attacked_by, Bitboard occ) const {
+        return GetAttacksForPiece<ROOK>(s, occ) & (GetPieces(ROOK, attacked_by) | GetPieces(QUEEN, attacked_by)) ||
+               GetAttacksForPiece<BISHOP>(s, occ) & (GetPieces(BISHOP, attacked_by) | GetPieces(QUEEN, attacked_by)) ||
+               GetAttacksForPiece<KNIGHT>(s) & GetPieces(KNIGHT, attacked_by) ||
+               GetAttacksForPiece<PAWN>(s, occ, OtherColor(attacked_by)) & GetPieces(PAWN, attacked_by) ||
+               GetAttacksForPiece<KING>(s) & GetPieces(KING, attacked_by);
     }
 
     bool Board::MakeMove(Move m) {
@@ -76,8 +74,7 @@ namespace Meetra {
         ClearEpSquare();
         IncrementPly();
 
-        Color black_moving = ColorToMove();
-        IncrementMoveNumber(!black_moving);
+        IncrementMoveNumber(this_move_col);
 
         Square from = FromSquare(m);
         Square to = ToSquare(m);
@@ -90,8 +87,8 @@ namespace Meetra {
         Piece moved_piece = board[from];
 
         if (move_type == EN_PASSANT) {
-            capture_square += black_moving ? SOUTH : NORTH;
-            captured_piece = NewPiece(PAWN, black_moving);
+            capture_square += next_move_col ? SOUTH : NORTH;
+            captured_piece = NewPiece(PAWN, next_move_col);
         }
 
         // TODO test if ply and move counter is incrementing/resetting correctly
@@ -108,29 +105,14 @@ namespace Meetra {
 
         if (move_type != NO_FLAG) {
             if (move_type == TWO_FORWARD) {
-                SetEpSquare(black_moving ? to + SOUTH : to + NORTH);
+                SetEpSquare(next_move_col ? to + SOUTH : to + NORTH);
             } else if (move_type == CASTLING) {
                 Square castling_rook_orig = RookFromCastling(to);
                 Square castling_rook_dest = RookToCastling(to);
                 MovePiece(castling_rook_orig, castling_rook_dest);
             } else if (IsPromotion(m)) {
                 RemovePiece(to);
-                switch (move_type) {
-                    case PROMOTE_QUEEN:
-                        PutPiece(to, NewPiece(QUEEN, OtherColor(ColorToMove())));
-                        break;
-                    case PROMOTE_ROOK:
-                        PutPiece(to, NewPiece(ROOK, OtherColor(ColorToMove())));
-                        break;
-                    case PROMOTE_BISHOP:
-                        PutPiece(to, NewPiece(BISHOP, OtherColor(ColorToMove())));
-                        break;
-                    case PROMOTE_KNIGHT:
-                        PutPiece(to, NewPiece(KNIGHT, OtherColor(ColorToMove())));
-                        break;
-                    default:
-                        break;
-                }
+                PutPiece(to, NewPiece(PieceTypeFromFlag(move_type), this_move_col));
             }
         }
 
@@ -148,14 +130,14 @@ namespace Meetra {
 
         if (IsPromotion(m)) {
             RemovePiece(to);
-            PutPiece(to, black_to_move ? NewPiece(PAWN, WHITE) : NewPiece(PAWN, BLACK));
+            PutPiece(to, NewPiece(PAWN, static_cast<Color>(!black_to_move)));
         }
 
         MovePiece(to, from);
 
         if (move_type == EN_PASSANT) {
             PutPiece(black_to_move ? to + SOUTH : to + NORTH, captured_piece);
-        } else if (captured_piece != NO_PIECE) {
+        } else if (captured_piece) {
             PutPiece(to, captured_piece);
         } else if (move_type == CASTLING) {
             Square castling_rook_orig = RookFromCastling(to);
@@ -205,7 +187,7 @@ namespace Meetra {
             castling_available = true;
         }
         if (!castling_available) { ret.push_back('-'); }
-        ret.append("\nEP square: ");
+        ret.append(" | EP square: ");
         if (EpSquare() != SQUARE_ZERO) { ret.append(std::to_string(EpSquare())); }
         else { ret.push_back('-'); }
         return ret;

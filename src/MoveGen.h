@@ -1,8 +1,7 @@
-#ifndef MEETRA_MOVELIST_H
-#define MEETRA_MOVELIST_H
+#ifndef MEETRA_MOVEGEN_H
+#define MEETRA_MOVEGEN_H
 
 #include "Types.h"
-#include "MoveGenerator.h"
 #include <deque>
 #include "Board.h"
 
@@ -11,10 +10,20 @@ namespace Meetra {
     // TODO priority queue for move list?
 
 
-    class MoveList {
+    // TODO TODO FIXME
+
+    // RENAME THIS MOVE GENERATOR AND MOVE MOVEGENERATOR CODE HERE
+    // DOESNT MAKE SENSE TO HAVE IT ANY OTHER WAY
+    // WE JUST CREATE NEW MOVE GENERATOR FOR EVERY ITERATION
+    // AND KEEP ASKING IT FOR NEXT MOVE
+    // THIS SHIT WITH MOVE LIST IS WEIRD AF
+
+    // TODO TODO TODO FIXME
+
+    class MoveGen {
 
     public:
-        MoveList(const Board &board, MoveListType t = NORMAL);
+        MoveGen(const Board &board, GenPhase start_phase = BEST_MOVE);
         Move GetNextMove();
 
 
@@ -32,4 +41,4 @@ namespace Meetra {
 
 }
 
-#endif //MEETRA_MOVELIST_H
+#endif //MEETRA_MOVEGEN_H

@@ -152,9 +152,10 @@ namespace Meetra {
 #pragma endregion
 
 #pragma region ===== Utils =====
+    inline PieceType PieceTypeFromFlag(MoveType mt) { return static_cast<PieceType >((mt >> 13) - 2); }
     inline Square FromSquare(Move m) { return static_cast<Square>(m & 0x3F); }
     inline Square ToSquare(Move m) { return static_cast<Square>((m & 0xFC0) >> 6); }
-    inline bool IsPromotion(Move m) { return m >> 15 != 0; }
+    inline bool IsPromotion(Move m) { return m >> 15; }
     inline MoveType GetFlag(Move m) { return static_cast<MoveType>(m & 0xF000); }
     inline bool IsValid(Move m) { return m != INVALID_MOVE; }
     inline std::string GetMoveName(Move m) {

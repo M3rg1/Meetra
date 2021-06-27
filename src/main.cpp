@@ -6,7 +6,7 @@
 #include "Misc.h"
 #include "Perft.h"
 #include "Macros.h"
-#include "MoveList.h"
+#include "MoveGen.h"
 
 //  Variables: snake_case
 //  Function names: UpperCamelCase (unless its a accessor/mutator)
@@ -33,7 +33,7 @@ int main(int argc, char *arv[]) {
     std::cout << " Made by " << GetAuthor() << std::endl << std::endl;
     std::cout << board.PPBoard() << std::endl;
 
-/*    MoveList ml(board);
+/*    MoveGen ml(board);
     board.MakeMove(ml.GetNextMove());*/
 
     RunPerft(5, board);
@@ -41,7 +41,7 @@ int main(int argc, char *arv[]) {
 /*    INIT_TIMER
     START_TIMER
     for (int i = 0; i < 10000000; i++) {
-        MoveList ml(board);
+        MoveGen ml(board);
         Move m;
         do {
             m = ml.GetNextMove();
@@ -66,7 +66,7 @@ int main(int argc, char *arv[]) {
     ulong list_timer = 0UL;
     auto total_start = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < 500000; i++) {
-        MoveList ml(board);
+        MoveGen ml(board);
 
         START_TIMER
         Move m = ml.GetNextMove();;
