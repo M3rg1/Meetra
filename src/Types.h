@@ -37,9 +37,9 @@ namespace Meetra {
         PIECE_NR = 15
     };
 
-    inline Color ColorOfPiece(Piece p) { return Color(p >> 3); }
-    inline PieceType TypeOfPiece(Piece p) { return PieceType(p & 7); }
-    inline Piece NewPiece(PieceType pt, Color c) { return Piece((c << 3) + pt); }
+    inline Color ColorOfPiece(Piece p) { return static_cast<Color>(p >> 3); }
+    inline PieceType TypeOfPiece(Piece p) { return static_cast<PieceType>(p & 7); }
+    inline Piece NewPiece(PieceType pt, Color c) { return static_cast<Piece>((c << 3) + pt); }
 
     enum Rank : int8_t {
         RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8,
