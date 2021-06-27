@@ -10,15 +10,14 @@ namespace Meetra {
 
     void InitBitboards();
 
+    std::string PPBitboard(Bitboard b);
+
     struct Magic {
         Bitboard *attacks; // pointer into the rook/bishop table, where all the attacks are stored
         Bitboard inner_board_mask;
         uint64_t magic_num;
         uint8_t shift;
     };
-
-    extern Bitboard rank_masks[RANK_NR];
-    extern Bitboard file_masks[FILE_NR];
 
     extern Magic bishop_magics[SQUARE_NR];
     extern Magic rook_magics[SQUARE_NR];
@@ -48,10 +47,10 @@ namespace Meetra {
     // 4:25
     // testing if a square is under attack TODO
 
-/*    template<PieceType pt>
+
+    template<PieceType PT>
     inline Bitboard GetAttacksForPiece(Square s, Bitboard occ = EMPTY_BB, Color c = WHITE) {
-        //occ &= ~SquareToBB(s);
-        switch (pt) {
+        switch (PT) {
             case PAWN:
                 return pawn_attacks[c][s];
             case BISHOP :
@@ -65,49 +64,7 @@ namespace Meetra {
             case KING :
                 return king_moves[s];
         }
-    }*/
-
-    template<PieceType pt>
-    inline Bitboard GetAttacksForPiece(Square s, Bitboard occ = EMPTY_BB, Color c = WHITE) {
-        if (pt == PAWN) {
-            return pawn_attacks[c][s];
-        } else if(pt == KNIGHT) {
-            return knight_moves[s];
-        } else if(pt == BISHOP) {
-            return GetBishopAttacks(s, occ);
-        } else if(pt == ROOK) {
-            return GetRookAttacks(s, occ);
-        } else if(pt == QUEEN) {
-            return GetBishopAttacks(s, occ) | GetRookAttacks(s, occ);
-        } else {
-            return king_moves[s];
-        }
     }
-
-    template<Color c>
-    inline Bitboard GetPawnOneForward(Bitboard pawns, Bitboard empty_squares) {
-        switch (c) {
-            case WHITE:
-                return (pawns << 8) & empty_squares;
-            case BLACK:
-                return (pawns >> 8) & empty_squares;
-        }
-    }
-
-    template<Color c>
-    inline Bitboard GetPawnTwoForward(Bitboard pawns, Bitboard empty_squares) {
-        switch (c) {
-            case WHITE:
-                pawns &= rank_masks[RANK_2];
-                break;
-            case BLACK:
-                pawns &= rank_masks[RANK_7];
-                break;
-        }
-        return GetPawnOneForward<c>(GetPawnOneForward<c>(pawns, empty_squares), empty_squares);
-    }
-
-    std::string PPBitboard(Bitboard b);
 
     inline int PopCount(Bitboard b) { return std::__popcount(b); }
     //linux builtins
@@ -120,18 +77,12 @@ namespace Meetra {
     }
 
 
-// win64 https://www.chessprogramming.org/BitScan -> Processor Instructions for Bitscans
-/*inline Square Lsb(Bitboard b) {
-    unsigned long idx;
-    _BitScanForward64(&idx, b);
-    return (Square) idx;
-}
-
-inline Square Msb(Bitboard b) {
-    unsigned long idx;
-    _BitScanReverse64(&idx, b);
-    return (Square) idx;
-}*/
+    // win64 https://www.chessprogramming.org/BitScan -> Processor Instructions for Bitscans
+    /*inline Square Lsb(Bitboard b) {
+        unsigned long idx;
+        _BitScanForward64(&idx, b);
+        return (Square) idx;
+    }*/
 
 }
 

@@ -49,18 +49,18 @@ namespace Meetra {
             if (board.CanWhiteShortCR()) {
                 Bitboard empty_squares = SquareToBB(F1) | SquareToBB(G1);
                 if ((empty_squares & board.GetPieces(ALL_TYPES)) == EMPTY_BB &&
-                    !board.SquareAttackers(F1, BLACK, board.GetPieces(ALL_TYPES)) &&
-                    !board.SquareAttackers(G1, BLACK, board.GetPieces(ALL_TYPES)) &&
-                    !board.SquareAttackers(E1, BLACK, board.GetPieces(ALL_TYPES))) {
+                    !board.IsSquareAttacked(F1, BLACK, board.GetPieces(ALL_TYPES)) &&
+                    !board.IsSquareAttacked(G1, BLACK, board.GetPieces(ALL_TYPES)) &&
+                    !board.IsSquareAttacked(E1, BLACK, board.GetPieces(ALL_TYPES))) {
                     d.emplace_back(NewMove(E1, G1, CASTLING));
                 }
             }
             if (board.CanWhiteLongCR()) {
                 Bitboard empty_squares = SquareToBB(B1) | SquareToBB(C1) | SquareToBB(D1);
                 if ((empty_squares & board.GetPieces(ALL_TYPES)) == EMPTY_BB &&
-                    !board.SquareAttackers(C1, BLACK, board.GetPieces(ALL_TYPES)) &&
-                    !board.SquareAttackers(D1, BLACK, board.GetPieces(ALL_TYPES)) &&
-                    !board.SquareAttackers(E1, BLACK, board.GetPieces(ALL_TYPES))) {
+                    !board.IsSquareAttacked(C1, BLACK, board.GetPieces(ALL_TYPES)) &&
+                    !board.IsSquareAttacked(D1, BLACK, board.GetPieces(ALL_TYPES)) &&
+                    !board.IsSquareAttacked(E1, BLACK, board.GetPieces(ALL_TYPES))) {
                     d.emplace_back(NewMove(E1, C1, CASTLING));
                 }
             }
@@ -68,18 +68,18 @@ namespace Meetra {
             if (board.CanBlackShortCR()) {
                 Bitboard empty_squares = SquareToBB(F8) | SquareToBB(G8);
                 if ((empty_squares & board.GetPieces(ALL_TYPES)) == EMPTY_BB &&
-                    !board.SquareAttackers(F8, WHITE, board.GetPieces(ALL_TYPES)) &&
-                    !board.SquareAttackers(G8, WHITE, board.GetPieces(ALL_TYPES)) &&
-                    !board.SquareAttackers(E8, WHITE, board.GetPieces(ALL_TYPES))) {
+                    !board.IsSquareAttacked(F8, WHITE, board.GetPieces(ALL_TYPES)) &&
+                    !board.IsSquareAttacked(G8, WHITE, board.GetPieces(ALL_TYPES)) &&
+                    !board.IsSquareAttacked(E8, WHITE, board.GetPieces(ALL_TYPES))) {
                     d.emplace_back(NewMove(E8, G8, CASTLING));
                 }
             }
             if (board.CanBlackLongCR()) {
                 Bitboard empty_squares = SquareToBB(B8) | SquareToBB(C8) | SquareToBB(D8);
                 if ((empty_squares & board.GetPieces(ALL_TYPES)) == EMPTY_BB &&
-                    !board.SquareAttackers(C8, WHITE, board.GetPieces(ALL_TYPES)) &&
-                    !board.SquareAttackers(D8, WHITE, board.GetPieces(ALL_TYPES)) &&
-                    !board.SquareAttackers(E8, WHITE, board.GetPieces(ALL_TYPES))) {
+                    !board.IsSquareAttacked(C8, WHITE, board.GetPieces(ALL_TYPES)) &&
+                    !board.IsSquareAttacked(D8, WHITE, board.GetPieces(ALL_TYPES)) &&
+                    !board.IsSquareAttacked(E8, WHITE, board.GetPieces(ALL_TYPES))) {
                     d.emplace_back(NewMove(E8, C8, CASTLING));
                 }
             }
@@ -184,52 +184,44 @@ namespace Meetra {
 
 // Ignoring pins, and king moving to attacked squares, and other quirky stuff like EP
     template<GenPhase phase, Color C>
-    void GenMoves(const Board &board, std::deque<Move> &d) {
+    void GenMoves(const Board &board, std::deque<Move> &d, Bitboard checkers, Bitboard legal_move_mask) {
 
-        Bitboard legal_moves = 0xFFFFFFFFFFFFFFFFUL;
+        // rovnou bych tomu mohl rikat legal moves per square a initializovat to na legal_moves ( a az potom spocitat
+        // piny a & s nima)
+        // renmae the evasion phase to something like begin_phase ? or something more appropriate
+
         Bitboard occ = board.GetPieces(ALL_TYPES);
 
         if (phase == EVASION) {
-            if (PopCount(board.GetCheckers()) > 1) {
                 GenMovesForPieceType<KING, C>(board, occ, d, board.GetPieces(OtherColor(C))
-                | board.GetEmptySquares());
-            }
+                                                             | board.GetEmptySquares());
+
             return;
         }
 
-        if (board.GetCheckers()) {
-            if (PopCount(board.GetCheckers()) > 1) {
-                return;
-            }
-            Square king_square = Lsb(board.GetPieces(KING, C));
-            Bitboard capture_mask = board.GetCheckers();
-            Square attacker_square = Lsb(capture_mask);
-            Bitboard block_mask = rays_between_squares[king_square][attacker_square];
-            legal_moves = capture_mask | block_mask;
-        }
 
         Bitboard phase_mask =
                 phase == CAPTURE ? board.GetPieces(OtherColor(C)) : board.GetEmptySquares();
 
-        GenMovesForPieceType<KNIGHT, C>(board, occ, d, legal_moves & phase_mask);
-        GenMovesForPieceType<BISHOP, C>(board, occ, d, legal_moves & phase_mask);
-        GenMovesForPieceType<ROOK, C>(board, occ, d, legal_moves & phase_mask);
-        GenMovesForPieceType<QUEEN, C>(board, occ, d, legal_moves & phase_mask);
+        GenMovesForPieceType<KNIGHT, C>(board, occ, d, legal_move_mask & phase_mask);
+        GenMovesForPieceType<BISHOP, C>(board, occ, d, legal_move_mask & phase_mask);
+        GenMovesForPieceType<ROOK, C>(board, occ, d, legal_move_mask & phase_mask);
+        GenMovesForPieceType<QUEEN, C>(board, occ, d, legal_move_mask & phase_mask);
         GenMovesForPieceType<KING, C>(board, occ, d, phase_mask);
         if (phase == QUIET) {
             GenCastlingMoves<C>(board, d);
-            GenPawnForwardMoves<C>(board, d, legal_moves);
+            GenPawnForwardMoves<C>(board, d, legal_move_mask);
         } else {
-            GenPawnCaptures<C>(board, d, legal_moves);
+            GenPawnCaptures<C>(board, d, legal_move_mask);
         }
     }
 
-    template void GenMoves<EVASION, WHITE>(const Meetra::Board &board, std::deque<Move> &d);
-    template void GenMoves<CAPTURE, WHITE>(const Board &board, std::deque<Move> &d);
-    template void GenMoves<QUIET, WHITE>(const Board &board, std::deque<Move> &d);
-    template void GenMoves<EVASION, BLACK>(const Board &board, std::deque<Move> &d);
-    template void GenMoves<CAPTURE, BLACK>(const Board &board, std::deque<Move> &d);
-    template void GenMoves<QUIET, BLACK>(const Board &board, std::deque<Move> &d);
+    template void GenMoves<EVASION, WHITE>(const Meetra::Board &board, std::deque<Move> &d, Bitboard checkers, Bitboard legal_move_mask);
+    template void GenMoves<CAPTURE, WHITE>(const Board &board, std::deque<Move> &d, Bitboard checkers, Bitboard legal_move_mask);
+    template void GenMoves<QUIET, WHITE>(const Board &board, std::deque<Move> &d, Bitboard checkers, Bitboard legal_move_mask);
+    template void GenMoves<EVASION, BLACK>(const Board &board, std::deque<Move> &d, Bitboard checkers, Bitboard legal_move_mask);
+    template void GenMoves<CAPTURE, BLACK>(const Board &board, std::deque<Move> &d, Bitboard checkers, Bitboard legal_move_mask);
+    template void GenMoves<QUIET, BLACK>(const Board &board, std::deque<Move> &d, Bitboard checkers, Bitboard legal_move_mask);
 
 // gen moves all
 

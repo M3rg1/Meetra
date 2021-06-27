@@ -26,11 +26,15 @@ int main(int argc, char *arv[]) {
 
     // rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
     // r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -
-    Board board("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ");
+    // rnb1k2r/ppQ2ppp/1qp5/4b2B/1PB5/P5Nn/1PP3PP/RN2R1K1 b Q - 0 1     --- pins
+    Board board("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -");
     std::cout << GetLogo() << std::endl;
     std::cout << " v. " << GetVersion() << std::endl;
     std::cout << " Made by " << GetAuthor() << std::endl << std::endl;
     std::cout << board.PPBoard() << std::endl;
+
+/*    MoveList ml(board);
+    board.MakeMove(ml.GetNextMove());*/
 
     RunPerft(5, board);
 

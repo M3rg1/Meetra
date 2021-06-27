@@ -18,13 +18,13 @@ namespace Meetra {
 
         bool MakeMove(Move m);
         void UnmakeMove(Move m);
-        [[nodiscard]] Bitboard SquareAttackers(Square s, Color c, Bitboard occ) const;
+        [[nodiscard]] bool IsSquareAttacked(Square s, Color attacked_by, Bitboard occ) const;
+        [[nodiscard]] Bitboard PinnedPiecesForSquare(Square s, Color blockers_color) const;
 
 #pragma region ===== Piece getters =====
         [[nodiscard]] inline Bitboard GetPieces(PieceType pt, Color c) const { return type_bbs[pt] & color_bbs[c]; }
         [[nodiscard]] inline Bitboard GetPieces(PieceType pt) const { return type_bbs[pt]; }
         [[nodiscard]] inline Bitboard GetPieces(Color c) const { return color_bbs[c]; }
-        [[nodiscard]] inline Bitboard GetCheckers() const { return checkers; }
         [[nodiscard]] inline Bitboard GetEmptySquares() const { return ~GetPieces(ALL_TYPES); }
 #pragma endregion
 
@@ -109,18 +109,20 @@ namespace Meetra {
 #pragma endregion
 
 #pragma region ===== Data =====
-        struct BoardData {
+/*        struct BoardData {
             GameState game_state;
             // zobrist_key
             Bitboard checkers;
-        };
+        };*/
 
-        std::deque<BoardData> gs_history;
+        GameState history[256];
+        uint8_t history_cnt;
+
         GameState game_state;
         Piece board[SQUARE_NR]{NO_PIECE};
         Bitboard color_bbs[COLOR_NR]{0};
         Bitboard type_bbs[PIECE_TYPE_NR]{0};
-        Bitboard checkers;
+        Bitboard blockers_for_king;
 
 #pragma endregion
     };

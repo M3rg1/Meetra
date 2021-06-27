@@ -22,9 +22,12 @@ namespace Meetra {
         GenPhase genPhase;
         std::deque<Move> moves;
         const Board &board;
+        Bitboard checkers;
+        Bitboard legal_moves;
 
         template <Color C>
         inline void GenNewMoves();
+        inline Bitboard SquareAttackers(Square s, Color attacked_by, Bitboard occ) const;
     };
 
 }

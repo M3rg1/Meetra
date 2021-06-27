@@ -13,7 +13,7 @@ namespace Meetra {
     // make LoadFen function that takes in game state and other arrays as arguments and fills them
 
     Board::Board(std::string fen) {
-        gs_history = std::deque<BoardData>(100);
+        history_cnt = 0;
         game_state = NEW_GAME_STATE;
         auto loadedInfo = Meetra::FenLoader::ParseFen(std::move(fen));
         SetColorToMove(loadedInfo->color_to_move);
@@ -35,17 +35,43 @@ namespace Meetra {
                 type_bbs[ALL_TYPES] |= pos;
             }
         }
-
-        Square king_square = Lsb(GetPieces(KING, ColorToMove()));
-        checkers = SquareAttackers(king_square, ColorToMove() == WHITE ? BLACK : WHITE, GetPieces(ALL_TYPES));
     }
 
+    Bitboard Board::PinnedPiecesForSquare(Square s, Color blockers_color) const{
+
+        Bitboard pinned_pieces = EMPTY_BB;
+        Color attackers_color = OtherColor(blockers_color);
+        Bitboard potential_blockers = GetPieces(blockers_color);
+        Bitboard attackers = GetPieces(BISHOP, attackers_color) | GetPieces(ROOK, attackers_color)
+                             | GetPieces(QUEEN, attackers_color);
+        while (attackers) {
+            Square attacker_s = PopLsb(attackers);
+            Bitboard blockers = rays_between_squares[attacker_s][s] & potential_blockers;
+            if(PopCount(blockers) == 1){
+                pinned_pieces |= blockers;
+            }
+        }
+        return pinned_pieces;
+    }
+
+    bool Board::IsSquareAttacked(Square s, Color attacked_by, Bitboard occ) const{
+        if((GetAttacksForPiece<ROOK>(s, occ) & (GetPieces(ROOK, attacked_by) | GetPieces(QUEEN, attacked_by))) ||
+           (GetAttacksForPiece<BISHOP>(s, occ) & (GetPieces(BISHOP, attacked_by) | GetPieces(QUEEN, attacked_by)))  ||
+           (GetAttacksForPiece<KNIGHT>(s) & GetPieces(KNIGHT, attacked_by)) ||
+           (GetAttacksForPiece<PAWN>(s, occ, OtherColor(attacked_by)) & GetPieces(PAWN, attacked_by)) ||
+           (GetAttacksForPiece<KING>(s) & GetPieces(KING, attacked_by)))
+            return true;
+        return false;
+    }
 
     bool Board::MakeMove(Move m) {
 
-        gs_history.emplace_back(BoardData{game_state, checkers});
+        history[history_cnt++] = game_state;
 
+        Color this_move_col = ColorToMove();
         ChangeColorToMove();
+        Color next_move_col = ColorToMove();
+
         ClearCapturedPiece();
         ClearEpSquare();
         IncrementPly();
@@ -91,16 +117,16 @@ namespace Meetra {
                 RemovePiece(to);
                 switch (move_type) {
                     case PROMOTE_QUEEN:
-                        PutPiece(to, NewPiece(QUEEN, static_cast<Color>(!black_moving)));
+                        PutPiece(to, NewPiece(QUEEN, OtherColor(ColorToMove())));
                         break;
                     case PROMOTE_ROOK:
-                        PutPiece(to, NewPiece(ROOK, static_cast<Color>(!black_moving)));
+                        PutPiece(to, NewPiece(ROOK, OtherColor(ColorToMove())));
                         break;
                     case PROMOTE_BISHOP:
-                        PutPiece(to, NewPiece(BISHOP, static_cast<Color>(!black_moving)));
+                        PutPiece(to, NewPiece(BISHOP, OtherColor(ColorToMove())));
                         break;
                     case PROMOTE_KNIGHT:
-                        PutPiece(to, NewPiece(KNIGHT, static_cast<Color>(!black_moving)));
+                        PutPiece(to, NewPiece(KNIGHT, OtherColor(ColorToMove())));
                         break;
                     default:
                         break;
@@ -108,25 +134,7 @@ namespace Meetra {
             }
         }
 
-        Square king_square = Lsb(GetPieces(KING, static_cast<Color>(!black_moving)));
-        if (SquareAttackers(king_square, static_cast<Color>(black_moving), GetPieces(ALL_TYPES))) {
-            return false;
-        }
-
-        king_square = Lsb(GetPieces(KING, static_cast<Color>(black_moving)));
-        checkers = SquareAttackers(king_square, static_cast<Color>(!black_moving), GetPieces(ALL_TYPES));
-
-        return true;
-    }
-
-
-    Bitboard Board::SquareAttackers(Square s, Color attacked_by, Bitboard occ) const {
-        return (GetAttacksForPiece<PAWN>(s, occ, OtherColor(attacked_by)) & GetPieces(PAWN, attacked_by)) |
-               (GetAttacksForPiece<KNIGHT>(s) & GetPieces(KNIGHT, attacked_by)) |
-               (GetAttacksForPiece<BISHOP>(s, occ) & GetPieces(BISHOP, attacked_by)) |
-               (GetAttacksForPiece<ROOK>(s, occ) & GetPieces(ROOK, attacked_by)) |
-               (GetAttacksForPiece<QUEEN>(s, occ) & GetPieces(QUEEN, attacked_by)) |
-               (GetAttacksForPiece<KING>(s) & GetPieces(KING, attacked_by));
+        return !IsSquareAttacked(Lsb(GetPieces(KING, this_move_col)), next_move_col, GetPieces(ALL_TYPES));
     }
 
     void Board::UnmakeMove(Move m) {
@@ -155,10 +163,7 @@ namespace Meetra {
             MovePiece(castling_rook_dest, castling_rook_orig);
         }
 
-        BoardData game_info = gs_history.back();
-        gs_history.pop_back();
-        game_state = game_info.game_state;
-        checkers = game_info.checkers;
+        game_state = history[--history_cnt];
     }
 
     std::string Board::PPBoard() const {

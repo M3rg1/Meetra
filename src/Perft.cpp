@@ -28,7 +28,7 @@ namespace Meetra {
         START_TIMER
         MoveList ml(board);
         Move m;
-        int total_nodes = 0;
+        ulong total_nodes = 0;
         while ((m = ml.GetNextMove()) != INVALID_MOVE) {
             if (board.MakeMove(m)) {
                 int nodes = Perft(depth - 1, board);

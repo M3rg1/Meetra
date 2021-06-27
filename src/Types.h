@@ -7,8 +7,7 @@
 namespace Meetra {
 
     enum GenPhase : uint8_t {
-        BEST_MOVE, EVASION, CAPTURE, QUIET, END,
-        GEN_PHASE_NR
+        BEST_MOVE, CAPTURE, QUIET, END, EVASION
     };
 
     enum MoveListType : uint8_t {
