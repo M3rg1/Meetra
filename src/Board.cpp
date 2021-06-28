@@ -37,12 +37,7 @@ namespace Meetra {
         }
     }
 
-    bool IsRookAtk(){
-
-        return true;
-    }
-
-    Bitboard Board::PinnedPiecesForSquare(Square s, Color attackers_color) const {
+    Bitboard Board::PinnedPiecesForSquare(Square s, Color attackers_color, Bitboard &pinning_pieces) const {
 
         Bitboard pinned_pieces = EMPTY_BB;
         Bitboard potential_blockers = GetPieces(ALL_TYPES);
@@ -53,6 +48,7 @@ namespace Meetra {
             Bitboard blockers = rays_between_squares[attacker_s][s] & potential_blockers & bishop_moves[attacker_s];
             if (PopCount(blockers) == 1) {
                 pinned_pieces |= blockers;
+                pinning_pieces |= SquareToBB(attacker_s);
             }
         }
 
@@ -62,6 +58,7 @@ namespace Meetra {
             Bitboard blockers = rays_between_squares[attacker_s][s] & potential_blockers & rook_moves[attacker_s];
             if (PopCount(blockers) == 1) {
                 pinned_pieces |= blockers;
+                pinning_pieces |= SquareToBB(attacker_s);
             }
         }
 

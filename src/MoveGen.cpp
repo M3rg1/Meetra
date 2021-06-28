@@ -39,7 +39,8 @@ namespace Meetra {
             legal_moves = capture_mask | block_mask;
         }
         genPhase = start_phase;
-        blockers = board.PinnedPiecesForSquare(king_square, enemy_color);
+        pinning_pieces = EMPTY_BB;
+        blockers = board.PinnedPiecesForSquare(king_square, enemy_color, pinning_pieces);
     }
 
     Move MoveGen::GetNextMove() {
@@ -92,13 +93,13 @@ namespace Meetra {
         } else if constexpr (phase == QUIET) {
             phase_mask = legal_moves & empty_squares;
             GenPawnForwardMoves<C>();
-            Blockers_GenPawnForwardMoves<C>();
+            //Blockers_GenPawnForwardMoves<C>();
             GenCastlingMoves<C>();
             GenMovesForPieceType<KING, C>(empty_squares);
         } else if constexpr (phase == CAPTURE) {
             phase_mask = legal_moves & enemy_pieces;
             GenPawnCaptures<C>();
-            Blockers_GenPawnCaptures<C>();
+            //Blockers_GenPawnCaptures<C>();
             GenEnPassantMoves<C>();
             GenMovesForPieceType<KING, C>(enemy_pieces);
         }
@@ -107,69 +108,29 @@ namespace Meetra {
         GenMovesForPieceType<BISHOP, C>(phase_mask);
         GenMovesForPieceType<ROOK, C>(phase_mask);
         GenMovesForPieceType<QUEEN, C>(phase_mask);
-        Blockers_GenMovesForPieceType<KNIGHT, C>(phase_mask);
-        Blockers_GenMovesForPieceType<BISHOP, C>(phase_mask);
-        Blockers_GenMovesForPieceType<ROOK, C>(phase_mask);
-        Blockers_GenMovesForPieceType<QUEEN, C>(phase_mask);
     }
 
     template<PieceType PT, Color C>
     inline void MoveGen::GenMovesForPieceType(Bitboard legality_mask) {
-        Bitboard pieces = board.GetPieces(PT, C) & ~blockers;
+        Bitboard pieces = board.GetPieces(PT, C);
         while (pieces) {
             Square origin_s = PopLsb(pieces);
             Bitboard possible_moves = GetAttacksForPiece<PT>(origin_s, all_pieces) & legality_mask;
+            if (blockers & SquareToBB(origin_s)) {
+                possible_moves &= rays_between_edges[king_square][origin_s];
+            }
             while (possible_moves) {
                 Square destination_s = PopLsb(possible_moves);
                 PutMove(NewMove(origin_s, destination_s));
             }
         }
     }
-
-    template<PieceType PT, Color C>
-    inline void MoveGen::Blockers_GenMovesForPieceType(Bitboard legality_mask) {
-        Bitboard pieces = board.GetPieces(PT, C) & blockers;
-        while (pieces) {
-            Square origin_s = PopLsb(pieces);
-            Bitboard possible_moves = GetAttacksForPiece<PT>(origin_s, all_pieces) & legality_mask & rays_between_edges[king_square][origin_s];
-            while (possible_moves) {
-                Square destination_s = PopLsb(possible_moves);
-                PutMove(NewMove(origin_s, destination_s));
-            }
-        }
-    }
-
 
     template<Color C>
     inline void MoveGen::GenPawnForwardMoves() {
 
         constexpr Direction push_dir = pawn_push_dir<C>();
-        Bitboard pawns_one_fw = shift<push_dir>(board.GetPieces(PAWN, C) & ~blockers) & empty_squares;
-        Bitboard pawns_two_fw = shift<push_dir>(pawns_one_fw) & empty_squares & two_fwd_rank<C>() & phase_mask;
-        Bitboard pawn_prom = pawns_one_fw & phase_mask & promotion_rank<C>();
-        pawns_one_fw &= phase_mask & ~promotion_rank<C>();
-
-        while (pawn_prom) {
-            Square dest_s = PopLsb(pawn_prom);
-            PutPromMoves(dest_s - push_dir, dest_s);
-        }
-
-        while (pawns_two_fw) {
-            Square dest_s = PopLsb(pawns_two_fw);
-            PutMove(NewMove(dest_s - push_dir - push_dir, dest_s, TWO_FORWARD));
-        }
-
-        while (pawns_one_fw) {
-            Square dest_s = PopLsb(pawns_one_fw);
-            PutMove(NewMove(dest_s - push_dir, dest_s));
-        }
-    }
-
-    template<Color C>
-    inline void MoveGen::Blockers_GenPawnForwardMoves() {
-
-        constexpr Direction push_dir = pawn_push_dir<C>();
-        Bitboard pawns_one_fw = shift<push_dir>(board.GetPieces(PAWN, C) & blockers) & empty_squares;
+        Bitboard pawns_one_fw = shift<push_dir>(board.GetPieces(PAWN, C)) & empty_squares;
         Bitboard pawns_two_fw = shift<push_dir>(pawns_one_fw) & empty_squares & two_fwd_rank<C>() & phase_mask;
         Bitboard pawn_prom = pawns_one_fw & phase_mask & promotion_rank<C>();
         pawns_one_fw &= phase_mask & ~promotion_rank<C>();
@@ -177,38 +138,45 @@ namespace Meetra {
         while (pawn_prom) {
             Square dest_s = PopLsb(pawn_prom);
             Square origin_s = dest_s - push_dir;
-            if(rays_between_edges[king_square][origin_s] & SquareToBB(dest_s)) {
-                PutPromMoves(origin_s, dest_s);
+            if (blockers & SquareToBB(origin_s) && !(rays_between_edges[king_square][origin_s] & SquareToBB(dest_s))) {
+                continue;
             }
+            PutPromMoves(origin_s, dest_s);
         }
 
         while (pawns_two_fw) {
             Square dest_s = PopLsb(pawns_two_fw);
             Square origin_s = dest_s - push_dir - push_dir;
-            if(rays_between_edges[king_square][origin_s] & SquareToBB(dest_s)) {
-                PutMove(NewMove(origin_s, dest_s, TWO_FORWARD));
+            if (blockers & SquareToBB(origin_s) && !(rays_between_edges[king_square][origin_s] & SquareToBB(dest_s))) {
+                continue;
             }
+            PutMove(NewMove(dest_s - push_dir - push_dir, dest_s, TWO_FORWARD));
         }
 
         while (pawns_one_fw) {
             Square dest_s = PopLsb(pawns_one_fw);
             Square origin_s = dest_s - push_dir;
-            if(rays_between_edges[king_square][origin_s] & SquareToBB(dest_s)) {
-                PutMove(NewMove(origin_s, dest_s));
+            if (blockers & SquareToBB(origin_s) && !(rays_between_edges[king_square][origin_s] & SquareToBB(dest_s))) {
+                continue;
             }
+            PutMove(NewMove(dest_s - push_dir, dest_s));
         }
     }
 
     template<Color C>
     inline void MoveGen::GenPawnCaptures() {
 
-        Bitboard pawns = board.GetPieces(PAWN, C) & ~blockers;
+        Bitboard pawns = board.GetPieces(PAWN, C);
 
         constexpr Direction left_dir = pawn_capture_left_dir<C>();
         constexpr Direction right_dir = pawn_capture_right_dir<C>();
 
-        Bitboard left_captures = shift<left_dir>(pawns) & phase_mask;
-        Bitboard right_captures = shift<right_dir>(pawns) & phase_mask;
+        Bitboard left_captures =
+                (shift<left_dir>(pawns & ~blockers) | (shift<left_dir>(pawns & blockers) & pinning_pieces)) &
+                phase_mask;
+        Bitboard right_captures =
+                (shift<right_dir>(pawns & ~blockers) | (shift<right_dir>(pawns & blockers) & pinning_pieces)) &
+                phase_mask;
 
         Bitboard left_prom = left_captures & promotion_rank<C>();
         Bitboard right_prom = right_captures & promotion_rank<C>();
@@ -235,104 +203,40 @@ namespace Meetra {
     }
 
     template<Color C>
-    inline void MoveGen::Blockers_GenPawnCaptures() {
-
-        Bitboard pawns = board.GetPieces(PAWN, C) & blockers;
-
-        constexpr Direction left_dir = pawn_capture_left_dir<C>();
-        constexpr Direction right_dir = pawn_capture_right_dir<C>();
-
-        Bitboard left_captures = shift<left_dir>(pawns) & phase_mask;
-        Bitboard right_captures = shift<right_dir>(pawns) & phase_mask;
-
-        Bitboard left_prom = left_captures & promotion_rank<C>();
-        Bitboard right_prom = right_captures & promotion_rank<C>();
-
-        left_captures &= ~promotion_rank<C>();
-        right_captures &= ~promotion_rank<C>();
-
-        while (left_prom) {
-            Square dest_s = PopLsb(left_prom);
-            Square origin_s = dest_s - left_dir;
-            if(rays_between_edges[king_square][origin_s] & SquareToBB(dest_s)) {
-                PutPromMoves(origin_s, dest_s);
-            }
-        }
-        while (right_prom) {
-            Square dest_s = PopLsb(right_prom);
-            Square origin_s = dest_s - right_dir;
-            if(rays_between_edges[king_square][origin_s] & SquareToBB(dest_s)) {
-                PutPromMoves(origin_s, dest_s);
-            }
-        }
-        while (left_captures) {
-            Square dest_s = PopLsb(left_captures);
-            Square origin_s = dest_s - left_dir;
-            if(rays_between_edges[king_square][origin_s] & SquareToBB(dest_s)) {
-                PutMove(NewMove(origin_s, dest_s));
-            }
-        }
-        while (right_captures) {
-            Square dest_s = PopLsb(right_captures);
-            Square origin_s = dest_s - right_dir;
-            if(rays_between_edges[king_square][origin_s] & SquareToBB(dest_s)) {
-                PutMove(NewMove(origin_s, dest_s));
-            }
-        }
-    }
-
-    template <Color C>
     inline void MoveGen::GenEnPassantMoves() {
         if (board.EpSquare()) {
             Square ep_s = board.EpSquare();
-            Bitboard attackers =
-                    GetAttacksForPiece<PAWN>(ep_s, all_pieces, OtherColor(C)) &
-                    board.GetPieces(PAWN, C);
+            Bitboard attackers = GetAttacksForPiece<PAWN>(ep_s, all_pieces, OtherColor(C)) & board.GetPieces(PAWN, C);
             while (attackers) {
-                Square origin_s = PopLsb(attackers);
-                PutMove(NewMove(origin_s, ep_s, EN_PASSANT));
+                PutMove(NewMove(PopLsb(attackers), ep_s, EN_PASSANT));
             }
         }
     }
-
 
     template<Color C>
     inline void MoveGen::GenCastlingMoves() {
-        Square king_s = C == WHITE ? E1 : E8;
-        if (CanCastleShort<C>(board.GetCR()) && IsEmptyForCastling<C>(true) && IsSafeToCastle<C>(true)) {
-            PutMove(NewMove(king_s, king_s + 2, CASTLING));
+        if (checkers) {
+            return;
         }
-        if (CanCastleLong<C>(board.GetCR()) && IsEmptyForCastling<C>(false) && IsSafeToCastle<C>(false)) {
-            PutMove(NewMove(king_s, king_s - 2, CASTLING));
+        if (CanCastleShort<C>(board.GetCR())) {
+            PutMove(NewMove(king_square, king_square + 2, CASTLING));
+        }
+        if (CanCastleLong<C>(board.GetCR())) {
+            PutMove(NewMove(king_square, king_square - 2, CASTLING));
         }
     }
 
     template<Color C>
-    inline bool CanCastleShort(CastlingRights cr) {
-        return cr & (C == WHITE ? WHITE_SHORT : BLACK_SHORT);
+    inline bool MoveGen::CanCastleShort(CastlingRights cr) {
+        return cr & (C == WHITE ? WHITE_SHORT : BLACK_SHORT) &&
+               (rays_between_squares[C == WHITE ? E1 : E8][C == WHITE ? H1 : H8] & all_pieces) == EMPTY_BB &&
+               !board.IsSquareAttacked(C == WHITE ? F1 : F8, OtherColor(C), all_pieces);
     }
 
     template<Color C>
-    inline bool CanCastleLong(CastlingRights cr) {
-        return cr & (C == WHITE ? WHITE_LONG : BLACK_LONG);
-    }
-
-    template<Color C>
-    inline bool MoveGen::IsSafeToCastle(bool castle_short) {
-        Square from = C == WHITE ? (castle_short ? E1 : C1) : (castle_short ? E8 : C8);
-        Square to = from + 2;
-        for (Square s = from; s <= to; ++s) {
-            if (board.IsSquareAttacked(s, OtherColor(C), all_pieces)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    template<Color C>
-    inline bool MoveGen::IsEmptyForCastling(bool castle_short) {
-        Square from = C == WHITE ? E1 : E8;
-        Square to = castle_short ? from + 3 : from - 4;
-        return (rays_between_squares[from][to] & all_pieces) == EMPTY_BB;
+    inline bool MoveGen::CanCastleLong(CastlingRights cr) {
+        return cr & (C == WHITE ? WHITE_LONG : BLACK_LONG) &&
+               (rays_between_squares[C == WHITE ? E1 : E8][C == WHITE ? A1 : A8] & all_pieces) == EMPTY_BB &&
+               !board.IsSquareAttacked(C == WHITE ? D1 : D8, OtherColor(C), all_pieces);
     }
 }

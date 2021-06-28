@@ -48,8 +48,6 @@ namespace Meetra {
     }
 
     inline Bitboard SquareToBB(Square s) { return static_cast<Bitboard>(0x1) << s; }
-    inline void SetBBSquareOne(Bitboard &b, Square s) { b |= SquareToBB(s); }
-    inline void SetBBSquareZero(Bitboard &b, Square s) { b &= ~SquareToBB(s); }
 
     //https://www.youtube.com/watch?v=JJ_OJFM-z5E
     // 4:25
@@ -74,8 +72,8 @@ namespace Meetra {
         }
     }
 
-    inline int PopCount(Bitboard b) { return __builtin_popcountl(b); }
-    inline Square Lsb(Bitboard b) { return static_cast<Square>(__builtin_ctzl(b)); }
+    inline int PopCount(Bitboard b) { return __builtin_popcountll(b); }
+    inline Square Lsb(Bitboard b) { return static_cast<Square>(__builtin_ctzll(b)); }
 
     inline Square PopLsb(Bitboard &b) {
         const Square s = Lsb(b);

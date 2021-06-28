@@ -119,10 +119,10 @@ namespace Meetra {
 
         Square current = PopLsb(explore_occ);
 
-        SetBBSquareOne(blockers, current);
+        blockers |= SquareToBB(current);
         SetBlockersRecursive(m, origin, blockers, explore_occ, move_generator);
 
-        SetBBSquareZero(blockers, current);
+        blockers ^= SquareToBB(current);
         SetBlockersRecursive(m, origin, blockers, explore_occ, move_generator);
 
     }
@@ -167,7 +167,7 @@ namespace Meetra {
             Bitboard attacks = EMPTY_BB;
             for (int m : possible_moves) {
                 if (s + m <= H8 && s + m >= A1) {
-                    SetBBSquareOne(attacks, s + m);
+                    attacks |= SquareToBB(s + m);
                 }
             }
             attacks &= FileFromSquare(s) > FILE_C ? ~file_masks[FILE_A] : ~file_masks[FILE_H];
@@ -176,7 +176,7 @@ namespace Meetra {
             attacks = EMPTY_BB;
             for (int m : possible_moves) {
                 if (s - m <= H8 && s - m >= A1) {
-                    SetBBSquareOne(attacks, s - m);
+                    attacks |= SquareToBB(s - m);
                 }
             }
             attacks &= FileFromSquare(s) > FILE_C ? ~file_masks[FILE_A] : ~file_masks[FILE_H];
@@ -189,7 +189,7 @@ namespace Meetra {
             Bitboard moves = EMPTY_BB;
             for (Direction d : Directions) {
                 if (s + d <= H8 && s + d >= A1) {
-                    SetBBSquareOne(moves, s + d);
+                    moves |= SquareToBB(s + d);
                 }
             }
             moves &= (s & 7) > 3 ? ~file_masks[FILE_A] : ~file_masks[FILE_H];
@@ -203,7 +203,7 @@ namespace Meetra {
             Bitboard moves = EMPTY_BB;
             for (int m : possible_moves) {
                 if (s + m <= H8 && s + m >= A1) {
-                    SetBBSquareOne(moves, s + m);
+                    moves |= SquareToBB(s + m);
                 }
             }
             moves &=

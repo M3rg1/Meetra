@@ -12,9 +12,9 @@ namespace Meetra {
         explicit MoveGen(const Board &board, GenPhase start_phase = BEST_MOVE);
         Move GetNextMove();
 
-
     private:
         const Board &board;
+
         GenPhase genPhase;
 
         Move moves[256];
@@ -22,6 +22,7 @@ namespace Meetra {
 
         Bitboard checkers;
         Bitboard blockers;
+        Bitboard pinning_pieces;
         Bitboard legal_moves;
         Bitboard phase_mask;
         Bitboard enemy_pieces;
@@ -51,9 +52,6 @@ namespace Meetra {
         template<PieceType PT, Color C>
         void GenMovesForPieceType(Bitboard legality_mask);
 
-        template<PieceType PT, Color C>
-        inline void Blockers_GenMovesForPieceType(Bitboard legality_mask);
-
         template <Color C>
         inline void GenEnPassantMoves();
 
@@ -61,22 +59,16 @@ namespace Meetra {
         inline void GenPawnCaptures();
 
         template<Color C>
-        inline void Blockers_GenPawnCaptures();
-
-        template<Color C>
         inline void GenPawnForwardMoves();
-
-        template<Color C>
-        inline void Blockers_GenPawnForwardMoves();
 
         template<Color C>
         inline void GenCastlingMoves();
 
         template<Color C>
-        inline bool IsSafeToCastle(bool castle_short);
+        inline bool CanCastleLong(CastlingRights cr);
 
         template<Color C>
-        inline bool IsEmptyForCastling(bool castle_short);
+        inline bool CanCastleShort(CastlingRights cr);
     };
 
     template<Color C>
