@@ -37,20 +37,34 @@ namespace Meetra {
         }
     }
 
-    Bitboard Board::PinnedPiecesForSquare(Square s, Color blockers_color) const {
+    bool IsRookAtk(){
+
+        return true;
+    }
+
+    Bitboard Board::PinnedPiecesForSquare(Square s, Color attackers_color) const {
 
         Bitboard pinned_pieces = EMPTY_BB;
-        Color attackers_color = OtherColor(blockers_color);
-        Bitboard potential_blockers = GetPieces(blockers_color);
-        Bitboard attackers = GetPieces(BISHOP, attackers_color) | GetPieces(ROOK, attackers_color)
-                             | GetPieces(QUEEN, attackers_color);
-        while (attackers) {
-            Square attacker_s = PopLsb(attackers);
-            Bitboard blockers = rays_between_squares[attacker_s][s] & potential_blockers;
+        Bitboard potential_blockers = GetPieces(ALL_TYPES);
+
+        Bitboard bishop_queen_attackers = GetPieces(BISHOP, attackers_color) | GetPieces(QUEEN, attackers_color);
+        while (bishop_queen_attackers) {
+            Square attacker_s = PopLsb(bishop_queen_attackers);
+            Bitboard blockers = rays_between_squares[attacker_s][s] & potential_blockers & bishop_moves[attacker_s];
             if (PopCount(blockers) == 1) {
                 pinned_pieces |= blockers;
             }
         }
+
+        Bitboard rook_queen_attackers = GetPieces(ROOK, attackers_color) | GetPieces(QUEEN, attackers_color);
+        while (rook_queen_attackers) {
+            Square attacker_s = PopLsb(rook_queen_attackers);
+            Bitboard blockers = rays_between_squares[attacker_s][s] & potential_blockers & rook_moves[attacker_s];
+            if (PopCount(blockers) == 1) {
+                pinned_pieces |= blockers;
+            }
+        }
+
         return pinned_pieces;
     }
 
@@ -95,6 +109,7 @@ namespace Meetra {
         Square capture_square = to;
         Piece captured_piece = board[to];
         Piece moved_piece = board[from];
+        PieceType moved_piece_type = TypeOfPiece(moved_piece);
 
         if (move_type == EN_PASSANT) {
             capture_square += next_move_col ? SOUTH : NORTH;
@@ -107,11 +122,15 @@ namespace Meetra {
             RemovePiece(capture_square);
             SetCapturedPiece(captured_piece);
             ResetPly();
-        } else if (TypeOfPiece(moved_piece) != PAWN) {
+        } else if (moved_piece_type != PAWN) {
             ResetPly();
         }
 
         MovePiece(from, to);
+
+        if(move_type == EN_PASSANT){
+            return !IsSquareAttacked(Lsb(GetPieces(KING, this_move_col)), next_move_col, GetPieces(ALL_TYPES));
+        }
 
         if (move_type != NO_FLAG) {
             if (move_type == TWO_FORWARD) {
@@ -126,7 +145,11 @@ namespace Meetra {
             }
         }
 
-        return !IsSquareAttacked(Lsb(GetPieces(KING, this_move_col)), next_move_col, GetPieces(ALL_TYPES));
+        if(moved_piece_type == KING){
+            return !IsSquareAttacked(Lsb(GetPieces(KING, this_move_col)), next_move_col, GetPieces(ALL_TYPES));
+        }
+
+        return true;
     }
 
     void Board::UnmakeMove(Move m) {

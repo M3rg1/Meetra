@@ -21,11 +21,16 @@ namespace Meetra {
         uint8_t moves_cnt;
 
         Bitboard checkers;
+        Bitboard blockers;
         Bitboard legal_moves;
         Bitboard phase_mask;
         Bitboard enemy_pieces;
         Bitboard all_pieces;
         Bitboard empty_squares;
+        Square king_square;
+
+        Color my_color;
+        Color enemy_color;
 
         [[nodiscard]] inline bool Empty() const { return moves_cnt == 0; }
         inline Move PopMove() { return moves[--moves_cnt]; }
@@ -46,14 +51,26 @@ namespace Meetra {
         template<PieceType PT, Color C>
         void GenMovesForPieceType(Bitboard legality_mask);
 
-        template<Color C>
-        void GenPawnCaptures();
+        template<PieceType PT, Color C>
+        inline void Blockers_GenMovesForPieceType(Bitboard legality_mask);
+
+        template <Color C>
+        inline void GenEnPassantMoves();
 
         template<Color C>
-        void GenPawnForwardMoves();
+        inline void GenPawnCaptures();
 
         template<Color C>
-        void GenCastlingMoves();
+        inline void Blockers_GenPawnCaptures();
+
+        template<Color C>
+        inline void GenPawnForwardMoves();
+
+        template<Color C>
+        inline void Blockers_GenPawnForwardMoves();
+
+        template<Color C>
+        inline void GenCastlingMoves();
 
         template<Color C>
         inline bool IsSafeToCastle(bool castle_short);

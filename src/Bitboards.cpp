@@ -48,9 +48,14 @@ namespace Meetra {
     Bitboard inner_rays[SQUARE_NR][DIRECTION_IDX_NR];
 
     Bitboard rays_between_squares[SQUARE_NR][SQUARE_NR];
+    Bitboard rays_between_edges[SQUARE_NR][SQUARE_NR];
+
+    Bitboard rook_moves[SQUARE_NR];
+    Bitboard bishop_moves[SQUARE_NR];
 
     Bitboard rook_table[102400];
     Bitboard bishop_table[5248];
+
 
 #pragma region ===== Hyperbola Quintessence, Reverse Bitboards (for magics initialization) =====
 
@@ -294,6 +299,31 @@ namespace Meetra {
         }
     }
 
+    Bitboard GetRayToEdge(Square s1, Square s2) {
+
+        File f1 = FileFromSquare(s1);
+        Rank r1 = RankFromSquare(s1);
+        File f2 = FileFromSquare(s2);
+        Rank r2 = RankFromSquare(s2);
+
+        Bitboard ray;
+
+        if (r1 == r2) {
+            ray = rank_masks[r1];
+        } else if (f1 == f2) {
+            ray = file_masks[f1];
+        } else if ((int) f1 + r1 == f2 + r2) {
+            ray = diag_masks[f1 + r1];
+        } else if ((int) f1 - r1 == (int) f2 - r2) {
+            ray = anti_diag_masks[r1 + 7 - f1];
+        } else{
+            ray = EMPTY_BB;
+        }
+
+        return ray;
+    }
+
+
     Bitboard GetRay(Square s1, Square s2) {
 
         Square min, max;
@@ -313,18 +343,6 @@ namespace Meetra {
 
         Rank r_min = RankFromSquare(min);
         File f_min = FileFromSquare(min);
-
-/*        Bitboard ray = mask;
-        if (r_max == r_min) {
-            ray &= rank_masks[r_max];
-        } else if (f_max == f_min) {
-            ray &= file_masks[f_max];
-        } else if (f_max < f_min) {
-            ray &= diag_masks[f_max + r_max];
-        } else {
-            ray &= anti_diag_masks[r_max + 7 - f_max];
-        }*/
-
 
         Bitboard ray = mask;
         if (r_max == r_min) {
@@ -346,7 +364,10 @@ namespace Meetra {
         for (Square origin = A1; origin <= H8; ++origin) {
             for (Square destination = A1; destination <= H8; ++destination) {
                 rays_between_squares[origin][destination] = GetRay(origin, destination);
+                rays_between_edges[origin][destination] = GetRayToEdge(origin, destination);
             }
+            rook_moves[origin] = rays[origin][NORTH_IDX] | rays[origin][WEST_IDX] | rays[origin][EAST_IDX] | rays[origin][SOUTH_IDX];
+            bishop_moves[origin] = rays[origin][NORTH_WEST_IDX] | rays[origin][SOUTH_WEST_IDX] | rays[origin][SOUTH_EAST_IDX] | rays[origin][NORTH_EAST_IDX];
         }
     }
 

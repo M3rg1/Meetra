@@ -42,7 +42,7 @@ namespace Meetra {
         }
         STOP_TIMER
         auto time_elapsed_ns = TIMER_GET_TIME_NS == 0 ? 1 : TIMER_GET_TIME_NS;
-        ulong nps = total_nodes / static_cast<ulong> (static_cast<double>(time_elapsed_ns) / 1000000000);
+        auto nps = static_cast<ulong> (static_cast<double>(total_nodes) / (static_cast<double>(time_elapsed_ns) / 1000000000));
         std::cout << "Time elapsed: " << TIMER_GET_TIME_MS << "ms";
         std::cout << " | Nodes explored: " << total_nodes;
         std::cout << " | NPS: " << nps << std::endl;

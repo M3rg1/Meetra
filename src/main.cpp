@@ -33,6 +33,15 @@ int main(int argc, char *arv[]) {
     std::cout << " Made by " << GetAuthor() << std::endl << std::endl;
     std::cout << board.PPBoard() << std::endl;
 
+/*    Square king_square = Lsb(board.GetPieces(KING, board.ColorToMove()));
+    Bitboard blockers = board.PinnedPiecesForSquare(king_square, OtherColor(board.ColorToMove()));
+    std::cout << PPBitboard(blockers) << std::endl;*/
+
+/*    std::cout << PPBitboard(rays_between_edges[king_square][PopLsb(blockers)]) << std::endl;
+    std::cout << PPBitboard(rays_between_edges[king_square][PopLsb(blockers)]) << std::endl;
+    std::cout << PPBitboard(rays_between_edges[king_square][PopLsb(blockers)]) << std::endl;
+    std::cout << PPBitboard(rays_between_edges[king_square][PopLsb(blockers)]) << std::endl;*/
+
 /*    MoveGen ml(board);
     board.MakeMove(ml.GetNextMove());*/
 
