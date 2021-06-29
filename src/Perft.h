@@ -1,7 +1,6 @@
 #ifndef MEETRA_PERFT_H
 #define MEETRA_PERFT_H
 
-#include "Board.h"
 #include "MoveGen.h"
 #include "Macros.h"
 

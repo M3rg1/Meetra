@@ -69,6 +69,8 @@ namespace Meetra {
 
         template<Color C>
         bool CanCastleShort(CastlingRights cr);
+
+        bool DiscoveryCheck(Square origin, Square destination);
     };
 
     template<Color C>

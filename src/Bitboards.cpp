@@ -306,7 +306,7 @@ namespace Meetra {
         File f2 = FileFromSquare(s2);
         Rank r2 = RankFromSquare(s2);
 
-        Bitboard ray;
+        Bitboard ray = EMPTY_BB;
 
         if (r1 == r2) {
             ray = rank_masks[r1];
@@ -316,8 +316,6 @@ namespace Meetra {
             ray = diag_masks[f1 + r1];
         } else if ((int) f1 - r1 == (int) f2 - r2) {
             ray = anti_diag_masks[r1 + 7 - f1];
-        } else{
-            ray = EMPTY_BB;
         }
 
         return ray;
@@ -344,17 +342,16 @@ namespace Meetra {
         Rank r_min = RankFromSquare(min);
         File f_min = FileFromSquare(min);
 
-        Bitboard ray = mask;
+        Bitboard ray = EMPTY_BB;
+
         if (r_max == r_min) {
-            ray &= rank_masks[r_max];
+            ray = rank_masks[r_max] & mask;
         } else if (f_max == f_min) {
-            ray &= file_masks[f_max];
+            ray = file_masks[f_max] & mask;
         } else if ((int) f_min + r_min == f_max + r_max) {
-            ray &= diag_masks[f_max + r_max];
+            ray = diag_masks[f_max + r_max] & mask;
         } else if ((int) f_min - r_min == (int) f_max - r_max) {
-            ray &= anti_diag_masks[r_max + 7 - f_max];
-        } else{
-            ray = EMPTY_BB;
+            ray = anti_diag_masks[r_max + 7 - f_max] & mask;
         }
 
         return ray;

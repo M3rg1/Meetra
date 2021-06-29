@@ -1,13 +1,7 @@
 #ifndef MEETRA_BOARD_H
 #define MEETRA_BOARD_H
 
-
-#include <string>
 #include "Types.h"
-#include "Bitboards.h"
-#include <deque>
-#include <chrono>
-
 
 namespace Meetra {
 

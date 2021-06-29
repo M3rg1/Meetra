@@ -1,8 +1,8 @@
 #ifndef MEETRA_STRINGTOKENSTREAM_H
 #define MEETRA_STRINGTOKENSTREAM_H
 
-#include <string>
 #include <deque>
+#include <string>
 
 namespace Meetra {
 

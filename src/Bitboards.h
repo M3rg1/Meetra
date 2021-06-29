@@ -2,9 +2,6 @@
 #define MEETRA_BITBOARDS_H
 
 #include "Types.h"
-#include <bit>
-#include <string>
-#include <iostream>
 
 namespace Meetra {
 
@@ -47,13 +44,6 @@ namespace Meetra {
         return m.attacks[((occ & m.inner_board_mask) * m.magic_num) >> m.shift];
     }
 
-    inline Bitboard SquareToBB(Square s) { return static_cast<Bitboard>(0x1) << s; }
-
-    //https://www.youtube.com/watch?v=JJ_OJFM-z5E
-    // 4:25
-    // testing if a square is under attack TODO
-
-
     template<PieceType PT>
     inline Bitboard GetAttacksForPiece(Square s, Bitboard occ = EMPTY_BB, Color c = WHITE) {
         switch (PT) {
@@ -72,9 +62,9 @@ namespace Meetra {
         }
     }
 
+    inline bool MoreThanOne(Bitboard b) { return (b & (b - 1)); }
     inline int PopCount(Bitboard b) { return __builtin_popcountll(b); }
     inline Square Lsb(Bitboard b) { return static_cast<Square>(__builtin_ctzll(b)); }
-
     inline Square PopLsb(Bitboard &b) {
         const Square s = Lsb(b);
         b &= b - 1;

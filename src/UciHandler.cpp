@@ -1,7 +1,7 @@
 #include "UciHandler.h"
 #include "StringTokenStream.h"
 #include "Misc.h"
-
+#include <string>
 #include <iostream>
 
 namespace Meetra {

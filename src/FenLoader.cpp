@@ -1,8 +1,4 @@
-#include <memory>
-#include <string>
 #include <sstream>
-#include <utility>
-#include "Macros.h"
 #include "FenLoader.h"
 #include "StringTokenStream.h"
 #include "Misc.h"

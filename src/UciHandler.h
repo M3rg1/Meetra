@@ -1,7 +1,6 @@
 #ifndef MEETRA_UCIHANDLER_H
 #define MEETRA_UCIHANDLER_H
 
-#include <string>
 
 namespace Meetra {
 

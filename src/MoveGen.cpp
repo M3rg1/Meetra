@@ -1,4 +1,5 @@
 #include "MoveGen.h"
+#include "Bitboards.h"
 
 
 namespace Meetra {
@@ -11,14 +12,12 @@ namespace Meetra {
         enemy_pieces = board.GetPieces(enemy_color);
         all_pieces = board.GetPieces(ALL_TYPES);
         empty_squares = board.GetEmptySquares();
-
-        checkers = board.SquareAttackers(Lsb(board.GetPieces(KING, my_color)),
-                                         enemy_color, all_pieces);
-
+        checkers = board.SquareAttackers(Lsb(board.GetPieces(KING, my_color)), enemy_color, all_pieces);
         legal_moves = 0xFFFFFFFFFFFFFFFFUL;
         king_square = Lsb(board.GetPieces(KING, my_color));
+
         if (checkers) {
-            if (PopCount(checkers) > 1) {
+            if (MoreThanOne(checkers)) {
                 genPhase = EVASION;
                 return;
             }
@@ -27,6 +26,7 @@ namespace Meetra {
             Bitboard block_mask = rays_between_squares[king_square][attacker_square];
             legal_moves = capture_mask | block_mask;
         }
+
         genPhase = start_phase;
         pinning_pieces = EMPTY_BB;
         blockers = board.PinnedPiecesForSquare(king_square, enemy_color, pinning_pieces);
@@ -127,28 +127,25 @@ namespace Meetra {
         while (pawn_prom) {
             Square dest_s = PopLsb(pawn_prom);
             Square origin_s = dest_s - push_dir;
-            if (blockers & SquareToBB(origin_s) && !(rays_between_edges[king_square][origin_s] & SquareToBB(dest_s))) {
-                continue;
+            if (!DiscoveryCheck(origin_s, dest_s)) {
+                PutPromMoves(origin_s, dest_s);
             }
-            PutPromMoves(origin_s, dest_s);
         }
 
         while (pawns_two_fw) {
             Square dest_s = PopLsb(pawns_two_fw);
             Square origin_s = dest_s - push_dir - push_dir;
-            if (blockers & SquareToBB(origin_s) && !(rays_between_edges[king_square][origin_s] & SquareToBB(dest_s))) {
-                continue;
+            if (!DiscoveryCheck(origin_s, dest_s)) {
+                PutMove(NewMove(origin_s, dest_s, TWO_FORWARD));
             }
-            PutMove(NewMove(dest_s - push_dir - push_dir, dest_s, TWO_FORWARD));
         }
 
         while (pawns_one_fw) {
             Square dest_s = PopLsb(pawns_one_fw);
             Square origin_s = dest_s - push_dir;
-            if (blockers & SquareToBB(origin_s) && !(rays_between_edges[king_square][origin_s] & SquareToBB(dest_s))) {
-                continue;
+            if (!DiscoveryCheck(origin_s, dest_s)) {
+                PutMove(NewMove(origin_s, dest_s));
             }
-            PutMove(NewMove(dest_s - push_dir, dest_s));
         }
     }
 
@@ -160,12 +157,8 @@ namespace Meetra {
         constexpr Direction left_dir = pawn_capture_left_dir<C>();
         constexpr Direction right_dir = pawn_capture_right_dir<C>();
 
-        Bitboard left_captures =
-                (shift<left_dir>(pawns & ~blockers) | (shift<left_dir>(pawns & blockers) & pinning_pieces)) &
-                phase_mask;
-        Bitboard right_captures =
-                (shift<right_dir>(pawns & ~blockers) | (shift<right_dir>(pawns & blockers) & pinning_pieces)) &
-                phase_mask;
+        Bitboard left_captures = shift<left_dir>(pawns) & phase_mask;
+        Bitboard right_captures = shift<right_dir>(pawns) & phase_mask;
 
         Bitboard left_prom = left_captures & promotion_rank<C>();
         Bitboard right_prom = right_captures & promotion_rank<C>();
@@ -175,20 +168,36 @@ namespace Meetra {
 
         while (left_prom) {
             Square dest_s = PopLsb(left_prom);
-            PutPromMoves(dest_s - left_dir, dest_s);
+            Square origin_s = dest_s - left_dir;
+            if (!DiscoveryCheck(origin_s, dest_s)) {
+                PutPromMoves(origin_s, dest_s);
+            }
         }
         while (right_prom) {
             Square dest_s = PopLsb(right_prom);
-            PutPromMoves(dest_s - right_dir, dest_s);
+            Square origin_s = dest_s - right_dir;
+            if (!DiscoveryCheck(origin_s, dest_s)) {
+                PutPromMoves(origin_s, dest_s);
+            }
         }
         while (left_captures) {
             Square dest_s = PopLsb(left_captures);
-            PutMove(NewMove(dest_s - left_dir, dest_s));
+            Square origin_s = dest_s - left_dir;
+            if (!DiscoveryCheck(origin_s, dest_s)) {
+                PutMove(NewMove(origin_s, dest_s));
+            }
         }
         while (right_captures) {
             Square dest_s = PopLsb(right_captures);
-            PutMove(NewMove(dest_s - right_dir, dest_s));
+            Square origin_s = dest_s - right_dir;
+            if (!DiscoveryCheck(origin_s, dest_s)) {
+                PutMove(NewMove(origin_s, dest_s));
+            }
         }
+    }
+
+    bool MoveGen::DiscoveryCheck(Square origin, Square destination){
+        return (blockers & SquareToBB(origin)) && !(rays_between_edges[king_square][origin] & SquareToBB(destination));
     }
 
     template<Color C>

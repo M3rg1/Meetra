@@ -1,10 +1,8 @@
 #include "Board.h"
-#include <utility>
 #include "Bitboards.h"
 #include "FenLoader.h"
 #include "Misc.h"
 #include <cstring>
-#include <chrono>
 
 namespace Meetra {
 
@@ -46,7 +44,7 @@ namespace Meetra {
         while (bishop_queen_attackers) {
             Square attacker_s = PopLsb(bishop_queen_attackers);
             Bitboard blockers = rays_between_squares[attacker_s][s] & potential_blockers & bishop_moves[attacker_s];
-            if (PopCount(blockers) == 1) {
+            if (blockers && !MoreThanOne(blockers)) {
                 pinned_pieces |= blockers;
                 pinning_pieces |= SquareToBB(attacker_s);
             }
@@ -56,7 +54,7 @@ namespace Meetra {
         while (rook_queen_attackers) {
             Square attacker_s = PopLsb(rook_queen_attackers);
             Bitboard blockers = rays_between_squares[attacker_s][s] & potential_blockers & rook_moves[attacker_s];
-            if (PopCount(blockers) == 1) {
+            if (blockers && !MoreThanOne(blockers)) {
                 pinned_pieces |= blockers;
                 pinning_pieces |= SquareToBB(attacker_s);
             }
@@ -113,8 +111,6 @@ namespace Meetra {
             captured_piece = NewPiece(PAWN, next_move_col);
         }
 
-        // TODO test if ply and move counter is incrementing/resetting correctly
-
         if (captured_piece != NO_PIECE) {
             RemovePiece(capture_square);
             SetCapturedPiece(captured_piece);
@@ -125,12 +121,10 @@ namespace Meetra {
 
         MovePiece(from, to);
 
-        if(move_type == EN_PASSANT){
-            return !IsSquareAttacked(Lsb(GetPieces(KING, this_move_col)), next_move_col, GetPieces(ALL_TYPES));
-        }
-
-        if (move_type != NO_FLAG) {
-            if (move_type == TWO_FORWARD) {
+        if (move_type) {
+            if (move_type == EN_PASSANT) {
+                return !IsSquareAttacked(Lsb(GetPieces(KING, this_move_col)), next_move_col, GetPieces(ALL_TYPES));
+            } else if (move_type == TWO_FORWARD) {
                 SetEpSquare(next_move_col ? to + SOUTH : to + NORTH);
             } else if (move_type == CASTLING) {
                 Square castling_rook_orig = RookFromCastling(to);
@@ -142,10 +136,9 @@ namespace Meetra {
             }
         }
 
-        if(moved_piece_type == KING){
+        if (moved_piece_type == KING) {
             return !IsSquareAttacked(Lsb(GetPieces(KING, this_move_col)), next_move_col, GetPieces(ALL_TYPES));
         }
-
         return true;
     }
 

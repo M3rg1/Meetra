@@ -88,6 +88,7 @@ namespace Meetra {
     inline Square SquareFromFiRa(File f, Rank r) { return static_cast<Square>((r << 3) + f); }
     inline File FileFromSquare(Square s) { return static_cast<File>(s & 7); }
     inline Rank RankFromSquare(Square s) { return static_cast<Rank>(s >> 3); }
+    inline Bitboard SquareToBB(Square s) { return static_cast<Bitboard>(0x1) << s; }
 
 #pragma region ===== Castling related stuff =====
     enum CastlingRights : uint16_t {
