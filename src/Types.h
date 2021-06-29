@@ -39,7 +39,7 @@ namespace Meetra {
 
     inline Color ColorOfPiece(Piece p) { return static_cast<Color>(p >> 3); }
     inline PieceType TypeOfPiece(Piece p) { return static_cast<PieceType>(p & 7); }
-    inline Piece NewPiece(PieceType pt, Color c) { return static_cast<Piece>((c << 3) + pt); }
+    inline Piece NewPiece(PieceType pt, Color c) { return static_cast<Piece>((c << 3) | pt); }
 
     enum Rank : int8_t {
         RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8,
@@ -85,7 +85,7 @@ namespace Meetra {
         SQUARE_ZERO = 0,
     };
 
-    inline Square SquareFromFiRa(File f, Rank r) { return static_cast<Square>((r << 3) + f); }
+    inline Square SquareFromFiRa(File f, Rank r) { return static_cast<Square>((r << 3) | f); }
     inline File FileFromSquare(Square s) { return static_cast<File>(s & 7); }
     inline Rank RankFromSquare(Square s) { return static_cast<Rank>(s >> 3); }
     inline Bitboard SquareToBB(Square s) { return static_cast<Bitboard>(0x1) << s; }
@@ -136,9 +136,7 @@ namespace Meetra {
 
 #pragma region ===== Initialization =====
     inline Move NewMove(Square from, Square to) { return static_cast<Move>(from | to << 6); }
-    inline Move NewMove(Square from, Square to, MoveType flag) {
-        return static_cast<Move>(NewMove(from, to) | flag);
-    }
+    inline Move NewMove(Square from, Square to, MoveType flag) { return static_cast<Move>(NewMove(from, to) | flag); }
 #pragma endregion
 
 #pragma region ===== Utils =====

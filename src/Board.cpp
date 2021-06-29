@@ -99,13 +99,12 @@ namespace Meetra {
         RemoveCastlingRights(static_cast<CastlingRights>(castling_mask[from] | castling_mask[to]));
 
         MoveType move_type = GetFlag(m);
-        Square capture_square = to;
         Piece captured_piece = board[to];
-        Piece moved_piece = board[from];
-        PieceType moved_piece_type = TypeOfPiece(moved_piece);
+        PieceType moved_piece_type = TypeOfPiece(board[from]);
 
 
         if (captured_piece || move_type == EN_PASSANT) {
+            Square capture_square = to;
             if (move_type == EN_PASSANT) {
                 capture_square += next_move_col ? SOUTH : NORTH;
                 captured_piece = NewPiece(PAWN, next_move_col);
@@ -144,17 +143,16 @@ namespace Meetra {
         Square to = ToSquare(m);
         MoveType move_type = GetFlag(m);
 
-        Color black_to_move = ColorToMove();
         Piece captured_piece = CapturedPiece();
 
         MovePiece(to, from);
 
         if (captured_piece) {
             if (move_type == EN_PASSANT) {
-                to = black_to_move ? to + SOUTH : to + NORTH;
+                to = ColorToMove() ? to + SOUTH : to + NORTH;
             } else if(IsPromotion(m)){
                 RemovePiece(from);
-                PutPiece(from, NewPiece(PAWN, static_cast<Color>(!black_to_move)));
+                PutPiece(from, NewPiece(PAWN, static_cast<Color>(!ColorToMove())));
             }
             PutPiece(to, captured_piece);
         } else if(move_type) {
@@ -162,7 +160,7 @@ namespace Meetra {
                 MovePiece(RookToCastling(to), RookFromCastling(to));
             } else if (IsPromotion(m)) {
                 RemovePiece(from);
-                PutPiece(from, NewPiece(PAWN, static_cast<Color>(!black_to_move)));
+                PutPiece(from, NewPiece(PAWN, static_cast<Color>(!ColorToMove())));
             }
         }
 
