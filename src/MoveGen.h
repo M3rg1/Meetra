@@ -32,7 +32,7 @@ namespace Meetra {
         Color my_color;
         Color enemy_color;
 
-        [[nodiscard]] inline bool Empty() const { return moves_cnt == 0; }
+        [[nodiscard]] inline bool Empty() const { return !moves_cnt; }
         inline Move PopMove() { return moves[--moves_cnt]; }
         inline void PutMove(Move m) { moves[moves_cnt++] = m; }
         inline void PutPromMoves(Square from, Square to){
@@ -73,32 +73,32 @@ namespace Meetra {
     };
 
     template<Color C>
-    constexpr Direction pawn_push_dir() {
+    constexpr Direction PawnFwdDir() {
         return C == WHITE ? NORTH : SOUTH;
     }
 
     template<Color C>
-    constexpr Direction pawn_capture_left_dir() {
+    constexpr Direction PawnCaptureLeftDir() {
         return C == WHITE ? NORTH_WEST : SOUTH_EAST;
     }
 
     template<Color C>
-    constexpr Direction pawn_capture_right_dir() {
+    constexpr Direction PawnCaptureRightDir() {
         return C == WHITE ? NORTH_EAST : SOUTH_WEST;
     }
 
     template<Color C>
-    constexpr Bitboard promotion_rank() {
+    constexpr Bitboard PromotionRank() {
         return C == WHITE ? 0xFF00000000000000UL : 0xFF000000000000FFUL;
     }
 
     template<Color C>
-    constexpr Bitboard two_fwd_rank() {
+    constexpr Bitboard TwoFwdRank() {
         return C == WHITE ? 0x00000000FF000000UL : 0x000000FF00000000UL;
     }
 
     template<Direction D>
-    constexpr Bitboard shift(Bitboard b) {
+    constexpr Bitboard BitShift(Bitboard b) {
         return D == NORTH ? b << 8 : D == SOUTH ? b >> 8 : D == EAST ? (b & ~0x8080808080808080UL) << 1 :
                                                            D == WEST ? (b & ~0x0101010101010101UL) >> 1 : D ==
                                                                                                           NORTH_EAST ?

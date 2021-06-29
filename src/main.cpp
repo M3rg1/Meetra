@@ -34,10 +34,10 @@ int main(int argc, char *arv[]) {
     Bitboard blockers = board.PinnedPiecesForSquare(king_square, OtherColor(board.ColorToMove()));
     std::cout << PPBitboard(blockers) << std::endl;*/
 
-/*    std::cout << PPBitboard(rays_between_edges[king_square][PopLsb(blockers)]) << std::endl;
-    std::cout << PPBitboard(rays_between_edges[king_square][PopLsb(blockers)]) << std::endl;
-    std::cout << PPBitboard(rays_between_edges[king_square][PopLsb(blockers)]) << std::endl;
-    std::cout << PPBitboard(rays_between_edges[king_square][PopLsb(blockers)]) << std::endl;*/
+/*    std::cout << PPBitboard(rays_between_board_edges[king_square][PopLsb(blockers)]) << std::endl;
+    std::cout << PPBitboard(rays_between_board_edges[king_square][PopLsb(blockers)]) << std::endl;
+    std::cout << PPBitboard(rays_between_board_edges[king_square][PopLsb(blockers)]) << std::endl;
+    std::cout << PPBitboard(rays_between_board_edges[king_square][PopLsb(blockers)]) << std::endl;*/
 
 /*    MoveGen ml(board);
     board.MakeMove(ml.GetNextMove());*/

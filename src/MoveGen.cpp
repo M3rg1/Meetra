@@ -105,7 +105,7 @@ namespace Meetra {
             Square origin_s = PopLsb(pieces);
             Bitboard possible_moves = GetAttacksForPiece<PT>(origin_s, all_pieces) & legality_mask;
             if (blockers & SquareToBB(origin_s)) {
-                possible_moves &= rays_between_edges[king_square][origin_s];
+                possible_moves &= rays_between_board_edges[king_square][origin_s];
             }
             while (possible_moves) {
                 Square destination_s = PopLsb(possible_moves);
@@ -117,11 +117,11 @@ namespace Meetra {
     template<Color C>
     void MoveGen::GenPawnForwardMoves() {
 
-        constexpr Direction push_dir = pawn_push_dir<C>();
-        Bitboard pawns_one_fw = shift<push_dir>(board.GetPieces(PAWN, C)) & empty_squares;
-        Bitboard pawns_two_fw = shift<push_dir>(pawns_one_fw) & empty_squares & two_fwd_rank<C>() & phase_mask;
-        Bitboard pawn_prom = pawns_one_fw & phase_mask & promotion_rank<C>();
-        pawns_one_fw &= phase_mask & ~promotion_rank<C>();
+        constexpr Direction push_dir = PawnFwdDir<C>();
+        Bitboard pawns_one_fw = BitShift<push_dir>(board.GetPieces(PAWN, C)) & empty_squares;
+        Bitboard pawns_two_fw = BitShift<push_dir>(pawns_one_fw) & empty_squares & TwoFwdRank<C>() & phase_mask;
+        Bitboard pawn_prom = pawns_one_fw & phase_mask & PromotionRank<C>();
+        pawns_one_fw &= phase_mask & ~PromotionRank<C>();
 
         while (pawn_prom) {
             Square dest_s = PopLsb(pawn_prom);
@@ -153,17 +153,17 @@ namespace Meetra {
 
         Bitboard pawns = board.GetPieces(PAWN, C);
 
-        constexpr Direction left_dir = pawn_capture_left_dir<C>();
-        constexpr Direction right_dir = pawn_capture_right_dir<C>();
+        constexpr Direction left_dir = PawnCaptureLeftDir<C>();
+        constexpr Direction right_dir = PawnCaptureRightDir<C>();
 
-        Bitboard left_captures = shift<left_dir>(pawns) & phase_mask;
-        Bitboard right_captures = shift<right_dir>(pawns) & phase_mask;
+        Bitboard left_captures = BitShift<left_dir>(pawns) & phase_mask;
+        Bitboard right_captures = BitShift<right_dir>(pawns) & phase_mask;
 
-        Bitboard left_prom = left_captures & promotion_rank<C>();
-        Bitboard right_prom = right_captures & promotion_rank<C>();
+        Bitboard left_prom = left_captures & PromotionRank<C>();
+        Bitboard right_prom = right_captures & PromotionRank<C>();
 
-        left_captures &= ~promotion_rank<C>();
-        right_captures &= ~promotion_rank<C>();
+        left_captures &= ~PromotionRank<C>();
+        right_captures &= ~PromotionRank<C>();
 
         while (left_prom) {
             Square dest_s = PopLsb(left_prom);
@@ -196,7 +196,7 @@ namespace Meetra {
     }
 
     bool MoveGen::DiscoveryCheck(Square origin, Square destination){
-        return (blockers & SquareToBB(origin)) && !(rays_between_edges[king_square][origin] & SquareToBB(destination));
+        return (blockers & SquareToBB(origin)) && !(rays_between_board_edges[king_square][origin] & SquareToBB(destination));
     }
 
     template<Color C>

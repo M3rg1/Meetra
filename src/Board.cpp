@@ -43,7 +43,7 @@ namespace Meetra {
         Bitboard bishop_queen_attackers = GetPieces(BISHOP, attackers_color) | GetPieces(QUEEN, attackers_color);
         while (bishop_queen_attackers) {
             Square attacker_s = PopLsb(bishop_queen_attackers);
-            Bitboard blockers = rays_between_squares[attacker_s][s] & potential_blockers & bishop_moves[attacker_s];
+            Bitboard blockers = rays_between_squares[attacker_s][s] & potential_blockers & bishop_unbound_moves[attacker_s];
             if (blockers && !MoreThanOne(blockers)) {
                 pinned_pieces |= blockers;
             }
@@ -52,7 +52,7 @@ namespace Meetra {
         Bitboard rook_queen_attackers = GetPieces(ROOK, attackers_color) | GetPieces(QUEEN, attackers_color);
         while (rook_queen_attackers) {
             Square attacker_s = PopLsb(rook_queen_attackers);
-            Bitboard blockers = rays_between_squares[attacker_s][s] & potential_blockers & rook_moves[attacker_s];
+            Bitboard blockers = rays_between_squares[attacker_s][s] & potential_blockers & rook_unbound_moves[attacker_s];
             if (blockers && !MoreThanOne(blockers)) {
                 pinned_pieces |= blockers;
             }

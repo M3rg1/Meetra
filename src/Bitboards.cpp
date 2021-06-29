@@ -48,13 +48,13 @@ namespace Meetra {
     Bitboard inner_rays[SQUARE_NR][DIRECTION_IDX_NR];
 
     Bitboard rays_between_squares[SQUARE_NR][SQUARE_NR];
-    Bitboard rays_between_edges[SQUARE_NR][SQUARE_NR];
+    Bitboard rays_between_board_edges[SQUARE_NR][SQUARE_NR];
 
-    Bitboard rook_moves[SQUARE_NR];
-    Bitboard bishop_moves[SQUARE_NR];
+    Bitboard rook_unbound_moves[SQUARE_NR];
+    Bitboard bishop_unbound_moves[SQUARE_NR];
 
-    Bitboard rook_table[102400];
-    Bitboard bishop_table[5248];
+    Bitboard rook_table[88064];
+    Bitboard bishop_table[4800];
 
 
 #pragma region ===== Hyperbola Quintessence, Reverse Bitboards (for magics initialization) =====
@@ -70,7 +70,7 @@ namespace Meetra {
     }
 
     Bitboard GetDiagMoves(Square s, Bitboard occ) {
-        ulong bitboard = SquareToBB(s);
+        Bitboard bitboard = SquareToBB(s);
         Bitboard move_mask = rays[s][NORTH_EAST_IDX] | rays[s][SOUTH_WEST_IDX];
         return (((occ & move_mask) - (bitboard << 1)) ^ ReverseBits(ReverseBits(occ & move_mask)
                                                                     - (ReverseBits(bitboard) << 1))) & move_mask;
@@ -129,12 +129,8 @@ namespace Meetra {
 
     void FillMagics() {
         for (Square s = A1; s <= H8; ++s) {
-            SetBlockersRecursive(rook_magics[s], s, EMPTY_BB,
-                                 rays[s][NORTH_IDX] | rays[s][EAST_IDX] | rays[s][SOUTH_IDX] | rays[s][WEST_IDX],
-                                 GetHorAndVertMoves);
-            SetBlockersRecursive(bishop_magics[s], s, EMPTY_BB,
-                                 rays[s][NORTH_WEST_IDX] | rays[s][NORTH_EAST_IDX] | rays[s][SOUTH_WEST_IDX] |
-                                 rays[s][SOUTH_EAST_IDX], GetDiagAndAntiDiagMoves);
+            SetBlockersRecursive(rook_magics[s], s, EMPTY_BB, rook_unbound_moves[s], GetHorAndVertMoves);
+            SetBlockersRecursive(bishop_magics[s], s, EMPTY_BB, bishop_unbound_moves[s], GetDiagAndAntiDiagMoves);
         }
     }
 
@@ -153,7 +149,6 @@ namespace Meetra {
             bishop_magics[s].attacks =
                     s == A1 ? bishop_table : bishop_magics[s - 1].attacks + (1 << bishop_magic_shift[s - 1]);
         }
-
         FillMagics();
     }
 #pragma endregion
@@ -162,7 +157,7 @@ namespace Meetra {
 #pragma region ===== Precomputing king, knight moves and pawn attacks =====
 
     void InitPawnAttacks() {
-        int possible_moves[2] = {7, 9};
+        int possible_moves[] = {7, 9};
         for (Square s = A1; s <= H8; ++s) {
             Bitboard attacks = EMPTY_BB;
             for (int m : possible_moves) {
@@ -192,7 +187,7 @@ namespace Meetra {
                     moves |= SquareToBB(s + d);
                 }
             }
-            moves &= (s & 7) > 3 ? ~file_masks[FILE_A] : ~file_masks[FILE_H];
+            moves &= FileFromSquare(s) > FILE_D ? ~file_masks[FILE_A] : ~file_masks[FILE_H];
             king_moves[s] = moves;
         }
     }
@@ -206,8 +201,7 @@ namespace Meetra {
                     moves |= SquareToBB(s + m);
                 }
             }
-            moves &=
-                    (s & 7) > 3 ? ~file_masks[FILE_A] & ~file_masks[FILE_B] : ~file_masks[FILE_H] & ~file_masks[FILE_G];
+            moves &= FileFromSquare(s) > FILE_D ? ~file_masks[FILE_A] & ~file_masks[FILE_B] : ~file_masks[FILE_H] & ~file_masks[FILE_G];
             knight_moves[s] = moves;
         }
     }
@@ -361,10 +355,10 @@ namespace Meetra {
         for (Square origin = A1; origin <= H8; ++origin) {
             for (Square destination = A1; destination <= H8; ++destination) {
                 rays_between_squares[origin][destination] = GetRay(origin, destination);
-                rays_between_edges[origin][destination] = GetRayToEdge(origin, destination);
+                rays_between_board_edges[origin][destination] = GetRayToEdge(origin, destination);
             }
-            rook_moves[origin] = rays[origin][NORTH_IDX] | rays[origin][WEST_IDX] | rays[origin][EAST_IDX] | rays[origin][SOUTH_IDX];
-            bishop_moves[origin] = rays[origin][NORTH_WEST_IDX] | rays[origin][SOUTH_WEST_IDX] | rays[origin][SOUTH_EAST_IDX] | rays[origin][NORTH_EAST_IDX];
+            rook_unbound_moves[origin] = rays[origin][NORTH_IDX] | rays[origin][WEST_IDX] | rays[origin][EAST_IDX] | rays[origin][SOUTH_IDX];
+            bishop_unbound_moves[origin] = rays[origin][NORTH_WEST_IDX] | rays[origin][SOUTH_WEST_IDX] | rays[origin][SOUTH_EAST_IDX] | rays[origin][NORTH_EAST_IDX];
         }
     }
 

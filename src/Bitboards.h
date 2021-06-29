@@ -21,17 +21,16 @@ namespace Meetra {
 
     extern Bitboard king_moves[SQUARE_NR];
     extern Bitboard knight_moves[SQUARE_NR];
-
-    extern Bitboard rays[SQUARE_NR][DIRECTION_IDX_NR];
-    extern Bitboard inner_rays[SQUARE_NR][DIRECTION_IDX_NR];
-
     extern Bitboard pawn_attacks[COLOR_NR][SQUARE_NR];
 
-    extern Bitboard rays_between_edges[SQUARE_NR][SQUARE_NR];
+    //extern Bitboard rays[SQUARE_NR][DIRECTION_IDX_NR];
+    extern Bitboard inner_rays[SQUARE_NR][DIRECTION_IDX_NR];
+
+    extern Bitboard rays_between_board_edges[SQUARE_NR][SQUARE_NR];
     extern Bitboard rays_between_squares[SQUARE_NR][SQUARE_NR];
 
-    extern Bitboard rook_moves[SQUARE_NR];
-    extern Bitboard bishop_moves[SQUARE_NR];
+    extern Bitboard rook_unbound_moves[SQUARE_NR];
+    extern Bitboard bishop_unbound_moves[SQUARE_NR];
 
 
     inline Bitboard GetRookAttacks(Square s, Bitboard occ) {
