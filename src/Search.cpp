@@ -5,18 +5,18 @@
 
 namespace Meetra {
 
-#define POSITIVE_INF 32000
-#define NEGATIVE_INF (-32000)
-#define MATE_SCORE (-31000)
-#define DRAW_SCORE 0
-
     ulong cutoffs = 0;
     ulong nodes_searched = 0;
     ulong qsearch_nodes = 0;
+    ulong qsearch_depth = 0;
 
-    int QuiescenceSearch(Board &board, int alpha, int beta) {
+    int QuiescenceSearch(Board &board, int alpha, int beta, int depth) {
 
-        auto score = EvalBoard(board);
+        if (depth > qsearch_depth) {
+            qsearch_depth = depth;
+        }
+
+        auto score = BoardEval(board);
         if (score >= beta) {
             cutoffs++;
             return beta;
@@ -33,7 +33,7 @@ namespace Meetra {
                 continue;
             }
             qsearch_nodes++;
-            score = -QuiescenceSearch(board, -beta, -alpha);
+            score = -QuiescenceSearch(board, -beta, -alpha, depth + 1);
             board.UnmakeMove(move);
             if (score >= beta) {
                 cutoffs++;
@@ -43,6 +43,7 @@ namespace Meetra {
                 alpha = score;
             }
         }
+
         return alpha;
     }
 
@@ -50,16 +51,16 @@ namespace Meetra {
 
 
         if (depth == 0) {
-            //return EvalBoard(board);
-            return QuiescenceSearch(board, alpha, beta);
+            //return BoardEval(board);
+            return QuiescenceSearch(board, alpha, beta, 1);
         }
 
-        if(board.Ply() >= 50){
+        if (board.Ply() >= 50) {
             return DRAW_SCORE;
         }
 
         MoveGen move_gen(board);
-        Move best_move_this_depth = INVALID_MOVE;
+        Move best_move = INVALID_MOVE;
         Move move;
         while ((move = move_gen.GetNextMove<false>())) {
             if (!board.MakeMove(move)) {
@@ -75,11 +76,11 @@ namespace Meetra {
             }
             if (score > alpha) {
                 alpha = score;
-                best_move_this_depth = move;
+                best_move = move;
             }
         }
 
-        if (best_move_this_depth == INVALID_MOVE) {
+        if (best_move == INVALID_MOVE) {
             if (move_gen.IsKingInCheck()) {
                 return MATE_SCORE;
             }
@@ -120,5 +121,6 @@ namespace Meetra {
         std::cout << "Best move: " << GetMoveName(best_move) << std::endl;
         std::cout << "Score: " << best_score << std::endl;
         std::cout << "Cutoffs: " << cutoffs << std::endl;
+        std::cout << "Qsearch depth: " << qsearch_depth << std::endl;
     }
 }

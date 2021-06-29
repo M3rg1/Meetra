@@ -26,7 +26,7 @@ int main(int argc, char *arv[]) {
     // r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -
     // rnb1k2r/ppQ2ppp/1qp5/4b2B/1PB5/P5Nn/1PP3PP/RN2R1K1 b Q - 0 1     --- pins
     // 1k4nQ/prpp1p2/bq2p1p1/3PNb2/np2P3/2N4p/PPPBBPPP/R3K2R w KQ - 0 1
-    Board board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    Board board("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -");
     std::cout << GetLogo() << std::endl;
     std::cout << " v. " << GetVersion() << std::endl;
     std::cout << " Made by " << GetAuthor() << std::endl << std::endl;
@@ -38,7 +38,12 @@ int main(int argc, char *arv[]) {
         std::cout << GetMoveName(m) << std::endl;
     }*/
 
-    StartSearch(board, 8);
+    INIT_TIMER
+    START_TIMER
+    StartSearch(board, 5);
+    STOP_TIMER
+
+    std::cout << "Elapsed: " << TIMER_GET_TIME_MS << "ms" << std::endl;
 
     //RunPerft(5, board);
 

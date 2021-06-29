@@ -21,6 +21,7 @@ namespace Meetra {
         [[nodiscard]] inline Bitboard GetPieces(PieceType pt) const { return type_bbs[pt]; }
         [[nodiscard]] inline Bitboard GetPieces(Color c) const { return color_bbs[c]; }
         [[nodiscard]] inline Bitboard GetEmptySquares() const { return ~GetPieces(ALL_TYPES); }
+        [[nodiscard]] inline PieceType GetPieceOnSquare(Square s) const { return TypeOfPiece(board[s]); }
 #pragma endregion
 
 #pragma region ===== Game State info getters =====

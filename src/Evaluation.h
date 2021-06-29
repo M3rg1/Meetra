@@ -5,7 +5,18 @@
 
 namespace Meetra{
 
-    int EvalBoard(Board &board);
+#define POSITIVE_INF 32000
+#define NEGATIVE_INF (-32000)
+#define MATE_SCORE (-31000)
+#define DRAW_SCORE 0
+
+    int MoveEval(const Board &board, Move move);
+    int MoveMaterialEval(const Board &board, Move move);
+    int MovePositionEval(const Board &board, Move move);
+
+    int BoardEval(const Board &board);
+    int BoardMaterialEval(const Board &board);
+    int BoardPositionEval(const Board &board, Color c);
 
 }
 

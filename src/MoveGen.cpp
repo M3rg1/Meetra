@@ -1,5 +1,6 @@
 #include "MoveGen.h"
 #include "Bitboards.h"
+#include "Evaluation.h"
 #include "Macros.h"
 
 
@@ -48,10 +49,23 @@ namespace Meetra {
             }
         }
 
-        // https://www.chessprogramming.org/Move_Ordering -- "Typical move ordering"
-        // selection sort to pick the best move - pass through the whole list once and pick move with highest score
+        // TODO i can do this only once, after the moves are generated and create an additional array
+        // TODO with all the evals, and then just return moves based on that array
+        // TODO where i just walk through the whole array and pick the best move to pop
+        int idx_best_move = 0;
+        int max_eval = NEGATIVE_INF;
+        for(int i = 0; i < moves_cnt; i++){
+            if(moves[i] == INVALID_MOVE){
+                continue;
+            }
+            int eval = MoveEval(board, moves[i]);
+            if(eval > max_eval){
+                max_eval = eval;
+                idx_best_move = i;
+            }
+        }
 
-        return PopMove();
+        return PopAtIdx(idx_best_move);
     }
 
     template<Color C, bool QSearch>

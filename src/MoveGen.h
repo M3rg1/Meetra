@@ -38,6 +38,11 @@ namespace Meetra {
 
         [[nodiscard]] inline bool Empty() const { return !moves_cnt; }
         inline Move PopMove() { return moves[--moves_cnt]; }
+        inline Move PopAtIdx(int idx) {
+            Move ret = moves[idx];
+            moves[idx] = moves[--moves_cnt];
+            return ret;
+        }
         inline void PutMove(Move m) { moves[moves_cnt++] = m; }
         inline void PutPromMoves(Square from, Square to){
             PutMove(NewMove(from, to, PROMOTE_QUEEN));
