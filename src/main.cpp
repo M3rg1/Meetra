@@ -3,6 +3,7 @@
 #include "Bitboards.h"
 #include "Board.h"
 #include "Misc.h"
+#include "Search.h"
 #include "Perft.h"
 
 //  Variables: snake_case
@@ -24,25 +25,22 @@ int main(int argc, char *arv[]) {
     // rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
     // r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -
     // rnb1k2r/ppQ2ppp/1qp5/4b2B/1PB5/P5Nn/1PP3PP/RN2R1K1 b Q - 0 1     --- pins
-    Board board("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ");
+    // 1k4nQ/prpp1p2/bq2p1p1/3PNb2/np2P3/2N4p/PPPBBPPP/R3K2R w KQ - 0 1
+    Board board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     std::cout << GetLogo() << std::endl;
     std::cout << " v. " << GetVersion() << std::endl;
     std::cout << " Made by " << GetAuthor() << std::endl << std::endl;
     std::cout << board.PPBoard() << std::endl;
 
-/*    Square king_square = Lsb(board.GetPieces(KING, board.ColorToMove()));
-    Bitboard blockers = board.PinnedPiecesForSquare(king_square, OtherColor(board.ColorToMove()));
-    std::cout << PPBitboard(blockers) << std::endl;*/
+/*    MoveGen mg(board, true);
+    Move m = INVALID_MOVE;
+    while((m = mg.GetNextMove())){
+        std::cout << GetMoveName(m) << std::endl;
+    }*/
 
-/*    std::cout << PPBitboard(rays_between_board_edges[king_square][PopLsb(blockers)]) << std::endl;
-    std::cout << PPBitboard(rays_between_board_edges[king_square][PopLsb(blockers)]) << std::endl;
-    std::cout << PPBitboard(rays_between_board_edges[king_square][PopLsb(blockers)]) << std::endl;
-    std::cout << PPBitboard(rays_between_board_edges[king_square][PopLsb(blockers)]) << std::endl;*/
+    StartSearch(board, 8);
 
-/*    MoveGen ml(board);
-    board.MakeMove(ml.GetNextMove());*/
-
-    RunPerft(5, board);
+    //RunPerft(5, board);
 
 /*    INIT_TIMER
     START_TIMER

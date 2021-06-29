@@ -1,10 +1,13 @@
 #include "MoveGen.h"
 #include "Bitboards.h"
+#include "Macros.h"
 
 
 namespace Meetra {
 
-    MoveGen::MoveGen(const Board &board, GenPhase start_phase) : board(board) {
+    // TODO quiescence will stop searching when no captures, but leave king in check
+
+    MoveGen::MoveGen(const Board &board) : board(board) {
 
         moves_cnt = 0;
         my_color = board.ColorToMove();
@@ -18,7 +21,12 @@ namespace Meetra {
 
         if (checkers) {
             if (MoreThanOne(checkers)) {
-                genPhase = EVASION;
+                if (my_color == WHITE) {
+                    GenMovesForPieceType<KING, WHITE>(enemy_pieces | empty_squares);
+                } else {
+                    GenMovesForPieceType<KING, BLACK>(enemy_pieces | empty_squares);
+                }
+                genPhase = END;
                 return;
             }
             Bitboard capture_mask = checkers;
@@ -26,17 +34,17 @@ namespace Meetra {
             Bitboard block_mask = rays_between_squares[king_square][attacker_square];
             legal_moves = capture_mask | block_mask;
         }
-
-        genPhase = start_phase;
         blockers = board.PinnedPiecesForSquare(king_square, enemy_color);
+        genPhase = BEST_MOVE;
     }
 
+    template<bool QSearch>
     Move MoveGen::GetNextMove() {
         while (Empty()) {
             if (my_color == WHITE) {
-                NextPhase<WHITE>();
+                NextPhase<WHITE, QSearch>();
             } else {
-                NextPhase<BLACK>();
+                NextPhase<BLACK, QSearch>();
             }
         }
 
@@ -46,48 +54,57 @@ namespace Meetra {
         return PopMove();
     }
 
-    template<Color C>
+    template<Color C, bool QSearch>
     void MoveGen::NextPhase() {
-        switch (genPhase) {
-            case BEST_MOVE:
-                ++genPhase;
-                // return TT / killer move // or make case: Killer Move (also from history heuristic possible)
-                // also null move? PV? etc.
-                break;
-            case CAPTURE:
-                GenMovesForPhase<CAPTURE, C>();
-                ++genPhase;
-                break;
-            case QUIET:
-                GenMovesForPhase<QUIET, C>();
-                ++genPhase;
-                break;
-            case END:
-                PutMove(INVALID_MOVE);
-                break;
-            case EVASION:
-                GenMovesForPhase<EVASION, C>();
-                genPhase = END;
-                break;
+        if constexpr (QSearch) {
+            switch (genPhase) {
+                case CAPTURE:
+                    GenMovesForPhase<CAPTURE, C>();
+                    genPhase = END;
+                    break;
+                case END:
+                    PutMove(INVALID_MOVE);
+                    break;
+                default:
+                    genPhase = CAPTURE;
+                    break;
+            }
+        } else {
+            switch (genPhase) {
+                case BEST_MOVE:
+                    ++genPhase;
+                    // return TT / killer move // or make case: Killer Move (also from history heuristic possible)
+                    // also null move? PV? etc.
+                    break;
+                case CAPTURE:
+                    GenMovesForPhase<CAPTURE, C>();
+                    ++genPhase;
+                    break;
+                case QUIET:
+                    GenMovesForPhase<QUIET, C>();
+                    ++genPhase;
+                    break;
+                case END:
+                    PutMove(INVALID_MOVE);
+                    break;
+                default:
+                    genPhase = END;
+                    break;
+            }
         }
     }
 
     template<GenPhase phase, Color C>
     void MoveGen::GenMovesForPhase() {
 
-        if constexpr (phase == EVASION) {
-            GenMovesForPieceType<KING, C>(enemy_pieces | empty_squares);
-            return;
-        } else if constexpr (phase == QUIET) {
+        if constexpr (phase == QUIET) {
             phase_mask = legal_moves & empty_squares;
             GenPawnForwardMoves<C>();
-            //Blockers_GenPawnForwardMoves<C>();
             GenCastlingMoves<C>();
             GenMovesForPieceType<KING, C>(empty_squares);
         } else if constexpr (phase == CAPTURE) {
             phase_mask = legal_moves & enemy_pieces;
             GenPawnCaptures<C>();
-            //Blockers_GenPawnCaptures<C>();
             GenEnPassantMoves<C>();
             GenMovesForPieceType<KING, C>(enemy_pieces);
         }
@@ -195,8 +212,9 @@ namespace Meetra {
         }
     }
 
-    bool MoveGen::DiscoveryCheck(Square origin, Square destination){
-        return (blockers & SquareToBB(origin)) && !(rays_between_board_edges[king_square][origin] & SquareToBB(destination));
+    bool MoveGen::DiscoveryCheck(Square origin, Square destination) {
+        return (blockers & SquareToBB(origin)) &&
+               !(rays_between_board_edges[king_square][origin] & SquareToBB(destination));
     }
 
     template<Color C>
@@ -236,4 +254,7 @@ namespace Meetra {
                (rays_between_squares[C == WHITE ? E1 : E8][C == WHITE ? A1 : A8] & all_pieces) == EMPTY_BB &&
                !board.IsSquareAttacked(C == WHITE ? D1 : D8, OtherColor(C), all_pieces);
     }
+
+    template Move MoveGen::GetNextMove<true>();
+    template Move MoveGen::GetNextMove<false>();
 }

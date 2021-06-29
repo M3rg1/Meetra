@@ -6,11 +6,15 @@
 
 namespace Meetra {
 
-    class MoveGen {
 
+    class MoveGen {
     public:
-        explicit MoveGen(const Board &board, GenPhase start_phase = BEST_MOVE);
+        explicit MoveGen(const Board &board);
+
+        template<bool QSearch>
         Move GetNextMove();
+
+        [[nodiscard]] inline bool IsKingInCheck() const{ return checkers; }
 
     private:
         const Board &board;
@@ -42,7 +46,7 @@ namespace Meetra {
             PutMove(NewMove(from, to, PROMOTE_KNIGHT));
         }
 
-        template<Color C>
+        template<Color C, bool QSearch>
         void NextPhase();
 
         template<GenPhase phase, Color C>

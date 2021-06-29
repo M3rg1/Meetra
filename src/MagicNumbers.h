@@ -139,7 +139,7 @@ namespace Meetra {
             0x7645FFFECBFEA79E //0x800040100944822,
     };
 
-    constexpr int rook_magic_shift[SQUARE_NR] = {
+    constexpr uint8_t rook_magic_shift[SQUARE_NR] = {
             12, 11, 11, 11, 11, 11, 11, 12,
             11, 10, 10, 10, 10, 10, 10, 11,
             11, 10, 10, 10, 10, 10, 10, 11,
@@ -150,7 +150,7 @@ namespace Meetra {
             11, 10, 10, 10, 10, 11, 10, 11,
     };
 
-    constexpr int bishop_magic_shift[SQUARE_NR] = {
+    constexpr uint8_t bishop_magic_shift[SQUARE_NR] = {
             5, 4, 5, 5, 5, 5, 4, 5,
             4, 4, 5, 5, 5, 5, 4, 4,
             4, 4, 7, 7, 7, 7, 4, 4,
