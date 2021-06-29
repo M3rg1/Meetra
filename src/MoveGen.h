@@ -22,7 +22,6 @@ namespace Meetra {
 
         Bitboard checkers;
         Bitboard blockers;
-        Bitboard pinning_pieces;
         Bitboard legal_moves;
         Bitboard phase_mask;
         Bitboard enemy_pieces;

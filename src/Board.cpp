@@ -35,7 +35,7 @@ namespace Meetra {
         }
     }
 
-    Bitboard Board::PinnedPiecesForSquare(Square s, Color attackers_color, Bitboard &pinning_pieces) const {
+    Bitboard Board::PinnedPiecesForSquare(Square s, Color attackers_color) const {
 
         Bitboard pinned_pieces = EMPTY_BB;
         Bitboard potential_blockers = GetPieces(ALL_TYPES);
@@ -46,7 +46,6 @@ namespace Meetra {
             Bitboard blockers = rays_between_squares[attacker_s][s] & potential_blockers & bishop_moves[attacker_s];
             if (blockers && !MoreThanOne(blockers)) {
                 pinned_pieces |= blockers;
-                pinning_pieces |= SquareToBB(attacker_s);
             }
         }
 
@@ -56,7 +55,6 @@ namespace Meetra {
             Bitboard blockers = rays_between_squares[attacker_s][s] & potential_blockers & rook_moves[attacker_s];
             if (blockers && !MoreThanOne(blockers)) {
                 pinned_pieces |= blockers;
-                pinning_pieces |= SquareToBB(attacker_s);
             }
         }
 
@@ -106,12 +104,12 @@ namespace Meetra {
         Piece moved_piece = board[from];
         PieceType moved_piece_type = TypeOfPiece(moved_piece);
 
-        if (move_type == EN_PASSANT) {
-            capture_square += next_move_col ? SOUTH : NORTH;
-            captured_piece = NewPiece(PAWN, next_move_col);
-        }
 
-        if (captured_piece != NO_PIECE) {
+        if (captured_piece || move_type == EN_PASSANT) {
+            if (move_type == EN_PASSANT) {
+                capture_square += next_move_col ? SOUTH : NORTH;
+                captured_piece = NewPiece(PAWN, next_move_col);
+            }
             RemovePiece(capture_square);
             SetCapturedPiece(captured_piece);
             ResetPly();
@@ -122,23 +120,21 @@ namespace Meetra {
         MovePiece(from, to);
 
         if (move_type) {
-            if (move_type == EN_PASSANT) {
-                return !IsSquareAttacked(Lsb(GetPieces(KING, this_move_col)), next_move_col, GetPieces(ALL_TYPES));
-            } else if (move_type == TWO_FORWARD) {
+            if (move_type == TWO_FORWARD) {
                 SetEpSquare(next_move_col ? to + SOUTH : to + NORTH);
             } else if (move_type == CASTLING) {
-                Square castling_rook_orig = RookFromCastling(to);
-                Square castling_rook_dest = RookToCastling(to);
-                MovePiece(castling_rook_orig, castling_rook_dest);
+                MovePiece(RookFromCastling(to), RookToCastling(to));
+                return !IsSquareAttacked(Lsb(GetPieces(KING, this_move_col)), next_move_col, GetPieces(ALL_TYPES));
             } else if (IsPromotion(m)) {
                 RemovePiece(to);
                 PutPiece(to, NewPiece(PieceTypeFromFlag(move_type), this_move_col));
+            } else if (move_type == EN_PASSANT) {
+                return !IsSquareAttacked(Lsb(GetPieces(KING, this_move_col)), next_move_col, GetPieces(ALL_TYPES));
             }
-        }
-
-        if (moved_piece_type == KING) {
+        } else if (moved_piece_type == KING) {
             return !IsSquareAttacked(Lsb(GetPieces(KING, this_move_col)), next_move_col, GetPieces(ALL_TYPES));
         }
+
         return true;
     }
 
@@ -151,21 +147,23 @@ namespace Meetra {
         Color black_to_move = ColorToMove();
         Piece captured_piece = CapturedPiece();
 
-        if (IsPromotion(m)) {
-            RemovePiece(to);
-            PutPiece(to, NewPiece(PAWN, static_cast<Color>(!black_to_move)));
-        }
-
         MovePiece(to, from);
 
-        if (move_type == EN_PASSANT) {
-            PutPiece(black_to_move ? to + SOUTH : to + NORTH, captured_piece);
-        } else if (captured_piece) {
+        if (captured_piece) {
+            if (move_type == EN_PASSANT) {
+                to = black_to_move ? to + SOUTH : to + NORTH;
+            } else if(IsPromotion(m)){
+                RemovePiece(from);
+                PutPiece(from, NewPiece(PAWN, static_cast<Color>(!black_to_move)));
+            }
             PutPiece(to, captured_piece);
-        } else if (move_type == CASTLING) {
-            Square castling_rook_orig = RookFromCastling(to);
-            Square castling_rook_dest = RookToCastling(to);
-            MovePiece(castling_rook_dest, castling_rook_orig);
+        } else if(move_type) {
+            if (move_type == CASTLING) {
+                MovePiece(RookToCastling(to), RookFromCastling(to));
+            } else if (IsPromotion(m)) {
+                RemovePiece(from);
+                PutPiece(from, NewPiece(PAWN, static_cast<Color>(!black_to_move)));
+            }
         }
 
         game_state = history[--history_cnt];

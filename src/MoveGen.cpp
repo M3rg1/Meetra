@@ -28,8 +28,7 @@ namespace Meetra {
         }
 
         genPhase = start_phase;
-        pinning_pieces = EMPTY_BB;
-        blockers = board.PinnedPiecesForSquare(king_square, enemy_color, pinning_pieces);
+        blockers = board.PinnedPiecesForSquare(king_square, enemy_color);
     }
 
     Move MoveGen::GetNextMove() {
