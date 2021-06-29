@@ -3,17 +3,6 @@
 
 namespace Meetra {
 
-    /**
-     In Joker (and qperft) I use only a partial legal-move generator. It will not generate moves with pinned pieces that leave
-     you in check, by first determining which pieces are pinned, and then temporarily remove them from the piece list, and generate
-     their moves along the pin line. This saves time in two ways: you don't waste time on generating invalid moves for the pinned pieces
-     , and you don't have to test all other moves for King exposure.
-
-    The King moves (incl. castlings) and e.p. captures that are generated are still pseudo-legal, though. Their legality was most
-     efficiently checked only after the move was made (to prevent the King from stepping 'into its own shadow', and detecting
-     the famous e.p. double-pin).
-     */
-
     MoveGen::MoveGen(const Board &board, GenPhase start_phase) : board(board) {
 
         moves_cnt = 0;
@@ -59,7 +48,7 @@ namespace Meetra {
     }
 
     template<Color C>
-    inline void MoveGen::NextPhase() {
+    void MoveGen::NextPhase() {
         switch (genPhase) {
             case BEST_MOVE:
                 ++genPhase;
@@ -111,7 +100,7 @@ namespace Meetra {
     }
 
     template<PieceType PT, Color C>
-    inline void MoveGen::GenMovesForPieceType(Bitboard legality_mask) {
+    void MoveGen::GenMovesForPieceType(Bitboard legality_mask) {
         Bitboard pieces = board.GetPieces(PT, C);
         while (pieces) {
             Square origin_s = PopLsb(pieces);
@@ -127,7 +116,7 @@ namespace Meetra {
     }
 
     template<Color C>
-    inline void MoveGen::GenPawnForwardMoves() {
+    void MoveGen::GenPawnForwardMoves() {
 
         constexpr Direction push_dir = pawn_push_dir<C>();
         Bitboard pawns_one_fw = shift<push_dir>(board.GetPieces(PAWN, C)) & empty_squares;
@@ -164,7 +153,7 @@ namespace Meetra {
     }
 
     template<Color C>
-    inline void MoveGen::GenPawnCaptures() {
+    void MoveGen::GenPawnCaptures() {
 
         Bitboard pawns = board.GetPieces(PAWN, C);
 
@@ -203,7 +192,7 @@ namespace Meetra {
     }
 
     template<Color C>
-    inline void MoveGen::GenEnPassantMoves() {
+    void MoveGen::GenEnPassantMoves() {
         if (board.EpSquare()) {
             Square ep_s = board.EpSquare();
             Bitboard attackers = GetAttacksForPiece<PAWN>(ep_s, all_pieces, OtherColor(C)) & board.GetPieces(PAWN, C);
@@ -214,7 +203,7 @@ namespace Meetra {
     }
 
     template<Color C>
-    inline void MoveGen::GenCastlingMoves() {
+    void MoveGen::GenCastlingMoves() {
         if (checkers) {
             return;
         }
@@ -227,14 +216,14 @@ namespace Meetra {
     }
 
     template<Color C>
-    inline bool MoveGen::CanCastleShort(CastlingRights cr) {
+    bool MoveGen::CanCastleShort(CastlingRights cr) {
         return cr & (C == WHITE ? WHITE_SHORT : BLACK_SHORT) &&
                (rays_between_squares[C == WHITE ? E1 : E8][C == WHITE ? H1 : H8] & all_pieces) == EMPTY_BB &&
                !board.IsSquareAttacked(C == WHITE ? F1 : F8, OtherColor(C), all_pieces);
     }
 
     template<Color C>
-    inline bool MoveGen::CanCastleLong(CastlingRights cr) {
+    bool MoveGen::CanCastleLong(CastlingRights cr) {
         return cr & (C == WHITE ? WHITE_LONG : BLACK_LONG) &&
                (rays_between_squares[C == WHITE ? E1 : E8][C == WHITE ? A1 : A8] & all_pieces) == EMPTY_BB &&
                !board.IsSquareAttacked(C == WHITE ? D1 : D8, OtherColor(C), all_pieces);

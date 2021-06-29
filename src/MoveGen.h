@@ -44,7 +44,7 @@ namespace Meetra {
         }
 
         template<Color C>
-        inline void NextPhase();
+        void NextPhase();
 
         template<GenPhase phase, Color C>
         void GenMovesForPhase();
@@ -53,22 +53,22 @@ namespace Meetra {
         void GenMovesForPieceType(Bitboard legality_mask);
 
         template <Color C>
-        inline void GenEnPassantMoves();
+        void GenEnPassantMoves();
 
         template<Color C>
-        inline void GenPawnCaptures();
+        void GenPawnCaptures();
 
         template<Color C>
-        inline void GenPawnForwardMoves();
+        void GenPawnForwardMoves();
 
         template<Color C>
-        inline void GenCastlingMoves();
+        void GenCastlingMoves();
 
         template<Color C>
-        inline bool CanCastleLong(CastlingRights cr);
+        bool CanCastleLong(CastlingRights cr);
 
         template<Color C>
-        inline bool CanCastleShort(CastlingRights cr);
+        bool CanCastleShort(CastlingRights cr);
     };
 
     template<Color C>

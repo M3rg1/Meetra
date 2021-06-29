@@ -59,7 +59,7 @@ namespace Meetra {
 
 #pragma region ===== Hyperbola Quintessence, Reverse Bitboards (for magics initialization) =====
 
-    inline Bitboard ReverseBits(Bitboard b) {
+    Bitboard ReverseBits(Bitboard b) {
         b = ((b >> 1) & 0x5555555555555555UL) | ((b & 0x5555555555555555UL) << 1);
         b = ((b >> 2) & 0x3333333333333333UL) | ((b & 0x3333333333333333UL) << 2);
         b = ((b >> 4) & 0x0F0F0F0F0F0F0F0FUL) | ((b & 0x0F0F0F0F0F0F0F0FUL) << 4);
@@ -69,38 +69,38 @@ namespace Meetra {
         return b;
     }
 
-    inline Bitboard GetDiagMoves(Square s, Bitboard occ) {
+    Bitboard GetDiagMoves(Square s, Bitboard occ) {
         ulong bitboard = SquareToBB(s);
         Bitboard move_mask = rays[s][NORTH_EAST_IDX] | rays[s][SOUTH_WEST_IDX];
         return (((occ & move_mask) - (bitboard << 1)) ^ ReverseBits(ReverseBits(occ & move_mask)
                                                                     - (ReverseBits(bitboard) << 1))) & move_mask;
     }
 
-    inline Bitboard GetAntiDiagMoves(Square s, Bitboard occ) {
+    Bitboard GetAntiDiagMoves(Square s, Bitboard occ) {
         Bitboard b = SquareToBB(s);
         Bitboard move_mask = rays[s][NORTH_WEST_IDX] | rays[s][SOUTH_EAST_IDX];
         return (((occ & move_mask) - (b << 1)) ^
                 ReverseBits(ReverseBits(occ & move_mask) - (ReverseBits(b) << 1))) & move_mask;
     }
 
-    inline Bitboard GetHorizontalMoves(Square s, Bitboard occ) {
+    Bitboard GetHorizontalMoves(Square s, Bitboard occ) {
         Bitboard b = SquareToBB(s);
         Rank r = RankFromSquare(s);
         return ((occ - (b << 1)) ^ ReverseBits(ReverseBits(occ) - (ReverseBits(b) << 1))) & rank_masks[r];
     }
 
-    inline Bitboard GetVerticalMoves(Square s, Bitboard occ) {
+    Bitboard GetVerticalMoves(Square s, Bitboard occ) {
         Bitboard b = SquareToBB(s);
         File f = FileFromSquare(s);
         return (((occ & file_masks[f]) - (b << 1)) ^
                 ReverseBits(ReverseBits(occ & file_masks[f]) - (ReverseBits(b) << 1))) & file_masks[f];
     }
 
-    inline Bitboard GetDiagAndAntiDiagMoves(Square s, Bitboard occ) {
+    Bitboard GetDiagAndAntiDiagMoves(Square s, Bitboard occ) {
         return GetAntiDiagMoves(s, occ) | GetDiagMoves(s, occ);
     }
 
-    inline Bitboard GetHorAndVertMoves(Square s, Bitboard occ) {
+    Bitboard GetHorAndVertMoves(Square s, Bitboard occ) {
         return GetVerticalMoves(s, occ) | GetHorizontalMoves(s, occ);
     }
 #pragma endregion
