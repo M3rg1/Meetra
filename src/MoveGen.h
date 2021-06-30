@@ -21,7 +21,8 @@ namespace Meetra {
 
         GenPhase genPhase;
 
-        Move moves[256];
+        Move moves[128];
+        int move_evals[128];
         uint8_t moves_cnt;
 
         Bitboard checkers;
@@ -40,7 +41,8 @@ namespace Meetra {
         inline Move PopMove() { return moves[--moves_cnt]; }
         inline Move PopAtIdx(int idx) {
             Move ret = moves[idx];
-            moves[idx] = moves[--moves_cnt];
+            move_evals[idx] = move_evals[--moves_cnt];
+            moves[idx] = moves[moves_cnt];
             return ret;
         }
         inline void PutMove(Move m) { moves[moves_cnt++] = m; }

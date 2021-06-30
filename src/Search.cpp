@@ -6,14 +6,14 @@
 
 namespace Meetra {
 
-    volatile bool run = false;
-    Move best_move = INVALID_MOVE;
-    int best_score = 0;
-    ulong nodes_searched = 0;
-    ulong qsearch_nodes = 0;
-    ulong qsearch_depth = 0;
-    int curr_depth = 0;
-    long timer_start = 0;
+    volatile bool run;
+    Move best_move;
+    int best_score;
+    ulong nodes_searched;
+    ulong qsearch_nodes;
+    ulong qsearch_depth ;
+    int curr_depth;
+    long timer_start;
 
     void StopSearch() {
         run = false;
@@ -24,10 +24,6 @@ namespace Meetra {
     }
 
     int QuiescenceSearch(Board &board, int alpha, int beta, int depth) {
-
-        if (!run) {
-            return 0;
-        }
 
         if (depth > qsearch_depth) {
             qsearch_depth = depth;
@@ -41,6 +37,7 @@ namespace Meetra {
             alpha = score;
         }
 
+        // TODO in qsearch try not to order moves by position, just by victim/attacker .. maybe?
         MoveGen move_gen(board);
         Move move;
         while ((move = move_gen.GetNextMove<true>())) {
@@ -72,7 +69,7 @@ namespace Meetra {
             return QuiescenceSearch(board, alpha, beta, 1);
         }
 
-        if (board.Ply() >= 50) {
+        if (board.Ply() >= 50  /*|| repetition*/ ) {
             return DRAW_SCORE;
         }
 
@@ -92,6 +89,9 @@ namespace Meetra {
             }
             if (score > alpha) {
                 alpha = score;
+                pv_move = move;
+            }
+            else if(!pv_move){
                 pv_move = move;
             }
         }
@@ -115,14 +115,8 @@ namespace Meetra {
                                      static_cast<double>(elapsed_ms));
 
         std::cout << "info " << "depth " << curr_depth << " nodes " << (nodes_searched + qsearch_nodes) << " time "
-                  << elapsed_ms << " nps " << nps << std::endl;
-
-/*        std::cout << "Normal nodes: " << nodes_searched << std::endl;
-        std::cout << "Qsearch nodes: " << qsearch_nodes << std::endl;
-        std::cout << "Best move: " << GetMoveName(best_move) << std::endl;
-        std::cout << "Score: " << best_score << std::endl;
-        std::cout << "Qsearch depth: " << qsearch_depth << std::endl;
-        std::cout << "=============================" << std::endl;*/
+                  << elapsed_ms << " nps " << nps << " score cp " << best_score << " pv " << GetMoveName(best_move)
+                  << std::endl;
     }
 
     void SendBestMove() {
@@ -157,6 +151,9 @@ namespace Meetra {
 
             MoveGen move_gen(board);
             Move move;
+            int best_score_this_iter = NEGATIVE_INF;
+            Move best_move_this_iter = INVALID_MOVE;
+
             while ((move = move_gen.GetNextMove<false>())) {
                 if (!board.MakeMove(move)) {
                     board.UnmakeMove(move);
@@ -165,11 +162,17 @@ namespace Meetra {
                 nodes_searched++;
                 auto score = -NegaMax(board, NEGATIVE_INF, POSITIVE_INF, curr_depth - 1);
                 board.UnmakeMove(move);
-                if (score > best_score) {
-                    best_score = score;
-                    best_move = move;
+                if (score > best_score_this_iter) {
+                    best_score_this_iter = score;
+                    best_move_this_iter = move;
                 }
             }
+
+            if(run){
+                best_move = best_move_this_iter;
+                best_score = best_score_this_iter;
+            }
+
             // TODO have sendinfo on another thread on timer (send it to the threadpool as repeated task every x seconds)
             SendInfo();
 

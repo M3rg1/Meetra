@@ -47,7 +47,17 @@ namespace Meetra {
             } else {
                 NextPhase<BLACK, QSearch>();
             }
-        }
+            if(!Empty()){
+                for(int i = 0; i < moves_cnt; i++){
+                    if(moves[i] == INVALID_MOVE){
+                        move_evals[i] = NEGATIVE_INF;
+                    }
+                    else {
+                        move_evals[i] = MoveEval(board, moves[i]);
+                    }
+                }
+            }
+        }// info depth 7 nodes 47020168 time 7558 nps 6221244 score cp -155 pv h7h6
 
         // TODO i can do this only once, after the moves are generated and create an additional array
         // TODO with all the evals, and then just return moves based on that array
@@ -55,12 +65,8 @@ namespace Meetra {
         int idx_best_move = 0;
         int max_eval = NEGATIVE_INF;
         for(int i = 0; i < moves_cnt; i++){
-            if(moves[i] == INVALID_MOVE){
-                continue;
-            }
-            int eval = MoveEval(board, moves[i]);
-            if(eval > max_eval){
-                max_eval = eval;
+            if(move_evals[i] > max_eval){
+                max_eval = move_evals[i];
                 idx_best_move = i;
             }
         }

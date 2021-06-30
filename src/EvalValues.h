@@ -6,7 +6,7 @@ static const int piece_values[7]{
 };
 
 
-static const int8_t wp_map[]
+static const int8_t bp_map[]
         {
                 0,  0,  0,  0,  0,  0,  0,  0,
                 50, 50, 50, 50, 50, 50, 50, 50,
@@ -18,7 +18,7 @@ static const int8_t wp_map[]
                 0,  0,  0,  0,  0,  0,  0,  0
         };
 
-static const int8_t wn_map[]
+static const int8_t bn_map[]
         {
                 -50,-40,-30,-30,-30,-30,-40,-50,
                 -40,-20,  0,  0,  0,  0,-20,-40,
@@ -31,7 +31,7 @@ static const int8_t wn_map[]
         };
 
 
-static const int8_t wb_map[]
+static const int8_t bb_map[]
         {
                 -20,-10,-10,-10,-10,-10,-10,-20,
                 -10,  0,  0,  0,  0,  0,  0,-10,
@@ -43,7 +43,7 @@ static const int8_t wb_map[]
                 -20,-10,-10,-10,-10,-10,-10,-20,
         };
 
-static const int8_t wr_map[]
+static const int8_t br_map[]
         {
                 0,  0,  0,  0,  0,  0,  0,  0,
                 5, 10, 10, 10, 10, 10, 10,  5,
@@ -52,22 +52,22 @@ static const int8_t wr_map[]
                 -5,  0,  0,  0,  0,  0,  0, -5,
                 -5,  0,  0,  0,  0,  0,  0, -5,
                 -5,  0,  0,  0,  0,  0,  0, -5,
-                0,  0,  0,  5,  5,  0,  0,  0
+                 0,  0,  0,  5,  5,  0,  0,  0
         };
 
-static const int8_t wq_map[]
+static const int8_t bq_map[]
         {
                 -20,-10,-10, -5, -5,-10,-10,-20,
                 -10,  0,  0,  0,  0,  0,  0,-10,
                 -10,  0,  5,  5,  5,  5,  0,-10,
-                -5,  0,  5,  5,  5,  5,  0, -5,
-                0,  0,  5,  5,  5,  5,  0, -5,
+                -5,   0,  5,  5,  5,  5,  0, -5,
+                 0,   0,  5,  5,  5,  5,  0, -5,
                 -10,  5,  5,  5,  5,  5,  0,-10,
                 -10,  0,  5,  0,  0,  0,  0,-10,
                 -20,-10,-10, -5, -5,-10,-10,-20
         };
 
-static const int8_t wk_mid_map[]
+static const int8_t bk_mid_map[]
         {
                 -30,-40,-40,-50,-50,-40,-40,-30,
                 -30,-40,-40,-50,-50,-40,-40,-30,
@@ -75,11 +75,11 @@ static const int8_t wk_mid_map[]
                 -30,-40,-40,-50,-50,-40,-40,-30,
                 -20,-30,-30,-40,-40,-30,-30,-20,
                 -10,-20,-20,-20,-20,-20,-20,-10,
-                20, 20,  0,  0,  0,  0, 20, 20,
-                20, 30, 10,  0,  0, 10, 30, 20
+                 20, 20,  0,  0,  0,  0, 20, 20,
+                 20, 30, 10,  0,  0, 10, 30, 20
         };
 
-static const int8_t wk_end_map[]
+static const int8_t bk_end_map[]
         {
                 -50,-40,-30,-20,-20,-30,-40,-50,
                 -30,-20,-10,  0,  0,-10,-20,-30,
@@ -96,7 +96,7 @@ static const int8_t wk_end_map[]
  * Black
  */
 
-static const int8_t bp_map[]
+static const int8_t wp_map[]
         {
                 0,  0,  0,  0,  0,  0,  0,  0,
                 5, 10, 10,-20,-20, 10, 10,  5,
@@ -108,7 +108,7 @@ static const int8_t bp_map[]
                 0,  0,  0,  0,  0,  0,  0,  0
         };
 
-static const int8_t bn_map[]
+static const int8_t wn_map[]
         {
                 -50,-40,-30,-30,-30,-30,-40,-50,
                 -40,-20,  0,  0,  0,  0,-20,-40,
@@ -121,7 +121,7 @@ static const int8_t bn_map[]
         };
 
 
-static const int8_t bb_map[]
+static const int8_t wb_map[]
         {
                 -20,-10,-10,-10,-10,-10,-10,-20,
                 -10,  5,  0,  0,  0,  0,  5,-10,
@@ -133,7 +133,7 @@ static const int8_t bb_map[]
                 -20,-10,-10,-10,-10,-10,-10,-20,
         };
 
-static const int8_t br_map[]
+static const int8_t wr_map[]
         {
                 0,  0,  0,  5,  5,  0,  0,  0,
                 -5,  0,  0,  0,  0,  0,  0, -5,
@@ -145,7 +145,7 @@ static const int8_t br_map[]
                 0,  0,  0,  0,  0,  0,  0,  0
         };
 
-static const int8_t bq_map[] =
+static const int8_t wq_map[] =
         {
                 -20,-10,-10, -5, -5,-10,-10,-20,
                 -10,  0,  5,  0,  0,  0,  0,-10,
@@ -157,7 +157,7 @@ static const int8_t bq_map[] =
                 -20,-10,-10, -5, -5,-10,-10,-20
         };
 
-static const int8_t bk_mid_map[]
+static const int8_t wk_mid_map[]
         {
                 20, 30, 10,  0,  0, 10, 30, 20,
                 20, 20,  0,  0,  0,  0, 20, 20,
@@ -169,7 +169,7 @@ static const int8_t bk_mid_map[]
                 -30,-40,-40,-50,-50,-40,-40,-30,
         };
 
-static const int8_t  bk_end_map[]
+static const int8_t  wk_end_map[]
         {
                 -50,-30,-30,-30,-30,-30,-30,-50,
                 -30,-30,  0,  0,  0,  0,-30,-30,

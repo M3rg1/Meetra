@@ -21,7 +21,7 @@ namespace Meetra {
         Square from = FromSquare(move);
         Square to = ToSquare(move);
         PieceType pt = board.GetPieceOnSquare(from);
-        return eval_maps[board.ColorToMove()][pt][to] - eval_maps[board.ColorToMove()][pt][from];
+        return eval_maps[board.ColorToMove()][pt][to]; //- eval_maps[board.ColorToMove()][pt][from];
     }
 
     int BoardEval(const Board &board) {
@@ -39,7 +39,8 @@ namespace Meetra {
             b = board.GetPieces(pt, BLACK);
             black_eval += PopCount(b) * piece_values[pt];
         }
-        return board.ColorToMove() == WHITE ? white_eval - black_eval : -(white_eval - black_eval);
+        int perspective = board.ColorToMove() == WHITE ? 1 : -1;
+        return (white_eval - black_eval) * perspective;
     }
 
     int BoardPositionEval(const Board &board, Color c) {
@@ -57,7 +58,8 @@ namespace Meetra {
                 black_eval += eval_maps[BLACK][pt][s];
             }
         }
-        return board.ColorToMove() == WHITE ? white_eval - black_eval : -(white_eval - black_eval);
+        int perspective = board.ColorToMove() == WHITE ? 1 : -1;
+        return (white_eval - black_eval) * perspective;
     }
 
 }

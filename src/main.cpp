@@ -27,11 +27,14 @@ int main(int argc, char *arv[]) {
     // r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -
     // rnb1k2r/ppQ2ppp/1qp5/4b2B/1PB5/P5Nn/1PP3PP/RN2R1K1 b Q - 0 1     --- pins
     // 1k4nQ/prpp1p2/bq2p1p1/3PNb2/np2P3/2N4p/PPPBBPPP/R3K2R w KQ - 0 1
-/*    Board board("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -");
+/*    Board board("r1b1kb1r/3pnppp/1qn5/1B4Q1/p7/4P3/PPPB1PPP/RN2K1NR b KQkq - 1 9");
     std::cout << GetLogo() << std::endl;
     std::cout << " v. " << GetVersion() << std::endl;
     std::cout << " Made by " << GetAuthor() << std::endl << std::endl;
-    std::cout << board.PPBoard() << std::endl;*/
+    std::cout << board.PPBoard() << std::endl;
+
+    InitSearch();
+    StartSearch(board, 7, 100000);*/
 
     UciHandler uciHandler;
     uciHandler.Listen();

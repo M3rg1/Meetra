@@ -19,21 +19,21 @@ namespace Meetra {
 
         listen = true;
         std::string token;
+        std::string input;
 
         do {
-            std::string input;
             std::getline(std::cin, input);
             StringTokenStream sts(input, true);
             token = sts.NextToken();
 
-            if (token == "uci") UciHandler::UciCommand();
-            else if (token == "isready") UciHandler::IsReadyCommand();
-            else if (token == "go") UciHandler::GoCommand(sts);
-            else if (token == "position") UciHandler::PositionCommand(sts);
-            else if (token == "quit") UciHandler::QuitCommand();
-            else if (token == "stop") UciHandler::StopCommand();
-            else if (token == "ucinewgame") UciHandler::UciNewGameCommand();
-            else if (token == "perft") UciHandler::PerftCommand(sts);
+            if (token == "uci") UciCommand();
+            else if (token == "isready") IsReadyCommand();
+            else if (token == "go") GoCommand(sts);
+            else if (token == "position") PositionCommand(sts);
+            else if (token == "quit") QuitCommand();
+            else if (token == "stop") StopCommand();
+            else if (token == "ucinewgame") UciNewGameCommand();
+            else if (token == "perft") PerftCommand(sts);
 
         } while (listen && !std::cin.eof());
     }
@@ -46,7 +46,6 @@ namespace Meetra {
     }
 
     void UciHandler::GoCommand(StringTokenStream &sts) {
-        // go wtime 241594 btime 252000 winc 0 binc 0
         if (IsSearching()) {
             return;
         }
@@ -65,26 +64,31 @@ namespace Meetra {
             else if (token == "btime") black_time = std::stoi(sts.NextToken());
             else if (token == "winc") white_increment = std::stoi(sts.NextToken());
             else if (token == "binc") black_increment = std::stoi(sts.NextToken());
-            else if (token == "movetime") { search_timer = std::stoi(sts.NextToken()); fixed_timer = true; }
+            else if (token == "movetime") {
+                search_timer = std::stoi(sts.NextToken());
+                fixed_timer = true;
+            }
             else if (token == "infinite") infinite = true;
-            else if (token == "depth") { depth = std::stoi(sts.NextToken()); fixed_depth = true; }
+            else if (token == "depth") {
+                depth = std::stoi(sts.NextToken());
+                fixed_depth = true;
+            }
             //else if (token == "ponder") infinite = true; - need to implement ponderhit command for this (there we set search_timer)
         }
-        std::cout << "Wtime: " << white_time << " BTime: " << black_time << std::endl;
         int time_left = board.ColorToMove() == WHITE ? white_time : black_time;
-        std::cout << "Timer: " << time_left <<  std::endl;
-        if(!infinite && !fixed_depth) {
-            if(!fixed_timer && time_left) {
+        if (!infinite && !fixed_depth) {
+            if (!fixed_timer && time_left) {
                 int moves_made = std::min(board.MovesMadeCount() + 1, 10);
                 double factor = 2.0 - moves_made / 10.0;
                 double target = static_cast<double>(time_left) / 50.0 - moves_made;
                 search_timer = static_cast<long>(factor * target);
             }
-            std::cout << "Allocated time: " << search_timer << std::endl;
+            //std::cout << "Allocated time: " << search_timer << std::endl;
             timer.SetTimeout(StopSearch, search_timer);
         }
         InitSearch();
         std::jthread search_thread(StartSearch, board, depth, search_timer);
+        search_thread.detach();
     }
 
     void UciHandler::PerftCommand(StringTokenStream &sts) {
