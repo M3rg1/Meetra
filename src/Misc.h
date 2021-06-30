@@ -5,6 +5,11 @@
 
 namespace Meetra{
 
+#define STARTPOS_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+#define DEFAULT_SEARCH_DEPTH 10
+#define INFINITE_TIMER (-1)
+#define DEFAULT_SEARCH_TIME INFINITE_TIMER
+
     inline std::string GetLogo(){
         return "  __  __         _            \n"
                " |  \\/  |___ ___| |_ _ _ __ _ \n"

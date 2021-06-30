@@ -2,19 +2,21 @@
 #define MEETRA_BOARD_H
 
 #include "Types.h"
+#include "Misc.h"
 
 namespace Meetra {
 
     class Board {
 
     public:
-        explicit Board(std::string Fen);
+        explicit Board(std::string Fen = STARTPOS_FEN);
 
         bool MakeMove(Move m);
         void UnmakeMove(Move m);
         [[nodiscard]] bool IsSquareAttacked(Square s, Color attacked_by, Bitboard occ) const;
         [[nodiscard]] Bitboard SquareAttackers(Square s, Color attacked_by, Bitboard occ) const;
         [[nodiscard]] Bitboard PinnedPiecesForSquare(Square s, Color blockers_color) const;
+        [[nodiscard]] int MovesMadeCount() const { return history_cnt; }
 
 #pragma region ===== Piece getters =====
         [[nodiscard]] inline Bitboard GetPieces(PieceType pt, Color c) const { return type_bbs[pt] & color_bbs[c]; }

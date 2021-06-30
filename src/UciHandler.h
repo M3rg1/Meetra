@@ -3,12 +3,15 @@
 
 #include "Board.h"
 #include "StringTokenStream.h"
+#include "Misc.h"
+#include "Timer.h"
 
 namespace Meetra {
 
     class UciHandler {
 
     public:
+        UciHandler();
         void Listen();
 
     private:
@@ -17,12 +20,13 @@ namespace Meetra {
         void GoCommand(StringTokenStream &sts);
         void UciNewGameCommand();
         void PositionCommand(StringTokenStream &sts);
+        void PerftCommand(StringTokenStream &sts);
         void StopCommand();
         void QuitCommand();
 
-
         Board board;
         bool listen;
+        Timer timer;
     };
 
 }

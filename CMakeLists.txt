@@ -13,4 +13,4 @@ set(GCC_COVERAGE_COMPILE_FLAGS "-pthread")
 #set(GCC_COVERAGE_COMPILE_FLAGS "-Wall -Wextra -pedantic -Wconversion -Wno-unknown-pragmas -DDEBUG_BUILD")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
 
-add_executable(Meetra src/main.cpp src/UciHandler.cpp src/UciHandler.h src/StringTokenStream.cpp src/StringTokenStream.h src/Bitboards.cpp src/Bitboards.h src/Types.h src/Perft.h src/Macros.h src/Board.cpp src/Board.h src/FenLoader.cpp src/FenLoader.h src/Misc.h src/MoveGen.cpp src/MoveGen.h src/MagicNumbers.h src/Search.cpp src/Search.h src/Evaluation.cpp src/Evaluation.h src/EvalValues.h)
+add_executable(Meetra src/main.cpp src/UciHandler.cpp src/UciHandler.h src/StringTokenStream.cpp src/StringTokenStream.h src/Bitboards.cpp src/Bitboards.h src/Types.h src/Perft.h src/Macros.h src/Board.cpp src/Board.h src/FenLoader.cpp src/FenLoader.h src/Misc.h src/MoveGen.cpp src/MoveGen.h src/MagicNumbers.h src/Search.cpp src/Search.h src/Evaluation.cpp src/Evaluation.h src/EvalValues.h src/Timer.h)

@@ -6,9 +6,10 @@
 
 namespace Meetra{
 
-    void StartSearch(Board board, int max_depth);
+    void StartSearch(Board board, int max_depth, long allowed_time);
     void StopSearch();
     bool IsSearching();
+    void InitSearch();
 
 }
 

@@ -6,7 +6,7 @@
 
 namespace Meetra {
 
-    int Perft(int depth, Board &board) {
+    inline int Perft(int depth, Board &board) {
 
         if (depth == 0) {
             return 1;
@@ -25,7 +25,7 @@ namespace Meetra {
         return nodes;
     }
 
-    void RunPerft(int depth, Board &board) {
+    inline void RunPerft(int depth, Board &board) {
         INIT_TIMER
         START_TIMER
         MoveGen moveGen(board);
