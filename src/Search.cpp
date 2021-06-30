@@ -5,10 +5,20 @@
 
 namespace Meetra {
 
-    ulong cutoffs = 0;
-    ulong nodes_searched = 0;
-    ulong qsearch_nodes = 0;
-    ulong qsearch_depth = 0;
+    volatile bool run;
+    Move best_move;
+    int best_score;
+    ulong nodes_searched;
+    ulong qsearch_nodes ;
+    ulong qsearch_depth;
+
+    void StopSearch(){
+        run = false;
+    }
+
+    bool IsSearching(){
+        return run;
+    }
 
     int QuiescenceSearch(Board &board, int alpha, int beta, int depth) {
 
@@ -18,7 +28,6 @@ namespace Meetra {
 
         auto score = BoardEval(board);
         if (score >= beta) {
-            cutoffs++;
             return beta;
         }
         if (score > alpha) {
@@ -36,7 +45,6 @@ namespace Meetra {
             score = -QuiescenceSearch(board, -beta, -alpha, depth + 1);
             board.UnmakeMove(move);
             if (score >= beta) {
-                cutoffs++;
                 return beta;
             }
             if (score > alpha) {
@@ -49,9 +57,11 @@ namespace Meetra {
 
     int NegaMax(Board &board, int alpha, int beta, int depth) {
 
+        if(!run){
+            return 0;
+        }
 
         if (depth == 0) {
-            //return BoardEval(board);
             return QuiescenceSearch(board, alpha, beta, 1);
         }
 
@@ -60,7 +70,7 @@ namespace Meetra {
         }
 
         MoveGen move_gen(board);
-        Move best_move = INVALID_MOVE;
+        Move pv_move = INVALID_MOVE;
         Move move;
         while ((move = move_gen.GetNextMove<false>())) {
             if (!board.MakeMove(move)) {
@@ -71,16 +81,15 @@ namespace Meetra {
             auto score = -NegaMax(board, -beta, -alpha, depth - 1);
             board.UnmakeMove(move);
             if (score >= beta) {
-                cutoffs++;
                 return beta;
             }
             if (score > alpha) {
                 alpha = score;
-                best_move = move;
+                pv_move = move;
             }
         }
 
-        if (best_move == INVALID_MOVE) {
+        if (pv_move == INVALID_MOVE) {
             if (move_gen.IsKingInCheck()) {
                 return MATE_SCORE;
             }
@@ -90,15 +99,25 @@ namespace Meetra {
         return alpha;
     }
 
-    void StartSearch(Board &board, int max_depth) {
+    void SendInfo(){
+        std::cout << "Normal nodes: " << nodes_searched << std::endl;
+        std::cout << "Qsearch nodes: " << qsearch_nodes << std::endl;
+        std::cout << "Best move: " << GetMoveName(best_move) << std::endl;
+        std::cout << "Score: " << best_score << std::endl;
+        std::cout << "Qsearch depth: " << qsearch_depth << std::endl;
+        std::cout << std::endl << std::endl;
+    }
 
-        Move best_move = INVALID_MOVE;
-        int best_score = NEGATIVE_INF;
+    void StartSearch(Board board, int max_depth) {
+
+        run = true;
+        best_move = INVALID_MOVE;
+        best_score = NEGATIVE_INF;
         nodes_searched = 0;
         qsearch_nodes = 0;
-        cutoffs = 0;
+        qsearch_depth = 0;
 
-        for (int i = 1; i <= max_depth; i++) {
+        for (int i = 1; i <= max_depth && run; i++) {
             MoveGen move_gen(board);
             Move move;
             while ((move = move_gen.GetNextMove<false>())) {
@@ -114,13 +133,8 @@ namespace Meetra {
                     best_move = move;
                 }
             }
+            SendInfo();
         }
-
-        std::cout << "Normal nodes: " << nodes_searched << std::endl;
-        std::cout << "Qsearch nodes: " << qsearch_nodes << std::endl;
-        std::cout << "Best move: " << GetMoveName(best_move) << std::endl;
-        std::cout << "Score: " << best_score << std::endl;
-        std::cout << "Cutoffs: " << cutoffs << std::endl;
-        std::cout << "Qsearch depth: " << qsearch_depth << std::endl;
+        run = false;
     }
 }

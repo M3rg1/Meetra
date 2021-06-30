@@ -9,10 +9,6 @@ namespace Meetra {
         BEST_MOVE, CAPTURE, QUIET, END
     };
 
-    enum MoveListType : uint8_t {
-        NORMAL, QUIESCENCE
-    };
-
     typedef uint64_t Bitboard;
 #define EMPTY_BB 0UL
 
@@ -134,9 +130,43 @@ namespace Meetra {
         MOVE_TYPE_NR = 9
     };
 
+
+    const std::string file_names = "abcdefgh";
+    const std::string rank_names = "12345678";
+
 #pragma region ===== Initialization =====
     inline Move NewMove(Square from, Square to) { return static_cast<Move>(from | to << 6); }
     inline Move NewMove(Square from, Square to, MoveType flag) { return static_cast<Move>(NewMove(from, to) | flag); }
+    inline Move NewMoveFromName(std::string move_name) {
+        File f_from = static_cast<File>(file_names.find(move_name[0]));
+        Rank r_from = static_cast<Rank>((move_name[1] - '0') - 1);
+        Square from = SquareFromFiRa(f_from, r_from);
+
+        File f_to = static_cast<File>(file_names.find(move_name[2]));
+        Rank r_to = static_cast<Rank>((move_name[3] - '0') - 1);
+        Square to = SquareFromFiRa(f_to, r_to);
+
+        const std::string asd = std::string("qwewq");
+
+        MoveType flag = NO_FLAG;
+        if (move_name.length() > 4) {
+            switch (move_name[4]) {
+                case 'q':
+                    flag = PROMOTE_QUEEN;
+                    break;
+                case 'r':
+                    flag = PROMOTE_ROOK;
+                    break;
+                case 'b':
+                    flag = PROMOTE_BISHOP;
+                    break;
+                case 'n':
+                    flag = PROMOTE_KNIGHT;
+                    break;
+            }
+        }
+        return NewMove(from, to, flag);
+    }
 #pragma endregion
 
 #pragma region ===== Utils =====
@@ -152,6 +182,24 @@ namespace Meetra {
         ret.push_back(RankNames[RankFromSquare(FromSquare(m))]);
         ret.push_back(FileNames[FileFromSquare(ToSquare(m))]);
         ret.push_back(RankNames[RankFromSquare(ToSquare(m))]);
+        if (IsPromotion(m)) {
+            switch (GetFlag(m)) {
+                case PROMOTE_QUEEN:
+                    ret.push_back('q');
+                    break;
+                case PROMOTE_ROOK:
+                    ret.push_back('r');
+                    break;
+                case PROMOTE_BISHOP:
+                    ret.push_back('b');
+                    break;
+                case PROMOTE_KNIGHT:
+                    ret.push_back('n');
+                    break;
+                default:
+                    break;
+            }
+        }
         return ret;
     }
     //inline constexpr bool IsValid(Move m) { return (m & 0x7FF) != INVALID_MOVE; }

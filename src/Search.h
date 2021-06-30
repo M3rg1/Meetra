@@ -2,10 +2,13 @@
 #define MEETRA_SEARCH_H
 
 #include "Board.h"
+#include <thread>
 
 namespace Meetra{
 
-    void StartSearch(Board &board, int max_depth = 5);
+    void StartSearch(Board board, int max_depth);
+    void StopSearch();
+    bool IsSearching();
 
 }
 

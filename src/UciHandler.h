@@ -1,6 +1,8 @@
 #ifndef MEETRA_UCIHANDLER_H
 #define MEETRA_UCIHANDLER_H
 
+#include "Board.h"
+#include "StringTokenStream.h"
 
 namespace Meetra {
 
@@ -12,11 +14,15 @@ namespace Meetra {
     private:
         void UciCommand();
         void IsReadyCommand();
-        void GoCommand();
+        void GoCommand(StringTokenStream &sts);
         void UciNewGameCommand();
-        void PositionCommand();
+        void PositionCommand(StringTokenStream &sts);
         void StopCommand();
         void QuitCommand();
+
+
+        Board board;
+        bool listen;
     };
 
 }

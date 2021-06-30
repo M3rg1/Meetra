@@ -5,6 +5,7 @@
 #include "Misc.h"
 #include "Search.h"
 #include "Perft.h"
+#include <thread>
 
 //  Variables: snake_case
 //  Function names: UpperCamelCase (unless its a accessor/mutator)
@@ -32,18 +33,14 @@ int main(int argc, char *arv[]) {
     std::cout << " Made by " << GetAuthor() << std::endl << std::endl;
     std::cout << board.PPBoard() << std::endl;
 
-/*    MoveGen mg(board, true);
-    Move m = INVALID_MOVE;
-    while((m = mg.GetNextMove())){
-        std::cout << GetMoveName(m) << std::endl;
-    }*/
+    std::jthread search_thread(StartSearch, board, 5);
 
-    INIT_TIMER
+/*    INIT_TIMER
     START_TIMER
     StartSearch(board, 5);
     STOP_TIMER
 
-    std::cout << "Elapsed: " << TIMER_GET_TIME_MS << "ms" << std::endl;
+    std::cout << "Elapsed: " << TIMER_GET_TIME_MS << "ms" << std::endl;*/
 
     //RunPerft(5, board);
 
