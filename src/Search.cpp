@@ -11,9 +11,12 @@ namespace Meetra {
     int best_score;
     ulong nodes_searched;
     ulong qsearch_nodes;
-    ulong qsearch_depth ;
+    ulong qsearch_depth;
     int curr_depth;
     long timer_start;
+    bool getting_mated = false;
+    bool giving_mate = false;
+
 
     void StopSearch() {
         run = false;
@@ -90,8 +93,7 @@ namespace Meetra {
             if (score > alpha) {
                 alpha = score;
                 pv_move = move;
-            }
-            else if(!pv_move){
+            } else if (!pv_move) {
                 pv_move = move;
             }
         }
@@ -114,13 +116,24 @@ namespace Meetra {
         long nps = static_cast<long>(static_cast<double>(nodes_searched + qsearch_nodes) * 1000.0 /
                                      static_cast<double>(elapsed_ms));
 
+        // do it in 1 cout, this is baaad with so many cout accesses
         std::cout << "info " << "depth " << curr_depth << " nodes " << (nodes_searched + qsearch_nodes) << " time "
-                  << elapsed_ms << " nps " << nps << " score cp " << best_score << " pv " << GetMoveName(best_move)
-                  << std::endl;
+                  << elapsed_ms << " nps " << nps << " pv " << GetMoveName(best_move);
+        if (giving_mate) {
+            std::cout << " score mate " << curr_depth / 2;
+        } else if (getting_mated) {
+            std::cout << " score mate " << -curr_depth / 2;
+        } else {
+            std::cout << " score cp " << best_score;
+        }
+        std::cout << std::endl;
     }
 
     void SendBestMove() {
-        std::cout << "bestmove " << GetMoveName(best_move) << std::endl;
+        if(best_move) {
+            SendInfo();
+            std::cout << "bestmove " << GetMoveName(best_move) << std::endl;
+        }
     }
 
     bool NotEnoughTimeLeft(long allowed_time) {
@@ -135,6 +148,8 @@ namespace Meetra {
 
     void InitSearch() {
         using namespace std::chrono;
+        getting_mated = false;
+        giving_mate = false;
         best_move = INVALID_MOVE;
         best_score = NEGATIVE_INF;
         nodes_searched = 0;
@@ -147,7 +162,7 @@ namespace Meetra {
 
     void StartSearch(Board board, int max_depth, long allowed_time) {
 
-        for (curr_depth = 1; curr_depth <= max_depth && run; curr_depth++) {
+        for (curr_depth = 1; curr_depth <= max_depth; curr_depth++) {
 
             MoveGen move_gen(board);
             Move move;
@@ -165,21 +180,30 @@ namespace Meetra {
                 if (score > best_score_this_iter) {
                     best_score_this_iter = score;
                     best_move_this_iter = move;
+                    if (score == MATE_SCORE) {
+                        giving_mate = true;
+                        break;
+                    } else if (score == -MATE_SCORE) {
+                        getting_mated = true;
+                        break;
+                    }
                 }
             }
 
-            if(run){
+            if (run) {
                 best_move = best_move_this_iter;
                 best_score = best_score_this_iter;
             }
 
             // TODO have sendinfo on another thread on timer (send it to the threadpool as repeated task every x seconds)
-            SendInfo();
 
             // TODO or if score very high or if mate, just return
-            if (allowed_time != INFINITE_TIMER && NotEnoughTimeLeft(allowed_time)) {
+            if (!run || (allowed_time != INFINITE_TIMER && NotEnoughTimeLeft(allowed_time)) || getting_mated ||
+                giving_mate || !best_move) {
                 break;
             }
+
+            SendInfo();
         }
         SendBestMove();
         run = false;

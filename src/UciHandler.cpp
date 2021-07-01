@@ -23,7 +23,9 @@ namespace Meetra {
 
         do {
             std::getline(std::cin, input);
-            StringTokenStream sts(input, true);
+            // TODO make lower for sts.GetNextToken - not for the entire string - so we can get the FEN properly capitalized
+            // but other shit lowered
+            StringTokenStream sts(input, false);
             token = sts.NextToken();
 
             if (token == "uci") UciCommand();
@@ -67,17 +69,20 @@ namespace Meetra {
             else if (token == "movetime") {
                 search_timer = std::stoi(sts.NextToken());
                 fixed_timer = true;
-            }
-            else if (token == "infinite") infinite = true;
-            else if (token == "depth") {
+            } else if (token == "infinite") {
+                depth = 100;
+                infinite = true;
+                search_timer = INFINITE_TIMER;
+            } else if (token == "depth") {
                 depth = std::stoi(sts.NextToken());
                 fixed_depth = true;
+                search_timer = INFINITE_TIMER;
             }
             //else if (token == "ponder") infinite = true; - need to implement ponderhit command for this (there we set search_timer)
         }
         int time_left = board.ColorToMove() == WHITE ? white_time : black_time;
         if (!infinite && !fixed_depth) {
-            if (!fixed_timer && time_left) {
+            if (time_left) {
                 int moves_made = std::min(board.MovesMadeCount() + 1, 10);
                 double factor = 2.0 - moves_made / 10.0;
                 double target = static_cast<double>(time_left) / 50.0 - moves_made;
@@ -107,11 +112,16 @@ namespace Meetra {
         std::string fen;
         if (token == "startpos") {
             fen = STARTPOS_FEN;
+        } else if (token == "fen") {
+            while (sts.HasNext() && ((token = sts.NextToken()) != "moves")) {
+                fen.append(token);
+                fen.push_back(' ');
+            }
         } else {
-            fen = sts.NextToken();
+            return;
         }
         board = Board(fen);
-        if (sts.HasNext() && sts.NextToken() == "moves") {
+        if (token == "moves" || sts.HasNext() && sts.NextToken() == "moves") {
             while (sts.HasNext()) {
                 Move move_made = NewMoveFromName(sts.NextToken());
                 MoveGen move_gen(board);
