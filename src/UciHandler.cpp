@@ -51,7 +51,6 @@ namespace Meetra {
         if (IsSearching()) {
             return;
         }
-        timer.Stop();
         long search_timer = DEFAULT_SEARCH_TIME;
         int white_time = 0;
         int black_time = 0;
@@ -89,6 +88,7 @@ namespace Meetra {
                 double target = static_cast<double>(time_left) / 50.0 - moves_made;
                 search_timer = static_cast<long>(factor * target);
             }
+            // TODO timer is still broken
             timer.SetTimeout(StopSearch, search_timer);
         }
         InitSearch();

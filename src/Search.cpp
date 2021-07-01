@@ -42,6 +42,7 @@ namespace Meetra {
         long now = time_point_cast<milliseconds>(system_clock::now()).time_since_epoch().count();
         long elapsed = now - timer_start;
         if (allowed_time < elapsed * 2) {
+            std::cout << "Not enough time" << std::endl;
             return true;
         }
         return false;
@@ -64,9 +65,9 @@ namespace Meetra {
                   << elapsed_ms << " nps " << nps << " pv " << GetMoveName(best_move);
         if (mate_found) {
             if (best_score == MATE_SCORE) {
-                std::cout << " score mate " << -(curr_depth + 1) / 2;
-            } else {
                 std::cout << " score mate " << (curr_depth + 1) / 2;
+            } else {
+                std::cout << " score mate " << -(curr_depth + 1) / 2;
             }
         } else {
             std::cout << " score cp " << best_score;
