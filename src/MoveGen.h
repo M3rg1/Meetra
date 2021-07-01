@@ -53,6 +53,9 @@ namespace Meetra {
             PutMove(NewMove(from, to, PROMOTE_KNIGHT));
         }
 
+        Move PickBestMove();
+        void SortMoves();
+
         template<Color C, bool QSearch>
         void NextPhase();
 

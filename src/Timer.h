@@ -11,7 +11,7 @@ class Timer {
 public:
     void SetTimeout(auto function, long delay) {
         active = true;
-        std::thread t([=]() {
+        std::thread t([=, this]() {
             if(!active.load()) return;
             std::this_thread::sleep_for(std::chrono::milliseconds(delay));
             if(!active.load()) return;
@@ -22,7 +22,7 @@ public:
 
     void SetInterval(auto function, long interval) {
         active = true;
-        std::thread t([=]() {
+        std::thread t([=, this]() {
             while(active.load()) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(interval));
                 if(!active.load()) return;

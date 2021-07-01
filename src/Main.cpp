@@ -6,6 +6,7 @@
 #include "Search.h"
 #include "Perft.h"
 #include <thread>
+#include "ThreadPool.h"
 
 //  Variables: snake_case
 //  Function names: UpperCamelCase (unless its a accessor/mutator)
@@ -22,6 +23,9 @@ int main(int argc, char *arv[]) {
     // when it happend, instead of finding out much later and having to figure it out backwards
 
     InitBitboards();
+    //InitThreadPool();
+
+    //thread_pool = new ThreadPool(10);
 
     // rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
     // r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -
@@ -34,10 +38,14 @@ int main(int argc, char *arv[]) {
     std::cout << board.PPBoard() << std::endl;
 
     InitSearch();
-    StartSearch(board, DEFAULT_SEARCH_DEPTH, INFINITE_TIMER);*/
+    StartSearch(board, 2, INFINITE_TIMER);*/
 
+    ThreadPool::InitThreadPool(4);
     UciHandler uciHandler;
     uciHandler.Listen();
+    //auto wrapper = std::bind(std::mem_fn(&UciHandler::Listen), uciHandler);
+    //ThreadPool::PushTask(wrapper);
+    // ThreadPool::PushTask([&uciHandler]() { uciHandler.Listen(); });
 
     return 0;
 }

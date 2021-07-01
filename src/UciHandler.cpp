@@ -7,6 +7,7 @@
 #include "Search.h"
 #include <thread>
 #include "Perft.h"
+#include "ThreadPool.h"
 
 namespace Meetra {
 
@@ -16,7 +17,6 @@ namespace Meetra {
     }
 
     void UciHandler::Listen() {
-
         listen = true;
         std::string token;
         std::string input;
@@ -89,11 +89,13 @@ namespace Meetra {
                 search_timer = static_cast<long>(factor * target);
             }
             // TODO timer is still broken
-            timer.SetTimeout(StopSearch, search_timer);
+            //timer.SetTimeout(StopSearch, search_timer);
         }
+        // TODO make this actually a class and just make a new one here
         InitSearch();
-        std::jthread search_thread(StartSearch, board, depth, search_timer);
-        search_thread.detach();
+        ThreadPool::PushTask(StartSearch, board, depth, search_timer);
+        //std::jthread search_thread(StartSearch, board, depth, search_timer);
+        //search_thread.detach();
     }
 
     void UciHandler::PerftCommand(StringTokenStream &sts) {

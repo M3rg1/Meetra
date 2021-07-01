@@ -11,7 +11,7 @@ namespace Meetra {
     int best_score;
     ulong nodes_searched;
     ulong qsearch_nodes;
-    ulong qsearch_depth;
+    int qsearch_depth;
     int curr_depth;
     long timer_start;
     bool mate_found;
@@ -64,6 +64,7 @@ namespace Meetra {
         std::cout << "info " << "depth " << curr_depth << " nodes " << (nodes_searched + qsearch_nodes) << " time "
                   << elapsed_ms << " nps " << nps << " pv " << GetMoveName(best_move);
         if (mate_found) {
+            // just do board.ColorTomove ? WHITE : *-1 : *1 instead of this ugly if
             if (best_score == MATE_SCORE) {
                 std::cout << " score mate " << (curr_depth + 1) / 2;
             } else {
@@ -118,6 +119,7 @@ namespace Meetra {
         }
 
         if (depth == 0) {
+            //return BoardEval(board);
             return QuiescenceSearch(board, alpha, beta, 1);
         }
 
@@ -194,7 +196,7 @@ namespace Meetra {
             }
 
             // TODO have sendinfo on another thread on timer (send it to the threadpool as repeated task every x seconds)
-            // or even better, have that other thread pool infomation from this thread every second or so
+            // or even better, have that other thread Thread_Pool infomation from this thread every second or so
             // so we dont even need this if and sendinfo - we can just do a final sendinfo from the SendBestMove
             // method, and also turn off the auto sending thread there
             if (pv_move) {

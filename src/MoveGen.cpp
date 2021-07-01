@@ -2,6 +2,7 @@
 #include "Bitboards.h"
 #include "Evaluation.h"
 #include "Macros.h"
+#include <iostream>
 
 
 namespace Meetra {
@@ -19,6 +20,8 @@ namespace Meetra {
         checkers = board.SquareAttackers(Lsb(board.GetPieces(KING, my_color)), enemy_color, all_pieces);
         legal_moves = 0xFFFFFFFFFFFFFFFFUL;
         king_square = Lsb(board.GetPieces(KING, my_color));
+        blockers = board.PinnedPiecesForSquare(king_square, enemy_color);
+        genPhase = BEST_MOVE;
 
         if (checkers) {
             if (MoreThanOne(checkers)) {
@@ -27,6 +30,7 @@ namespace Meetra {
                 } else {
                     GenMovesForPieceType<KING, BLACK>(enemy_pieces | empty_squares);
                 }
+                SortMoves();
                 genPhase = END;
                 return;
             }
@@ -35,8 +39,28 @@ namespace Meetra {
             Bitboard block_mask = rays_between_squares[king_square][attacker_square];
             legal_moves = capture_mask | block_mask;
         }
-        blockers = board.PinnedPiecesForSquare(king_square, enemy_color);
-        genPhase = BEST_MOVE;
+    }
+
+    void MoveGen::SortMoves(){
+        for (int i = 0; i < moves_cnt; i++) {
+            if (moves[i] == INVALID_MOVE) {
+                move_evals[i] = NEGATIVE_INF;
+            } else {
+                move_evals[i] = MoveEval(board, moves[i]);
+            }
+        }
+    }
+
+    Move MoveGen::PickBestMove(){
+        int idx_best_move = 0;
+        int max_eval = NEGATIVE_INF;
+        for (int i = 0; i < moves_cnt; i++) {
+            if (move_evals[i] > max_eval) {
+                max_eval = move_evals[i];
+                idx_best_move = i;
+            }
+        }
+        return PopAtIdx(idx_best_move);
     }
 
     template<bool QSearch>
@@ -47,31 +71,13 @@ namespace Meetra {
             } else {
                 NextPhase<BLACK, QSearch>();
             }
-            if(!Empty()){
-                for(int i = 0; i < moves_cnt; i++){
-                    if(moves[i] == INVALID_MOVE){
-                        move_evals[i] = NEGATIVE_INF;
-                    }
-                    else {
-                        move_evals[i] = MoveEval(board, moves[i]);
-                    }
-                }
-            }
+            SortMoves();
         }// info depth 7 nodes 47020168 time 7558 nps 6221244 score cp -155 pv h7h6
 
         // TODO i can do this only once, after the moves are generated and create an additional array
         // TODO with all the evals, and then just return moves based on that array
         // TODO where i just walk through the whole array and pick the best move to pop
-        int idx_best_move = 0;
-        int max_eval = NEGATIVE_INF;
-        for(int i = 0; i < moves_cnt; i++){
-            if(move_evals[i] > max_eval){
-                max_eval = move_evals[i];
-                idx_best_move = i;
-            }
-        }
-
-        return PopAtIdx(idx_best_move);
+        return PickBestMove();
     }
 
     template<Color C, bool QSearch>
