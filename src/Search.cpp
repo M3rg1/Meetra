@@ -14,8 +14,7 @@ namespace Meetra {
     ulong qsearch_depth;
     int curr_depth;
     long timer_start;
-    bool getting_mated = false;
-    bool giving_mate = false;
+    bool mate_found;
 
 
     void StopSearch() {
@@ -119,10 +118,12 @@ namespace Meetra {
         // do it in 1 cout, this is baaad with so many cout accesses
         std::cout << "info " << "depth " << curr_depth << " nodes " << (nodes_searched + qsearch_nodes) << " time "
                   << elapsed_ms << " nps " << nps << " pv " << GetMoveName(best_move);
-        if (giving_mate) {
-            std::cout << " score mate " << curr_depth / 2;
-        } else if (getting_mated) {
-            std::cout << " score mate " << -curr_depth / 2;
+        if (mate_found) {
+            if (best_score == MATE_SCORE) {
+                std::cout << " score mate " << -(curr_depth + 1) / 2;
+            } else {
+                std::cout << " score mate " << (curr_depth + 1) / 2;
+            }
         } else {
             std::cout << " score cp " << best_score;
         }
@@ -130,10 +131,7 @@ namespace Meetra {
     }
 
     void SendBestMove() {
-        if(best_move) {
-            SendInfo();
-            std::cout << "bestmove " << GetMoveName(best_move) << std::endl;
-        }
+        std::cout << "bestmove " << GetMoveName(best_move) << std::endl;
     }
 
     bool NotEnoughTimeLeft(long allowed_time) {
@@ -148,8 +146,7 @@ namespace Meetra {
 
     void InitSearch() {
         using namespace std::chrono;
-        getting_mated = false;
-        giving_mate = false;
+        mate_found = false;
         best_move = INVALID_MOVE;
         best_score = NEGATIVE_INF;
         nodes_searched = 0;
@@ -167,7 +164,7 @@ namespace Meetra {
             MoveGen move_gen(board);
             Move move;
             int best_score_this_iter = NEGATIVE_INF;
-            Move best_move_this_iter = INVALID_MOVE;
+            Move pv_move = INVALID_MOVE;
 
             while ((move = move_gen.GetNextMove<false>())) {
                 if (!board.MakeMove(move)) {
@@ -175,35 +172,35 @@ namespace Meetra {
                     continue;
                 }
                 nodes_searched++;
-                auto score = -NegaMax(board, NEGATIVE_INF, POSITIVE_INF, curr_depth - 1);
+                auto score = -NegaMax(board, NEGATIVE_INF, POSITIVE_INF, curr_depth);
                 board.UnmakeMove(move);
                 if (score > best_score_this_iter) {
                     best_score_this_iter = score;
-                    best_move_this_iter = move;
-                    if (score == MATE_SCORE) {
-                        giving_mate = true;
-                        break;
-                    } else if (score == -MATE_SCORE) {
-                        getting_mated = true;
+                    pv_move = move;
+                    if (std::abs(score) == std::abs(MATE_SCORE)) {
+                        mate_found = true;
                         break;
                     }
                 }
             }
 
             if (run) {
-                best_move = best_move_this_iter;
+                best_move = pv_move;
                 best_score = best_score_this_iter;
             }
 
             // TODO have sendinfo on another thread on timer (send it to the threadpool as repeated task every x seconds)
-
-            // TODO or if score very high or if mate, just return
-            if (!run || (allowed_time != INFINITE_TIMER && NotEnoughTimeLeft(allowed_time)) || getting_mated ||
-                giving_mate || !best_move) {
-                break;
+            // or even better, have that other thread pool infomation from this thread every second or so
+            // so we dont even need this if and sendinfo - we can just do a final sendinfo from the SendBestMove
+            // method, and also turn off the auto sending thread there
+            if (best_move) {
+                SendInfo();
             }
 
-            SendInfo();
+            if (!run || (allowed_time != INFINITE_TIMER && NotEnoughTimeLeft(allowed_time)) || mate_found ||
+                !best_move) {
+                break;
+            }
         }
         SendBestMove();
         run = false;
