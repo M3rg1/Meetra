@@ -14,22 +14,30 @@ namespace Meetra {
 
     class ThreadPool {
     public:
-
-        static ThreadPool* GetInstance(){
-            if(!instance){
+        static ThreadPool *GetInstance() {
+            if (!instance) {
                 InitThreadPool(4);
-                return instance;
+                return instance.get();
             }
-            return instance;
+            return instance.get();
         }
 
-        static void InitThreadPool(auto thread_num){
-            instance = new ThreadPool(thread_num);
+        static void Resize(int num_threads) {
+            instance.reset();
+            InitThreadPool(num_threads);
         }
 
+        explicit ThreadPool(int num_threads);
+        ~ThreadPool();
+
+        static void InitThreadPool(auto thread_num) {
+            if (!instance) {
+                instance = std::make_unique<ThreadPool>(thread_num);
+            }
+        }
 
         template<typename F, typename... Args>
-        static void PushTask(F f, Args &&... args){
+        static void PushTask(F f, Args &&... args) {
             GetInstance()->i_PushTask(f, args...);
         }
 
@@ -43,11 +51,10 @@ namespace Meetra {
             task_wait_var.notify_one();
         }
 
-        static ThreadPool *instance;
+        //static ThreadPool *instance;
 
-        explicit ThreadPool(int num_threads);
-        ~ThreadPool();
 
+        static std::unique_ptr<ThreadPool> instance;
         std::vector<std::thread> threads;
         std::queue<std::function<void()>> task_queue;
         std::condition_variable task_wait_var;

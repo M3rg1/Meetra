@@ -2,12 +2,12 @@
 
 namespace Meetra {
 
-    ThreadPool *ThreadPool::instance = nullptr;
+    std::unique_ptr<ThreadPool> ThreadPool::instance = nullptr;
 
     ThreadPool::ThreadPool(int num_threads) {
         running = true;
         for (auto i = 0; i < num_threads; i++) {
-            threads.emplace_back([&] {
+            threads.emplace_back([=, this] {
                 while (true) {
                     std::function<void()> task;
                     {
@@ -38,7 +38,6 @@ namespace Meetra {
             thread.join();
         }
 
-        delete(instance);
     }
 
 
