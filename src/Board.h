@@ -23,7 +23,7 @@ namespace Meetra {
         [[nodiscard]] inline Bitboard GetPieces(PieceType pt) const { return type_bbs[pt]; }
         [[nodiscard]] inline Bitboard GetPieces(Color c) const { return color_bbs[c]; }
         [[nodiscard]] inline Bitboard GetEmptySquares() const { return ~GetPieces(ALL_TYPES); }
-        [[nodiscard]] inline PieceType GetPieceOnSquare(Square s) const { return TypeOfPiece(board[s]); }
+        [[nodiscard]] inline PieceType GetPieceTypeOnSq(Square s) const { return TypeOfPiece(board[s]); }
 #pragma endregion
 
 #pragma region ===== Game State info getters =====
@@ -32,6 +32,9 @@ namespace Meetra {
         [[nodiscard]] inline bool CanWhiteLongCR() const { return (game_state & WHITE_LONG) != 0; }
         [[nodiscard]] inline bool CanBlackShortCR() const { return (game_state & BLACK_SHORT) != 0; }
         [[nodiscard]] inline bool CanBlackLongCR() const { return (game_state & BLACK_LONG) != 0; }
+        [[nodiscard]] inline bool CanColorCastleAny(Color c) const{
+            return c == WHITE ? CanWhiteShortCR() || CanWhiteLongCR() : CanBlackShortCR() || CanBlackLongCR();
+        }
         [[nodiscard]] inline Square EpSquare() const { return static_cast<Square >(game_state & 0x3F); }
         [[nodiscard]] inline Color ColorToMove() const { return static_cast<Color>(game_state >> 10 & 0x1); }
         [[nodiscard]] inline Piece CapturedPiece() const { return static_cast<Piece>(game_state >> 11 & 0xF); }

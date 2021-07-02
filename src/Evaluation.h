@@ -13,6 +13,7 @@ namespace Meetra{
     int MoveEval(const Board &board, Move move);
     int MoveMaterialEval(const Board &board, Move move);
     int MovePositionEval(const Board &board, Move move);
+    int MoveCastlingEval(const Board &board, Move move);
 
     int BoardEval(const Board &board);
     int BoardMaterialEval(const Board &board);

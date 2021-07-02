@@ -174,7 +174,7 @@ namespace Meetra {
     inline Square FromSquare(Move m) { return static_cast<Square>(m & 0x3F); }
     inline Square ToSquare(Move m) { return static_cast<Square>((m & 0xFC0) >> 6); }
     inline bool IsPromotion(Move m) { return m >> 15; }
-    inline MoveType GetFlag(Move m) { return static_cast<MoveType>(m & 0xF000); }
+    inline MoveType GetMoveType(Move m) { return static_cast<MoveType>(m & 0xF000); }
     inline bool IsValid(Move m) { return m != INVALID_MOVE; }
     inline std::string GetMoveName(Move m) {
         std::string ret;
@@ -183,7 +183,7 @@ namespace Meetra {
         ret.push_back(FileNames[FileFromSquare(ToSquare(m))]);
         ret.push_back(RankNames[RankFromSquare(ToSquare(m))]);
         if (IsPromotion(m)) {
-            switch (GetFlag(m)) {
+            switch (GetMoveType(m)) {
                 case PROMOTE_QUEEN:
                     ret.push_back('q');
                     break;

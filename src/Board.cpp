@@ -98,7 +98,7 @@ namespace Meetra {
 
         RemoveCastlingRights(static_cast<CastlingRights>(castling_mask[from] | castling_mask[to]));
 
-        MoveType move_type = GetFlag(m);
+        MoveType move_type = GetMoveType(m);
         Piece captured_piece = board[to];
         PieceType moved_piece_type = TypeOfPiece(board[from]);
 
@@ -141,7 +141,7 @@ namespace Meetra {
 
         Square from = FromSquare(m);
         Square to = ToSquare(m);
-        MoveType move_type = GetFlag(m);
+        MoveType move_type = GetMoveType(m);
 
         Piece captured_piece = CapturedPiece();
 

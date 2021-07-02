@@ -81,19 +81,17 @@ namespace Meetra {
             //else if (token == "ponder") infinite = true; - need to implement ponderhit command for this (there we set search_timer)
         }
         int time_left = board.ColorToMove() == WHITE ? white_time : black_time;
-        if (!infinite && !fixed_depth) {
-            if (time_left) {
-                int moves_made = std::min(board.MovesMadeCount() + 1, 10);
-                double factor = 2.0 - moves_made / 10.0;
-                double target = static_cast<double>(time_left) / 50.0 - moves_made;
-                search_timer = static_cast<long>(factor * target);
-            }
-            // TODO timer is still broken
-            //timer.SetTimeout(StopSearch, search_timer);
+        if (time_left && !infinite && !fixed_depth) {
+            int moves_made = std::min(board.MovesMadeCount() + 1, 10);
+            double factor = 2.0 - moves_made / 10.0;
+            double target = static_cast<double>(time_left) / 50.0 - moves_made;
+            search_timer = static_cast<long>(factor * target);
         }
+
         // TODO make this actually a class and just make a new one here
         InitSearch();
         ThreadPool::PushTask(StartSearch, board, depth, search_timer);
+
         //std::jthread search_thread(StartSearch, board, depth, search_timer);
         //search_thread.detach();
     }
@@ -130,7 +128,7 @@ namespace Meetra {
                 Move move;
                 while ((move = move_gen.GetNextMove<false>())) {
                     if (FromSquare(move) == FromSquare(move_made) && ToSquare(move) == ToSquare(move_made)) {
-                        if (IsPromotion(move) && GetFlag(move) != GetFlag(move_made)) {
+                        if (IsPromotion(move) && GetMoveType(move) != GetMoveType(move_made)) {
                             continue;
                         }
                         board.MakeMove(move);
@@ -142,11 +140,14 @@ namespace Meetra {
     }
 
     void UciHandler::QuitCommand() {
-        StopSearch();
+        StopCommand();
+/*        timer.Stop();
+        StopSearch();*/
         listen = false;
     }
 
     void UciHandler::StopCommand() {
+        //timer.Stop();
         StopSearch();
     }
 

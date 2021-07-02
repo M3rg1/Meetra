@@ -26,7 +26,6 @@ namespace Meetra {
 
         Board board;
         bool listen;
-        //Timer timer;
     };
 
 }

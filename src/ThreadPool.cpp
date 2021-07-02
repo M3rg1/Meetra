@@ -12,7 +12,7 @@ namespace Meetra {
                     std::function<void()> task;
                     {
                         std::unique_lock<std::mutex> lock{mtx};
-                        task_wait_var.wait(lock, [=, this] { return !running || !task_queue.empty(); });
+                        task_wait_var.wait(lock, [&] { return !running || !task_queue.empty(); });
                         if (!running && task_queue.empty()) {
                             break;
                         }

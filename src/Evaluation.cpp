@@ -12,16 +12,30 @@ namespace Meetra {
     }
 
     int MoveMaterialEval(const Board &board, Move move) {
-        PieceType taken_piece = board.GetPieceOnSquare(ToSquare(move));
-        PieceType this_piece = board.GetPieceOnSquare(FromSquare(move));
+        PieceType taken_piece = board.GetPieceTypeOnSq(ToSquare(move));
+        PieceType this_piece = board.GetPieceTypeOnSq(FromSquare(move));
         return piece_values[taken_piece] - piece_values[this_piece];
     }
 
     int MovePositionEval(const Board &board, Move move) {
         Square from = FromSquare(move);
         Square to = ToSquare(move);
-        PieceType pt = board.GetPieceOnSquare(from);
-        return eval_maps[board.ColorToMove()][pt][to]; //- eval_maps[board.ColorToMove()][pt][from];
+        PieceType pt = board.GetPieceTypeOnSq(from);
+        auto eval = eval_maps[board.ColorToMove()][pt][to] - eval_maps[board.ColorToMove()][pt][from];
+        eval += MoveCastlingEval(board, move);
+        return eval;
+    }
+
+    int MoveCastlingEval(const Board &board, Move move) {
+        auto eval = 0;
+        Square from = FromSquare(move);
+        if (board.GetPieceTypeOnSq(from) == KING && GetMoveType(move) != CASTLING &&
+            board.CanColorCastleAny(board.ColorToMove())) {
+            eval -= 50;
+        } else if (board.GetPieceTypeOnSq(from) == ROOK && board.CanColorCastleAny(board.ColorToMove())) {
+            eval -= 30;
+        }
+        return eval;
     }
 
     int BoardEval(const Board &board) {

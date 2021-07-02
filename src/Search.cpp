@@ -3,6 +3,7 @@
 #include "Evaluation.h"
 #include <iostream>
 #include <chrono>
+#include "Timer.h"
 
 namespace Meetra {
 
@@ -15,6 +16,7 @@ namespace Meetra {
     int curr_depth;
     long timer_start;
     bool mate_found;
+    Timer timer;
 
     void StopSearch() {
         run = false;
@@ -42,7 +44,6 @@ namespace Meetra {
         long now = time_point_cast<milliseconds>(system_clock::now()).time_since_epoch().count();
         long elapsed = now - timer_start;
         if (allowed_time < elapsed * 2) {
-            std::cout << "Not enough time" << std::endl;
             return true;
         }
         return false;
@@ -161,6 +162,10 @@ namespace Meetra {
 
     void StartSearch(Board board, int max_depth, long allowed_time) {
 
+        if(allowed_time != INFINITE_TIMER){
+            timer.SetTimeout(StopSearch, allowed_time);
+        }
+
         for (curr_depth = 1; curr_depth <= max_depth; curr_depth++) {
 
             MoveGen move_gen(board);
@@ -210,5 +215,6 @@ namespace Meetra {
         }
         SendBestMove();
         run = false;
+        timer.Stop();
     }
 }
