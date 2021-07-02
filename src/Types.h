@@ -5,6 +5,8 @@
 
 namespace Meetra {
 
+    typedef uint64_t ZobristHash;
+
     enum GenPhase : uint8_t {
         BEST_MOVE, CAPTURE, QUIET, END
     };
