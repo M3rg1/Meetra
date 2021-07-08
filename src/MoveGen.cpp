@@ -9,7 +9,7 @@ namespace Meetra {
 
     // TODO quiescence will stop searching when no captures, but leave king in check
 
-    MoveGen::MoveGen(const Board &board) : board(board) {
+    MoveGen::MoveGen(const Board &board, const TranspositionTable *tt) : board(board), tt(tt) {
 
         moves_cnt = 0;
         my_color = board.ColorToMove();
@@ -41,7 +41,11 @@ namespace Meetra {
         }
     }
 
-    void MoveGen::SortMoves(){
+    MoveGen::MoveGen(const Board &board) : MoveGen(board, nullptr) {
+        genPhase = CAPTURE;
+    }
+
+    void MoveGen::SortMoves() {
         for (int i = 0; i < moves_cnt; i++) {
             if (moves[i] == INVALID_MOVE) {
                 move_evals[i] = NEGATIVE_INF;
@@ -51,7 +55,7 @@ namespace Meetra {
         }
     }
 
-    Move MoveGen::PickBestMove(){
+    Move MoveGen::PickBestMove() {
         int idx_best_move = 0;
         int max_eval = NEGATIVE_INF;
         for (int i = 0; i < moves_cnt; i++) {
@@ -98,9 +102,12 @@ namespace Meetra {
         } else {
             switch (genPhase) {
                 case BEST_MOVE:
+                    Move m;
+                    m = tt->GetPVMove(board.GetZobristHash());
+                    if (m) {
+                        PutMove(m);
+                    }
                     ++genPhase;
-                    // return TT / killer move // or make case: Killer Move (also from history heuristic possible)
-                    // also null move? PV? etc.
                     break;
                 case CAPTURE:
                     GenMovesForPhase<CAPTURE, C>();

@@ -3,21 +3,24 @@
 
 #include "Types.h"
 #include "Board.h"
+#include "TranspositionTable.h"
 
 namespace Meetra {
 
 
     class MoveGen {
     public:
+        MoveGen(const Board &board, const TranspositionTable *tt);
         explicit MoveGen(const Board &board);
 
         template<bool QSearch>
         Move GetNextMove();
 
-        [[nodiscard]] inline bool IsKingInCheck() const{ return checkers; }
+        [[nodiscard]] inline bool IsKingInCheck() const { return checkers; }
 
     private:
         const Board &board;
+        const TranspositionTable *tt;
 
         GenPhase genPhase;
 
@@ -46,7 +49,7 @@ namespace Meetra {
             return ret;
         }
         inline void PutMove(Move m) { moves[moves_cnt++] = m; }
-        inline void PutPromMoves(Square from, Square to){
+        inline void PutPromMoves(Square from, Square to) {
             PutMove(NewMove(from, to, PROMOTE_QUEEN));
             PutMove(NewMove(from, to, PROMOTE_ROOK));
             PutMove(NewMove(from, to, PROMOTE_BISHOP));
@@ -65,7 +68,7 @@ namespace Meetra {
         template<PieceType PT, Color C>
         void GenMovesForPieceType(Bitboard legality_mask);
 
-        template <Color C>
+        template<Color C>
         void GenEnPassantMoves();
 
         template<Color C>

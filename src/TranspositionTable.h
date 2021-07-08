@@ -7,6 +7,19 @@
 
 namespace Meetra {
 
+    /*
+     * Therefor to calculate the address or index requires signature modulo number of entries,
+     * for power of two sized tables, the lower part of the hash key, masked by an 'and'-instruction accordantly.
+     *
+     * ////// MAKE IT POWER OF 2 SO THAT MODULO IS EASY TO CALCULATE WITH JUST & MASKING
+     *
+     * // CAN STORE ONLY UPPER HALF OF THE ZOBRIST KEY FOR COMPARISONS
+     * They require detection, realized by storing the signature as part of the hash entry, to check whether a
+     * stored entry matches the position while probing. Specially with power of two entry tables, many programmers choose
+     * to trade-off space for accuracy and only store that part of the hash key not already considered as index, or even less.
+     * https://www.chessprogramming.org/Transposition_Table
+     * IT REQUIRES LESS SPACE!!
+     */
     enum TTSize : size_t {
         TT256MB = 16000000,
         TT128MB = 8000000,
@@ -25,9 +38,15 @@ namespace Meetra {
     public:
 
         explicit TranspositionTable(size_t size);
-        void AddEntry(ZobristHash key, Score score, Depth depth, Move move, uint8_t flag);
-        Score GetEval(ZobristHash key, Score alpha, Score beta, Depth depth);
+        void AddEntry(ZobristHash key, Score score, Depth depth, Move move, EntryFlag flag);
         void Resize(size_t new_size);
+        [[nodiscard]] Score GetEval(ZobristHash key, Score alpha, Score beta, Depth depth) const;
+        [[nodiscard]] Move GetPVMove(ZobristHash key) const;
+        [[nodiscard]] int Overwrites() const { return overwrites; }
+        [[nodiscard]] int NewEntries() const { return new_entries; }
+        [[nodiscard]] double Usage() const {
+            return static_cast<double>(new_entries) / static_cast<double>(size);
+        }
         ~TranspositionTable();
 
 
@@ -50,7 +69,7 @@ namespace Meetra {
             [[nodiscard]] Move GetMove() const { return static_cast<Move>(move); }
             [[nodiscard]] EntryFlag GetFlag() const { return static_cast<EntryFlag>(flag); }
 
-            void SaveEntry(ZobristHash k, Score s, Depth d, Move m, uint8_t f) {
+            void SaveEntry(ZobristHash k, Score s, Depth d, Move m, EntryFlag f) {
                 key = static_cast<uint64_t>(k);
                 score = static_cast<int16_t>(s);
                 depth = static_cast<uint16_t>(d);
@@ -59,8 +78,9 @@ namespace Meetra {
             }
         };
 
+        int overwrites;
+        int new_entries;
         size_t size;
-        size_t count;
         TTEntry *table;
     };
 

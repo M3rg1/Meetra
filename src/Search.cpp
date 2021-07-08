@@ -30,8 +30,10 @@ namespace Meetra {
     }
 
     void InitSearch() {
-        delete tt;
-        tt = new TranspositionTable(TT64MB);
+        //delete tt;
+        if (!tt) {
+            tt = new TranspositionTable(TT64MB);
+        }
         tt_hits = 0;
         mate_found = false;
         best_move = INVALID_MOVE;
@@ -80,7 +82,11 @@ namespace Meetra {
         } else {
             std::cout << " score cp " << best_score;
         }
-        std::cout << " tt hits: " << tt_hits;
+/*        std::cout << " tt hits: " << tt_hits;
+        std::cout << " tt new_entries: " << tt->NewEntries();
+        std::cout << " tt overwrites: " << tt->Overwrites();*/
+        std::cout << " hashfull " << int(tt->Usage() * 1000);
+
         std::cout << std::endl;
     }
 
@@ -111,8 +117,7 @@ namespace Meetra {
             board.UnmakeMove(move);
             if (score >= beta) {
                 return beta;
-            }
-            if (score > alpha) {
+            } else if (score > alpha) {
                 alpha = score;
             }
         }
@@ -127,22 +132,24 @@ namespace Meetra {
         }
 
         //Score score = NOT_FOUND;
+
+        if (board.Ply() >= 50  /*|| repetition*/ ) {
+            return DRAW_SCORE;
+        } else if (depth == 0) {
+            return QuiescenceSearch(board, alpha, beta, 1);
+        }
+
         Score score = tt->GetEval(board.GetZobristHash(), alpha, beta, depth);
         if (score != NOT_FOUND) {
             tt_hits++;
             return score;
-        } else if (board.Ply() >= 50  /*|| repetition*/ ) {
-            return DRAW_SCORE;
-        } else if (depth == 0) {
-            //return BoardEval(board);
-            return QuiescenceSearch(board, alpha, beta, 1);
         }
 
         EntryFlag tt_flag = ALPHA;
-        MoveGen move_gen(board);
-        Move pv_move = INVALID_MOVE;
+        MoveGen move_gen(board, tt);
         Move move;
-        while ((move = move_gen.GetNextMove<false>())) {
+        Move best_move_this_iter;
+        for (move = move_gen.GetNextMove<false>(), best_move_this_iter = move; move; move = move_gen.GetNextMove<false>()) {
             if (!board.MakeMove(move)) {
                 board.UnmakeMove(move);
                 continue;
@@ -151,26 +158,23 @@ namespace Meetra {
             score = -NegaMax(board, -beta, -alpha, depth - 1);
             board.UnmakeMove(move);
             if (score >= beta) {
-                tt->AddEntry(board.GetZobristHash(), score, depth, move, BETA);
+                tt->AddEntry(board.GetZobristHash(), beta, depth, move, BETA);
                 return beta;
-            }
-            if (score > alpha) {
+            } else if (score > alpha) {
                 tt_flag = EXACT_SCORE;
                 alpha = score;
-                pv_move = move;
-            } else if (!pv_move) {
-                pv_move = move;
+                best_move_this_iter = move;
             }
         }
 
-        if (pv_move == INVALID_MOVE) {
+        if (best_move_this_iter == INVALID_MOVE) {
             if (move_gen.IsKingInCheck()) {
                 return -MATE_SCORE;
             }
             return DRAW_SCORE;
         }
 
-        tt->AddEntry(board.GetZobristHash(), score, depth, move, tt_flag);
+        tt->AddEntry(board.GetZobristHash(), score, depth, best_move_this_iter, tt_flag);
 
         return alpha;
     }

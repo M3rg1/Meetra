@@ -1,7 +1,5 @@
 #include "ZobristHash.h"
 #include <random>
-#include <limits>
-#include <iostream>
 #include "Types.h"
 #include "Bitboards.h"
 
@@ -48,7 +46,7 @@ namespace Meetra{
             pieces = board.GetPieces(pt, BLACK);
             while(pieces){
                 Square s = PopLsb(pieces);
-                hash ^= piece_keys[s][pt + 7];
+                hash ^= piece_keys[s][pt + 5];
             }
         }
 
