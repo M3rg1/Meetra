@@ -4,16 +4,19 @@
 #include <iostream>
 #include <chrono>
 #include "Timer.h"
+#include "TranspositionTable.h"
 
 namespace Meetra {
 
+    TranspositionTable *tt;
     volatile bool run;
     Move best_move;
-    int best_score;
+    Score best_score;
     ulong nodes_searched;
     ulong qsearch_nodes;
-    int qsearch_depth;
-    int curr_depth;
+    ulong tt_hits;
+    Depth qsearch_depth;
+    Depth curr_depth;
     long timer_start;
     bool mate_found;
     Timer timer;
@@ -27,7 +30,9 @@ namespace Meetra {
     }
 
     void InitSearch() {
-        using namespace std::chrono;
+        delete tt;
+        tt = new TranspositionTable(TT64MB);
+        tt_hits = 0;
         mate_found = false;
         best_move = INVALID_MOVE;
         best_score = NEGATIVE_INF;
@@ -35,6 +40,7 @@ namespace Meetra {
         qsearch_nodes = 0;
         qsearch_depth = 0;
         curr_depth = 0;
+        using namespace std::chrono;
         timer_start = time_point_cast<milliseconds>(system_clock::now()).time_since_epoch().count();
         run = true;
     }
@@ -74,10 +80,11 @@ namespace Meetra {
         } else {
             std::cout << " score cp " << best_score;
         }
+        std::cout << " tt hits: " << tt_hits;
         std::cout << std::endl;
     }
 
-    int QuiescenceSearch(Board &board, int alpha, int beta, int depth) {
+    Score QuiescenceSearch(Board &board, Score alpha, Score beta, Depth depth) {
 
         if (depth > qsearch_depth) {
             qsearch_depth = depth;
@@ -113,21 +120,25 @@ namespace Meetra {
         return alpha;
     }
 
-    int NegaMax(Board &board, int alpha, int beta, int depth) {
+    Score NegaMax(Board &board, Score alpha, Score beta, Depth depth) {
 
         if (!run) {
             return 0;
         }
 
-        if (depth == 0) {
+        //Score score = NOT_FOUND;
+        Score score = tt->GetEval(board.GetZobristHash(), alpha, beta, depth);
+        if (score != NOT_FOUND) {
+            tt_hits++;
+            return score;
+        } else if (board.Ply() >= 50  /*|| repetition*/ ) {
+            return DRAW_SCORE;
+        } else if (depth == 0) {
             //return BoardEval(board);
             return QuiescenceSearch(board, alpha, beta, 1);
         }
 
-        if (board.Ply() >= 50  /*|| repetition*/ ) {
-            return DRAW_SCORE;
-        }
-
+        EntryFlag tt_flag = ALPHA;
         MoveGen move_gen(board);
         Move pv_move = INVALID_MOVE;
         Move move;
@@ -137,12 +148,14 @@ namespace Meetra {
                 continue;
             }
             nodes_searched++;
-            auto score = -NegaMax(board, -beta, -alpha, depth - 1);
+            score = -NegaMax(board, -beta, -alpha, depth - 1);
             board.UnmakeMove(move);
             if (score >= beta) {
+                tt->AddEntry(board.GetZobristHash(), score, depth, move, BETA);
                 return beta;
             }
             if (score > alpha) {
+                tt_flag = EXACT_SCORE;
                 alpha = score;
                 pv_move = move;
             } else if (!pv_move) {
@@ -157,12 +170,14 @@ namespace Meetra {
             return DRAW_SCORE;
         }
 
+        tt->AddEntry(board.GetZobristHash(), score, depth, move, tt_flag);
+
         return alpha;
     }
 
-    void StartSearch(Board board, int max_depth, long allowed_time) {
+    void StartSearch(Board board, Depth max_depth, long allowed_time) {
 
-        if(allowed_time != INFINITE_TIMER){
+        if (allowed_time != INFINITE_TIMER) {
             timer.SetTimeout(StopSearch, allowed_time);
         }
 
@@ -170,7 +185,7 @@ namespace Meetra {
 
             MoveGen move_gen(board);
             Move move;
-            int best_score_this_iter = NEGATIVE_INF;
+            Score best_score_this_iter = NEGATIVE_INF;
             Move pv_move = INVALID_MOVE;
 
             while ((move = move_gen.GetNextMove<false>())) {
@@ -179,7 +194,7 @@ namespace Meetra {
                     continue;
                 }
                 nodes_searched++;
-                auto score = -NegaMax(board, NEGATIVE_INF, POSITIVE_INF, curr_depth);
+                Score score = -NegaMax(board, NEGATIVE_INF, POSITIVE_INF, curr_depth);
                 board.UnmakeMove(move);
                 if (score > best_score_this_iter) {
                     best_score_this_iter = score;

@@ -28,27 +28,13 @@ namespace Meetra {
 
     ThreadPool::~ThreadPool() {
         {
-            std::unique_lock<std::mutex> lock{mtx};
+            std::scoped_lock<std::mutex> lock{mtx};
             running = false;
         }
-
         task_wait_var.notify_all();
-
         for (auto &thread : threads) {
             thread.join();
         }
-
     }
-
-
-/*    template<typename F, typename... Args>
-    void ThreadPool::i_PushTask(F f, Args &&... args) {
-        {
-            std::unique_lock<std::mutex> lock{mtx};
-            task_queue.emplace(std::bind(f, std::forward<Args>(args)...));
-        }
-        task_wait_var.notify_one();
-    }*/
-
 
 }

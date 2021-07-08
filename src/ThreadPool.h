@@ -45,7 +45,7 @@ namespace Meetra {
         template<typename F, typename... Args>
         void i_PushTask(F f, Args &&... args) {
             {
-                std::unique_lock<std::mutex> lock{mtx};
+                std::scoped_lock<std::mutex> lock{mtx};
                 task_queue.emplace(std::bind(f, std::forward<Args>(args)...));
             }
             task_wait_var.notify_one();

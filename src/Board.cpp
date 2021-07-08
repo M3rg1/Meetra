@@ -3,6 +3,7 @@
 #include "FenLoader.h"
 #include "Misc.h"
 #include <cstring>
+#include "ZobristHash.h"
 
 namespace Meetra {
 
@@ -33,6 +34,7 @@ namespace Meetra {
                 type_bbs[ALL_TYPES] |= pos;
             }
         }
+        zobrist_hash = GenZobristHash(*this);
     }
 
     Bitboard Board::PinnedPiecesForSquare(Square s, Color attackers_color) const {
@@ -81,6 +83,7 @@ namespace Meetra {
 
     bool Board::MakeMove(Move m) {
 
+        zh_history[history_cnt] = zobrist_hash;
         history[history_cnt++] = game_state;
 
         Color this_move_col = ColorToMove();
@@ -123,17 +126,21 @@ namespace Meetra {
                 SetEpSquare(next_move_col ? to + SOUTH : to + NORTH);
             } else if (move_type == CASTLING) {
                 MovePiece(RookFromCastling(to), RookToCastling(to));
+                zobrist_hash = GenZobristHash(*this);
                 return !IsSquareAttacked(Lsb(GetPieces(KING, this_move_col)), next_move_col, GetPieces(ALL_TYPES));
             } else if (IsPromotion(m)) {
                 RemovePiece(to);
                 PutPiece(to, NewPiece(PieceTypeFromFlag(move_type), this_move_col));
             } else if (move_type == EN_PASSANT) {
+                zobrist_hash = GenZobristHash(*this);
                 return !IsSquareAttacked(Lsb(GetPieces(KING, this_move_col)), next_move_col, GetPieces(ALL_TYPES));
             }
         } else if (moved_piece_type == KING) {
+            zobrist_hash = GenZobristHash(*this);
             return !IsSquareAttacked(Lsb(GetPieces(KING, this_move_col)), next_move_col, GetPieces(ALL_TYPES));
         }
 
+        zobrist_hash = GenZobristHash(*this);
         return true;
     }
 
@@ -163,8 +170,8 @@ namespace Meetra {
                 PutPiece(from, NewPiece(PAWN, static_cast<Color>(!ColorToMove())));
             }
         }
-
         game_state = history[--history_cnt];
+        zobrist_hash = zh_history[history_cnt];
     }
 
     std::string Board::PPBoard() const {

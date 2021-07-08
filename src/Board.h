@@ -27,12 +27,13 @@ namespace Meetra {
 #pragma endregion
 
 #pragma region ===== Game State info getters =====
+        [[nodiscard]] inline ZobristHash GetZobristHash() const { return zobrist_hash; }
         [[nodiscard]] inline CastlingRights GetCR() const { return static_cast<CastlingRights>(game_state & ALL_CR); }
         [[nodiscard]] inline bool CanWhiteShortCR() const { return (game_state & WHITE_SHORT) != 0; }
         [[nodiscard]] inline bool CanWhiteLongCR() const { return (game_state & WHITE_LONG) != 0; }
         [[nodiscard]] inline bool CanBlackShortCR() const { return (game_state & BLACK_SHORT) != 0; }
         [[nodiscard]] inline bool CanBlackLongCR() const { return (game_state & BLACK_LONG) != 0; }
-        [[nodiscard]] inline bool CanColorCastleAny(Color c) const{
+        [[nodiscard]] inline bool CanColorCastleAny(Color c) const {
             return c == WHITE ? CanWhiteShortCR() || CanWhiteLongCR() : CanBlackShortCR() || CanBlackLongCR();
         }
         [[nodiscard]] inline Square EpSquare() const { return static_cast<Square >(game_state & 0x3F); }
@@ -45,7 +46,6 @@ namespace Meetra {
 #pragma region ===== Misc =====
         [[nodiscard]] std::string PPBoard() const;
 #pragma endregion
-
 
     private:
 #pragma region ===== Game State definitions =====
@@ -112,12 +112,14 @@ namespace Meetra {
 #pragma region ===== Data =====
 /*        struct BoardData {
             GameState game_state;
-            // zobrist_key
+            ZobristHash zobrist_hash;
         };*/
 
         GameState history[256];
+        ZobristHash zh_history[256];
         uint8_t history_cnt;
 
+        ZobristHash zobrist_hash;
         GameState game_state;
         Piece board[SQUARE_NR]{NO_PIECE};
         Bitboard color_bbs[COLOR_NR]{0};

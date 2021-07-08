@@ -6,7 +6,7 @@
 
 namespace Meetra{
 
-    void StartSearch(Board board, int max_depth, long allowed_time);
+    void StartSearch(Board board, Depth max_depth, long allowed_time);
     void StopSearch();
     bool IsSearching();
     void InitSearch();

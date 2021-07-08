@@ -10,14 +10,14 @@ namespace Meetra{
 #define MATE_SCORE 31000
 #define DRAW_SCORE 0
 
-    int MoveEval(const Board &board, Move move);
-    int MoveMaterialEval(const Board &board, Move move);
-    int MovePositionEval(const Board &board, Move move);
-    int MoveCastlingEval(const Board &board, Move move);
+    Score MoveEval(const Board &board, Move move);
+    Score MoveMaterialEval(const Board &board, Move move);
+    Score MovePositionEval(const Board &board, Move move);
+    Score MoveCastlingEval(const Board &board, Move move);
 
-    int BoardEval(const Board &board);
-    int BoardMaterialEval(const Board &board);
-    int BoardPositionEval(const Board &board, Color c);
+    Score BoardEval(const Board &board);
+    Score BoardMaterialEval(const Board &board);
+    Score BoardPositionEval(const Board &board);
 
 }
 
