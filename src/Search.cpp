@@ -5,6 +5,7 @@
 #include <chrono>
 #include "Timer.h"
 #include "TranspositionTable.h"
+#include <sstream>
 
 namespace Meetra {
 
@@ -69,25 +70,18 @@ namespace Meetra {
         long nps = static_cast<long>(static_cast<double>(nodes_searched + qsearch_nodes) * 1000.0 /
                                      static_cast<double>(elapsed_ms));
 
-        // do it in 1 cout, this is baaad with so many cout accesses
-        std::cout << "info " << "depth " << curr_depth << " nodes " << (nodes_searched + qsearch_nodes) << " time "
-                  << elapsed_ms << " nps " << nps << " pv " << GetMoveName(best_move);
-        if (mate_found) {
-            // just do board.ColorTomove ? WHITE : *-1 : *1 instead of this ugly if
-            if (best_score == MATE_SCORE) {
-                std::cout << " score mate " << (curr_depth + 1) / 2;
-            } else {
-                std::cout << " score mate " << -(curr_depth + 1) / 2;
-            }
-        } else {
-            std::cout << " score cp " << best_score;
-        }
-/*        std::cout << " tt hits: " << tt_hits;
-        std::cout << " tt new_entries: " << tt->NewEntries();
-        std::cout << " tt overwrites: " << tt->Overwrites();*/
-        std::cout << " hashfull " << int(tt->Usage() * 1000);
+        std::stringstream ss;
+        ss << "info " << "depth " << curr_depth << " nodes " << (nodes_searched + qsearch_nodes) << " time "
+           << elapsed_ms << " nps " << nps << " pv " << GetMoveName(best_move) << " hashfull "
+           << static_cast<int>(tt->Usage() * 1000);
 
-        std::cout << std::endl;
+        if (mate_found) {
+            ss << " score mate ";
+            best_score == MATE_SCORE ? ss << (curr_depth + 1) / 2 : ss << -(curr_depth + 1) / 2;
+        } else {
+            ss << " score cp " << best_score;
+        }
+        std::cout << ss.str() << std::endl;
     }
 
     Score QuiescenceSearch(Board &board, Score alpha, Score beta, Depth depth) {
@@ -223,7 +217,7 @@ namespace Meetra {
             // or even better, have that other thread Thread_Pool infomation from this thread every second or so
             // so we dont even need this if and sendinfo - we can just do a final sendinfo from the SendBestMove
             // method, and also turn off the auto sending thread there
-            if (pv_move) {
+            if (pv_move && run) {
                 SendInfo();
             }
 
