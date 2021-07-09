@@ -2,10 +2,7 @@
 #include "Misc.h"
 #include <string>
 #include <iostream>
-#include "Search.h"
 #include "MoveGen.h"
-#include "Search.h"
-#include <thread>
 #include "Perft.h"
 #include "ThreadPool.h"
 
@@ -38,6 +35,8 @@ namespace Meetra {
             else if (token == "perft") PerftCommand(sts);
 
         } while (listen && !std::cin.eof());
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
     void UciHandler::UciCommand() {
@@ -48,7 +47,7 @@ namespace Meetra {
     }
 
     void UciHandler::GoCommand(StringTokenStream &sts) {
-        if (IsSearching()) {
+        if (search.IsSearching()) {
             return;
         }
         long search_timer = DEFAULT_SEARCH_TIME;
@@ -88,12 +87,13 @@ namespace Meetra {
             search_timer = static_cast<long>(factor * target);
         }
 
-        // TODO make this actually a class and just make a new one here
-        InitSearch();
-        ThreadPool::PushTask(StartSearch, board, depth, search_timer);
+        ThreadPool::PushTask([&]() {
+            search.StartSearch(board, depth, search_timer);
+        });
 
-        //std::jthread search_thread(StartSearch, board, depth, search_timer);
-        //search_thread.detach();
+/*        info_pooling_timer.SetInterval([&]() {
+            std::cout << search.GetCurrMoveInfo() << std::endl;
+        }, 1500);*/
     }
 
     void UciHandler::PerftCommand(StringTokenStream &sts) {
@@ -141,17 +141,19 @@ namespace Meetra {
 
     void UciHandler::QuitCommand() {
         StopCommand();
-/*        timer.Stop();
-        StopSearch();*/
         listen = false;
+        // await search shutdown
+        // TODO will shutdown threadpool as well, and await here in while loop until thread pool running = false
+        //  (shutdown = true - static var in destructor set to true)
     }
 
     void UciHandler::StopCommand() {
-        //timer.Stop();
-        StopSearch();
+        info_pooling_timer.Stop();
+        search.StopSearch();
+        // should await search completion here maybe?
     }
 
     void UciHandler::UciNewGameCommand() {
-        // reset TT
+        search.ClearTT();
     }
 }

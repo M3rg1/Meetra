@@ -28,6 +28,7 @@ namespace Meetra {
         TT16MB = 1000000,
         TT8MB = 500000,
     };
+#define DEFAULT_TT_SIZE TT64MB
 
     enum EntryFlag : Score {
         EXACT_SCORE, ALPHA, BETA, NOT_FOUND = -32013
@@ -37,14 +38,15 @@ namespace Meetra {
 
     public:
 
-        explicit TranspositionTable(size_t size);
+        explicit TranspositionTable(size_t size = DEFAULT_TT_SIZE);
         void AddEntry(ZobristHash key, Score score, Depth depth, Move move, EntryFlag flag);
-        void Resize(size_t new_size);
+        void Resize(TTSize new_size);
         void NewSearch();
+        void Clear();
         [[nodiscard]] Score GetEval(ZobristHash key, Score alpha, Score beta, Depth depth) const;
         [[nodiscard]] Move GetPVMove(ZobristHash key) const;
         [[nodiscard]] int EntriesCount() const { return entries; }
-        // 0.01% == 1% usage, 0.1 == 10% usage, 1 == 100% usage
+        // 0.01 == 1% usage, 0.1 == 10% usage, 1 == 100% usage
         [[nodiscard]] double Usage() const {
             return static_cast<double>(entries) / static_cast<double>(size);
         }
@@ -52,9 +54,6 @@ namespace Meetra {
 
 
     private:
-
-        void Clear();
-
         // 16 bytes
         class TTEntry {
             uint64_t key;

@@ -23,6 +23,8 @@ int main(int argc, char *arv[]) {
     // TODO make an automatic bulk perft testing so if something breaks and itsnt immediatelly visible we can know
     // when it happend, instead of finding out much later and having to figure it out backwards
 
+    // just make everything into a class and make static methods + static variables
+    // like UciHandler::Listen;
     InitBitboards();
     InitZobrist();
 

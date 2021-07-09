@@ -1,6 +1,5 @@
 #include <cstring>
 #include "TranspositionTable.h"
-#include <iostream>
 
 namespace Meetra {
 
@@ -28,7 +27,7 @@ namespace Meetra {
         ttEntry->SaveEntry(key, score, depth, move, flag);
     }
 
-    void TranspositionTable::Resize(size_t new_size) {
+    void TranspositionTable::Resize(TTSize new_size) {
         delete[] table;
         size = new_size;
         table = new TTEntry[sizeof(TTEntry) * new_size];

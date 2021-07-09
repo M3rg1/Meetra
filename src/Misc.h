@@ -11,6 +11,9 @@ namespace Meetra{
 #define INFINITE_TIMER (-1)
 #define DEFAULT_SEARCH_TIME INFINITE_TIMER
 
+    // i think this should e define rather than functions
+    // or mby not because of GetOptions? idk will see when i implement options
+
     inline std::string GetLogo(){
         return "  __  __         _            \n"
                " |  \\/  |___ ___| |_ _ _ __ _ \n"

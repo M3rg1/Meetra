@@ -3,8 +3,7 @@
 
 #include "Board.h"
 #include "StringTokenStream.h"
-#include "Misc.h"
-#include "Timer.h"
+#include "Search.h"
 
 namespace Meetra {
 
@@ -26,6 +25,8 @@ namespace Meetra {
 
         Board board;
         bool listen;
+        ABSearch search;
+        Timer info_pooling_timer;
     };
 
 }
