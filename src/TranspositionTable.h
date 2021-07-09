@@ -40,12 +40,13 @@ namespace Meetra {
         explicit TranspositionTable(size_t size);
         void AddEntry(ZobristHash key, Score score, Depth depth, Move move, EntryFlag flag);
         void Resize(size_t new_size);
+        void NewSearch();
         [[nodiscard]] Score GetEval(ZobristHash key, Score alpha, Score beta, Depth depth) const;
         [[nodiscard]] Move GetPVMove(ZobristHash key) const;
-        [[nodiscard]] int Overwrites() const { return overwrites; }
-        [[nodiscard]] int NewEntries() const { return new_entries; }
+        [[nodiscard]] int EntriesCount() const { return entries; }
+        // 0.01% == 1% usage, 0.1 == 10% usage, 1 == 100% usage
         [[nodiscard]] double Usage() const {
-            return static_cast<double>(new_entries) / static_cast<double>(size);
+            return static_cast<double>(entries) / static_cast<double>(size);
         }
         ~TranspositionTable();
 
@@ -78,8 +79,7 @@ namespace Meetra {
             }
         };
 
-        int overwrites;
-        int new_entries;
+        int entries;
         size_t size;
         TTEntry *table;
     };

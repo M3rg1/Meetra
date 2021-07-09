@@ -38,6 +38,8 @@ namespace Meetra {
         if (!tt) {
             tt = new TranspositionTable(TT64MB);
         }
+        tt->NewSearch();
+
         if (!pv_table) {
             pv_table = new PVTable();
         } else {
@@ -131,9 +133,7 @@ namespace Meetra {
 
     Score NegaMax(Board &board, Score alpha, Score beta, Depth depth) {
 
-        if (!run) {
-            return 0;
-        } else if (board.Ply() >= 50  /*|| repetition*/ ) {
+        if (board.Ply() >= 50  /*|| repetition*/ ) {
             return DRAW_SCORE;
         } else if (depth == 0) {
             return QuiescenceSearch(board, alpha, beta, 1);
@@ -159,7 +159,9 @@ namespace Meetra {
             nodes_searched++;
             score = -NegaMax(board, -beta, -alpha, depth - 1);
             board.UnmakeMove(move);
-            if (score >= beta) {
+            if (!run) {
+                return 0;
+            } else if (score >= beta) {
                 tt->AddEntry(board.GetZobristHash(), beta, depth, move, BETA);
                 return beta;
             } else if (score > alpha) {
@@ -177,10 +179,7 @@ namespace Meetra {
             return DRAW_SCORE;
         }
 
-        if (!run) {
-            return 0;
-        }
-
+        // we could have a if lock check inside the TT, that will that will only allow write of new entries if run == true
         tt->AddEntry(board.GetZobristHash(), alpha, depth, best_move_this_iter, tt_flag);
 
         return alpha;
@@ -218,24 +217,15 @@ namespace Meetra {
                 best_move = pv_move;
                 best_score = best_score_this_iter;
                 if (std::abs(best_score) == MATE_SCORE) {
-                    // should choose the mating sequence that is longest - if we are getting mated
-                    // now it just goes with whatever move it tried first, because all other moves lead to mate
-                    // as well, so it doesnt update the best_score_this_iter
-                    // i think this might be possible to avoid when we will choose the principal variation move first
-                    // so it automatically chooses the best move (the one that took the longest to find the mating patter for) first
                     mate_found = true;
                     mate_depth = curr_depth;
                 }
             }
 
-            // TODO have sendinfo on another thread on timer (send it to the threadpool as repeated task every x seconds)
-            // or even better, have that other thread Thread_Pool infomation from this thread every second or so
-            // so we dont even need this if and sendinfo - we can just do a final sendinfo from the SendBestMove
-            // method, and also turn off the auto sending thread there
+            // TODO instead of send info have a thread probing for info every x seconds
             if (pv_move && run) {
                 SendInfo();
             }
-
             if (!run || (allowed_time != INFINITE_TIMER && NotEnoughTimeLeft(allowed_time)) || !pv_move || mate_found) {
                 break;
             }

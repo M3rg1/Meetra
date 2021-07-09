@@ -7,9 +7,12 @@ namespace Meetra {
 
     TranspositionTable::TranspositionTable(size_t size) : size(size) {
         table = new TTEntry[sizeof(TTEntry) * size];
-        new_entries = 0;
-        overwrites = 0;
+        entries = 0;
         Clear();
+    }
+
+    void TranspositionTable::NewSearch(){
+        entries = 0;
     }
 
     void TranspositionTable::AddEntry(ZobristHash key, Score score, Depth depth, Move move, EntryFlag flag) {
@@ -20,11 +23,7 @@ namespace Meetra {
             return;
         }
 
-        if (ttEntry->GetKey() == 0) {
-            new_entries++;
-        } else {
-            overwrites++;
-        }
+        entries++;
 
         ttEntry->SaveEntry(key, score, depth, move, flag);
     }
@@ -37,8 +36,7 @@ namespace Meetra {
     }
 
     void TranspositionTable::Clear() {
-        overwrites = 0;
-        new_entries = 0;
+        entries = 0;
         memset(table, 0, sizeof(TTEntry) * size);
     }
 
