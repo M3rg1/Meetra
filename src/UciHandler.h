@@ -26,7 +26,6 @@ namespace Meetra {
         Board board;
         bool listen;
         ABSearch search;
-        Timer info_pooling_timer;
     };
 
 }

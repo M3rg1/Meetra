@@ -6,15 +6,17 @@
 #include "PVTable.h"
 #include "Timer.h"
 
-namespace Meetra{
+namespace Meetra {
 
-    class ABSearch{
+    class ABSearch {
+
     public:
         ABSearch();
         void StartSearch(Board board, Depth max_depth, long allowed_time);
-        [[nodiscard]] std::string GetSearchInfo() const;
+        [[nodiscard]] std::string GetFullInfo() const;
         [[nodiscard]] std::string GetBestMove() const;
         [[nodiscard]] std::string GetCurrMoveInfo() const;
+        [[nodiscard]] std::string GetUpdateInfo() const;
         void ResizeTT(TTSize size);
         void ClearTT();
 
@@ -32,7 +34,8 @@ namespace Meetra{
         PVTable pv_table;
 
         volatile bool run;
-        Timer timer;
+        Timer search_timer;
+        Timer info_timer;
 
         Move curr_move;
         int curr_move_num;

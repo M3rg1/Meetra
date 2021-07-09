@@ -16,7 +16,7 @@ class Timer {
 public:
     void SetTimeout(auto function, long delay) {
         active = true;
-        std::jthread t([&]() {
+        std::jthread t([&, delay, function]() {
             std::unique_lock<std::mutex> lock(mtx);
             cond_var.wait_for(lock, std::chrono::milliseconds(delay), [&](){ return !active; });
             if(!active) return;
@@ -33,9 +33,10 @@ public:
     // when Stop method is called
     void SetInterval(auto function, long interval) {
         active = true;
-        std::thread t([&]() {
+        std::jthread t([&, interval, function]() {
             while(active) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(interval));
+                std::unique_lock<std::mutex> lock(mtx);
+                cond_var.wait_for(lock, std::chrono::milliseconds(interval), [&](){ return !active; });
                 if(!active) return;
                 function();
             }
@@ -44,7 +45,7 @@ public:
     }
 
     void Stop() {
-        std::unique_lock<std::mutex> lock(mtx);
+        std::scoped_lock<std::mutex> lock(mtx);
         active = false;
         cond_var.notify_all();
     }

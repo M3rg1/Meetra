@@ -51,14 +51,13 @@ namespace Meetra {
             task_wait_var.notify_one();
         }
 
-        //static ThreadPool *instance;
-
-
         static std::unique_ptr<ThreadPool> instance;
+
         std::vector<std::thread> threads;
         std::queue<std::function<void()>> task_queue;
         std::condition_variable task_wait_var;
         std::mutex mtx;
+
         bool running;
     };
 

@@ -87,13 +87,9 @@ namespace Meetra {
             search_timer = static_cast<long>(factor * target);
         }
 
-        ThreadPool::PushTask([&]() {
+        ThreadPool::PushTask([&, depth, search_timer]() {
             search.StartSearch(board, depth, search_timer);
         });
-
-/*        info_pooling_timer.SetInterval([&]() {
-            std::cout << search.GetCurrMoveInfo() << std::endl;
-        }, 1500);*/
     }
 
     void UciHandler::PerftCommand(StringTokenStream &sts) {
@@ -148,7 +144,6 @@ namespace Meetra {
     }
 
     void UciHandler::StopCommand() {
-        info_pooling_timer.Stop();
         search.StopSearch();
         // should await search completion here maybe?
     }

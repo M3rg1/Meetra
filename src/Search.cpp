@@ -37,15 +37,24 @@ namespace Meetra {
         run = true;
         InitSearch();
 
+        // TODO this timers shoulkdnt create new thread every time, but thread should already exist
+        //  and we just send new tasks
+
         if (allowed_time != INFINITE_TIMER) {
-            timer.SetTimeout([&]() { StopSearch(); }, allowed_time);
+            search_timer.SetTimeout([&]() { StopSearch(); }, allowed_time);
         }
+
+        info_timer.SetInterval([&]() {
+            std::cout << GetUpdateInfo() << std::endl;
+            std::cout << GetCurrMoveInfo() << std::endl;
+        }, 1000);
 
         for (curr_depth = 1; curr_depth <= max_depth; curr_depth++) {
 
             MoveGen move_gen(board);
             Score best_score_this_iter = NEGATIVE_INF;
             Move pv_move = INVALID_MOVE;
+            curr_move_num = 0;
 
             while ((curr_move = move_gen.GetNextMove<false>())) {
                 if (!board.MakeMove(curr_move)) {
@@ -70,20 +79,17 @@ namespace Meetra {
                     mate_found = true;
                     mate_depth = curr_depth;
                 }
+                std::cout << GetFullInfo() << std::endl;
             }
 
-            // TODO instead of send info have a thread probing for info every x seconds (currmove too)
-            // currently_rpboed_move should be global variable instead of just the local "move" var we use
-            if (pv_move && run) {
-                std::cout << GetSearchInfo() << std::endl;
-            }
             if (!run || (allowed_time != INFINITE_TIMER && NotEnoughTimeLeft(allowed_time)) || !pv_move || mate_found) {
                 break;
             }
         }
-        std::cout << GetBestMove() << std::endl;
         run = false;
-        timer.Stop();
+        search_timer.Stop();
+        info_timer.Stop();
+        std::cout << GetBestMove() << std::endl;
     }
 
     Score ABSearch::NegaMax(Board &board, Score alpha, Score beta, Depth depth) {
@@ -199,7 +205,7 @@ namespace Meetra {
         return ret;
     }
 
-    std::string ABSearch::GetSearchInfo() const {
+    std::string ABSearch::GetFullInfo() const {
         using namespace std::chrono;
         long now = time_point_cast<milliseconds>(system_clock::now()).time_since_epoch().count();
         long elapsed_ms = now - timer_start;
@@ -208,15 +214,30 @@ namespace Meetra {
                                      static_cast<double>(elapsed_ms));
 
         std::stringstream ss;
-        ss << "info " << "depth " << curr_depth << " nodes " << (nodes_searched + qsearch_nodes) << " time "
-           << elapsed_ms << " nps " << nps << " pv " << GetMoveName(best_move); /*<< " hashfull "
-           << static_cast<int>(tt->Usage() * 1000);*/
+        ss << "info depth " << curr_depth << " nodes " << (nodes_searched + qsearch_nodes) << " time "
+           << elapsed_ms << " nps " << nps << " pv " << GetMoveName(best_move) << " hashfull "
+           << static_cast<int>(tt->Usage() * 1000);
         if (mate_found) {
             ss << " score mate ";
             best_score == MATE_SCORE ? ss << (mate_depth + 1) / 2 : ss << (-(mate_depth + 1) / 2);
         } else {
             ss << " score cp " << best_score;
         }
+        return ss.str();
+    }
+
+    std::string ABSearch::GetUpdateInfo() const {
+        using namespace std::chrono;
+        long now = time_point_cast<milliseconds>(system_clock::now()).time_since_epoch().count();
+        long elapsed_ms = now - timer_start;
+        elapsed_ms = std::max(1l, elapsed_ms);
+        long nps = static_cast<long>(static_cast<double>(nodes_searched + qsearch_nodes) * 1000.0 /
+                                     static_cast<double>(elapsed_ms));
+
+        std::stringstream ss;
+        ss << "info nodes " << (nodes_searched + qsearch_nodes) << " time " << elapsed_ms << " nps " << nps
+           << " hashfull " << static_cast<int>(tt->Usage() * 1000);
+
         return ss.str();
     }
 

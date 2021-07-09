@@ -7,7 +7,7 @@ namespace Meetra {
     ThreadPool::ThreadPool(int num_threads) {
         running = true;
         for (auto i = 0; i < num_threads; i++) {
-            threads.emplace_back([=, this] {
+            threads.emplace_back([&] {
                 while (true) {
                     std::function<void()> task;
                     {
