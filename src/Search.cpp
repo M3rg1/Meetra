@@ -96,6 +96,10 @@ namespace Meetra {
         std::cout << ss.str() << std::endl;
     }
 
+    void SendCurrMoveInfo(Move move, int num){
+        std::cout << "info currmove " << GetMoveName(move) << " currmovenumber " << num << std::endl;
+    }
+
     Score QuiescenceSearch(Board &board, Score alpha, Score beta, Depth depth) {
 
         if (depth > qsearch_depth) {
@@ -197,12 +201,14 @@ namespace Meetra {
             Move move;
             Score best_score_this_iter = NEGATIVE_INF;
             Move pv_move = INVALID_MOVE;
+            int curr_move_number = 1;
 
             while ((move = move_gen.GetNextMove<false>())) {
                 if (!board.MakeMove(move)) {
                     board.UnmakeMove(move);
                     continue;
                 }
+                SendCurrMoveInfo(move, curr_move_number++);
                 nodes_searched++;
                 Score score = -NegaMax(board, NEGATIVE_INF, POSITIVE_INF, curr_depth);
                 board.UnmakeMove(move);
