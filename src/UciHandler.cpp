@@ -70,7 +70,7 @@ namespace Meetra {
                 search_timer = std::stoi(sts.NextToken());
                 fixed_timer = true;
             } else if (token == "infinite") {
-                depth = 100;
+                depth = MAX_SEARCH_DEPTH;
                 infinite = true;
                 search_timer = INFINITE_TIMER;
             } else if (token == "depth") {

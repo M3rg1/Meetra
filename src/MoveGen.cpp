@@ -42,7 +42,9 @@ namespace Meetra {
     }
 
     MoveGen::MoveGen(const Board &board) : MoveGen(board, nullptr) {
-        genPhase = CAPTURE;
+        if(genPhase != END) {
+            genPhase = CAPTURE;
+        }
     }
 
     void MoveGen::SortMoves() {
@@ -57,7 +59,7 @@ namespace Meetra {
 
     Move MoveGen::PickBestMove() {
         int idx_best_move = 0;
-        int max_eval = NEGATIVE_INF;
+        Score max_eval = NEGATIVE_INF;
         for (int i = 0; i < moves_cnt; i++) {
             if (move_evals[i] > max_eval) {
                 max_eval = move_evals[i];
@@ -76,11 +78,7 @@ namespace Meetra {
                 NextPhase<BLACK, QSearch>();
             }
             SortMoves();
-        }// info depth 7 nodes 47020168 time 7558 nps 6221244 score cp -155 pv h7h6
-
-        // TODO i can do this only once, after the moves are generated and create an additional array
-        // TODO with all the evals, and then just return moves based on that array
-        // TODO where i just walk through the whole array and pick the best move to pop
+        }
         return PickBestMove();
     }
 
@@ -104,7 +102,7 @@ namespace Meetra {
                 case BEST_MOVE:
                     Move m;
                     m = tt->GetPVMove(board.GetZobristHash());
-                    if (m) {
+                    if (m != INVALID_MOVE) {
                         PutMove(m);
                     }
                     ++genPhase;

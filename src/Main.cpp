@@ -25,6 +25,7 @@ int main(int argc, char *arv[]) {
 
     InitBitboards();
     InitZobrist();
+
     //ThreadPool::InitThreadPool(4);
 
     //thread_pool = new ThreadPool(10);

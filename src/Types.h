@@ -183,6 +183,9 @@ namespace Meetra {
     inline MoveType GetMoveType(Move m) { return static_cast<MoveType>(m & 0xF000); }
     inline bool IsValid(Move m) { return m != INVALID_MOVE; }
     inline std::string GetMoveName(Move m) {
+        if(m == INVALID_MOVE){
+            return "0000";
+        }
         std::string ret;
         ret.push_back(FileNames[FileFromSquare(FromSquare(m))]);
         ret.push_back(RankNames[RankFromSquare(FromSquare(m))]);

@@ -6,6 +6,7 @@
 namespace Meetra{
 
 #define STARTPOS_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+#define MAX_SEARCH_DEPTH 100
 #define DEFAULT_SEARCH_DEPTH 20
 #define INFINITE_TIMER (-1)
 #define DEFAULT_SEARCH_TIME INFINITE_TIMER

@@ -6,6 +6,7 @@
 #include "Timer.h"
 #include "TranspositionTable.h"
 #include <sstream>
+#include "PVTable.h"
 
 namespace Meetra {
 
@@ -20,7 +21,9 @@ namespace Meetra {
     Depth curr_depth;
     long timer_start;
     bool mate_found;
+    Depth mate_depth;
     Timer timer;
+    PVTable *pv_table;
 
     void StopSearch() {
         run = false;
@@ -35,6 +38,11 @@ namespace Meetra {
         if (!tt) {
             tt = new TranspositionTable(TT64MB);
         }
+        if (!pv_table) {
+            pv_table = new PVTable();
+        } else {
+            pv_table->Reset();
+        }
         tt_hits = 0;
         mate_found = false;
         best_move = INVALID_MOVE;
@@ -43,6 +51,7 @@ namespace Meetra {
         qsearch_nodes = 0;
         qsearch_depth = 0;
         curr_depth = 0;
+        mate_depth = 0;
         using namespace std::chrono;
         timer_start = time_point_cast<milliseconds>(system_clock::now()).time_since_epoch().count();
         run = true;
@@ -77,10 +86,11 @@ namespace Meetra {
 
         if (mate_found) {
             ss << " score mate ";
-            best_score == MATE_SCORE ? ss << (curr_depth + 1) / 2 : ss << -(curr_depth + 1) / 2;
+            best_score == MATE_SCORE ? ss << (mate_depth + 1) / 2 : ss << (-(mate_depth + 1) / 2);
         } else {
             ss << " score cp " << best_score;
         }
+
         std::cout << ss.str() << std::endl;
     }
 
@@ -123,11 +133,7 @@ namespace Meetra {
 
         if (!run) {
             return 0;
-        }
-
-        //Score score = NOT_FOUND;
-
-        if (board.Ply() >= 50  /*|| repetition*/ ) {
+        } else if (board.Ply() >= 50  /*|| repetition*/ ) {
             return DRAW_SCORE;
         } else if (depth == 0) {
             return QuiescenceSearch(board, alpha, beta, 1);
@@ -139,11 +145,13 @@ namespace Meetra {
             return score;
         }
 
-        EntryFlag tt_flag = ALPHA;
         MoveGen move_gen(board, tt);
         Move move;
-        Move best_move_this_iter;
-        for (move = move_gen.GetNextMove<false>(), best_move_this_iter = move; move; move = move_gen.GetNextMove<false>()) {
+        Move best_move_this_iter = INVALID_MOVE;
+        EntryFlag tt_flag = ALPHA;
+        bool no_legal_moves = true;
+
+        while ((move = move_gen.GetNextMove<false>())) {
             if (!board.MakeMove(move)) {
                 board.UnmakeMove(move);
                 continue;
@@ -159,16 +167,21 @@ namespace Meetra {
                 alpha = score;
                 best_move_this_iter = move;
             }
+            no_legal_moves = false;
         }
 
-        if (best_move_this_iter == INVALID_MOVE) {
+        if (no_legal_moves) {
             if (move_gen.IsKingInCheck()) {
                 return -MATE_SCORE;
             }
             return DRAW_SCORE;
         }
 
-        tt->AddEntry(board.GetZobristHash(), score, depth, best_move_this_iter, tt_flag);
+        if (!run) {
+            return 0;
+        }
+
+        tt->AddEntry(board.GetZobristHash(), alpha, depth, best_move_this_iter, tt_flag);
 
         return alpha;
     }
@@ -201,15 +214,17 @@ namespace Meetra {
             }
 
             if (run) {
+                //pv_table->AddEntry(pv_move);
                 best_move = pv_move;
                 best_score = best_score_this_iter;
                 if (std::abs(best_score) == MATE_SCORE) {
-                    // should choose the mating sequence that is longest
+                    // should choose the mating sequence that is longest - if we are getting mated
                     // now it just goes with whatever move it tried first, because all other moves lead to mate
                     // as well, so it doesnt update the best_score_this_iter
                     // i think this might be possible to avoid when we will choose the principal variation move first
                     // so it automatically chooses the best move (the one that took the longest to find the mating patter for) first
                     mate_found = true;
+                    mate_depth = curr_depth;
                 }
             }
 
@@ -221,8 +236,7 @@ namespace Meetra {
                 SendInfo();
             }
 
-            if (!run || (allowed_time != INFINITE_TIMER && NotEnoughTimeLeft(allowed_time)) || mate_found ||
-                !pv_move) {
+            if (!run || (allowed_time != INFINITE_TIMER && NotEnoughTimeLeft(allowed_time)) || !pv_move || mate_found) {
                 break;
             }
         }

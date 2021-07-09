@@ -30,7 +30,7 @@ namespace Meetra {
     };
 
     enum EntryFlag : Score {
-        EXACT_SCORE, ALPHA, BETA, NOT_FOUND = -31123
+        EXACT_SCORE, ALPHA, BETA, NOT_FOUND = -32013
     };
 
     class TranspositionTable {
