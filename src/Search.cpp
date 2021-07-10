@@ -26,7 +26,7 @@ namespace Meetra {
         nodes_searched = 0;
         qsearch_nodes = 0;
         qsearch_depth = 0;
-        curr_depth = 0;
+        curr_max_depth = 0;
         mate_depth = 0;
         using namespace std::chrono;
         timer_start = time_point_cast<milliseconds>(system_clock::now()).time_since_epoch().count();
@@ -49,11 +49,19 @@ namespace Meetra {
             std::cout << GetCurrMoveInfo() << std::endl;
         }, 1000);
 
-        for (curr_depth = 1; curr_depth <= max_depth; curr_depth++) {
+        // TODO TODO TODO
+        //  ulozit si vsechny projdete movy do arraye a k nim vzdy jejich hodnoceni
+        //  pri nasledujici iteraci s vetsi hloubkou je prochazim postupne od nejlepe hodnoceneho po nejhure
+        //  a nemusim je znova generovat - generator uplne na zacatku vygeneruje vsechny movy a pak uz je jen
+        //  prochazim a radim postupne
+        //  tim se i elegantne vyresi co zobrazovat v GUI jako current top move a jeho skore
+        //  vzdy akorat zobrazim prvni move v tom arrayi movu
+        //  a fajn by bylo kdyby to bylo array arraye -> ze tam je zvdy cely PV ke kazdemu movu z rootu
+        for (curr_max_depth = 1; curr_max_depth <= max_depth; curr_max_depth++) {
 
             MoveGen move_gen(board);
             Score best_score_this_iter = NEGATIVE_INF;
-            Move pv_move = INVALID_MOVE;
+            Move best_move_this_iter = INVALID_MOVE;
             curr_move_num = 0;
             qsearch_depth = 0;
 
@@ -64,30 +72,31 @@ namespace Meetra {
                 }
                 curr_move_num++;
                 nodes_searched++;
-                Score score = -NegaMax(board, NEGATIVE_INF, POSITIVE_INF, curr_depth);
+                Score score = -NegaMax(board, NEGATIVE_INF, POSITIVE_INF, curr_max_depth);
                 board.UnmakeMove(curr_move);
                 if (score > best_score_this_iter && run) {
                     best_score_this_iter = score;
-                    pv_move = curr_move;
-                    if (best_score_this_iter > best_score) {
-                        best_move = pv_move;
+                    best_move_this_iter = curr_move;
+                    if (best_score_this_iter >= best_score) {
+                        best_move = best_move_this_iter;
                         best_score = best_score_this_iter;
                     }
                 }
             }
 
             if (run) {
-                //pv_table->AddEntry(pv_move);
-                best_move = pv_move;
+                //pv_table->AddEntry(best_move_this_iter);
+                best_move = best_move_this_iter;
                 best_score = best_score_this_iter;
                 if (std::abs(best_score) == MATE_SCORE) {
                     mate_found = true;
-                    mate_depth = curr_depth;
+                    mate_depth = curr_max_depth;
                 }
-                std::cout << GetSearchInfo() << std::endl;
             }
 
-            if (!run || (allowed_time != INFINITE_TIMER && NotEnoughTimeLeft(allowed_time)) || !pv_move || mate_found) {
+            std::cout << GetSearchInfo() << std::endl;
+
+            if (!run || (allowed_time != INFINITE_TIMER && NotEnoughTimeLeft(allowed_time)) || !best_move_this_iter || mate_found) {
                 break;
             }
         }
@@ -219,7 +228,7 @@ namespace Meetra {
                                      static_cast<double>(elapsed_ms));
 
         std::stringstream ss;
-        ss << "info depth " << curr_depth << " seldepth " << curr_depth + qsearch_depth << " nodes "
+        ss << "info depth " << curr_max_depth << " seldepth " << curr_max_depth + qsearch_depth << " nodes "
            << (nodes_searched + qsearch_nodes) << " time " << elapsed_ms << " nps " << nps << " pv "
            << GetMoveName(best_move) << " hashfull " << static_cast<int>(tt->Usage() * 1000);
         if (mate_found) {

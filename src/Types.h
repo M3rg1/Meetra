@@ -143,7 +143,7 @@ namespace Meetra {
 #pragma region ===== Initialization =====
     inline Move NewMove(Square from, Square to) { return static_cast<Move>(from | to << 6); }
     inline Move NewMove(Square from, Square to, MoveType flag) { return static_cast<Move>(NewMove(from, to) | flag); }
-    inline Move NewMoveFromName(std::string move_name) {
+    inline Move NewMoveFromName(const std::string &move_name) {
         File f_from = static_cast<File>(file_names.find(move_name[0]));
         Rank r_from = static_cast<Rank>((move_name[1] - '0') - 1);
         Square from = SquareFromFiRa(f_from, r_from);
@@ -183,7 +183,7 @@ namespace Meetra {
     inline MoveType GetMoveType(Move m) { return static_cast<MoveType>(m & 0xF000); }
     inline bool IsValid(Move m) { return m != INVALID_MOVE; }
     inline std::string GetMoveName(Move m) {
-        if(m == INVALID_MOVE){
+        if (m == INVALID_MOVE) {
             return "0000";
         }
         std::string ret;

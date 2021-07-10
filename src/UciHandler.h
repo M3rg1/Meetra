@@ -23,9 +23,25 @@ namespace Meetra {
         void StopCommand();
         void QuitCommand();
 
+        void InitSearchOptions(StringTokenStream &sts);
+        void ResetSearchOptions();
+        void InitSearchTimer();
+        void MakeUciMove(const std::string& move_string);
+        void ParseSearchOptions(StringTokenStream &sts);
+
         Board board;
         bool listen;
         ABSearch search;
+
+        long search_timer;
+        int white_time;
+        int black_time;
+        int white_increment;
+        int black_increment;
+        int depth;
+        bool fixed_depth;
+        bool infinite;
+        bool fixed_timer;
     };
 
 }

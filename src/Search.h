@@ -44,7 +44,7 @@ namespace Meetra {
         ulong qsearch_nodes;
         ulong tt_hits;
         Depth qsearch_depth;
-        Depth curr_depth;
+        Depth curr_max_depth;
         long timer_start;
         bool mate_found;
         Depth mate_depth;
