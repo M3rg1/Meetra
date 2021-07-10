@@ -13,10 +13,9 @@ namespace Meetra {
     public:
         ABSearch();
         void StartSearch(Board board, Depth max_depth, long allowed_time);
-        [[nodiscard]] std::string GetFullInfo() const;
+        [[nodiscard]] std::string GetSearchInfo() const;
         [[nodiscard]] std::string GetBestMove() const;
         [[nodiscard]] std::string GetCurrMoveInfo() const;
-        [[nodiscard]] std::string GetUpdateInfo() const;
         void ResizeTT(TTSize size);
         void ClearTT();
 

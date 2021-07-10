@@ -22,6 +22,9 @@ namespace Meetra {
             return;
         }
 
+        // TODO i think usage counting could be done with generation - we only count entries++ if they are not
+        //  overwriting current generation, if they are overwriting anything else (empty, or old entries) then its
+        //  entries++ - that way we cant get above 100% since once is everything from current gen, entries == size
         entries++;
 
         ttEntry->SaveEntry(key, score, depth, move, flag);

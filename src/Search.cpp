@@ -45,7 +45,7 @@ namespace Meetra {
         }
 
         info_timer.SetInterval([&]() {
-            std::cout << GetUpdateInfo() << std::endl;
+            std::cout << GetSearchInfo() << std::endl;
             std::cout << GetCurrMoveInfo() << std::endl;
         }, 1000);
 
@@ -55,6 +55,7 @@ namespace Meetra {
             Score best_score_this_iter = NEGATIVE_INF;
             Move pv_move = INVALID_MOVE;
             curr_move_num = 0;
+            qsearch_depth = 0;
 
             while ((curr_move = move_gen.GetNextMove<false>())) {
                 if (!board.MakeMove(curr_move)) {
@@ -65,9 +66,13 @@ namespace Meetra {
                 nodes_searched++;
                 Score score = -NegaMax(board, NEGATIVE_INF, POSITIVE_INF, curr_depth);
                 board.UnmakeMove(curr_move);
-                if (score > best_score_this_iter) {
+                if (score > best_score_this_iter && run) {
                     best_score_this_iter = score;
                     pv_move = curr_move;
+                    if (best_score_this_iter > best_score) {
+                        best_move = pv_move;
+                        best_score = best_score_this_iter;
+                    }
                 }
             }
 
@@ -79,7 +84,7 @@ namespace Meetra {
                     mate_found = true;
                     mate_depth = curr_depth;
                 }
-                std::cout << GetFullInfo() << std::endl;
+                std::cout << GetSearchInfo() << std::endl;
             }
 
             if (!run || (allowed_time != INFINITE_TIMER && NotEnoughTimeLeft(allowed_time)) || !pv_move || mate_found) {
@@ -205,7 +210,7 @@ namespace Meetra {
         return ret;
     }
 
-    std::string ABSearch::GetFullInfo() const {
+    std::string ABSearch::GetSearchInfo() const {
         using namespace std::chrono;
         long now = time_point_cast<milliseconds>(system_clock::now()).time_since_epoch().count();
         long elapsed_ms = now - timer_start;
@@ -214,30 +219,15 @@ namespace Meetra {
                                      static_cast<double>(elapsed_ms));
 
         std::stringstream ss;
-        ss << "info depth " << curr_depth << " nodes " << (nodes_searched + qsearch_nodes) << " time "
-           << elapsed_ms << " nps " << nps << " pv " << GetMoveName(best_move) << " hashfull "
-           << static_cast<int>(tt->Usage() * 1000);
+        ss << "info depth " << curr_depth << " seldepth " << curr_depth + qsearch_depth << " nodes "
+           << (nodes_searched + qsearch_nodes) << " time " << elapsed_ms << " nps " << nps << " pv "
+           << GetMoveName(best_move) << " hashfull " << static_cast<int>(tt->Usage() * 1000);
         if (mate_found) {
             ss << " score mate ";
             best_score == MATE_SCORE ? ss << (mate_depth + 1) / 2 : ss << (-(mate_depth + 1) / 2);
         } else {
             ss << " score cp " << best_score;
         }
-        return ss.str();
-    }
-
-    std::string ABSearch::GetUpdateInfo() const {
-        using namespace std::chrono;
-        long now = time_point_cast<milliseconds>(system_clock::now()).time_since_epoch().count();
-        long elapsed_ms = now - timer_start;
-        elapsed_ms = std::max(1l, elapsed_ms);
-        long nps = static_cast<long>(static_cast<double>(nodes_searched + qsearch_nodes) * 1000.0 /
-                                     static_cast<double>(elapsed_ms));
-
-        std::stringstream ss;
-        ss << "info nodes " << (nodes_searched + qsearch_nodes) << " time " << elapsed_ms << " nps " << nps
-           << " hashfull " << static_cast<int>(tt->Usage() * 1000);
-
         return ss.str();
     }
 
