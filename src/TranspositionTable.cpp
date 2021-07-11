@@ -3,7 +3,7 @@
 
 namespace Meetra {
 
-#define BUCKET_SIZE 5
+#define BUCKET_SIZE 4
 
 
     TranspositionTable::TranspositionTable(size_t size) : size(size) {
@@ -11,14 +11,6 @@ namespace Meetra {
         entries = 0;
         current_epoch = 0;
         Clear();
-    }
-
-    void TranspositionTable::NewSearch() {
-        if (current_epoch == 63) {
-            Clear();
-        }
-        entries = 0;
-        current_epoch++;
     }
 
     Key32 TranspositionTable::Make32Key(ZobristHash zobrist_hash) const {
@@ -36,21 +28,22 @@ namespace Meetra {
             TTEntry *curr_entry = &table[index];
 
             if (curr_entry->Get32Key() == key_32) {
-                // if this node is exact and im trying to put in non-exact node - that shouldnt be allowed?
-                // or what if this node is exact but has lower depth?
-                // do i just keep all exact nodes from this particular epoch no matter what? sounds werid, what
-                // if i improve the exact score? only then save it?
-                if (depth >= curr_entry->GetDepth()) {
+                curr_entry->SetEpoch(current_epoch);
+                if(curr_entry->GetFlag() == EXACT_SCORE && flag != EXACT_SCORE){
+                    return;
+                }
+                if (depth >= curr_entry->GetDepth() || flag == EXACT_SCORE) {
                     curr_entry->SaveEntry(key_32, score, depth, move, flag, current_epoch);
-                } else {
-                    curr_entry->SetEpoch(current_epoch);
                 }
                 return;
             }
 
             int entry_score = static_cast<int>(curr_entry->GetDepth());
             if (curr_entry->GetEpoch() < current_epoch) {
-                entry_score -= 100 * (current_epoch - curr_entry->GetEpoch());
+                entry_score -= (current_epoch - curr_entry->GetEpoch()) << 5;
+            }
+            if(curr_entry->GetFlag() == EXACT_SCORE){
+                entry_score += 1000;
             }
             if (entry_score < worst_entry_score) {
                 worst_entry_score = entry_score;
@@ -58,9 +51,7 @@ namespace Meetra {
             }
         }
 
-        if (entry_to_write) {
-            entry_to_write->SaveEntry(key_32, score, depth, move, flag, current_epoch);
-        }
+        entry_to_write->SaveEntry(key_32, score, depth, move, flag, current_epoch);
 
 
         // TODO i think usage counting could be done with generation - we only count entries++ if they are not
@@ -93,6 +84,14 @@ namespace Meetra {
         }
 
         return NOT_FOUND;
+    }
+
+    void TranspositionTable::NewSearch() {
+        if (current_epoch == 63) {
+            Clear();
+        }
+        entries = 0;
+        current_epoch++;
     }
 
     void TranspositionTable::Resize(TTSize new_size) {

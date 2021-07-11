@@ -10,6 +10,8 @@
 
 namespace Meetra {
 
+#define MULTI_PV 1
+
     ABSearch::ABSearch() {
         run = false;
         InitSearch();
@@ -31,7 +33,7 @@ namespace Meetra {
     // board should be class variable, so we dont have to pass it in the recursion all the time
     // TODO fixed search time isnt working right now! we ending when 50% time remaining!!!
     //  the UciHandler will have to let us know this is fixed search time, so we dont exist early via NotEnoughTime foo
-    void ABSearch::StartSearch(const Board & b, Depth max_depth, long allowed_time) {
+    void ABSearch::StartSearch(const Board &b, Depth max_depth, long allowed_time) {
 
         board = b;
         run = true;
@@ -57,7 +59,7 @@ namespace Meetra {
                 continue;
             }
             board.UnmakeMove(m);
-            score_move[moves_count++].second = m;
+            score_move_pair[moves_count++].second = m;
         }
         // if moves count == 0 = the board is already in checkmate/draw
 
@@ -66,7 +68,7 @@ namespace Meetra {
             qsearch_depth = 0;
 
             for (curr_move_num = 0; curr_move_num < moves_count && run; curr_move_num++) {
-                curr_move = score_move[curr_move_num].second;
+                curr_move = score_move_pair[curr_move_num].second;
 
                 if (ElapsedTimeMs() > 1000) {
                     uci_send_info = GetCurrMoveInfo();
@@ -77,12 +79,12 @@ namespace Meetra {
                 nodes_searched++;
                 Score score = -NegaMax(NEGATIVE_INF, POSITIVE_INF, curr_max_depth - 1);
                 if (run) {
-                    score_move[curr_move_num].first = score;
+                    score_move_pair[curr_move_num].first = score;
                 }
                 board.UnmakeMove(curr_move);
             }
 
-            std::sort(score_move, score_move + moves_count, std::greater<>());
+            std::sort(score_move_pair, score_move_pair + moves_count, std::greater<>());
             uci_send_info = GetSearchInfo();
             ThreadPool::PushTask([uci_send_info]() { UciHandler::SendToGui(uci_send_info); });
         }
@@ -94,21 +96,6 @@ namespace Meetra {
         // We dont really want to send any more info after sending bestmove, this almost guarantees that wont happen
         // (in case the final search info wasn't sent yet by the ThreadPool)
         ThreadPool::PushTask([uci_send_info]() { UciHandler::SendToGui(uci_send_info); });
-    }
-
-    void ABSearch::UpdatePvTable() {
-        RetrievePv(0);
-    }
-
-    void ABSearch::RetrievePv(int i) {
-        Move move = tt.GetPVMove(board.GetZobristHash());
-        //pv_table[i] = move;
-        if (!move) {
-            return;
-        }
-        board.MakeMove(move);
-        RetrievePv(i + 1);
-        board.UnmakeMove(move);
     }
 
     Score ABSearch::NegaMax(Score alpha, Score beta, Depth depth) {
@@ -159,7 +146,6 @@ namespace Meetra {
             return DRAW_SCORE;
         }
 
-        // we could have a if lock check inside the TT, that will that will only allow write of new entries if run == true
         tt.SaveEval(board.GetZobristHash(), alpha, depth, best_move_this_iter, tt_flag);
 
         return alpha;
@@ -217,7 +203,7 @@ namespace Meetra {
 
     std::string ABSearch::GetBestMove() const {
         std::string ret = "bestmove ";
-        ret.append(GetMoveName(score_move[0].second));
+        ret.append(GetMoveName(score_move_pair[0].second));
         return ret;
     }
 
@@ -226,6 +212,18 @@ namespace Meetra {
         long now = time_point_cast<milliseconds>(system_clock::now()).time_since_epoch().count();
         long elapsed_ms = now - timer_start;
         return std::max(1l, elapsed_ms);
+    }
+
+    void ABSearch::RetrievePv(Move *pv_line, Depth depth) {
+        Move move = tt.GetPVMove(board.GetZobristHash());
+        if (!move || depth == 0) {
+            *pv_line = INVALID_MOVE;
+            return;
+        }
+        *pv_line++ = move;
+        board.MakeMove(move);
+        RetrievePv(pv_line, depth - 1);
+        board.UnmakeMove(move);
     }
 
     std::string ABSearch::GetUpdateSearchInfo() const {
@@ -246,14 +244,16 @@ namespace Meetra {
         return ss.str();
     }
 
-    std::string ABSearch::GetSearchInfo() const {
+    std::string ABSearch::GetSearchInfo() {
 
         long elapsed_ms = ElapsedTimeMs();
         long nps = static_cast<long>(static_cast<double>(nodes_searched + qsearch_nodes) * 1000.0 /
                                      static_cast<double>(elapsed_ms));
 
         std::stringstream ss;
-        for (auto i = 0; i < 1; i++) {
+        Move pv_stack[64];
+        auto pvs_to_send = std::min(MULTI_PV, moves_count);
+        for (auto i = 0; i < pvs_to_send; i++) {
             ss << "info multipv " << i + 1
                << " depth " << +curr_max_depth
                << " seldepth " << qsearch_depth + curr_max_depth
@@ -261,9 +261,17 @@ namespace Meetra {
                << " time " << elapsed_ms
                << " nps " << nps
                << " hashfull " << static_cast<int>(tt.Usage() * 1000)
-               << " score cp " << score_move[i].first
-               << " pv " << GetMoveName(score_move[i].second);
-            // extract PV for this particular move
+               << " score cp " << score_move_pair[i].first
+               << " pv " << GetMoveName(score_move_pair[i].second);
+
+            board.MakeMove(score_move_pair[i].second);
+            RetrievePv(pv_stack, curr_max_depth - 1);
+            board.UnmakeMove(score_move_pair[i].second);
+            Move *pv_stack_ptr = pv_stack;
+            Move pv_move;
+            while ((pv_move = *pv_stack_ptr++)) {
+                ss << " " << GetMoveName(pv_move);
+            }
         }
 
         return ss.str();

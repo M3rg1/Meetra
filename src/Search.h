@@ -12,13 +12,12 @@ namespace Meetra {
 
     public:
         ABSearch();
-        void StartSearch(const Board & b, Depth max_depth, long allowed_time);
-        [[nodiscard]] std::string GetSearchInfo() const;
+        void StartSearch(const Board &b, Depth max_depth, long allowed_time);
+        [[nodiscard]] std::string GetSearchInfo();
         [[nodiscard]] std::string GetBestMove() const;
         [[nodiscard]] std::string GetCurrMoveInfo() const;
         [[nodiscard]] std::string GetUpdateSearchInfo() const;
-        void UpdatePvTable();
-        void RetrievePv(int i);
+        void RetrievePv(Move *pv_line, Depth depth);
         void ResizeTT(TTSize size);
         void ClearTT();
 
@@ -40,7 +39,7 @@ namespace Meetra {
         Timer search_timer;
         Timer info_timer;
 
-        std::pair<Score, Move> score_move[128];
+        std::pair<Score, Move> score_move_pair[128];
         int moves_count;
         Move curr_move;
         int curr_move_num;

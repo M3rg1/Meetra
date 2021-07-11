@@ -63,16 +63,14 @@ namespace Meetra {
 
         [[nodiscard]] Key32 Make32Key(ZobristHash zobrist_hash) const;
 
-        // 10 bytes (either 8 or 12 or 16 - will get padded by compiler anyway)
 #pragma pack(push, 1)
-
+        // 10 bytes
         class TTEntry {
             uint32_t key;
             int16_t score;
             uint8_t depth;
             uint16_t move;
-            // 2 low bits for flag, rest for epoch
-            uint8_t epoch_and_flag;
+            uint8_t epoch_and_flag; // 2 low bits for flag, rest for epoch
 
         public:
             [[nodiscard]] Key32 Get32Key() const { return static_cast<Key32>(key); }
@@ -95,39 +93,7 @@ namespace Meetra {
                 epoch_and_flag |= static_cast<uint8_t>(e) << 2;
             }
         };
-
 #pragma pack(pop)
-
-
-/*#pragma pack(push, 1)
-        class TTEntry {
-            uint32_t key;
-            int16_t score;
-            uint8_t depth;
-            uint16_t move;
-            uint8_t flag;
-            // TODO can be inside the flag - like last 5 bits or whatever, flag only uses 3 bits
-            uint8_t epoch;
-
-        public:
-            [[nodiscard]] Key32 Get32Key() const { return static_cast<Key32>(key); }
-            [[nodiscard]] Score GetScore() const { return static_cast<Score>(score); }
-            [[nodiscard]] Depth GetDepth() const { return static_cast<Depth>(depth); }
-            [[nodiscard]] Move GetMove() const { return static_cast<Move>(move); }
-            [[nodiscard]] EntryFlag GetFlag() const { return static_cast<EntryFlag>(flag); }
-            [[nodiscard]] Epoch GetEpoch() const { return static_cast<Epoch>(epoch); }
-
-            void SetEpoch(Epoch e) { epoch = static_cast<uint8_t>(e); }
-            void SaveEntry(Key32 k, Score s, Depth d, Move m, EntryFlag f, Epoch e) {
-                key = static_cast<uint32_t>(k);
-                score = static_cast<int16_t>(s);
-                depth = static_cast<uint8_t>(d);
-                move = static_cast<uint16_t>(m);
-                flag = static_cast<uint8_t>(f);
-                epoch = static_cast<uint8_t>(e);
-            }
-        };
-#pragma pack(pop)*/
 
         Epoch current_epoch;
         size_t entries;
