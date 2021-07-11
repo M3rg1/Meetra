@@ -53,7 +53,7 @@ namespace Meetra {
         ss << "id name " << GetName() << " v. " << GetVersion() << '\n'
            << "id author " << GetAuthor() << '\n'
            << GetOptions() << '\n'
-           << "uciok" << '\n';
+           << "uciok";
         SendToGui(ss.str());
     }
 

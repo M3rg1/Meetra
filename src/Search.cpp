@@ -51,37 +51,41 @@ namespace Meetra {
 
         for (curr_max_depth = 1; curr_max_depth <= max_depth; curr_max_depth++) {
 
-            MoveGen move_gen(board);
+            MoveGen move_gen(board, tt);
             Score best_score_this_iter = NEGATIVE_INF;
             Move best_move_this_iter = INVALID_MOVE;
             curr_move_num = 0;
             qsearch_depth = 0;
 
-            // no need to generate moves all the time
             while ((curr_move = move_gen.GetNextMove<false>())) {
 
                 if (!board.MakeMove(curr_move)) {
                     board.UnmakeMove(curr_move);
                     continue;
-                } else if (run && curr_max_depth > 7) {
+                }
+                curr_move_num++;
+
+                if (ElapsedTimeMs() > 1000) {
                     uci_send_info = GetCurrMoveInfo();
                     ThreadPool::PushTask([uci_send_info]() { UciHandler::SendToGui(uci_send_info); });
                 }
 
-                curr_move_num++;
                 nodes_searched++;
-
                 Score score = -NegaMax(board, NEGATIVE_INF, POSITIVE_INF, curr_max_depth - 1);
                 board.UnmakeMove(curr_move);
 
-                if (run) {
-                    if (score > best_score_this_iter) {
-                        best_score_this_iter = score;
-                        best_move_this_iter = curr_move;
-                        if (best_score_this_iter > best_score) {
-                            best_move = best_move_this_iter;
-                            best_score = best_score_this_iter;
-                        }
+                if (!run) {
+                    break;
+                }
+
+                if (score > best_score_this_iter) {
+                    best_score_this_iter = score;
+                    best_move_this_iter = curr_move;
+                    // if the current move proved to be better than the best move we already have, we can save
+                    // it as the new best move, despite not having completed the whole search for this depth
+                    if (best_score_this_iter > best_score) {
+                        best_move = best_move_this_iter;
+                        best_score = best_score_this_iter;
                     }
                 }
             }
@@ -200,10 +204,7 @@ namespace Meetra {
     }
 
     bool ABSearch::NotEnoughTimeLeft(long allowed_time) const {
-        using namespace std::chrono;
-        long now = time_point_cast<milliseconds>(system_clock::now()).time_since_epoch().count();
-        long elapsed = now - timer_start;
-        if (allowed_time < elapsed * 2) {
+        if (allowed_time < ElapsedTimeMs() * 2) {
             return true;
         }
         return false;
@@ -223,11 +224,15 @@ namespace Meetra {
         return ret;
     }
 
-    std::string ABSearch::GetUpdateSearchInfo() const {
+    long ABSearch::ElapsedTimeMs() const {
         using namespace std::chrono;
         long now = time_point_cast<milliseconds>(system_clock::now()).time_since_epoch().count();
         long elapsed_ms = now - timer_start;
-        elapsed_ms = std::max(1l, elapsed_ms);
+        return std::max(1l, elapsed_ms);
+    }
+
+    std::string ABSearch::GetUpdateSearchInfo() const {
+        auto elapsed_ms = ElapsedTimeMs();
         long nps = static_cast<long>(static_cast<double>(nodes_searched + qsearch_nodes) * 1000.0 /
                                      static_cast<double>(elapsed_ms));
 
@@ -238,21 +243,17 @@ namespace Meetra {
            << " nodes " << (nodes_searched + qsearch_nodes)
            << " time " << elapsed_ms
            << " nps " << nps
-           << " hashfull "; // something
+           << " hashfull ";
 
         return ss.str();
     }
 
     std::string ABSearch::GetSearchInfo() const {
 
-        using namespace std::chrono;
-        long now = time_point_cast<milliseconds>(system_clock::now()).time_since_epoch().count();
-        long elapsed_ms = now - timer_start;
-        elapsed_ms = std::max(1l, elapsed_ms);
+        long elapsed_ms = ElapsedTimeMs();
         long nps = static_cast<long>(static_cast<double>(nodes_searched + qsearch_nodes) * 1000.0 /
                                      static_cast<double>(elapsed_ms));
 
-        // i < max available moves or MultiPv (whichever is smaller)
         std::stringstream ss;
         for (auto i = 1; i <= 1; i++) {
 

@@ -27,6 +27,7 @@ namespace Meetra {
         Score QuiescenceSearch(Board &board, Score alpha, Score beta, Depth depth);
         Score NegaMax(Board &board, Score alpha, Score beta, Depth depth);
         [[nodiscard]] bool NotEnoughTimeLeft(long allowed_time) const;
+        [[nodiscard]] long ElapsedTimeMs() const;
 
 
         TranspositionTable *tt;

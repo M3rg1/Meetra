@@ -65,6 +65,7 @@ namespace Meetra {
 
         // 10 bytes (either 8 or 12 or 16 - will get padded by compiler anyway)
 #pragma pack(push, 1)
+
         class TTEntry {
             uint32_t key;
             int16_t score;
@@ -94,6 +95,7 @@ namespace Meetra {
                 epoch_and_flag |= static_cast<uint8_t>(e) << 2;
             }
         };
+
 #pragma pack(pop)
 
 
