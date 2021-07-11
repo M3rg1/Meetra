@@ -4,6 +4,7 @@
 #include "Board.h"
 #include "TranspositionTable.h"
 #include "Timer.h"
+#include <stack>
 
 namespace Meetra {
 
@@ -16,6 +17,8 @@ namespace Meetra {
         [[nodiscard]] std::string GetBestMove() const;
         [[nodiscard]] std::string GetCurrMoveInfo() const;
         [[nodiscard]] std::string GetUpdateSearchInfo() const;
+        void UpdatePvTable(Board &board);
+        void RetrievePv(Board &board, int i);
         void ResizeTT(TTSize size);
         void ClearTT();
 
@@ -26,7 +29,7 @@ namespace Meetra {
         void InitSearch();
         Score QuiescenceSearch(Board &board, Score alpha, Score beta, Depth depth);
         Score NegaMax(Board &board, Score alpha, Score beta, Depth depth);
-        [[nodiscard]] bool NotEnoughTimeLeft(long allowed_time) const;
+        [[nodiscard]] bool EnoughTimeLeft(long allowed_time) const;
         [[nodiscard]] long ElapsedTimeMs() const;
 
 
@@ -36,18 +39,16 @@ namespace Meetra {
         Timer search_timer;
         Timer info_timer;
 
+        std::pair<Score, Move> score_move[128];
+        int moves_count;
         Move curr_move;
         int curr_move_num;
-        Move best_move;
-        Score best_score;
         ulong nodes_searched;
         ulong qsearch_nodes;
         ulong tt_hits;
         Depth qsearch_depth;
         Depth curr_max_depth;
         long timer_start;
-        bool mate_found;
-        Depth mate_depth;
     };
 
 }

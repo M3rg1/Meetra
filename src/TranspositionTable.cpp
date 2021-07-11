@@ -14,7 +14,7 @@ namespace Meetra {
     }
 
     void TranspositionTable::NewSearch() {
-        if(current_epoch == 63){
+        if (current_epoch == 63) {
             Clear();
         }
         entries = 0;
@@ -36,6 +36,10 @@ namespace Meetra {
             TTEntry *curr_entry = &table[index];
 
             if (curr_entry->Get32Key() == key_32) {
+                // if this node is exact and im trying to put in non-exact node - that shouldnt be allowed?
+                // or what if this node is exact but has lower depth?
+                // do i just keep all exact nodes from this particular epoch no matter what? sounds werid, what
+                // if i improve the exact score? only then save it?
                 if (depth >= curr_entry->GetDepth()) {
                     curr_entry->SaveEntry(key_32, score, depth, move, flag, current_epoch);
                 } else {
@@ -105,9 +109,21 @@ namespace Meetra {
     }
 
     Move TranspositionTable::GetPVMove(ZobristHash key) const {
-        TTEntry *ttEntry = &table[key % size];
+
         Key32 key_32 = Make32Key(key);
-        return ttEntry->Get32Key() == key_32 ? ttEntry->GetMove() : INVALID_MOVE;
+
+        for (auto i = 0; i < BUCKET_SIZE; i++) {
+            auto index = (key + i) % size;
+            TTEntry *ttEntry = &table[index];
+
+            if (ttEntry->Get32Key() == key_32) {
+                if (ttEntry->GetFlag() == EXACT_SCORE) {
+                    return ttEntry->GetMove();
+                }
+                return INVALID_MOVE;
+            }
+        }
+        return INVALID_MOVE;
     }
 
     TranspositionTable::~TranspositionTable() {

@@ -19,20 +19,19 @@ namespace Meetra {
     void ABSearch::InitSearch() {
         tt->NewSearch();
         tt_hits = 0;
-        mate_found = false;
         curr_move = INVALID_MOVE;
         curr_move_num = 0;
-        best_move = INVALID_MOVE;
-        best_score = NEGATIVE_INF;
         nodes_searched = 0;
         qsearch_nodes = 0;
         qsearch_depth = 0;
         curr_max_depth = 0;
-        mate_depth = 0;
         using namespace std::chrono;
         timer_start = time_point_cast<milliseconds>(system_clock::now()).time_since_epoch().count();
     }
 
+    // board should be class variable, so we dont have to pass it in the recursion all the time
+    // TODO fixed search time isnt working right now! we ending when 50% time remaining!!!
+    //  the UciHandler will have to let us know this is fixed search time, so we dont exist early via NotEnoughTime foo
     void ABSearch::StartSearch(Board board, Depth max_depth, long allowed_time) {
         run = true;
         InitSearch();
@@ -44,67 +43,47 @@ namespace Meetra {
         if (allowed_time != INFINITE_TIMER) {
             search_timer.SetTimeout([&]() { StopSearch(); }, allowed_time);
         }
-
         info_timer.SetInterval([&]() {
             UciHandler::SendToGui(GetUpdateSearchInfo());
         }, 1000);
 
-        for (curr_max_depth = 1; curr_max_depth <= max_depth; curr_max_depth++) {
+        MoveGen move_gen(board);
+        moves_count = 0;
+        Move m;
+        while ((m = move_gen.GetNextMove<false>())) {
+            if (!board.MakeMove(m)) {
+                board.UnmakeMove(m);
+                continue;
+            }
+            board.UnmakeMove(m);
+            score_move[moves_count++].second = m;
+        }
+        // if moves count == 0 = the board is already in checkmate/draw
 
-            MoveGen move_gen(board, tt);
-            Score best_score_this_iter = NEGATIVE_INF;
-            Move best_move_this_iter = INVALID_MOVE;
-            curr_move_num = 0;
+        for (curr_max_depth = 1; curr_max_depth <= max_depth && run && EnoughTimeLeft(allowed_time); curr_max_depth++) {
+
             qsearch_depth = 0;
 
-            while ((curr_move = move_gen.GetNextMove<false>())) {
-
-                if (!board.MakeMove(curr_move)) {
-                    board.UnmakeMove(curr_move);
-                    continue;
-                }
-                curr_move_num++;
+            for (curr_move_num = 0; curr_move_num < moves_count && run; curr_move_num++) {
+                curr_move = score_move[curr_move_num].second;
 
                 if (ElapsedTimeMs() > 1000) {
                     uci_send_info = GetCurrMoveInfo();
                     ThreadPool::PushTask([uci_send_info]() { UciHandler::SendToGui(uci_send_info); });
                 }
 
+                board.MakeMove(curr_move);
                 nodes_searched++;
                 Score score = -NegaMax(board, NEGATIVE_INF, POSITIVE_INF, curr_max_depth - 1);
+                if (run) {
+                    score_move[curr_move_num].first = score;
+                }
                 board.UnmakeMove(curr_move);
-
-                if (!run) {
-                    break;
-                }
-
-                if (score > best_score_this_iter) {
-                    best_score_this_iter = score;
-                    best_move_this_iter = curr_move;
-                    // if the current move proved to be better than the best move we already have, we can save
-                    // it as the new best move, despite not having completed the whole search for this depth
-                    if (best_score_this_iter > best_score) {
-                        best_move = best_move_this_iter;
-                        best_score = best_score_this_iter;
-                    }
-                }
             }
 
-            if (run) {
-                best_move = best_move_this_iter;
-                best_score = best_score_this_iter;
-                if (std::abs(best_score) == MATE_SCORE) {
-                    mate_found = true;
-                    mate_depth = curr_max_depth;
-                }
-                uci_send_info = GetSearchInfo();
-                ThreadPool::PushTask([uci_send_info]() { UciHandler::SendToGui(uci_send_info); });
-            }
-
-            if (!run || (allowed_time != INFINITE_TIMER && NotEnoughTimeLeft(allowed_time)) || !best_move_this_iter ||
-                mate_found) {
-                break;
-            }
+            std::sort(score_move, score_move + moves_count, std::greater<>());
+            uci_send_info = GetSearchInfo();
+            ThreadPool::PushTask([uci_send_info]() { UciHandler::SendToGui(uci_send_info); });
         }
 
         run = false;
@@ -112,6 +91,21 @@ namespace Meetra {
         info_timer.Stop();
         uci_send_info = GetBestMove();
         ThreadPool::PushTask([uci_send_info]() { UciHandler::SendToGui(uci_send_info); });
+    }
+
+    void ABSearch::UpdatePvTable(Board &board) {
+        RetrievePv(board, 0);
+    }
+
+    void ABSearch::RetrievePv(Board &board, int i) {
+        Move move = tt->GetPVMove(board.GetZobristHash());
+        //pv_table[i] = move;
+        if (!move) {
+            return;
+        }
+        board.MakeMove(move);
+        RetrievePv(board, i + 1);
+        board.UnmakeMove(move);
     }
 
     Score ABSearch::NegaMax(Board &board, Score alpha, Score beta, Depth depth) {
@@ -203,8 +197,8 @@ namespace Meetra {
         return alpha;
     }
 
-    bool ABSearch::NotEnoughTimeLeft(long allowed_time) const {
-        if (allowed_time < ElapsedTimeMs() * 2) {
+    bool ABSearch::EnoughTimeLeft(long allowed_time) const {
+        if (allowed_time == INFINITE_TIMER || allowed_time > ElapsedTimeMs() * 2) {
             return true;
         }
         return false;
@@ -220,7 +214,7 @@ namespace Meetra {
 
     std::string ABSearch::GetBestMove() const {
         std::string ret = "bestmove ";
-        ret.append(GetMoveName(best_move));
+        ret.append(GetMoveName(score_move[0].second));
         return ret;
     }
 
@@ -232,6 +226,7 @@ namespace Meetra {
     }
 
     std::string ABSearch::GetUpdateSearchInfo() const {
+
         auto elapsed_ms = ElapsedTimeMs();
         long nps = static_cast<long>(static_cast<double>(nodes_searched + qsearch_nodes) * 1000.0 /
                                      static_cast<double>(elapsed_ms));
@@ -255,30 +250,17 @@ namespace Meetra {
                                      static_cast<double>(elapsed_ms));
 
         std::stringstream ss;
-        for (auto i = 1; i <= 1; i++) {
-
-
-            ss << "info multipv " << i
+        for (auto i = 0; i < 1; i++) {
+            ss << "info multipv " << i + 1
                << " depth " << +curr_max_depth
                << " seldepth " << qsearch_depth + curr_max_depth
                << " nodes " << (nodes_searched + qsearch_nodes)
                << " time " << elapsed_ms
                << " nps " << nps
-               << " hashfull " << static_cast<int>(tt->Usage() * 1000);
-
-            if (mate_found) {
-                ss << " score mate ";
-                best_score == MATE_SCORE ? ss << (mate_depth + 1) / 2 : ss << (-(mate_depth + 1) / 2);
-            } else {
-                ss << " score cp " << best_score;
-            }
-
-            ss << " pv " << GetMoveName(best_move);
-/*
-            for (Depth d = curr_max_depth; d > 0; --d) {
-                ss << " " << GetMoveName(pv_table.ProbePv(i - 1, d - 1));
-            }
-*/
+               << " hashfull " << static_cast<int>(tt->Usage() * 1000)
+               << " score cp " << score_move[i].first
+               << " pv " << GetMoveName(score_move[i].second);
+            // extract PV for this particular move
         }
 
         return ss.str();
@@ -288,7 +270,7 @@ namespace Meetra {
         std::string ret = "info currmove ";
         ret.append(GetMoveName(curr_move));
         ret.append(" currmovenumber ");
-        ret.append(std::to_string(curr_move_num));
+        ret.append(std::to_string(curr_move_num + 1));
         return ret;
     }
 }
