@@ -5,7 +5,7 @@
 
 namespace Meetra {
 
-    typedef uint_fast16_t Depth;
+    typedef uint_fast8_t Depth;
 
     typedef int_fast16_t Score;
 

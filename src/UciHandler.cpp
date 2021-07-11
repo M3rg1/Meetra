@@ -5,8 +5,11 @@
 #include "MoveGen.h"
 #include "Perft.h"
 #include "ThreadPool.h"
+#include "Search.h"
 
 namespace Meetra {
+
+    std::mutex UciHandler::output_mtx;
 
     UciHandler::UciHandler() {
         board = Board(STARTPOS_FEN);
@@ -37,6 +40,11 @@ namespace Meetra {
         } while (listen && !std::cin.eof());
 
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+
+    void UciHandler::SendToGui(const std::string& data){
+        std::scoped_lock<std::mutex> lock{output_mtx};
+        std::cout << data << std::endl;
     }
 
     void UciHandler::UciCommand() {

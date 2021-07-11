@@ -3,7 +3,6 @@
 
 #include "Board.h"
 #include "TranspositionTable.h"
-#include "PVTable.h"
 #include "Timer.h"
 
 namespace Meetra {
@@ -16,6 +15,7 @@ namespace Meetra {
         [[nodiscard]] std::string GetSearchInfo() const;
         [[nodiscard]] std::string GetBestMove() const;
         [[nodiscard]] std::string GetCurrMoveInfo() const;
+        [[nodiscard]] std::string GetUpdateSearchInfo() const;
         void ResizeTT(TTSize size);
         void ClearTT();
 
@@ -30,7 +30,6 @@ namespace Meetra {
 
 
         TranspositionTable *tt;
-        PVTable pv_table;
 
         volatile bool run;
         Timer search_timer;

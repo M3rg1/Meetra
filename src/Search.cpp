@@ -5,6 +5,8 @@
 #include <chrono>
 #include "TranspositionTable.h"
 #include <sstream>
+#include "ThreadPool.h"
+#include "UciHandler.h"
 
 namespace Meetra {
 
@@ -16,7 +18,6 @@ namespace Meetra {
 
     void ABSearch::InitSearch() {
         tt->NewSearch();
-        pv_table.Reset();
         tt_hits = 0;
         mate_found = false;
         curr_move = INVALID_MOVE;
@@ -33,9 +34,9 @@ namespace Meetra {
     }
 
     void ABSearch::StartSearch(Board board, Depth max_depth, long allowed_time) {
-
         run = true;
         InitSearch();
+        std::string uci_send_info;
 
         // TODO this timers shoulkdnt create new thread every time, but thread should already exist
         //  and we just send new tasks
@@ -45,18 +46,9 @@ namespace Meetra {
         }
 
         info_timer.SetInterval([&]() {
-            std::cout << GetSearchInfo() << std::endl;
-            std::cout << GetCurrMoveInfo() << std::endl;
+            UciHandler::SendToGui(GetUpdateSearchInfo());
         }, 1000);
 
-        // TODO TODO TODO
-        //  ulozit si vsechny projdete movy do arraye a k nim vzdy jejich hodnoceni
-        //  pri nasledujici iteraci s vetsi hloubkou je prochazim postupne od nejlepe hodnoceneho po nejhure
-        //  a nemusim je znova generovat - generator uplne na zacatku vygeneruje vsechny movy a pak uz je jen
-        //  prochazim a radim postupne
-        //  tim se i elegantne vyresi co zobrazovat v GUI jako current top move a jeho skore
-        //  vzdy akorat zobrazim prvni move v tom arrayi movu
-        //  a fajn by bylo kdyby to bylo array arraye -> ze tam je zvdy cely PV ke kazdemu movu z rootu
         for (curr_max_depth = 1; curr_max_depth <= max_depth; curr_max_depth++) {
 
             MoveGen move_gen(board);
@@ -65,45 +57,57 @@ namespace Meetra {
             curr_move_num = 0;
             qsearch_depth = 0;
 
+            // no need to generate moves all the time
             while ((curr_move = move_gen.GetNextMove<false>())) {
+
                 if (!board.MakeMove(curr_move)) {
                     board.UnmakeMove(curr_move);
                     continue;
+                } else if (run && curr_max_depth > 7) {
+                    uci_send_info = GetCurrMoveInfo();
+                    ThreadPool::PushTask([uci_send_info]() { UciHandler::SendToGui(uci_send_info); });
                 }
+
                 curr_move_num++;
                 nodes_searched++;
-                Score score = -NegaMax(board, NEGATIVE_INF, POSITIVE_INF, curr_max_depth);
+
+                Score score = -NegaMax(board, NEGATIVE_INF, POSITIVE_INF, curr_max_depth - 1);
                 board.UnmakeMove(curr_move);
-                if (score > best_score_this_iter && run) {
-                    best_score_this_iter = score;
-                    best_move_this_iter = curr_move;
-                    if (best_score_this_iter >= best_score) {
-                        best_move = best_move_this_iter;
-                        best_score = best_score_this_iter;
+
+                if (run) {
+                    if (score > best_score_this_iter) {
+                        best_score_this_iter = score;
+                        best_move_this_iter = curr_move;
+                        if (best_score_this_iter > best_score) {
+                            best_move = best_move_this_iter;
+                            best_score = best_score_this_iter;
+                        }
                     }
                 }
             }
 
             if (run) {
-                //pv_table->AddEntry(best_move_this_iter);
                 best_move = best_move_this_iter;
                 best_score = best_score_this_iter;
                 if (std::abs(best_score) == MATE_SCORE) {
                     mate_found = true;
                     mate_depth = curr_max_depth;
                 }
+                uci_send_info = GetSearchInfo();
+                ThreadPool::PushTask([uci_send_info]() { UciHandler::SendToGui(uci_send_info); });
             }
 
-            std::cout << GetSearchInfo() << std::endl;
-
-            if (!run || (allowed_time != INFINITE_TIMER && NotEnoughTimeLeft(allowed_time)) || !best_move_this_iter || mate_found) {
+            if (!run || (allowed_time != INFINITE_TIMER && NotEnoughTimeLeft(allowed_time)) || !best_move_this_iter ||
+                mate_found) {
                 break;
             }
         }
+
         run = false;
         search_timer.Stop();
         info_timer.Stop();
-        std::cout << GetBestMove() << std::endl;
+        uci_send_info = GetBestMove();
+        ThreadPool::PushTask([uci_send_info]() { UciHandler::SendToGui(uci_send_info); });
     }
 
     Score ABSearch::NegaMax(Board &board, Score alpha, Score beta, Depth depth) {
@@ -111,7 +115,7 @@ namespace Meetra {
         if (board.Ply() >= 50  /*|| repetition*/ ) {
             return DRAW_SCORE;
         } else if (depth == 0) {
-            return QuiescenceSearch(board, alpha, beta, 1);
+            return QuiescenceSearch(board, alpha, beta, curr_max_depth);
         }
 
         Score score = tt->GetEval(board.GetZobristHash(), alpha, beta, depth);
@@ -219,7 +223,7 @@ namespace Meetra {
         return ret;
     }
 
-    std::string ABSearch::GetSearchInfo() const {
+    std::string ABSearch::GetUpdateSearchInfo() const {
         using namespace std::chrono;
         long now = time_point_cast<milliseconds>(system_clock::now()).time_since_epoch().count();
         long elapsed_ms = now - timer_start;
@@ -228,15 +232,54 @@ namespace Meetra {
                                      static_cast<double>(elapsed_ms));
 
         std::stringstream ss;
-        ss << "info depth " << curr_max_depth << " seldepth " << curr_max_depth + qsearch_depth << " nodes "
-           << (nodes_searched + qsearch_nodes) << " time " << elapsed_ms << " nps " << nps << " pv "
-           << GetMoveName(best_move) << " hashfull " << static_cast<int>(tt->Usage() * 1000);
-        if (mate_found) {
-            ss << " score mate ";
-            best_score == MATE_SCORE ? ss << (mate_depth + 1) / 2 : ss << (-(mate_depth + 1) / 2);
-        } else {
-            ss << " score cp " << best_score;
+
+        ss << "info depth " << +curr_max_depth
+           << " seldepth " << qsearch_depth + curr_max_depth
+           << " nodes " << (nodes_searched + qsearch_nodes)
+           << " time " << elapsed_ms
+           << " nps " << nps
+           << " hashfull "; // something
+
+        return ss.str();
+    }
+
+    std::string ABSearch::GetSearchInfo() const {
+
+        using namespace std::chrono;
+        long now = time_point_cast<milliseconds>(system_clock::now()).time_since_epoch().count();
+        long elapsed_ms = now - timer_start;
+        elapsed_ms = std::max(1l, elapsed_ms);
+        long nps = static_cast<long>(static_cast<double>(nodes_searched + qsearch_nodes) * 1000.0 /
+                                     static_cast<double>(elapsed_ms));
+
+        // i < max available moves or MultiPv (whichever is smaller)
+        std::stringstream ss;
+        for (auto i = 1; i <= 1; i++) {
+
+
+            ss << "info multipv " << i
+               << " depth " << +curr_max_depth
+               << " seldepth " << qsearch_depth + curr_max_depth
+               << " nodes " << (nodes_searched + qsearch_nodes)
+               << " time " << elapsed_ms
+               << " nps " << nps
+               << " hashfull " << static_cast<int>(tt->Usage() * 1000);
+
+            if (mate_found) {
+                ss << " score mate ";
+                best_score == MATE_SCORE ? ss << (mate_depth + 1) / 2 : ss << (-(mate_depth + 1) / 2);
+            } else {
+                ss << " score cp " << best_score;
+            }
+
+            ss << " pv " << GetMoveName(best_move);
+/*
+            for (Depth d = curr_max_depth; d > 0; --d) {
+                ss << " " << GetMoveName(pv_table.ProbePv(i - 1, d - 1));
+            }
+*/
         }
+
         return ss.str();
     }
 

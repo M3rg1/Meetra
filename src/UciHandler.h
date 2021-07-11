@@ -3,6 +3,7 @@
 
 #include "Board.h"
 #include "StringTokenStream.h"
+#include "mutex"
 #include "Search.h"
 
 namespace Meetra {
@@ -12,6 +13,7 @@ namespace Meetra {
     public:
         UciHandler();
         void Listen();
+        static void SendToGui(const std::string& data);
 
     private:
         void UciCommand();
@@ -28,6 +30,9 @@ namespace Meetra {
         void InitSearchTimer();
         void MakeUciMove(const std::string& move_string);
         void ParseSearchOptions(StringTokenStream &sts);
+
+
+        static std::mutex output_mtx;
 
         Board board;
         bool listen;

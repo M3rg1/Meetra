@@ -28,6 +28,17 @@ int main(int argc, char *arv[]) {
     InitBitboards();
     InitZobrist();
 
+/*    PVTable pv_table;
+    pv_table.SetCurrentRoot(2);
+    pv_table.AddEntry(NewMove(A5, A7), 0);
+    pv_table.AddEntry(NewMove(A5, G1), 1);
+    pv_table.AddEntry(NewMove(A3, A7), 2);
+    pv_table.AddEntry(NewMove(A3, A4), 3);
+    pv_table.AddEntry(NewMove(A3, B3), 2);
+    while(pv_table.HasNext()) {
+        std::cout << pv_table.PopPV() << std::endl;
+    }*/
+
     //ThreadPool::InitThreadPool(4);
 
     //thread_pool = new ThreadPool(10);
