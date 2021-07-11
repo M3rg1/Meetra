@@ -29,9 +29,6 @@ namespace Meetra {
 
             if (curr_entry->Get32Key() == key_32) {
                 curr_entry->SetEpoch(current_epoch);
-                if(curr_entry->GetFlag() == EXACT_SCORE && flag != EXACT_SCORE){
-                    return;
-                }
                 if (depth >= curr_entry->GetDepth() || flag == EXACT_SCORE) {
                     curr_entry->SaveEntry(key_32, score, depth, move, flag, current_epoch);
                 }
@@ -42,7 +39,7 @@ namespace Meetra {
             if (curr_entry->GetEpoch() < current_epoch) {
                 entry_score -= (current_epoch - curr_entry->GetEpoch()) << 5;
             }
-            if(curr_entry->GetFlag() == EXACT_SCORE){
+            if (curr_entry->GetFlag() == EXACT_SCORE) {
                 entry_score += 1000;
             }
             if (entry_score < worst_entry_score) {

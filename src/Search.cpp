@@ -265,6 +265,7 @@ namespace Meetra {
                << " pv " << GetMoveName(score_move_pair[i].second);
 
             board.MakeMove(score_move_pair[i].second);
+            // TODO try to remove the max depth guard when we have working repetition recognition
             RetrievePv(pv_stack, curr_max_depth - 1);
             board.UnmakeMove(score_move_pair[i].second);
             Move *pv_stack_ptr = pv_stack;
