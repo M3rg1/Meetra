@@ -2,6 +2,7 @@
 #include "Misc.h"
 #include <string>
 #include <iostream>
+#include <sstream>
 #include "MoveGen.h"
 #include "Perft.h"
 #include "ThreadPool.h"
@@ -48,10 +49,12 @@ namespace Meetra {
     }
 
     void UciHandler::UciCommand() {
-        std::cout << "id name " << GetName() << " v. " << GetVersion() << std::endl;
-        std::cout << "id author " << GetAuthor() << std::endl;
-        std::cout << GetOptions() << std::endl;
-        std::cout << "uciok" << std::endl;
+        std::stringstream ss;
+        ss << "id name " << GetName() << " v. " << GetVersion() << '\n'
+           << "id author " << GetAuthor() << '\n'
+           << GetOptions() << '\n'
+           << "uciok" << '\n';
+        SendToGui(ss.str());
     }
 
     void UciHandler::GoCommand(StringTokenStream &sts) {
@@ -74,7 +77,7 @@ namespace Meetra {
     }
 
     void UciHandler::IsReadyCommand() {
-        std::cout << "readyok" << std::endl;
+        SendToGui("readyok");
     }
 
     void UciHandler::PositionCommand(StringTokenStream &sts) {

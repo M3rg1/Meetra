@@ -34,7 +34,7 @@ int main(int argc, char *arv[]) {
     pv_table.AddEntry(NewMove(A5, G1), 1);
     pv_table.AddEntry(NewMove(A3, A7), 2);
     pv_table.AddEntry(NewMove(A3, A4), 3);
-    pv_table.AddEntry(NewMove(A3, B3), 2);
+    pv_table.SaveEval(NewMove(A3, B3), 2);
     while(pv_table.HasNext()) {
         std::cout << pv_table.PopPV() << std::endl;
     }*/

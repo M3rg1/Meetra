@@ -118,7 +118,7 @@ namespace Meetra {
             return QuiescenceSearch(board, alpha, beta, curr_max_depth);
         }
 
-        Score score = tt->GetEval(board.GetZobristHash(), alpha, beta, depth);
+        Score score = tt->ProbeEval(board.GetZobristHash(), alpha, beta, depth);
         if (score != NOT_FOUND) {
             tt_hits++;
             return score;
@@ -141,7 +141,7 @@ namespace Meetra {
             if (!run) {
                 return 0;
             } else if (score >= beta) {
-                tt->AddEntry(board.GetZobristHash(), beta, depth, move, BETA);
+                tt->SaveEval(board.GetZobristHash(), beta, depth, move, BETA);
                 return beta;
             } else if (score > alpha) {
                 tt_flag = EXACT_SCORE;
@@ -159,7 +159,7 @@ namespace Meetra {
         }
 
         // we could have a if lock check inside the TT, that will that will only allow write of new entries if run == true
-        tt->AddEntry(board.GetZobristHash(), alpha, depth, best_move_this_iter, tt_flag);
+        tt->SaveEval(board.GetZobristHash(), alpha, depth, best_move_this_iter, tt_flag);
 
         return alpha;
     }

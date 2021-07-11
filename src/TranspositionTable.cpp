@@ -1,6 +1,5 @@
 #include <cstring>
 #include "TranspositionTable.h"
-#include <iostream>
 
 namespace Meetra {
 
@@ -8,7 +7,6 @@ namespace Meetra {
 
 
     TranspositionTable::TranspositionTable(size_t size) : size(size) {
-        std::cout << sizeof(TTEntry) << std::endl;
         table = new TTEntry[sizeof(TTEntry) * size];
         entries = 0;
         current_epoch = 0;
@@ -27,7 +25,7 @@ namespace Meetra {
         return zobrist_hash >> 32;
     }
 
-    void TranspositionTable::AddEntry(ZobristHash key, Score score, Depth depth, Move move, EntryFlag flag) {
+    void TranspositionTable::SaveEval(ZobristHash key, Score score, Depth depth, Move move, EntryFlag flag) {
 
         Key32 key_32 = Make32Key(key);
         TTEntry *entry_to_write;
@@ -67,7 +65,7 @@ namespace Meetra {
         //entries++;
     }
 
-    Score TranspositionTable::GetEval(ZobristHash key, Score alpha, Score beta, Depth depth) const {
+    Score TranspositionTable::ProbeEval(ZobristHash key, Score alpha, Score beta, Depth depth) const {
 
         Key32 key_32 = Make32Key(key);
 
