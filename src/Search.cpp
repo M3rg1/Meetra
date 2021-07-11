@@ -12,12 +12,11 @@ namespace Meetra {
 
     ABSearch::ABSearch() {
         run = false;
-        tt = new TranspositionTable();
         InitSearch();
     }
 
     void ABSearch::InitSearch() {
-        tt->NewSearch();
+        tt.NewSearch();
         tt_hits = 0;
         curr_move = INVALID_MOVE;
         curr_move_num = 0;
@@ -32,7 +31,9 @@ namespace Meetra {
     // board should be class variable, so we dont have to pass it in the recursion all the time
     // TODO fixed search time isnt working right now! we ending when 50% time remaining!!!
     //  the UciHandler will have to let us know this is fixed search time, so we dont exist early via NotEnoughTime foo
-    void ABSearch::StartSearch(Board board, Depth max_depth, long allowed_time) {
+    void ABSearch::StartSearch(const Board & b, Depth max_depth, long allowed_time) {
+
+        board = b;
         run = true;
         InitSearch();
         std::string uci_send_info;
@@ -74,7 +75,7 @@ namespace Meetra {
 
                 board.MakeMove(curr_move);
                 nodes_searched++;
-                Score score = -NegaMax(board, NEGATIVE_INF, POSITIVE_INF, curr_max_depth - 1);
+                Score score = -NegaMax(NEGATIVE_INF, POSITIVE_INF, curr_max_depth - 1);
                 if (run) {
                     score_move[curr_move_num].first = score;
                 }
@@ -90,39 +91,41 @@ namespace Meetra {
         search_timer.Stop();
         info_timer.Stop();
         uci_send_info = GetBestMove();
+        // We dont really want to send any more info after sending bestmove, this almost guarantees that wont happen
+        // (in case the final search info wasn't sent yet by the ThreadPool)
         ThreadPool::PushTask([uci_send_info]() { UciHandler::SendToGui(uci_send_info); });
     }
 
-    void ABSearch::UpdatePvTable(Board &board) {
-        RetrievePv(board, 0);
+    void ABSearch::UpdatePvTable() {
+        RetrievePv(0);
     }
 
-    void ABSearch::RetrievePv(Board &board, int i) {
-        Move move = tt->GetPVMove(board.GetZobristHash());
+    void ABSearch::RetrievePv(int i) {
+        Move move = tt.GetPVMove(board.GetZobristHash());
         //pv_table[i] = move;
         if (!move) {
             return;
         }
         board.MakeMove(move);
-        RetrievePv(board, i + 1);
+        RetrievePv(i + 1);
         board.UnmakeMove(move);
     }
 
-    Score ABSearch::NegaMax(Board &board, Score alpha, Score beta, Depth depth) {
+    Score ABSearch::NegaMax(Score alpha, Score beta, Depth depth) {
 
         if (board.Ply() >= 50  /*|| repetition*/ ) {
             return DRAW_SCORE;
         } else if (depth == 0) {
-            return QuiescenceSearch(board, alpha, beta, curr_max_depth);
+            return QuiescenceSearch(alpha, beta, curr_max_depth);
         }
 
-        Score score = tt->ProbeEval(board.GetZobristHash(), alpha, beta, depth);
+        Score score = tt.ProbeEval(board.GetZobristHash(), alpha, beta, depth);
         if (score != NOT_FOUND) {
             tt_hits++;
             return score;
         }
 
-        MoveGen move_gen(board, tt);
+        MoveGen move_gen(board, &tt);
         Move move;
         Move best_move_this_iter = INVALID_MOVE;
         EntryFlag tt_flag = ALPHA;
@@ -134,12 +137,12 @@ namespace Meetra {
                 continue;
             }
             nodes_searched++;
-            score = -NegaMax(board, -beta, -alpha, depth - 1);
+            score = -NegaMax(-beta, -alpha, depth - 1);
             board.UnmakeMove(move);
             if (!run) {
                 return 0;
             } else if (score >= beta) {
-                tt->SaveEval(board.GetZobristHash(), beta, depth, move, BETA);
+                tt.SaveEval(board.GetZobristHash(), beta, depth, move, BETA);
                 return beta;
             } else if (score > alpha) {
                 tt_flag = EXACT_SCORE;
@@ -157,12 +160,12 @@ namespace Meetra {
         }
 
         // we could have a if lock check inside the TT, that will that will only allow write of new entries if run == true
-        tt->SaveEval(board.GetZobristHash(), alpha, depth, best_move_this_iter, tt_flag);
+        tt.SaveEval(board.GetZobristHash(), alpha, depth, best_move_this_iter, tt_flag);
 
         return alpha;
     }
 
-    Score ABSearch::QuiescenceSearch(Board &board, Score alpha, Score beta, Depth depth) {
+    Score ABSearch::QuiescenceSearch(Score alpha, Score beta, Depth depth) {
 
         if (depth > qsearch_depth) {
             qsearch_depth = depth;
@@ -185,7 +188,7 @@ namespace Meetra {
                 continue;
             }
             qsearch_nodes++;
-            score = -QuiescenceSearch(board, -beta, -alpha, depth + 1);
+            score = -QuiescenceSearch(-beta, -alpha, depth + 1);
             board.UnmakeMove(move);
             if (score >= beta) {
                 return beta;
@@ -205,11 +208,11 @@ namespace Meetra {
     }
 
     void ABSearch::ResizeTT(TTSize size) {
-        tt->Resize(size);
+        tt.Resize(size);
     }
 
     void ABSearch::ClearTT() {
-        tt->Clear();
+        tt.Clear();
     }
 
     std::string ABSearch::GetBestMove() const {
@@ -257,7 +260,7 @@ namespace Meetra {
                << " nodes " << (nodes_searched + qsearch_nodes)
                << " time " << elapsed_ms
                << " nps " << nps
-               << " hashfull " << static_cast<int>(tt->Usage() * 1000)
+               << " hashfull " << static_cast<int>(tt.Usage() * 1000)
                << " score cp " << score_move[i].first
                << " pv " << GetMoveName(score_move[i].second);
             // extract PV for this particular move
