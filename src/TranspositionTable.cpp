@@ -1,5 +1,6 @@
 #include <cstring>
 #include "TranspositionTable.h"
+#include "Evaluation.h"
 
 namespace Meetra {
 
@@ -16,11 +17,13 @@ namespace Meetra {
         return zobrist_hash >> 32;
     }
 
-    void TranspositionTable::SaveEval(ZobristHash key, Score score, Depth depth, Move move, EntryFlag flag) {
+    void TranspositionTable::SaveEval(ZobristHash key, Score score, Depth depth, Move move, EntryFlag flag, Depth ply) {
 
         Key32 key_32 = Make32Key(key);
         TTEntry *entry_to_write;
         int worst_entry_score = 100000;
+
+        score = RemoveMatePly(score, ply);
 
         for (auto i = 0; i < BUCKET_SIZE; i++) {
             auto index = (key + i) & index_mask;
@@ -56,7 +59,31 @@ namespace Meetra {
         entry_to_write->SaveEntry(key_32, score, depth, move, flag, current_epoch);
     }
 
-    Score TranspositionTable::ProbeEval(ZobristHash key, Score alpha, Score beta, Depth depth) const {
+    Score TranspositionTable::RemoveMatePly(Score score, Depth ply) const {
+        if(score > MATE_SCORE - MAX_SEARCH_DEPTH){
+            return score + ply;
+        } else if (score < -MATE_SCORE + MAX_SEARCH_DEPTH) {
+            return score - ply;
+        } else {
+            return score;
+        }
+    }
+
+    Score TranspositionTable::AddMatePly(Score score, Depth ply) const {
+/*        if(std::abs(score) >= MATE_SCORE - MAX_GAME_LENGTH){
+            return score + ply;
+        }*/
+
+        if(score >= MATE_SCORE - MAX_SEARCH_DEPTH){
+            return score - ply;
+        } else if (score <= -MATE_SCORE + MAX_SEARCH_DEPTH) {
+            return score + ply;
+        } else {
+            return score;
+        }
+    }
+
+    Score TranspositionTable::ProbeEval(ZobristHash key, Score alpha, Score beta, Depth depth, Depth ply) const {
 
         Key32 key_32 = Make32Key(key);
 
@@ -68,7 +95,7 @@ namespace Meetra {
                 if (ttEntry->GetDepth() >= depth) {
                     ttEntry->SetEpoch(current_epoch);
                     if (ttEntry->GetFlag() == EXACT_SCORE) {
-                        return ttEntry->GetScore();
+                        return AddMatePly(ttEntry->GetScore(), ply);
                     } else if (ttEntry->GetFlag() == ALPHA && ttEntry->GetScore() <= alpha) {
                         return alpha;
                     } else if (ttEntry->GetFlag() == BETA && ttEntry->GetScore() >= beta) {

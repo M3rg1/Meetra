@@ -32,12 +32,12 @@ namespace Meetra {
     public:
 
         explicit TranspositionTable(size_t size = DEFAULT_TT_SIZE);
-        void SaveEval(ZobristHash key, Score score, Depth depth, Move move, EntryFlag flag);
+        void SaveEval(ZobristHash key, Score score, Depth depth, Move move, EntryFlag flag, Depth ply);
         void Resize(TTSize new_size);
         void NewSearch();
         void Clear();
 
-        [[nodiscard]] Score ProbeEval(ZobristHash key, Score alpha, Score beta, Depth depth) const;
+        [[nodiscard]] Score ProbeEval(ZobristHash key, Score alpha, Score beta, Depth depth, Depth ply) const;
         [[nodiscard]] Move GetPVMove(ZobristHash key) const;
         [[nodiscard]] size_t EntriesCount() const { return entries; }
         // 0.01 == 1% usage, 0.1 == 10% usage, 1 == 100% usage
@@ -50,6 +50,8 @@ namespace Meetra {
     private:
 
         [[nodiscard]] Key32 Make32Key(ZobristHash zobrist_hash) const;
+        [[nodiscard]] Score RemoveMatePly(Score score, Depth ply) const;
+        [[nodiscard]] Score AddMatePly(Score score, Depth ply) const;
 
 #pragma pack(push, 1)
         // 10 bytes

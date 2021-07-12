@@ -28,6 +28,10 @@ namespace Meetra {
         curr_max_depth = 0;
         using namespace std::chrono;
         timer_start = time_point_cast<milliseconds>(system_clock::now()).time_since_epoch().count();
+        for(auto smp : score_move_pair){
+            smp.first = 0;
+            smp.second = INVALID_MOVE;
+        }
     }
 
     // TODO fixed search time isnt working right now! we ending when 50% time remaining!!!
@@ -56,17 +60,22 @@ namespace Meetra {
                 board.UnmakeMove(m);
                 continue;
             }
+            Score s = tt.ProbeEval(board.GetZobristHash(), NEGATIVE_INF, POSITIVE_INF, 0, 0);
             board.UnmakeMove(m);
             score_move_pair[moves_count++].second = m;
+            if(s != NOT_FOUND) {
+                score_move_pair[moves_count].first = s;
+            }
         }
         // if moves count == 0 = the board is already in checkmate/draw
-
+        std::sort(score_move_pair, score_move_pair + moves_count, std::greater<>());
         max_depth = std::min(max_depth, MAX_SEARCH_DEPTH);
         for (curr_max_depth = 1; curr_max_depth <= max_depth && run && EnoughTimeLeft(allowed_time); curr_max_depth++) {
 
             qsearch_depth = 0;
+            Score alpha = NEGATIVE_INF;
 
-            for (curr_move_num = 0; curr_move_num < moves_count && run; curr_move_num++) {
+            for (curr_move_num = 0; curr_move_num < moves_count; curr_move_num++) {
                 curr_move = score_move_pair[curr_move_num].second;
 
                 if (ElapsedTimeMs() > 1000) {
@@ -75,15 +84,21 @@ namespace Meetra {
 
                 board.MakeMove(curr_move);
                 nodes_searched++;
-                Score score = -NegaMax(NEGATIVE_INF, POSITIVE_INF, curr_max_depth - 1);
-                if (run) {
-                    score_move_pair[curr_move_num].first = score;
-                }
+                Score score = -NegaMax(alpha, POSITIVE_INF, curr_max_depth - 1, 1);
                 board.UnmakeMove(curr_move);
+                if (!run) {
+                    break;
+                }
+                score_move_pair[curr_move_num].first = score;
+                if (score > alpha) {
+                    alpha = score;
+                }
             }
 
             std::sort(score_move_pair, score_move_pair + moves_count, std::greater<>());
             UciHandler::SendToGui(GetSearchInfo());
+
+            // if top move is checkmate and we are not searching infinite/fixed depth/time/ whatever, break search
         }
 
         run = false;
@@ -92,7 +107,7 @@ namespace Meetra {
         UciHandler::SendToGui(GetBestMove());
     }
 
-    Score ABSearch::NegaMax(Score alpha, Score beta, Depth depth) {
+    Score ABSearch::NegaMax(Score alpha, Score beta, Depth depth, Depth ply) {
 
         if (board.Ply() >= 50  /*|| repetition*/ ) {
             return DRAW_SCORE;
@@ -100,7 +115,7 @@ namespace Meetra {
             return QuiescenceSearch(alpha, beta, curr_max_depth);
         }
 
-        Score score = tt.ProbeEval(board.GetZobristHash(), alpha, beta, depth);
+        Score score = tt.ProbeEval(board.GetZobristHash(), alpha, beta, depth, ply);
         if (score != NOT_FOUND) {
             tt_hits++;
             return score;
@@ -118,12 +133,12 @@ namespace Meetra {
                 continue;
             }
             nodes_searched++;
-            score = -NegaMax(-beta, -alpha, depth - 1);
+            score = -NegaMax(-beta, -alpha, depth - 1, ply + 1);
             board.UnmakeMove(move);
             if (!run) {
                 return 0;
             } else if (score >= beta) {
-                tt.SaveEval(board.GetZobristHash(), beta, depth, move, BETA);
+                tt.SaveEval(board.GetZobristHash(), beta, depth, move, BETA, ply);
                 return beta;
             } else if (score > alpha) {
                 tt_flag = EXACT_SCORE;
@@ -135,12 +150,12 @@ namespace Meetra {
 
         if (no_legal_moves) {
             if (move_gen.IsKingInCheck()) {
-                return -MATE_SCORE;
+                return -MATE_SCORE + ply + 1;
             }
             return DRAW_SCORE;
         }
 
-        tt.SaveEval(board.GetZobristHash(), alpha, depth, best_move_this_iter, tt_flag);
+        tt.SaveEval(board.GetZobristHash(), alpha, depth, best_move_this_iter, tt_flag, ply);
 
         return alpha;
     }
@@ -255,12 +270,23 @@ namespace Meetra {
                << " time " << elapsed_ms
                << " nps " << nps
                << " hashfull " << static_cast<int>(tt.Usage() * 1000)
-               << " score cp " << score_move_pair[i].first
-               << " pv " << GetMoveName(score_move_pair[i].second);
+               << " score ";
 
+            int mate_length_ply = 0;
+            if(score_move_pair[i].first >= MATE_SCORE - MAX_SEARCH_DEPTH){
+                mate_length_ply = static_cast<int>(MATE_SCORE - score_move_pair[i].first);
+                ss << "mate " << mate_length_ply / 2;
+            } else if (score_move_pair[i].first <= -MATE_SCORE + MAX_SEARCH_DEPTH) {
+                mate_length_ply = static_cast<int>(MATE_SCORE + score_move_pair[i].first);
+                ss << "mate " << -mate_length_ply / 2;
+            } else {
+                ss << "cp " << score_move_pair[i].first;
+            }
+
+            ss << " pv " << GetMoveName(score_move_pair[i].second);
             board.MakeMove(score_move_pair[i].second);
             // TODO try to remove the max depth guard when we have working repetition recognition
-            RetrievePv(pv_stack, curr_max_depth - 1);
+            RetrievePv(pv_stack, std::max(curr_max_depth - 1, mate_length_ply));
             board.UnmakeMove(score_move_pair[i].second);
             Move *pv_stack_ptr = pv_stack;
             Move pv_move;

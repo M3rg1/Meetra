@@ -27,7 +27,7 @@ namespace Meetra {
     private:
         void InitSearch();
         Score QuiescenceSearch(Score alpha, Score beta, Depth depth);
-        Score NegaMax(Score alpha, Score beta, Depth depth);
+        Score NegaMax(Score alpha, Score beta, Depth depth, Depth ply);
         [[nodiscard]] bool EnoughTimeLeft(long allowed_time) const;
         [[nodiscard]] long ElapsedTimeMs() const;
 
