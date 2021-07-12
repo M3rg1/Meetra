@@ -131,8 +131,6 @@ namespace Meetra {
         };
 
         BoardData board_history[MAX_GAME_LENGTH];
-        //GameState history[MAX_GAME_LENGTH];
-        //ZobristHash zh_history[MAX_GAME_LENGTH];
         int_fast16_t history_cnt;
 
         ZobristHash zobrist_hash;

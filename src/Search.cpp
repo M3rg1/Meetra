@@ -28,7 +28,7 @@ namespace Meetra {
         qsearch_nodes = 0;
         qsearch_depth = 0;
         curr_max_depth = 0;
-        memset(move_evals, 0, MAX_LEGAL_MOVES);
+        memset(move_evals, 0, MAX_LEGAL_MOVES * sizeof(MoveAndEval));
         moves_count = 0;
         using namespace std::chrono;
         timer_start = time_point_cast<milliseconds>(system_clock::now()).time_since_epoch().count();
@@ -61,10 +61,11 @@ namespace Meetra {
             }
             Score s = tt.ProbeEval(board.GetZobristHash(), NEGATIVE_INF, POSITIVE_INF, 0, 0);
             board.UnmakeMove(m);
-            move_evals[moves_count++].move = m;
+            move_evals[moves_count].move = m;
             if (s != NOT_FOUND) {
                 move_evals[moves_count].score = s;
             }
+            moves_count++;
         }
         // if moves count == 0 = the board is already in checkmate/draw
         std::sort(move_evals, move_evals + moves_count,
@@ -92,9 +93,9 @@ namespace Meetra {
                     break;
                 }
                 move_evals[curr_move_num].score = score;
-                if (score > alpha) {
+/*                if (score > alpha) {
                     alpha = score;
-                }
+                }*/
             }
             std::sort(move_evals, move_evals + moves_count,
                       [](const MoveAndEval &mae1, const MoveAndEval &mae2) {
@@ -118,7 +119,7 @@ namespace Meetra {
         if (board.IsRepetition() || board.Ply() >= 50) {
             return DRAW_SCORE;
         } else if (depth == 0) {
-            return QuiescenceSearch(alpha, beta, curr_max_depth);
+            return QuiescenceSearch(alpha, beta, 0);
         }
 
         Score score = tt.ProbeEval(board.GetZobristHash(), alpha, beta, depth, ply);
