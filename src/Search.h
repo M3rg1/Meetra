@@ -5,6 +5,7 @@
 #include "TranspositionTable.h"
 #include "Timer.h"
 #include <stack>
+#include <atomic>
 
 namespace Meetra {
 
@@ -12,12 +13,12 @@ namespace Meetra {
 
     public:
         ABSearch();
-        void StartSearch(const Board &b, Depth max_depth, long allowed_time);
-        [[nodiscard]] std::string GetSearchInfo();
+        void StartSearch(Board &b, Depth max_depth, long allowed_time);
+        [[nodiscard]] std::string GetSearchInfo(Board & board);
         [[nodiscard]] std::string GetBestMove() const;
-        [[nodiscard]] std::string GetCurrMoveInfo() const;
+        [[nodiscard]] std::string GetCurrMoveInfo(Move move, int num)  const;
         [[nodiscard]] std::string GetUpdateSearchInfo() const;
-        void RetrievePv(Move *pv_line, Depth depth);
+        void RetrievePv(Board & board, Move *pv_line, Depth depth);
         void ResizeTT(TTSize size);
         void ClearTT();
 
@@ -25,15 +26,14 @@ namespace Meetra {
         [[nodiscard]] inline bool IsSearching() const { return run; }
 
     private:
-        void InitSearch();
-        Score QuiescenceSearch(Score alpha, Score beta, Depth depth);
-        Score NegaMax(Score alpha, Score beta, Depth depth, Depth ply);
+        void InitSearch(Board &board);
+        Score QuiescenceSearch(Board &board, Score alpha, Score beta, Depth depth);
+        Score NegaMax(Board &board, Score alpha, Score beta, Depth depth, Depth ply);
         [[nodiscard]] bool EnoughTimeLeft(long allowed_time) const;
         [[nodiscard]] long ElapsedTimeMs() const;
 
 
         TranspositionTable tt;
-        Board board;
 
         volatile bool run;
         Timer search_timer;
@@ -44,13 +44,11 @@ namespace Meetra {
             Score score;
         };
 
-        MoveAndEval move_evals[MAX_LEGAL_MOVES];
+        MoveAndEval root_moves[MAX_LEGAL_MOVES];
+        int root_moves_cnt;
 
         //std::pair<Score, Move> score_move_pair[MAX_LEGAL_MOVES];
-        int moves_count;
-        Move curr_move;
-        int curr_move_num;
-        ulong nodes_searched;
+        std::atomic_ulong nodes_searched;
         ulong qsearch_nodes;
         ulong tt_hits;
         Depth qsearch_depth;

@@ -8,6 +8,8 @@
 #include "ThreadPool.h"
 #include "UciHandler.h"
 #include <cstring>
+#include <execution>
+#include "omp.h"
 
 namespace Meetra {
 
@@ -15,32 +17,45 @@ namespace Meetra {
 
     ABSearch::ABSearch() {
         run = false;
-        moves_count = 0;
-        InitSearch();
+        //InitSearch();
     }
 
-    void ABSearch::InitSearch() {
+    void ABSearch::InitSearch(Board &board) {
         tt.NewSearch();
         tt_hits = 0;
-        curr_move = INVALID_MOVE;
-        curr_move_num = 0;
         nodes_searched = 0;
         qsearch_nodes = 0;
         qsearch_depth = 0;
         curr_max_depth = 0;
-        memset(move_evals, 0, MAX_LEGAL_MOVES * sizeof(MoveAndEval));
-        moves_count = 0;
+        root_moves_cnt = 0;
         using namespace std::chrono;
         timer_start = time_point_cast<milliseconds>(system_clock::now()).time_since_epoch().count();
+
+        MoveGen move_gen(board);
+        Move m;
+        while ((m = move_gen.GetNextMove<false>())) {
+            if (!board.MakeMove(m)) {
+                board.UnmakeMove(m);
+                continue;
+            }
+            Score s = tt.ProbeEval(board.GetZobristHash(), NEGATIVE_INF, POSITIVE_INF, 0, 0);
+            board.UnmakeMove(m);
+            root_moves[root_moves_cnt].move = m;
+            if (s != NOT_FOUND) {
+                root_moves[root_moves_cnt].score = s;
+            }
+            root_moves_cnt++;
+        }
     }
 
     // TODO fixed search time isnt working right now! we ending when 50% time remaining!!!
     //  the UciHandler will have to let us know this is fixed search time, so we dont exist early via NotEnoughTime foo
-    void ABSearch::StartSearch(const Board &b, Depth max_depth, long allowed_time) {
+    void ABSearch::StartSearch(Board &board, Depth max_depth, long allowed_time) {
 
-        board = b;
         run = true;
-        InitSearch();
+        InitSearch(board);
+
+        //std::cout << "Omp cancellation: " << omp_get_cancellation() << std::endl;
 
         // TODO this timers shoulkdnt create new thread every time, but thread should already exist
         //  and we just send new tasks
@@ -52,58 +67,42 @@ namespace Meetra {
             UciHandler::SendToGui(GetUpdateSearchInfo());
         }, 1000);
 
-        MoveGen move_gen(board);
-        Move m;
-        while ((m = move_gen.GetNextMove<false>())) {
-            if (!board.MakeMove(m)) {
-                board.UnmakeMove(m);
-                continue;
-            }
-            Score s = tt.ProbeEval(board.GetZobristHash(), NEGATIVE_INF, POSITIVE_INF, 0, 0);
-            board.UnmakeMove(m);
-            move_evals[moves_count].move = m;
-            if (s != NOT_FOUND) {
-                move_evals[moves_count].score = s;
-            }
-            moves_count++;
-        }
         // if moves count == 0 = the board is already in checkmate/draw
-        std::sort(move_evals, move_evals + moves_count,
+        std::sort(std::execution::seq, root_moves, root_moves + root_moves_cnt,
                   [](const MoveAndEval &mae1, const MoveAndEval &mae2) {
                       return mae1.score > mae2.score;
                   });
         max_depth = std::min(max_depth, MAX_SEARCH_DEPTH);
+
         for (curr_max_depth = 1; curr_max_depth <= max_depth && run && EnoughTimeLeft(allowed_time); curr_max_depth++) {
 
             qsearch_depth = 0;
-            Score alpha = NEGATIVE_INF;
 
-            for (curr_move_num = 0; curr_move_num < moves_count; curr_move_num++) {
-                curr_move = move_evals[curr_move_num].move;
+//#pragma omp parallel for default(none) schedule(static, 1) firstprivate(board)
+            for (int curr_move_num = 0; curr_move_num < root_moves_cnt; curr_move_num++) {
+                Move curr_move = root_moves[curr_move_num].move;
 
                 if (ElapsedTimeMs() > 1000) {
-                    UciHandler::SendToGui(GetCurrMoveInfo());
+                    UciHandler::SendToGui(GetCurrMoveInfo(curr_move, curr_move_num));
                 }
 
                 board.MakeMove(curr_move);
                 nodes_searched++;
-                Score score = -NegaMax(alpha, POSITIVE_INF, curr_max_depth - 1, 1);
+                Score score = -NegaMax(board, NEGATIVE_INF, POSITIVE_INF, curr_max_depth - 1, 1);
                 board.UnmakeMove(curr_move);
                 if (!run) {
-                    break;
+//#pragma omp cancel for
                 }
-                move_evals[curr_move_num].score = score;
-/*                if (score > alpha) {
-                    alpha = score;
-                }*/
+                root_moves[curr_move_num].score = score;
             }
-            std::sort(move_evals, move_evals + moves_count,
+
+            std::sort(std::execution::seq, root_moves, root_moves + root_moves_cnt,
                       [](const MoveAndEval &mae1, const MoveAndEval &mae2) {
                           return mae1.score > mae2.score;
                       });
-            UciHandler::SendToGui(GetSearchInfo());
+            UciHandler::SendToGui(GetSearchInfo(board));
 
-            if (IsScoreMate(move_evals[0].score)) {
+            if (IsScoreMate(root_moves[0].score)) {
                 break;
             }
         }
@@ -114,12 +113,12 @@ namespace Meetra {
         UciHandler::SendToGui(GetBestMove());
     }
 
-    Score ABSearch::NegaMax(Score alpha, Score beta, Depth depth, Depth ply) {
+    Score ABSearch::NegaMax(Board &board, Score alpha, Score beta, Depth depth, Depth ply) {
 
         if (board.IsRepetition() || board.Ply() >= 50) {
             return DRAW_SCORE;
         } else if (depth == 0) {
-            return QuiescenceSearch(alpha, beta, 0);
+            return QuiescenceSearch(board, alpha, beta, 0);
         }
 
         Score score = tt.ProbeEval(board.GetZobristHash(), alpha, beta, depth, ply);
@@ -140,7 +139,7 @@ namespace Meetra {
                 continue;
             }
             nodes_searched++;
-            score = -NegaMax(-beta, -alpha, depth - 1, ply + 1);
+            score = -NegaMax(board, -beta, -alpha, depth - 1, ply + 1);
             board.UnmakeMove(move);
             if (!run) {
                 return 0;
@@ -167,7 +166,7 @@ namespace Meetra {
         return alpha;
     }
 
-    Score ABSearch::QuiescenceSearch(Score alpha, Score beta, Depth depth) {
+    Score ABSearch::QuiescenceSearch(Board & board, Score alpha, Score beta, Depth depth) {
 
         if (depth > qsearch_depth) {
             qsearch_depth = depth;
@@ -190,7 +189,7 @@ namespace Meetra {
                 continue;
             }
             qsearch_nodes++;
-            score = -QuiescenceSearch(-beta, -alpha, depth + 1);
+            score = -QuiescenceSearch(board, -beta, -alpha, depth + 1);
             board.UnmakeMove(move);
             if (score >= beta) {
                 return beta;
@@ -219,7 +218,7 @@ namespace Meetra {
 
     std::string ABSearch::GetBestMove() const {
         std::string ret = "bestmove ";
-        ret.append(GetMoveName(move_evals[0].move));
+        ret.append(GetMoveName(root_moves[0].move));
         return ret;
     }
 
@@ -230,7 +229,7 @@ namespace Meetra {
         return std::max(1l, elapsed_ms);
     }
 
-    void ABSearch::RetrievePv(Move *pv_line, Depth depth) {
+    void ABSearch::RetrievePv(Board & board, Move *pv_line, Depth depth) {
         Move move = tt.GetPVMove(board.GetZobristHash());
         if (!move || depth == 0) {
             *pv_line = INVALID_MOVE;
@@ -238,7 +237,7 @@ namespace Meetra {
         }
         *pv_line++ = move;
         board.MakeMove(move);
-        RetrievePv(pv_line, depth - 1);
+        RetrievePv(board, pv_line, depth - 1);
         board.UnmakeMove(move);
     }
 
@@ -260,7 +259,7 @@ namespace Meetra {
         return ss.str();
     }
 
-    std::string ABSearch::GetSearchInfo() {
+    std::string ABSearch::GetSearchInfo(Board & board) {
 
         long elapsed_ms = ElapsedTimeMs();
         long nps = static_cast<long>(static_cast<double>(nodes_searched + qsearch_nodes) * 1000.0 /
@@ -268,7 +267,8 @@ namespace Meetra {
 
         std::stringstream ss;
         Move pv_stack[MAX_SEARCH_DEPTH];
-        auto pvs_to_send = std::min(MULTI_PV, moves_count);
+        //auto pvs_to_send = std::min(MULTI_PV, moves_count);
+        auto pvs_to_send = 1;
         for (auto i = 0; i < pvs_to_send; i++) {
             ss << "info multipv " << i + 1
                << " depth " << +curr_max_depth
@@ -280,21 +280,21 @@ namespace Meetra {
                << " score ";
 
             int mate_length_ply = 0;
-            if (move_evals[i].score >= MATE_SCORE - MAX_SEARCH_DEPTH) {
-                mate_length_ply = static_cast<int>(MATE_SCORE - move_evals[i].score);
+            if (root_moves[i].score >= MATE_SCORE - MAX_SEARCH_DEPTH) {
+                mate_length_ply = static_cast<int>(MATE_SCORE - root_moves[i].score);
                 ss << "mate " << mate_length_ply / 2;
-            } else if (move_evals[i].score <= -MATE_SCORE + MAX_SEARCH_DEPTH) {
-                mate_length_ply = static_cast<int>(MATE_SCORE + move_evals[i].score);
+            } else if (root_moves[i].score <= -MATE_SCORE + MAX_SEARCH_DEPTH) {
+                mate_length_ply = static_cast<int>(MATE_SCORE + root_moves[i].score);
                 ss << "mate " << -mate_length_ply / 2;
             } else {
-                ss << "cp " << move_evals[i].score;
+                ss << "cp " << root_moves[i].score;
             }
 
-            ss << " pv " << GetMoveName(move_evals[i].move);
-            board.MakeMove(move_evals[i].move);
+            ss << " pv " << GetMoveName(root_moves[i].move);
+            board.MakeMove(root_moves[i].move);
             // TODO try to remove the max depth guard when we have working repetition recognition
-            RetrievePv(pv_stack, std::max(curr_max_depth - 1, mate_length_ply));
-            board.UnmakeMove(move_evals[i].move);
+            RetrievePv(board, pv_stack, std::max(curr_max_depth - 1, mate_length_ply));
+            board.UnmakeMove(root_moves[i].move);
             Move *pv_stack_ptr = pv_stack;
             Move pv_move;
             while ((pv_move = *pv_stack_ptr++)) {
@@ -305,11 +305,11 @@ namespace Meetra {
         return ss.str();
     }
 
-    std::string ABSearch::GetCurrMoveInfo() const {
+    std::string ABSearch::GetCurrMoveInfo(Move move, int num) const {
         std::string ret = "info currmove ";
-        ret.append(GetMoveName(curr_move));
+        ret.append(GetMoveName(move));
         ret.append(" currmovenumber ");
-        ret.append(std::to_string(curr_move_num + 1));
+        ret.append(std::to_string(num + 1));
         return ret;
     }
 }
