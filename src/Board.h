@@ -3,6 +3,7 @@
 
 #include "Types.h"
 #include "Misc.h"
+#include "ZobristHash.h"
 
 namespace Meetra {
 
@@ -41,6 +42,20 @@ namespace Meetra {
         [[nodiscard]] inline Piece CapturedPiece() const { return static_cast<Piece>(game_state >> 11 & 0xF); }
         [[nodiscard]] inline int Ply() const { return static_cast<int>(game_state >> 15 & 0x3F); }
         [[nodiscard]] inline int TotalMoves() const { return static_cast<int>(game_state >> 22); }
+        [[nodiscard]] inline bool IsRepetition() const {
+            auto rep = 0;
+            for (auto i = history_cnt - 2; i >= 0; i-=2) {
+                if (board_history[i].game_state & 0x7800) {
+                    return false;
+                } else if (board_history[i].zobrist_hash == zobrist_hash) {
+                    rep++;
+                    if (rep > 1) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
 #pragma endregion
 
 #pragma region ===== Misc =====
@@ -110,14 +125,15 @@ namespace Meetra {
 #pragma endregion
 
 #pragma region ===== Data =====
-/*        struct BoardData {
+        struct BoardData {
             GameState game_state;
             ZobristHash zobrist_hash;
-        };*/
+        };
 
-        GameState history[MAX_GAME_LENGTH];
-        ZobristHash zh_history[MAX_GAME_LENGTH];
-        uint_fast16_t history_cnt;
+        BoardData board_history[MAX_GAME_LENGTH];
+        //GameState history[MAX_GAME_LENGTH];
+        //ZobristHash zh_history[MAX_GAME_LENGTH];
+        int_fast16_t history_cnt;
 
         ZobristHash zobrist_hash;
         GameState game_state;

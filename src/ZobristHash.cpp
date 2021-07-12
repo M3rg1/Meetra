@@ -2,6 +2,7 @@
 #include <random>
 #include "Types.h"
 #include "Bitboards.h"
+#include "Board.h"
 
 namespace Meetra{
 

@@ -3,7 +3,6 @@
 #include "FenLoader.h"
 #include "Misc.h"
 #include <cstring>
-#include "ZobristHash.h"
 
 namespace Meetra {
 
@@ -83,8 +82,9 @@ namespace Meetra {
 
     bool Board::MakeMove(Move m) {
 
-        zh_history[history_cnt] = zobrist_hash;
-        history[history_cnt++] = game_state;
+        board_history[history_cnt].game_state = game_state;
+        board_history[history_cnt].zobrist_hash = zobrist_hash;
+        history_cnt++;
 
         Color this_move_col = ColorToMove();
         ChangeColorToMove();
@@ -115,7 +115,7 @@ namespace Meetra {
             RemovePiece(capture_square);
             SetCapturedPiece(captured_piece);
             ResetPly();
-        } else if (moved_piece_type != PAWN) {
+        } else if (moved_piece_type == PAWN) {
             ResetPly();
         }
 
@@ -170,8 +170,10 @@ namespace Meetra {
                 PutPiece(from, NewPiece(PAWN, static_cast<Color>(!ColorToMove())));
             }
         }
-        game_state = history[--history_cnt];
-        zobrist_hash = zh_history[history_cnt];
+
+        history_cnt--;
+        game_state = board_history[history_cnt].game_state;
+        zobrist_hash = board_history[history_cnt].zobrist_hash;
     }
 
     std::string Board::PPBoard() const {

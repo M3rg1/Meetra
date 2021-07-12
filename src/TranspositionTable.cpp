@@ -13,10 +13,6 @@ namespace Meetra {
         Clear();
     }
 
-    Key32 TranspositionTable::Make32Key(ZobristHash zobrist_hash) const {
-        return zobrist_hash >> 32;
-    }
-
     void TranspositionTable::SaveEval(ZobristHash key, Score score, Depth depth, Move move, EntryFlag flag, Depth ply) {
 
         Key32 key_32 = Make32Key(key);

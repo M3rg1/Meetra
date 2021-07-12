@@ -9,8 +9,6 @@ namespace Meetra {
 
     typedef int_fast16_t Score;
 
-    typedef uint_fast64_t ZobristHash;
-
     enum GenPhase : uint8_t {
         BEST_MOVE, CAPTURE, QUIET, END
     };

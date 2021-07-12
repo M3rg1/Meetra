@@ -7,6 +7,7 @@
 #include <sstream>
 #include "ThreadPool.h"
 #include "UciHandler.h"
+#include <cstring>
 
 namespace Meetra {
 
@@ -14,6 +15,7 @@ namespace Meetra {
 
     ABSearch::ABSearch() {
         run = false;
+        moves_count = 0;
         InitSearch();
     }
 
@@ -26,12 +28,10 @@ namespace Meetra {
         qsearch_nodes = 0;
         qsearch_depth = 0;
         curr_max_depth = 0;
+        memset(move_evals, 0, MAX_LEGAL_MOVES);
+        moves_count = 0;
         using namespace std::chrono;
         timer_start = time_point_cast<milliseconds>(system_clock::now()).time_since_epoch().count();
-        for(auto smp : score_move_pair){
-            smp.first = 0;
-            smp.second = INVALID_MOVE;
-        }
     }
 
     // TODO fixed search time isnt working right now! we ending when 50% time remaining!!!
@@ -53,7 +53,6 @@ namespace Meetra {
         }, 1000);
 
         MoveGen move_gen(board);
-        moves_count = 0;
         Move m;
         while ((m = move_gen.GetNextMove<false>())) {
             if (!board.MakeMove(m)) {
@@ -62,13 +61,16 @@ namespace Meetra {
             }
             Score s = tt.ProbeEval(board.GetZobristHash(), NEGATIVE_INF, POSITIVE_INF, 0, 0);
             board.UnmakeMove(m);
-            score_move_pair[moves_count++].second = m;
-            if(s != NOT_FOUND) {
-                score_move_pair[moves_count].first = s;
+            move_evals[moves_count++].move = m;
+            if (s != NOT_FOUND) {
+                move_evals[moves_count].score = s;
             }
         }
         // if moves count == 0 = the board is already in checkmate/draw
-        std::sort(score_move_pair, score_move_pair + moves_count, std::greater<>());
+        std::sort(move_evals, move_evals + moves_count,
+                  [](const MoveAndEval &mae1, const MoveAndEval &mae2) {
+                      return mae1.score > mae2.score;
+                  });
         max_depth = std::min(max_depth, MAX_SEARCH_DEPTH);
         for (curr_max_depth = 1; curr_max_depth <= max_depth && run && EnoughTimeLeft(allowed_time); curr_max_depth++) {
 
@@ -76,7 +78,7 @@ namespace Meetra {
             Score alpha = NEGATIVE_INF;
 
             for (curr_move_num = 0; curr_move_num < moves_count; curr_move_num++) {
-                curr_move = score_move_pair[curr_move_num].second;
+                curr_move = move_evals[curr_move_num].move;
 
                 if (ElapsedTimeMs() > 1000) {
                     UciHandler::SendToGui(GetCurrMoveInfo());
@@ -89,16 +91,20 @@ namespace Meetra {
                 if (!run) {
                     break;
                 }
-                score_move_pair[curr_move_num].first = score;
+                move_evals[curr_move_num].score = score;
                 if (score > alpha) {
                     alpha = score;
                 }
             }
-
-            std::sort(score_move_pair, score_move_pair + moves_count, std::greater<>());
+            std::sort(move_evals, move_evals + moves_count,
+                      [](const MoveAndEval &mae1, const MoveAndEval &mae2) {
+                          return mae1.score > mae2.score;
+                      });
             UciHandler::SendToGui(GetSearchInfo());
 
-            // if top move is checkmate and we are not searching infinite/fixed depth/time/ whatever, break search
+            if (IsScoreMate(move_evals[0].score)) {
+                break;
+            }
         }
 
         run = false;
@@ -109,7 +115,7 @@ namespace Meetra {
 
     Score ABSearch::NegaMax(Score alpha, Score beta, Depth depth, Depth ply) {
 
-        if (board.Ply() >= 50  /*|| repetition*/ ) {
+        if (board.IsRepetition() || board.Ply() >= 50) {
             return DRAW_SCORE;
         } else if (depth == 0) {
             return QuiescenceSearch(alpha, beta, curr_max_depth);
@@ -212,7 +218,7 @@ namespace Meetra {
 
     std::string ABSearch::GetBestMove() const {
         std::string ret = "bestmove ";
-        ret.append(GetMoveName(score_move_pair[0].second));
+        ret.append(GetMoveName(move_evals[0].move));
         return ret;
     }
 
@@ -273,21 +279,21 @@ namespace Meetra {
                << " score ";
 
             int mate_length_ply = 0;
-            if(score_move_pair[i].first >= MATE_SCORE - MAX_SEARCH_DEPTH){
-                mate_length_ply = static_cast<int>(MATE_SCORE - score_move_pair[i].first);
+            if (move_evals[i].score >= MATE_SCORE - MAX_SEARCH_DEPTH) {
+                mate_length_ply = static_cast<int>(MATE_SCORE - move_evals[i].score);
                 ss << "mate " << mate_length_ply / 2;
-            } else if (score_move_pair[i].first <= -MATE_SCORE + MAX_SEARCH_DEPTH) {
-                mate_length_ply = static_cast<int>(MATE_SCORE + score_move_pair[i].first);
+            } else if (move_evals[i].score <= -MATE_SCORE + MAX_SEARCH_DEPTH) {
+                mate_length_ply = static_cast<int>(MATE_SCORE + move_evals[i].score);
                 ss << "mate " << -mate_length_ply / 2;
             } else {
-                ss << "cp " << score_move_pair[i].first;
+                ss << "cp " << move_evals[i].score;
             }
 
-            ss << " pv " << GetMoveName(score_move_pair[i].second);
-            board.MakeMove(score_move_pair[i].second);
+            ss << " pv " << GetMoveName(move_evals[i].move);
+            board.MakeMove(move_evals[i].move);
             // TODO try to remove the max depth guard when we have working repetition recognition
             RetrievePv(pv_stack, std::max(curr_max_depth - 1, mate_length_ply));
-            board.UnmakeMove(score_move_pair[i].second);
+            board.UnmakeMove(move_evals[i].move);
             Move *pv_stack_ptr = pv_stack;
             Move pv_move;
             while ((pv_move = *pv_stack_ptr++)) {

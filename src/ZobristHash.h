@@ -3,13 +3,17 @@
 
 
 #include "Types.h"
-#include "Board.h"
 
 namespace Meetra{
 
+    class Board;
+
+    typedef uint64_t ZobristHash;
+    typedef uint32_t Key32;
 
     void InitZobrist();
     ZobristHash GenZobristHash(Board &board);
+    inline Key32 Make32Key(ZobristHash zobrist_hash) { return zobrist_hash >> 32; }
 
 
 }

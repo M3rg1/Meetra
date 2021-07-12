@@ -4,6 +4,7 @@
 #include "Types.h"
 #include "Bitboards.h"
 #include "Board.h"
+#include "ZobristHash.h"
 
 namespace Meetra {
 
@@ -22,7 +23,6 @@ namespace Meetra {
     enum EntryFlag : uint8_t {
         EXACT_SCORE, ALPHA, BETA
     };
-    typedef uint32_t Key32;
     typedef uint8_t Epoch;
 
     constexpr Score NOT_FOUND = -32013;
@@ -49,7 +49,6 @@ namespace Meetra {
 
     private:
 
-        [[nodiscard]] Key32 Make32Key(ZobristHash zobrist_hash) const;
         [[nodiscard]] Score RemoveMatePly(Score score, Depth ply) const;
         [[nodiscard]] Score AddMatePly(Score score, Depth ply) const;
 
