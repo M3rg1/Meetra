@@ -8,8 +8,7 @@ namespace Meetra {
 
     TranspositionTable::TranspositionTable(size_t size) : size(size) {
         table = new TTEntry[sizeof(TTEntry) * size];
-        entries = 0;
-        current_epoch = 0;
+        index_mask = size - 1;
         Clear();
     }
 
@@ -24,11 +23,14 @@ namespace Meetra {
         int worst_entry_score = 100000;
 
         for (auto i = 0; i < BUCKET_SIZE; i++) {
-            auto index = (key + i) % size;
+            auto index = (key + i) & index_mask;
             TTEntry *curr_entry = &table[index];
 
             if (curr_entry->Get32Key() == key_32) {
-                curr_entry->SetEpoch(current_epoch);
+                if(curr_entry->GetEpoch() != current_epoch){
+                    curr_entry->SetEpoch(current_epoch);
+                    entries++;
+                }
                 if (depth >= curr_entry->GetDepth() || flag == EXACT_SCORE) {
                     curr_entry->SaveEntry(key_32, score, depth, move, flag, current_epoch);
                 }
@@ -48,13 +50,10 @@ namespace Meetra {
             }
         }
 
+        if(entry_to_write->GetEpoch() != current_epoch){
+            entries++;
+        }
         entry_to_write->SaveEntry(key_32, score, depth, move, flag, current_epoch);
-
-
-        // TODO i think usage counting could be done with generation - we only count entries++ if they are not
-        //  overwriting current generation, if they are overwriting anything else (empty, or old entries) then its
-        //  entries++ - that way we cant get above 100% since once is everything from current gen, entries == size
-        //entries++;
     }
 
     Score TranspositionTable::ProbeEval(ZobristHash key, Score alpha, Score beta, Depth depth) const {
@@ -62,7 +61,7 @@ namespace Meetra {
         Key32 key_32 = Make32Key(key);
 
         for (auto i = 0; i < BUCKET_SIZE; i++) {
-            auto index = (key + i) % size;
+            auto index = (key + i) & index_mask;
             TTEntry *ttEntry = &table[index];
 
             if (ttEntry->Get32Key() == key_32) {
@@ -94,6 +93,7 @@ namespace Meetra {
     void TranspositionTable::Resize(TTSize new_size) {
         delete[] table;
         size = new_size;
+        index_mask = new_size - 1;
         table = new TTEntry[sizeof(TTEntry) * new_size];
         Clear();
     }
@@ -109,7 +109,7 @@ namespace Meetra {
         Key32 key_32 = Make32Key(key);
 
         for (auto i = 0; i < BUCKET_SIZE; i++) {
-            auto index = (key + i) % size;
+            auto index = (key + i) & index_mask;
             TTEntry *ttEntry = &table[index];
 
             if (ttEntry->Get32Key() == key_32) {

@@ -30,7 +30,6 @@ namespace Meetra {
         timer_start = time_point_cast<milliseconds>(system_clock::now()).time_since_epoch().count();
     }
 
-    // board should be class variable, so we dont have to pass it in the recursion all the time
     // TODO fixed search time isnt working right now! we ending when 50% time remaining!!!
     //  the UciHandler will have to let us know this is fixed search time, so we dont exist early via NotEnoughTime foo
     void ABSearch::StartSearch(const Board &b, Depth max_depth, long allowed_time) {
@@ -38,7 +37,6 @@ namespace Meetra {
         board = b;
         run = true;
         InitSearch();
-        std::string uci_send_info;
 
         // TODO this timers shoulkdnt create new thread every time, but thread should already exist
         //  and we just send new tasks
@@ -63,6 +61,7 @@ namespace Meetra {
         }
         // if moves count == 0 = the board is already in checkmate/draw
 
+        max_depth = std::min(max_depth, MAX_SEARCH_DEPTH);
         for (curr_max_depth = 1; curr_max_depth <= max_depth && run && EnoughTimeLeft(allowed_time); curr_max_depth++) {
 
             qsearch_depth = 0;
@@ -71,8 +70,7 @@ namespace Meetra {
                 curr_move = score_move_pair[curr_move_num].second;
 
                 if (ElapsedTimeMs() > 1000) {
-                    uci_send_info = GetCurrMoveInfo();
-                    ThreadPool::PushTask([uci_send_info]() { UciHandler::SendToGui(uci_send_info); });
+                    UciHandler::SendToGui(GetCurrMoveInfo());
                 }
 
                 board.MakeMove(curr_move);
@@ -85,17 +83,13 @@ namespace Meetra {
             }
 
             std::sort(score_move_pair, score_move_pair + moves_count, std::greater<>());
-            uci_send_info = GetSearchInfo();
-            ThreadPool::PushTask([uci_send_info]() { UciHandler::SendToGui(uci_send_info); });
+            UciHandler::SendToGui(GetSearchInfo());
         }
 
         run = false;
         search_timer.Stop();
         info_timer.Stop();
-        uci_send_info = GetBestMove();
-        // We dont really want to send any more info after sending bestmove, this almost guarantees that wont happen
-        // (in case the final search info wasn't sent yet by the ThreadPool)
-        ThreadPool::PushTask([uci_send_info]() { UciHandler::SendToGui(uci_send_info); });
+        UciHandler::SendToGui(GetBestMove());
     }
 
     Score ABSearch::NegaMax(Score alpha, Score beta, Depth depth) {
@@ -239,7 +233,7 @@ namespace Meetra {
            << " nodes " << (nodes_searched + qsearch_nodes)
            << " time " << elapsed_ms
            << " nps " << nps
-           << " hashfull ";
+           << " hashfull " << static_cast<int>(tt.Usage() * 1000);
 
         return ss.str();
     }
@@ -251,7 +245,7 @@ namespace Meetra {
                                      static_cast<double>(elapsed_ms));
 
         std::stringstream ss;
-        Move pv_stack[64];
+        Move pv_stack[MAX_SEARCH_DEPTH];
         auto pvs_to_send = std::min(MULTI_PV, moves_count);
         for (auto i = 0; i < pvs_to_send; i++) {
             ss << "info multipv " << i + 1

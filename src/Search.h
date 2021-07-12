@@ -39,7 +39,7 @@ namespace Meetra {
         Timer search_timer;
         Timer info_timer;
 
-        std::pair<Score, Move> score_move_pair[128];
+        std::pair<Score, Move> score_move_pair[MAX_LEGAL_MOVES];
         int moves_count;
         Move curr_move;
         int curr_move_num;

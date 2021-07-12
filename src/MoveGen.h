@@ -24,8 +24,8 @@ namespace Meetra {
 
         GenPhase genPhase;
 
-        Move moves[128];
-        Score move_evals[128];
+        Move moves[MAX_LEGAL_MOVES];
+        Score move_evals[MAX_LEGAL_MOVES];
         uint8_t moves_cnt;
 
         Bitboard checkers;

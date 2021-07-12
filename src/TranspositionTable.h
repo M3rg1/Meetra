@@ -7,28 +7,16 @@
 
 namespace Meetra {
 
-    /*
-     * Therefor to calculate the address or index requires signature modulo number of entries,
-     * for power of two sized tables, the lower part of the hash key, masked by an 'and'-instruction accordantly.
-     *
-     * ////// MAKE IT POWER OF 2 SO THAT MODULO IS EASY TO CALCULATE WITH JUST & MASKING
-     *
-     * // CAN STORE ONLY UPPER HALF OF THE ZOBRIST KEY FOR COMPARISONS
-     * They require detection, realized by storing the signature as part of the hash entry, to check whether a
-     * stored entry matches the position while probing. Specially with power of two entry tables, many programmers choose
-     * to trade-off space for accuracy and only store that part of the hash key not already considered as index, or even less.
-     * https://www.chessprogramming.org/Transposition_Table
-     * IT REQUIRES LESS SPACE!!
-     */
     enum TTSize : size_t {
-        TT512MB = 51200000,
-        TT256MB = 25600000,
-        TT128MB = 12800000,
-        TT64MB = 6400000,
-        TT32MB = 3200000,
-        TT16MB = 1600000,
-        TT8MB = 800000,
+        TT512MB =   67108864, //51200000,
+        TT256MB =   33554432, //25600000,
+        TT128MB =   16777216, //12800000,
+        TT64MB =    8388608, //6400000,
+        TT32MB =    4194304, //3200000,
+        TT16MB =    2097152, //1600000,
+        TT8MB =     1048576, //800000
     };
+
 #define DEFAULT_TT_SIZE TT64MB
 
     enum EntryFlag : uint8_t {
@@ -51,7 +39,7 @@ namespace Meetra {
 
         [[nodiscard]] Score ProbeEval(ZobristHash key, Score alpha, Score beta, Depth depth) const;
         [[nodiscard]] Move GetPVMove(ZobristHash key) const;
-        [[nodiscard]] int EntriesCount() const { return entries; }
+        [[nodiscard]] size_t EntriesCount() const { return entries; }
         // 0.01 == 1% usage, 0.1 == 10% usage, 1 == 100% usage
         [[nodiscard]] double Usage() const {
             return static_cast<double>(entries) / static_cast<double>(size);
@@ -98,6 +86,7 @@ namespace Meetra {
         Epoch current_epoch;
         size_t entries;
         size_t size;
+        size_t index_mask;
         TTEntry *table;
     };
 

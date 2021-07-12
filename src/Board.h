@@ -115,9 +115,9 @@ namespace Meetra {
             ZobristHash zobrist_hash;
         };*/
 
-        GameState history[256];
-        ZobristHash zh_history[256];
-        uint8_t history_cnt;
+        GameState history[MAX_GAME_LENGTH];
+        ZobristHash zh_history[MAX_GAME_LENGTH];
+        uint_fast16_t history_cnt;
 
         ZobristHash zobrist_hash;
         GameState game_state;
