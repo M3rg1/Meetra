@@ -1,6 +1,7 @@
 #include <cstring>
 #include "TranspositionTable.h"
 #include "Evaluation.h"
+#include "omp.h"
 
 namespace Meetra {
 
@@ -21,38 +22,46 @@ namespace Meetra {
 
         score = RemoveMatePly(score, ply);
 
-        for (auto i = 0; i < BUCKET_SIZE; i++) {
-            auto index = (key + i) & index_mask;
-            TTEntry *curr_entry = &table[index];
+#pragma omp critical
+        {
+            for (auto i = 0; i < BUCKET_SIZE; i++) {
+                auto index = (key + i) & index_mask;
+                TTEntry *curr_entry = &table[index];
 
-            if (curr_entry->Get32Key() == key_32) {
-                if(curr_entry->GetEpoch() != current_epoch){
-                    curr_entry->SetEpoch(current_epoch);
+                if (curr_entry->Get32Key() == key_32) {
+                    entry_to_write = nullptr;
+                    if (curr_entry->GetEpoch() != current_epoch) {
+                        curr_entry->SetEpoch(current_epoch);
+                        entries++;
+                    }
+                    if (depth >= curr_entry->GetDepth() || flag == EXACT_SCORE) {
+                        entry_to_write = curr_entry;
+                        //curr_entry->SaveEntry(key_32, score, depth, move, flag, current_epoch);
+                    }
+                    //return;
+                    break;
+                }
+
+                int entry_score = static_cast<int>(curr_entry->GetDepth());
+                if (curr_entry->GetEpoch() < current_epoch) {
+                    entry_score -= (current_epoch - curr_entry->GetEpoch()) << 5;
+                }
+                if (curr_entry->GetFlag() == EXACT_SCORE) {
+                    entry_score += 1000;
+                }
+                if (entry_score < worst_entry_score) {
+                    worst_entry_score = entry_score;
+                    entry_to_write = curr_entry;
+                }
+            }
+
+            if (entry_to_write) {
+                if(entry_to_write->GetEpoch() != current_epoch){
                     entries++;
                 }
-                if (depth >= curr_entry->GetDepth() || flag == EXACT_SCORE) {
-                    curr_entry->SaveEntry(key_32, score, depth, move, flag, current_epoch);
-                }
-                return;
-            }
-
-            int entry_score = static_cast<int>(curr_entry->GetDepth());
-            if (curr_entry->GetEpoch() < current_epoch) {
-                entry_score -= (current_epoch - curr_entry->GetEpoch()) << 5;
-            }
-            if (curr_entry->GetFlag() == EXACT_SCORE) {
-                entry_score += 1000;
-            }
-            if (entry_score < worst_entry_score) {
-                worst_entry_score = entry_score;
-                entry_to_write = curr_entry;
+                entry_to_write->SaveEntry(key_32, score, depth, move, flag, current_epoch);
             }
         }
-
-        if(entry_to_write->GetEpoch() != current_epoch){
-            entries++;
-        }
-        entry_to_write->SaveEntry(key_32, score, depth, move, flag, current_epoch);
     }
 
     Score TranspositionTable::RemoveMatePly(Score score, Depth ply) const {
@@ -66,10 +75,6 @@ namespace Meetra {
     }
 
     Score TranspositionTable::AddMatePly(Score score, Depth ply) const {
-/*        if(std::abs(score) >= MATE_SCORE - MAX_GAME_LENGTH){
-            return score + ply;
-        }*/
-
         if(score >= MATE_SCORE - MAX_SEARCH_DEPTH){
             return score - ply;
         } else if (score <= -MATE_SCORE + MAX_SEARCH_DEPTH) {
@@ -82,27 +87,30 @@ namespace Meetra {
     Score TranspositionTable::ProbeEval(ZobristHash key, Score alpha, Score beta, Depth depth, Depth ply) const {
 
         Key32 key_32 = Make32Key(key);
+        auto ret = NOT_FOUND;
+        // TODO make a lock for each bucket for multithreading
+#pragma omp critical
+        {
+            for (auto i = 0; i < BUCKET_SIZE; i++) {
+                auto index = (key + i) & index_mask;
+                TTEntry *ttEntry = &table[index];
 
-        for (auto i = 0; i < BUCKET_SIZE; i++) {
-            auto index = (key + i) & index_mask;
-            TTEntry *ttEntry = &table[index];
-
-            if (ttEntry->Get32Key() == key_32) {
-                if (ttEntry->GetDepth() >= depth) {
-                    ttEntry->SetEpoch(current_epoch);
-                    if (ttEntry->GetFlag() == EXACT_SCORE) {
-                        return AddMatePly(ttEntry->GetScore(), ply);
-                    } else if (ttEntry->GetFlag() == ALPHA && ttEntry->GetScore() <= alpha) {
-                        return alpha;
-                    } else if (ttEntry->GetFlag() == BETA && ttEntry->GetScore() >= beta) {
-                        return beta;
+                if (ttEntry->Get32Key() == key_32) {
+                    if (ttEntry->GetDepth() >= depth) {
+                        ttEntry->SetEpoch(current_epoch);
+                        if (ttEntry->GetFlag() == EXACT_SCORE) {
+                            ret = AddMatePly(ttEntry->GetScore(), ply);
+                        } else if (ttEntry->GetFlag() == ALPHA && ttEntry->GetScore() <= alpha) {
+                            ret = alpha;
+                        } else if (ttEntry->GetFlag() == BETA && ttEntry->GetScore() >= beta) {
+                            ret = beta;
+                        }
                     }
+                    break;
                 }
-                break;
             }
         }
-
-        return NOT_FOUND;
+        return ret;
     }
 
     void TranspositionTable::NewSearch() {

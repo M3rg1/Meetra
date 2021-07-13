@@ -65,7 +65,7 @@ namespace Meetra {
         InitSearchOptions(sts);
 
         ThreadPool::PushTask([&]() {
-            search.StartSearch(board, depth, search_timer);
+            search.StartSearch(board, depth, search_timer, DEFAULT_SEARCH_THREADS);
         });
     }
 

@@ -12,6 +12,8 @@ namespace Meetra{
 #define DEFAULT_SEARCH_TIME INFINITE_TIMER
 #define MAX_LEGAL_MOVES 128
 #define MAX_GAME_LENGTH 256
+#define DEFAULT_SEARCH_THREADS 4
+#define MAX_SEARCH_THREADS 20
 
     // i think this should e define rather than functions
     // or mby not because of GetOptions? idk will see when i implement options
