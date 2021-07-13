@@ -11,7 +11,7 @@ namespace Meetra {
 
     public:
         ABSearch();
-        void StartSearch(Board &b, Depth max_depth, long allowed_time, int num_threads, bool fixed_timer);
+        void StartSearch(Board board, Depth max_depth, long allowed_time, int num_threads, bool fixed_timer);
         [[nodiscard]] std::string GetSearchInfo(Board & board);
         [[nodiscard]] std::string GetBestMove() const;
         [[nodiscard]] std::string GetCurrMoveInfo(Move move, int num)  const;
@@ -44,6 +44,9 @@ namespace Meetra {
             Score score;
         };
 
+
+        Score best_score;
+        Move best_move;
         MoveAndEval root_moves[MAX_LEGAL_MOVES];
         int root_moves_cnt;
         ulong normal_nodes;

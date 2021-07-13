@@ -12,6 +12,8 @@
 
 namespace Meetra {
 
+    // TODO really search should just take in some options object with all the settings like how many threads,
+    //  what the multi_pv is, depth, time, how often update gui with info, delay before first currmove etc.
 #define MULTI_PV 1
 
     ABSearch::ABSearch() {
@@ -31,7 +33,7 @@ namespace Meetra {
         SortRootNodes();
     }
 
-    void ABSearch::StartSearch(Board &board, Depth max_depth, long allowed_time, int num_threads, bool fixed_timer) {
+    void ABSearch::StartSearch(Board board, Depth max_depth, long allowed_time, int num_threads, bool fixed_timer) {
 
         run = true;
 
@@ -42,15 +44,23 @@ namespace Meetra {
             UciHandler::SendToGui(GetUpdateSearchInfo());
         }, 1000);
 
+        // board should be as well inside the search options settings struct ill make
         InitSearch(board);
         omp_set_dynamic(0);
         omp_set_num_threads(std::min(MAX_SEARCH_THREADS, num_threads));
         max_depth = std::min(max_depth, MAX_SEARCH_DEPTH);
 
+        best_score = root_moves[0].score;
+        best_move = root_moves[0].move;
+
         for (curr_max_depth = 1; curr_max_depth <= max_depth; curr_max_depth++, qsearch_depth = 0) {
 
-#pragma omp parallel for default(none) ordered schedule(static, 1) firstprivate(board)
+            Score alpha = NEGATIVE_INF;
+            Score beta = POSITIVE_INF;
+
+#pragma omp parallel for default(none) ordered schedule(static, 1) firstprivate(board) shared(alpha, beta)
             for (int curr_move_num = 0; curr_move_num < root_moves_cnt; curr_move_num++) {
+
                 Move curr_move = root_moves[curr_move_num].move;
 
                 if (run && ElapsedTimeMs() > 1000) {
@@ -59,24 +69,36 @@ namespace Meetra {
 
                 board.MakeMove(curr_move);
                 normal_nodes++;
-                Score score = -NegaMax(board, NEGATIVE_INF, POSITIVE_INF, curr_max_depth - 1, 1);
+                Score score = -NegaMax(board, -beta, -alpha, curr_max_depth - 1, 1);
                 board.UnmakeMove(curr_move);
-                if (!run) {
-                    continue;
-                }
-                // TODO fix checmakte -> there might be multiple same length mates stores now with multithreading
-                //  cause multiple threads will finish at the same time and find a same length mate
-                //  we need to not allow any more writes once mate is found and exit
-                //  and also repetition still not properly found
 
-                // ooooooor maybe when it finds mate it doesnt search anymote so it doesnt see the repetition
-                root_moves[curr_move_num].score = score;
+                if (run) {
+                    root_moves[curr_move_num].score = score;
+#pragma omp critical
+                    {
+                        if (score > alpha) {
+                            alpha = score;
+                            if (alpha > best_score) {
+                                best_move = curr_move;
+                                best_score = score;
+                            }
+                        }
+                    }
+                }
             }
 
             SortRootNodes();
+            if (run) {
+                best_move = root_moves[0].move;
+                best_score = root_moves[0].score;
+                tt.SaveEval(board.GetZobristHash(), best_score, curr_max_depth, best_score, EXACT_SCORE, 0);
+                if(IsScoreMate(best_score)){
+                    run = false;
+                }
+            }
             UciHandler::SendToGui(GetSearchInfo(board));
 
-            if (!run || !EnoughTimeLeft(allowed_time) || IsScoreMate(root_moves[0].score)) {
+            if (!run || !EnoughTimeLeft(allowed_time) || IsScoreMate(best_move)) {
                 break;
             }
         }
@@ -89,7 +111,7 @@ namespace Meetra {
 
     Score ABSearch::NegaMax(Board &board, Score alpha, Score beta, Depth depth, Depth ply) {
 
-        if (board.IsRepetition() || board.Ply() >= 50) {
+        if (board.IsRepetition() || board.Ply() >= 75) {
             return DRAW_SCORE;
         } else if (depth == 0) {
             return QuiescenceSearch(board, alpha, beta, 0);
@@ -191,7 +213,7 @@ namespace Meetra {
 
     std::string ABSearch::GetBestMove() const {
         std::string ret = "bestmove ";
-        ret.append(GetMoveName(root_moves[0].move));
+        ret.append(GetMoveName(best_move));
         return ret;
     }
 
@@ -234,10 +256,10 @@ namespace Meetra {
     }
 
     void ABSearch::SortRootNodes() {
-        std::sort(std::execution::seq, root_moves, root_moves + root_moves_cnt,
-                  [](const MoveAndEval &mae1, const MoveAndEval &mae2) {
-                      return mae1.score > mae2.score;
-                  });
+        std::stable_sort(std::execution::seq, root_moves, root_moves + root_moves_cnt,
+                         [](const MoveAndEval &mae1, const MoveAndEval &mae2) {
+                             return mae1.score > mae2.score;
+                         });
     }
 
     std::string ABSearch::GetUpdateSearchInfo() const {
@@ -266,8 +288,7 @@ namespace Meetra {
 
         std::stringstream ss;
         Move pv_stack[MAX_SEARCH_DEPTH];
-        //auto pvs_to_send = std::min(MULTI_PV, moves_count);
-        auto pvs_to_send = 1;
+        auto pvs_to_send = std::min(MULTI_PV, root_moves_cnt);
         for (auto i = 0; i < pvs_to_send; i++) {
             ss << "info multipv " << i + 1
                << " depth " << +curr_max_depth
@@ -279,21 +300,22 @@ namespace Meetra {
                << " score ";
 
             int mate_length_ply = 0;
-            if (root_moves[i].score >= MATE_SCORE - MAX_SEARCH_DEPTH) {
-                mate_length_ply = static_cast<int>(MATE_SCORE - root_moves[i].score);
+            Score score = best_score; //root_moves[i].score;
+            Move move = best_move; //root_moves[i].move;
+
+            if (score >= MATE_SCORE - MAX_SEARCH_DEPTH) {
+                mate_length_ply = static_cast<int>(MATE_SCORE - score);
                 ss << "mate " << mate_length_ply / 2;
-            } else if (root_moves[i].score <= -MATE_SCORE + MAX_SEARCH_DEPTH) {
-                mate_length_ply = static_cast<int>(MATE_SCORE + root_moves[i].score);
+            } else if (score <= -MATE_SCORE + MAX_SEARCH_DEPTH) {
+                mate_length_ply = static_cast<int>(MATE_SCORE + score);
                 ss << "mate " << -mate_length_ply / 2;
             } else {
-                ss << "cp " << root_moves[i].score;
+                ss << "cp " << score;
             }
-
-            ss << " pv " << GetMoveName(root_moves[i].move);
-            board.MakeMove(root_moves[i].move);
-            // TODO try to remove the max depth guard when we have working repetition recognition
+            ss << " pv " << GetMoveName(move);
+            board.MakeMove(move);
             RetrievePv(board, pv_stack, std::max(curr_max_depth - 1, mate_length_ply));
-            board.UnmakeMove(root_moves[i].move);
+            board.UnmakeMove(move);
             Move *pv_stack_ptr = pv_stack;
             Move pv_move;
             while ((pv_move = *pv_stack_ptr++)) {
