@@ -32,23 +32,22 @@ namespace Meetra {
         SortRootNodes();
     }
 
-    // TODO fixed search time isnt working right now! we ending when 50% time remaining!!!
-    //  the UciHandler will have to let us know this is fixed search time, so we dont exist early via NotEnoughTime foo
-    void ABSearch::StartSearch(Board &board, Depth max_depth, long allowed_time, int num_threads) {
+    void ABSearch::StartSearch(Board &board, Depth max_depth, long allowed_time, int num_threads, bool fixed_timer) {
 
         run = true;
-        InitSearch(board);
-        omp_set_dynamic(0);
-        omp_set_num_threads(std::min(MAX_SEARCH_THREADS, num_threads));
 
-        if (allowed_time != INFINITE_TIMER) {
+        if (allowed_time != INFINITE_TIMER && !fixed_timer) {
             search_timer.SetTimeout([&]() { StopSearch(); }, allowed_time);
         }
         info_timer.SetInterval([&]() {
             UciHandler::SendToGui(GetUpdateSearchInfo());
         }, 1000);
 
+        InitSearch(board);
+        omp_set_dynamic(0);
+        omp_set_num_threads(std::min(MAX_SEARCH_THREADS, num_threads));
         max_depth = std::min(max_depth, MAX_SEARCH_DEPTH);
+
         for (curr_max_depth = 1; curr_max_depth <= max_depth; curr_max_depth++, qsearch_depth = 0) {
 
 #pragma omp parallel for default(none) ordered schedule(static, 1) firstprivate(board)
@@ -81,115 +80,6 @@ namespace Meetra {
         search_timer.Stop();
         info_timer.Stop();
         UciHandler::SendToGui(GetBestMove());
-    }
-
-    void ABSearch::ExperimentalStartSearch(Board &board, Depth max_depth, long allowed_time, int num_threads) {
-
-        run = true;
-        InitSearch(board);
-        omp_set_dynamic(0);
-        omp_set_num_threads(std::min(MAX_SEARCH_THREADS, num_threads));
-
-        if (allowed_time != INFINITE_TIMER) {
-            search_timer.SetTimeout([&]() { StopSearch(); }, allowed_time);
-        }
-        info_timer.SetInterval([&]() {
-            UciHandler::SendToGui(GetUpdateSearchInfo());
-        }, 1000);
-
-        max_depth = std::min(max_depth, MAX_SEARCH_DEPTH);
-        qsearch_depth = 0;
-        int top_depth = 0;
-
-#pragma omp parallel for default(none) schedule(static, 1) firstprivate(board) shared(max_depth, allowed_time, top_depth)
-        for (int search_depth = 1; search_depth <= max_depth; search_depth++) {
-
-            if (!run || !EnoughTimeLeft(allowed_time)) {
-                continue;
-            }
-
-            for (int curr_move_num = 0; curr_move_num < root_moves_cnt; curr_move_num++) {
-                Move curr_move = root_moves[curr_move_num].move;
-                board.MakeMove(curr_move);
-                normal_nodes++;
-                Score score = -NegaMax(board, NEGATIVE_INF, POSITIVE_INF, search_depth - 1, 1);
-                board.UnmakeMove(curr_move);
-                if (!run) {
-                    break;
-                }
-#pragma omp critical
-                {
-                    if (root_moves[curr_move_num].depth_searched < search_depth) {
-                        root_moves[curr_move_num].score = score;
-                        root_moves[curr_move_num].depth_searched = search_depth;
-                    }
-
-                }
-            }
-            if (run) {
-#pragma omp critical
-                {
-                    if (search_depth > top_depth) {
-                        top_depth = search_depth;
-                    }
-                    UciHandler::SendToGui(ExperimentalGetSearchInfo(board, search_depth));
-                }
-            }
-        }
-        SortRootNodes();
-        run = false;
-        search_timer.Stop();
-        info_timer.Stop();
-        UciHandler::SendToGui(ExperimentalGetSearchInfo(board, top_depth));
-        UciHandler::SendToGui(GetBestMove());
-    }
-
-    std::string ABSearch::ExperimentalGetSearchInfo(Board &board, Depth depth) {
-        long elapsed_ms = ElapsedTimeMs();
-        long nps = static_cast<long>(static_cast<double>(normal_nodes + qsearch_nodes) * 1000.0 /
-                                     static_cast<double>(elapsed_ms));
-
-        std::stringstream ss;
-        Move pv_stack[MAX_SEARCH_DEPTH];
-        auto pvs_to_send = 1;
-        Score top_score = NEGATIVE_INF;
-        int i = 0;
-        for (int idx = 0; i < root_moves_cnt; i++) {
-            if (root_moves[idx].score > top_score) {
-                top_score = root_moves[idx].score;
-                i = idx;
-            }
-        }
-        ss << "info multipv " << i + 1
-           << " depth " << +depth
-           << " time " << elapsed_ms
-           << " nps " << nps
-           << " hashfull " << static_cast<int>(tt.Usage() * 1000)
-           << " score ";
-
-        int mate_length_ply = 0;
-        if (root_moves[i].score >= MATE_SCORE - MAX_SEARCH_DEPTH) {
-            mate_length_ply = static_cast<int>(MATE_SCORE - root_moves[i].score);
-            ss << "mate " << mate_length_ply / 2;
-        } else if (root_moves[i].score <= -MATE_SCORE + MAX_SEARCH_DEPTH) {
-            mate_length_ply = static_cast<int>(MATE_SCORE + root_moves[i].score);
-            ss << "mate " << -mate_length_ply / 2;
-        } else {
-            ss << "cp " << root_moves[i].score;
-        }
-
-        ss << " pv " << GetMoveName(root_moves[i].move);
-        board.MakeMove(root_moves[i].move);
-        // TODO try to remove the max depth guard when we have working repetition recognition
-        RetrievePv(board, pv_stack, std::max(depth - 1, mate_length_ply));
-        board.UnmakeMove(root_moves[i].move);
-        Move *pv_stack_ptr = pv_stack;
-        Move pv_move;
-        while ((pv_move = *pv_stack_ptr++)) {
-            ss << " " << GetMoveName(pv_move);
-        }
-
-        return ss.str();
     }
 
     Score ABSearch::NegaMax(Board &board, Score alpha, Score beta, Depth depth, Depth ply) {
@@ -335,7 +225,6 @@ namespace Meetra {
             }
             root_moves[root_moves_cnt].move = m;
             root_moves[root_moves_cnt].score = s;
-            root_moves[root_moves_cnt].depth_searched = 0;
             root_moves_cnt++;
         }
     }

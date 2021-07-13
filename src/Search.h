@@ -11,7 +11,7 @@ namespace Meetra {
 
     public:
         ABSearch();
-        void StartSearch(Board &b, Depth max_depth, long allowed_time, int num_threads);
+        void StartSearch(Board &b, Depth max_depth, long allowed_time, int num_threads, bool fixed_timer);
         [[nodiscard]] std::string GetSearchInfo(Board & board);
         [[nodiscard]] std::string GetBestMove() const;
         [[nodiscard]] std::string GetCurrMoveInfo(Move move, int num)  const;
@@ -24,8 +24,6 @@ namespace Meetra {
         [[nodiscard]] inline bool IsSearching() const { return run; }
 
     private:
-        std::string ExperimentalGetSearchInfo(Board &board, Depth depth);
-        void ExperimentalStartSearch(Board &board, Depth max_depth, long allowed_time, int num_threads);
         void InitSearch(Board &board);
         Score QuiescenceSearch(Board &board, Score alpha, Score beta, Depth depth);
         Score NegaMax(Board &board, Score alpha, Score beta, Depth depth, Depth ply);
@@ -44,13 +42,11 @@ namespace Meetra {
         struct MoveAndEval {
             Move move;
             Score score;
-            Depth depth_searched;
         };
 
         MoveAndEval root_moves[MAX_LEGAL_MOVES];
         int root_moves_cnt;
 
-        //std::pair<Score, Move> score_move_pair[MAX_LEGAL_MOVES];
         ulong normal_nodes;
         ulong qsearch_nodes;
         ulong tt_hits;
