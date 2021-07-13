@@ -89,7 +89,7 @@ namespace Meetra {
 
     Score ABSearch::NegaMax(Board &board, Score alpha, Score beta, Depth depth, Depth ply) {
 
-        if (board.IsRepetition() || board.Ply() >= 75) {
+        if (board.IsRepetition() || board.Ply() >= 50) {
             return DRAW_SCORE;
         } else if (depth == 0) {
             return QuiescenceSearch(board, alpha, beta, 0);

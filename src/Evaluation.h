@@ -8,7 +8,7 @@ namespace Meetra{
 #define POSITIVE_INF 32000
 #define NEGATIVE_INF (-32000)
 #define MATE_SCORE 31000
-#define DRAW_SCORE 0
+#define DRAW_SCORE (70)
 
     inline bool IsScoreMate(Score score){
         return std::abs(score) >= MATE_SCORE - MAX_SEARCH_DEPTH;
