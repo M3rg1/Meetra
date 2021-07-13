@@ -18,7 +18,7 @@ namespace Meetra {
         TT8MB =     1048576, //800000
     };
 
-#define DEFAULT_TT_SIZE TT128MB
+#define DEFAULT_TT_SIZE TT64MB
 
     enum EntryFlag : uint8_t {
         EXACT_SCORE, ALPHA, BETA

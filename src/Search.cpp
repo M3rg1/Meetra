@@ -20,7 +20,6 @@ namespace Meetra {
 
     void ABSearch::InitSearch(Board &board) {
         tt.NewSearch();
-        tt_hits = 0;
         normal_nodes = 0;
         qsearch_nodes = 0;
         qsearch_depth = 0;
@@ -65,6 +64,12 @@ namespace Meetra {
                 if (!run) {
                     continue;
                 }
+                // TODO fix checmakte -> there might be multiple same length mates stores now with multithreading
+                //  cause multiple threads will finish at the same time and find a same length mate
+                //  we need to not allow any more writes once mate is found and exit
+                //  and also repetition still not properly found
+
+                // ooooooor maybe when it finds mate it doesnt search anymote so it doesnt see the repetition
                 root_moves[curr_move_num].score = score;
             }
 
@@ -84,7 +89,7 @@ namespace Meetra {
 
     Score ABSearch::NegaMax(Board &board, Score alpha, Score beta, Depth depth, Depth ply) {
 
-        if (board.IsRepetition() || board.Ply() >= 50) {
+        if (board.IsRepetition() || board.Ply() >= 75) {
             return DRAW_SCORE;
         } else if (depth == 0) {
             return QuiescenceSearch(board, alpha, beta, 0);
@@ -92,7 +97,6 @@ namespace Meetra {
 
         Score score = tt.ProbeEval(board.GetZobristHash(), alpha, beta, depth, ply);
         if (score != NOT_FOUND) {
-            tt_hits++;
             return score;
         }
 

@@ -49,7 +49,7 @@ namespace Meetra {
                     return false;
                 } else if (board_history[i].zobrist_hash == zobrist_hash) {
                     rep++;
-                    if (rep > 1) {
+                    if (rep > 0) {
                         return true;
                     }
                 }

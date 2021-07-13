@@ -88,7 +88,14 @@ namespace Meetra {
 
         Key32 key_32 = Make32Key(key);
         auto ret = NOT_FOUND;
+        // https://en.cppreference.com/w/cpp/atomic/atomic_flag spinlock imple example
         // TODO make a lock for each bucket for multithreading
+        //  neco jako while(this_bucket->is_locked) {wait}
+        //  is locked bude obycejny (atomic) bool, ktery proste nastavim na true kdyz zacnu pracovat s bucketem
+        //  a false kdyz ho opustim
+        //  a dokud je true, tak nikdo nesmi vstoupit, jakmile je false tak ho muzu nastavit na true a vstoupit
+        //  akorat musi teda byt atomic
+        //  kazdy bucket ho bude mit, tj budu muset udelat nejaky struct bucket - ve kterme budou 4 structy entry
 #pragma omp critical
         {
             for (auto i = 0; i < BUCKET_SIZE; i++) {

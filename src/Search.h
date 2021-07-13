@@ -46,10 +46,8 @@ namespace Meetra {
 
         MoveAndEval root_moves[MAX_LEGAL_MOVES];
         int root_moves_cnt;
-
         ulong normal_nodes;
         ulong qsearch_nodes;
-        ulong tt_hits;
         Depth qsearch_depth;
         Depth curr_max_depth;
         long timer_start;
