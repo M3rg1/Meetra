@@ -25,11 +25,9 @@ namespace Meetra {
         void StopCommand();
         void QuitCommand();
 
-        void InitSearchOptions(StringTokenStream &sts);
-        void ResetSearchOptions();
-        void InitSearchTimer();
+        ABSearch::SearchSettings InitSearchOptions(StringTokenStream &sts);
         void MakeUciMove(const std::string& move_string);
-        void ParseSearchOptions(StringTokenStream &sts);
+        void ParseSearchOptions(StringTokenStream &sts, ABSearch::SearchSettings &settings);
 
 
         static std::mutex output_mtx;
@@ -37,16 +35,6 @@ namespace Meetra {
         Board board;
         bool listen;
         ABSearch search;
-
-        long search_timer;
-        int white_time;
-        int black_time;
-        int white_increment;
-        int black_increment;
-        int depth;
-        bool fixed_depth;
-        bool infinite;
-        bool fixed_timer;
     };
 
 }

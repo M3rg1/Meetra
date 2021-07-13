@@ -40,10 +40,11 @@ namespace Meetra {
 
         } while (listen && !std::cin.eof());
 
+        // TODO fix this have some sort of terminating function that waits for everything (also call it in the quit command i guess)
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
-    void UciHandler::SendToGui(const std::string& data){
+    void UciHandler::SendToGui(const std::string &data) {
         std::scoped_lock<std::mutex> lock{output_mtx};
         std::cout << data << std::endl;
     }
@@ -61,17 +62,15 @@ namespace Meetra {
         if (search.IsSearching()) {
             return;
         }
-
-        InitSearchOptions(sts);
-
-        ThreadPool::PushTask([&]() {
-            search.StartSearch(board, depth, search_timer, DEFAULT_SEARCH_THREADS, fixed_timer);
+        ABSearch::SearchSettings settings = InitSearchOptions(sts);
+        ThreadPool::PushTask([&, settings]() {
+            search.StartSearch(settings);
         });
     }
 
     void UciHandler::PerftCommand(StringTokenStream &sts) {
         if (sts.HasNext()) {
-            depth = std::stoi(sts.NextToken());
+            Depth depth = std::stoi(sts.NextToken());
             RunPerft(depth, board);
         }
     }
@@ -135,61 +134,37 @@ namespace Meetra {
         }
     }
 
-    void UciHandler::InitSearchOptions(StringTokenStream &sts) {
-        ResetSearchOptions();
-        ParseSearchOptions(sts);
-        InitSearchTimer();
+    ABSearch::SearchSettings UciHandler::InitSearchOptions(StringTokenStream &sts) {
+        ABSearch::SearchSettings settings;
+        settings.max_allowed_depth = DEFAULT_SEARCH_DEPTH;
+        settings.allowed_time = DEFAULT_SEARCH_TIME;
+        settings.info_to_ui_ms_timer = DEFAULT_UI_SPAM;
+        settings.multi_pv = 1;
+        settings.board = board;
+        ParseSearchOptions(sts, settings);
+        return settings;
     }
 
-    void UciHandler::ParseSearchOptions(StringTokenStream &sts){
+    void UciHandler::ParseSearchOptions(StringTokenStream &sts, ABSearch::SearchSettings &settings) {
+        settings.fixed_timer = false;
         while (sts.HasNext()) {
             std::string token = sts.NextToken();
-            if (token == "wtime") white_time = std::stoi(sts.NextToken());
-            else if (token == "btime") black_time = std::stoi(sts.NextToken());
-            else if (token == "winc") white_increment = std::stoi(sts.NextToken());
-            else if (token == "binc") black_increment = std::stoi(sts.NextToken());
+            if (token == "wtime") settings.white_time = std::stoi(sts.NextToken());
+            else if (token == "btime") settings.black_time = std::stoi(sts.NextToken());
+            else if (token == "winc") settings.white_increment = std::stoi(sts.NextToken());
+            else if (token == "binc") settings.black_increment = std::stoi(sts.NextToken());
             else if (token == "movetime") {
-                depth = MAX_SEARCH_DEPTH;
-                fixed_timer = true;
-                search_timer = std::stoi(sts.NextToken());
+                settings.max_allowed_depth = MAX_SEARCH_DEPTH;
+                settings.fixed_timer = true;
+                settings.allowed_time = std::stoi(sts.NextToken());
             } else if (token == "infinite") {
-                depth = MAX_SEARCH_DEPTH;
-                infinite = true;
-                search_timer = INFINITE_TIMER;
+                settings.max_allowed_depth = MAX_SEARCH_DEPTH;
+                settings.infinite = true;
             } else if (token == "depth") {
-                depth = std::stoi(sts.NextToken());
-                fixed_depth = true;
-                search_timer = INFINITE_TIMER;
+                settings.max_allowed_depth = std::stoi(sts.NextToken());
+                settings.infinite = true;
             }
             //else if (token == "ponder") infinite = true; - need to implement ponderhit command for this (there we set search_timer)
         }
     }
-
-    void UciHandler::InitSearchTimer() {
-
-        if(infinite || fixed_depth || fixed_timer){
-            return;
-        }
-
-        int time_left = board.ColorToMove() == WHITE ? white_time : black_time;
-        if (time_left) {
-            int moves_made = std::min(board.MovesMadeCount() + 1, 10);
-            double factor = 2.0 - moves_made / 10.0;
-            double target = static_cast<double>(time_left) / 50.0 - moves_made;
-            search_timer = static_cast<long>(factor * target);
-        }
-    }
-
-    void UciHandler::ResetSearchOptions() {
-        search_timer = DEFAULT_SEARCH_TIME;
-        white_time = 0;
-        black_time = 0;
-        white_increment = 0;
-        black_increment = 0;
-        depth = DEFAULT_SEARCH_DEPTH;
-        fixed_depth = false;
-        infinite = false;
-        fixed_timer = false;
-    }
-
 }

@@ -10,13 +10,30 @@ namespace Meetra {
     class ABSearch {
 
     public:
+
+        struct SearchSettings {
+            Board board;
+            int multi_pv;
+            Depth max_allowed_depth;
+            bool fixed_timer;
+            bool infinite;
+            long allowed_time;
+
+            long white_time;
+            long black_time;
+            long white_increment;
+            long black_increment;
+
+            long info_to_ui_ms_timer;
+        };
+
         ABSearch();
-        void StartSearch(Board board, Depth max_depth, long allowed_time, int num_threads, bool fixed_timer);
-        [[nodiscard]] std::string GetSearchInfo(Board & board);
+        void StartSearch(SearchSettings settings);
+        [[nodiscard]] std::string GetSearchInfo(Board &board);
         [[nodiscard]] std::string GetBestMove() const;
-        [[nodiscard]] std::string GetCurrMoveInfo(Move move, int num)  const;
+        [[nodiscard]] std::string GetCurrMoveInfo(Move move, int num) const;
         [[nodiscard]] std::string GetUpdateSearchInfo() const;
-        void RetrievePv(Board & board, Move *pv_line, Depth depth);
+        void SetNumThreads(int num_threads);
         void ResizeTT(TTSize size);
         void ClearTT();
 
@@ -24,12 +41,14 @@ namespace Meetra {
         [[nodiscard]] inline bool IsSearching() const { return run; }
 
     private:
-        void InitSearch(Board &board);
+        void InitSearchTimer();
+        void InitSearch(SearchSettings &settings);
         Score QuiescenceSearch(Board &board, Score alpha, Score beta, Depth depth);
         Score NegaMax(Board &board, Score alpha, Score beta, Depth depth, Depth ply);
+        void RetrievePv(Board &board, Move *pv_line, Depth depth);
         void SortRootNodes();
         void GenRootNodes(Board &board);
-        [[nodiscard]] bool EnoughTimeLeft(long allowed_time) const;
+        [[nodiscard]] bool EnoughTimeLeft() const;
         [[nodiscard]] long ElapsedTimeMs() const;
 
 
@@ -44,6 +63,8 @@ namespace Meetra {
             Score score;
         };
 
+
+        SearchSettings settings;
 
         Score best_score;
         Move best_move;

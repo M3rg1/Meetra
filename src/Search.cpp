@@ -12,53 +12,70 @@
 
 namespace Meetra {
 
-    // TODO really search should just take in some options object with all the settings like how many threads,
-    //  what the multi_pv is, depth, time, how often update gui with info, delay before first currmove etc.
-#define MULTI_PV 1
 
     ABSearch::ABSearch() {
         run = false;
+        omp_set_dynamic(0);
+        omp_set_num_threads(DEFAULT_SEARCH_THREADS);
     }
 
-    void ABSearch::InitSearch(Board &board) {
+    void ABSearch::InitSearch(SearchSettings &s) {
+        settings = s;
         tt.NewSearch();
         normal_nodes = 0;
         qsearch_nodes = 0;
         qsearch_depth = 0;
         curr_max_depth = 0;
         root_moves_cnt = 0;
+        GenRootNodes(settings.board);
+        SortRootNodes();
+        best_score = root_moves[0].score;
+        best_move = root_moves[0].move;
+        settings.max_allowed_depth = std::min(settings.max_allowed_depth, MAX_SEARCH_DEPTH);
         using namespace std::chrono;
         timer_start = time_point_cast<milliseconds>(system_clock::now()).time_since_epoch().count();
-        GenRootNodes(board);
-        SortRootNodes();
-    }
 
-    void ABSearch::StartSearch(Board board, Depth max_depth, long allowed_time, int num_threads, bool fixed_timer) {
 
-        run = true;
 
-        if (allowed_time != INFINITE_TIMER && !fixed_timer) {
-            search_timer.SetTimeout([&]() { StopSearch(); }, allowed_time);
+        InitSearchTimer();
+        if (!settings.infinite && !settings.fixed_timer) {
+            search_timer.SetTimeout([&]() { StopSearch(); }, settings.allowed_time);
         }
         info_timer.SetInterval([&]() {
             UciHandler::SendToGui(GetUpdateSearchInfo());
-        }, 1000);
+        }, settings.info_to_ui_ms_timer);
+    }
 
-        // board should be as well inside the search options settings struct ill make
-        InitSearch(board);
-        omp_set_dynamic(0);
+    void ABSearch::SetNumThreads(int num_threads){
         omp_set_num_threads(std::min(MAX_SEARCH_THREADS, num_threads));
-        max_depth = std::min(max_depth, MAX_SEARCH_DEPTH);
+    }
 
-        best_score = root_moves[0].score;
-        best_move = root_moves[0].move;
+    void ABSearch::InitSearchTimer() {
+        if (settings.infinite || settings.fixed_timer) {
+            return;
+        }
 
-        for (curr_max_depth = 1; curr_max_depth <= max_depth; curr_max_depth++, qsearch_depth = 0) {
+        auto time_left = settings.board.ColorToMove() == WHITE ? settings.white_time : settings.black_time;
+        if (time_left) {
+            int moves_made = std::min(settings.board.MovesMadeCount() + 1, 10);
+            double factor = 2.0 - moves_made / 10.0;
+            double target = static_cast<double>(time_left) / 50.0 - moves_made;
+            settings.allowed_time = static_cast<long>(factor * target);
+        }
+    }
+
+    void ABSearch::StartSearch(SearchSettings s) {
+
+        run = true;
+        InitSearch(s);
+
+        for (curr_max_depth = 1; curr_max_depth <= settings.max_allowed_depth; curr_max_depth++) {
 
             Score alpha = NEGATIVE_INF;
             Score beta = POSITIVE_INF;
+            qsearch_depth = 0;
 
-#pragma omp parallel for default(none) ordered schedule(static, 1) firstprivate(board) shared(alpha, beta)
+#pragma omp parallel for default(none) ordered schedule(static, 1) firstprivate(settings) shared(alpha, beta)
             for (int curr_move_num = 0; curr_move_num < root_moves_cnt; curr_move_num++) {
 
                 Move curr_move = root_moves[curr_move_num].move;
@@ -67,38 +84,37 @@ namespace Meetra {
                     UciHandler::SendToGui(GetCurrMoveInfo(curr_move, curr_move_num));
                 }
 
-                board.MakeMove(curr_move);
+                settings.board.MakeMove(curr_move);
                 normal_nodes++;
-                Score score = -NegaMax(board, -beta, -alpha, curr_max_depth - 1, 1);
-                board.UnmakeMove(curr_move);
+                Score score = -NegaMax(settings.board, -beta, -alpha, curr_max_depth - 1, 1);
+                settings.board.UnmakeMove(curr_move);
 
                 if (run) {
                     root_moves[curr_move_num].score = score;
 #pragma omp critical
-                    {
-                        if (score > alpha) {
-                            alpha = score;
-                            if (alpha > best_score) {
-                                best_move = curr_move;
-                                best_score = score;
-                            }
+                    if (score > alpha) {
+                        alpha = score;
+                        if (alpha > best_score) {
+                            best_move = curr_move;
+                            best_score = score;
                         }
                     }
                 }
             }
 
             SortRootNodes();
+            std::cout << " Hellow? " << std::endl;
             if (run) {
                 best_move = root_moves[0].move;
                 best_score = root_moves[0].score;
-                tt.SaveEval(board.GetZobristHash(), best_score, curr_max_depth, best_score, EXACT_SCORE, 0);
-                if(IsScoreMate(best_score)){
+                tt.SaveEval(settings.board.GetZobristHash(), best_score, curr_max_depth, best_move, EXACT_SCORE, 0);
+                if (IsScoreMate(best_score)) {
                     run = false;
                 }
             }
-            UciHandler::SendToGui(GetSearchInfo(board));
+            UciHandler::SendToGui(GetSearchInfo(settings.board));
 
-            if (!run || !EnoughTimeLeft(allowed_time) || IsScoreMate(best_move)) {
+            if (!run || !EnoughTimeLeft() || IsScoreMate(best_move)) {
                 break;
             }
         }
@@ -196,8 +212,8 @@ namespace Meetra {
         return alpha;
     }
 
-    bool ABSearch::EnoughTimeLeft(long allowed_time) const {
-        if (allowed_time == INFINITE_TIMER || allowed_time > ElapsedTimeMs() * 2) {
+    bool ABSearch::EnoughTimeLeft() const {
+        if (settings.infinite || settings.fixed_timer || settings.allowed_time > ElapsedTimeMs() * 2) {
             return true;
         }
         return false;
@@ -288,7 +304,7 @@ namespace Meetra {
 
         std::stringstream ss;
         Move pv_stack[MAX_SEARCH_DEPTH];
-        auto pvs_to_send = std::min(MULTI_PV, root_moves_cnt);
+        auto pvs_to_send = std::min(settings.multi_pv, root_moves_cnt);
         for (auto i = 0; i < pvs_to_send; i++) {
             ss << "info multipv " << i + 1
                << " depth " << +curr_max_depth
