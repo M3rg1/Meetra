@@ -103,7 +103,6 @@ namespace Meetra {
             }
 
             SortRootNodes();
-            std::cout << " Hellow? " << std::endl;
             if (run) {
                 best_move = root_moves[0].move;
                 best_score = root_moves[0].score;
