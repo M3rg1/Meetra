@@ -47,7 +47,7 @@ namespace Meetra {
         Score NegaMax(Board &board, Score alpha, Score beta, Depth depth, Depth ply);
         void RetrievePv(Board &board, Move *pv_line, Depth depth);
         void SortRootNodes();
-        void GenRootNodes(Board &board);
+        void GenRootNodes();
         [[nodiscard]] bool EnoughTimeLeft() const;
         [[nodiscard]] long ElapsedTimeMs() const;
 

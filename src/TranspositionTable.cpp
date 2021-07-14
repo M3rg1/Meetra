@@ -19,13 +19,15 @@ namespace Meetra {
         Key32 key_32 = Make32Key(key);
         TTEntry *entry_to_write;
         int worst_entry_score = 1000000;
-
         score = RemoveMatePly(score, ply);
 
 #pragma omp critical
         {
             for (auto i = 0; i < BUCKET_SIZE; i++) {
                 auto index = (key + i) & index_mask;
+                // TODO a good way to test if my & index is working is to let it analyze for a long time
+                //  and see if it reaches 100% usage
+                //  actually better to just print the entries var, since usage is rounded
                 TTEntry *curr_entry = &table[index];
 
                 if (curr_entry->Get32Key() == key_32) {

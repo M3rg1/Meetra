@@ -27,7 +27,7 @@ namespace Meetra {
         qsearch_depth = 0;
         curr_max_depth = 0;
         root_moves_cnt = 0;
-        GenRootNodes(settings.board);
+        GenRootNodes();
         SortRootNodes();
         best_score = root_moves[0].score;
         best_move = root_moves[0].move;
@@ -251,18 +251,18 @@ namespace Meetra {
         board.UnmakeMove(move);
     }
 
-    void ABSearch::GenRootNodes(Board &board) {
-        MoveGen move_gen(board);
+    void ABSearch::GenRootNodes() {
+        MoveGen move_gen(settings.board);
         Move m;
         while ((m = move_gen.GetNextMove<false>())) {
-            if (!board.MakeMove(m)) {
-                board.UnmakeMove(m);
+            if (!settings.board.MakeMove(m)) {
+                settings.board.UnmakeMove(m);
                 continue;
             }
-            Score s = tt.ProbeEval(board.GetZobristHash(), NEGATIVE_INF, POSITIVE_INF, 0, 0);
-            board.UnmakeMove(m);
+            Score s = tt.ProbeEval(settings.board.GetZobristHash(), NEGATIVE_INF, POSITIVE_INF, 0, 0);
+            settings.board.UnmakeMove(m);
             if (s == NOT_FOUND) {
-                s = MoveEval(board, m);
+                s = MoveEval(settings.board, m);
             }
             root_moves[root_moves_cnt].move = m;
             root_moves[root_moves_cnt].score = s;
