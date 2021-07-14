@@ -40,7 +40,7 @@ namespace Meetra {
         best_move = INVALID_MOVE;
 
         GenRootNodes();
-        SortRootNodes();
+        SortRootMoves();
         settings.max_allowed_depth = std::min(settings.max_allowed_depth, MAX_SEARCH_DEPTH);
 
         InitSearchTimer();
@@ -91,24 +91,24 @@ namespace Meetra {
 
                 Move curr_move = root_moves[curr_move_num].move;
 
-                if (run && show_currmove && ElapsedTimeMs() > 1000) {
+                if (show_currmove && ElapsedTimeMs() > 1000) {
                     UciHandler::SendToGui(GetCurrMoveInfo(curr_move, curr_move_num, settings.board));
                 }
 
                 settings.board.MakeMove(curr_move);
                 normal_nodes++;
-                Score score = -NegaMax(settings.board, -beta, -alpha, curr_max_depth - 1, 1);
+                Score score = -NegaMax(settings.board, -beta, -alpha, curr_max_depth - 1, 2);
                 settings.board.UnmakeMove(curr_move);
 
                 if (run) {
                     root_moves[curr_move_num].score = score;
                     if (multi_pv > 1) {
                         continue;
-                    } else if (curr_move == best_move) {
-                        best_score = score;
                     } else if (score > best_score) {
                         best_score = score;
                         best_move = curr_move;
+                    } else if (curr_move == best_move) {
+                        best_score = score;
                     }
                     if (score > alpha) {
                         alpha = score;
@@ -116,11 +116,11 @@ namespace Meetra {
                 }
             }
 
-            SortRootNodes();
+            SortRootMoves();
             if (run) {
                 best_move = root_moves[0].move;
                 best_score = root_moves[0].score;
-                //tt.SaveEval(settings.board.GetZobristHash(), best_score, curr_max_depth, best_move, EXACT_SCORE, 0);
+                tt.SaveEval(settings.board.GetZobristHash(), best_score, curr_max_depth, best_move, EXACT_SCORE, 1);
             }
 
             if (curr_max_depth > plies_muted) {
@@ -265,7 +265,7 @@ namespace Meetra {
                 settings.board.UnmakeMove(m);
                 continue;
             }
-            Score s = tt.ProbeEval(settings.board.GetZobristHash(), NEGATIVE_INF, POSITIVE_INF, 0, 0);
+            Score s = tt.ProbeEval(settings.board.GetZobristHash(), NEGATIVE_INF, POSITIVE_INF, 0, 1);
             settings.board.UnmakeMove(m);
             if (s == NOT_FOUND) {
                 s = MoveEval(settings.board, m);
@@ -276,7 +276,7 @@ namespace Meetra {
         }
     }
 
-    void ABSearch::SortRootNodes() {
+    void ABSearch::SortRootMoves() {
         std::stable_sort(std::execution::seq, root_moves, root_moves + root_moves_cnt,
                          [](const MoveAndEval &mae1, const MoveAndEval &mae2) {
                              return mae1.score > mae2.score;
@@ -327,10 +327,10 @@ namespace Meetra {
 
             if (score >= MATE_SCORE - MAX_SEARCH_DEPTH) {
                 mate_length_ply = static_cast<int>(MATE_SCORE - score);
-                ss << "mate " << (mate_length_ply + 1) / 2;
+                ss << "mate " << (mate_length_ply) / 2;
             } else if (score <= -MATE_SCORE + MAX_SEARCH_DEPTH) {
                 mate_length_ply = static_cast<int>(MATE_SCORE + score);
-                ss << "mate " << -(mate_length_ply + 1) / 2;
+                ss << "mate " << -(mate_length_ply) / 2;
             } else {
                 ss << "cp " << score;
             }

@@ -130,6 +130,8 @@ namespace Meetra {
         if (option == "hash") {
             if (sts.HasNext() && sts.NextToken() == "value") {
                 auto hash_size = std::stoi(sts.NextToken());
+                //std::min(hash_size, MAX_HASH_SIZE);
+                //std::max(hash_size, MIN_HASH_SIZE;
                 //search.SetTTSize(hash_size);
             }
         } else if (option == "clear") {
