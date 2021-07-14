@@ -24,34 +24,39 @@ namespace Meetra {
     }
 
     void ABSearch::InitSearch(SearchSettings &s) {
+
         settings = s;
+
+        using namespace std::chrono;
+        timer_start = time_point_cast<milliseconds>(system_clock::now()).time_since_epoch().count();
+
         tt.NewSearch();
         normal_nodes = 0;
         qsearch_nodes = 0;
         qsearch_depth = 0;
         curr_max_depth = 0;
         root_moves_cnt = 0;
-        GenRootNodes();
-        SortRootNodes();
         best_score = NEGATIVE_INF;
         best_move = INVALID_MOVE;
-        settings.max_allowed_depth = std::min(settings.max_allowed_depth, MAX_SEARCH_DEPTH);
-        using namespace std::chrono;
-        timer_start = time_point_cast<milliseconds>(system_clock::now()).time_since_epoch().count();
 
+        GenRootNodes();
+        SortRootNodes();
+        settings.max_allowed_depth = std::min(settings.max_allowed_depth, MAX_SEARCH_DEPTH);
 
         InitSearchTimer();
+
         if (!settings.infinite) {
             search_timer.SetTimeout([&]() { StopSearch(); }, settings.allowed_time);
         }
+
         info_timer.SetInterval([&]() {
             UciHandler::SendToGui(GetUpdateSearchInfo());
         }, settings.info_to_ui_ms_timer);
-
     }
 
 
     void ABSearch::InitSearchTimer() {
+
         if (settings.infinite || settings.fixed_timer) {
             return;
         }
@@ -97,12 +102,16 @@ namespace Meetra {
 
                 if (run) {
                     root_moves[curr_move_num].score = score;
-                    if (multi_pv == 1 && score > alpha) {
+                    if (multi_pv > 1) {
+                        continue;
+                    } else if (curr_move == best_move) {
+                        best_score = score;
+                    } else if (score > best_score) {
+                        best_score = score;
+                        best_move = curr_move;
+                    }
+                    if (score > alpha) {
                         alpha = score;
-                        if (alpha > best_score) {
-                            best_move = curr_move;
-                            best_score = score;
-                        }
                     }
                 }
             }
@@ -111,7 +120,7 @@ namespace Meetra {
             if (run) {
                 best_move = root_moves[0].move;
                 best_score = root_moves[0].score;
-                tt.SaveEval(settings.board.GetZobristHash(), best_score, curr_max_depth, best_move, EXACT_SCORE, 0);
+                //tt.SaveEval(settings.board.GetZobristHash(), best_score, curr_max_depth, best_move, EXACT_SCORE, 0);
             }
 
             if (curr_max_depth > plies_muted) {
