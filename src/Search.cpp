@@ -110,7 +110,7 @@ namespace Meetra {
             }
             UciHandler::SendToGui(GetSearchInfo(settings.board));
 
-            if (!run || !EnoughTimeLeft() || IsScoreMate(best_move)) {
+            if (!run || !EnoughTimeLeft()) {
                 break;
             }
         }

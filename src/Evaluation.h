@@ -10,10 +10,6 @@ namespace Meetra{
 #define MATE_SCORE 31000
 #define DRAW_SCORE (0)
 
-    inline bool IsScoreMate(Score score){
-        return std::abs(score) >= MATE_SCORE - MAX_SEARCH_DEPTH;
-    }
-
     Score MoveEval(const Board &board, Move move);
     Score MoveMaterialEval(const Board &board, Move move);
     Score MovePositionEval(const Board &board, Move move);
