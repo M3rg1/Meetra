@@ -18,7 +18,7 @@ namespace Meetra {
 
         Key32 key_32 = Make32Key(key);
         TTEntry *entry_to_write;
-        int worst_entry_score = 100000;
+        int worst_entry_score = 1000000;
 
         score = RemoveMatePly(score, ply);
 
@@ -29,25 +29,27 @@ namespace Meetra {
                 TTEntry *curr_entry = &table[index];
 
                 if (curr_entry->Get32Key() == key_32) {
-                    entry_to_write = nullptr;
-                    if (curr_entry->GetEpoch() != current_epoch) {
-                        curr_entry->SetEpoch(current_epoch);
-                        entries++;
-                    }
-                    if (depth >= curr_entry->GetDepth() || flag == EXACT_SCORE) {
+                    if (curr_entry->GetEpoch() != current_epoch || flag == EXACT_SCORE ||
+                        (depth > curr_entry->GetDepth() && curr_entry->GetFlag() != EXACT_SCORE)) {
                         entry_to_write = curr_entry;
-                        //curr_entry->SaveEntry(key_32, score, depth, move, flag, current_epoch);
+                    } else {
+                        entry_to_write = nullptr;
                     }
-                    //return;
                     break;
                 }
 
                 int entry_score = static_cast<int>(curr_entry->GetDepth());
                 if (curr_entry->GetEpoch() < current_epoch) {
-                    entry_score -= (current_epoch - curr_entry->GetEpoch()) << 5;
+                    if (curr_entry->GetEpoch() == 0) {
+                        entry_to_write = curr_entry;
+                        break;
+                    } else {
+                        entry_score -= (current_epoch - curr_entry->GetEpoch()) << 6;
+                    }
                 }
+                // two epochs back = 2 << 6 = 128, but 3 = 192 == keeping exact entries 2 epochs old
                 if (curr_entry->GetFlag() == EXACT_SCORE) {
-                    entry_score += 1000;
+                    entry_score += 150;
                 }
                 if (entry_score < worst_entry_score) {
                     worst_entry_score = entry_score;
@@ -56,7 +58,7 @@ namespace Meetra {
             }
 
             if (entry_to_write) {
-                if(entry_to_write->GetEpoch() != current_epoch){
+                if (entry_to_write->GetEpoch() != current_epoch) {
                     entries++;
                 }
                 entry_to_write->SaveEntry(key_32, score, depth, move, flag, current_epoch);
@@ -65,7 +67,7 @@ namespace Meetra {
     }
 
     Score TranspositionTable::RemoveMatePly(Score score, Depth ply) const {
-        if(score > MATE_SCORE - MAX_SEARCH_DEPTH){
+        if (score > MATE_SCORE - MAX_SEARCH_DEPTH) {
             return score + ply;
         } else if (score < -MATE_SCORE + MAX_SEARCH_DEPTH) {
             return score - ply;
@@ -75,7 +77,7 @@ namespace Meetra {
     }
 
     Score TranspositionTable::AddMatePly(Score score, Depth ply) const {
-        if(score >= MATE_SCORE - MAX_SEARCH_DEPTH){
+        if (score >= MATE_SCORE - MAX_SEARCH_DEPTH) {
             return score - ply;
         } else if (score <= -MATE_SCORE + MAX_SEARCH_DEPTH) {
             return score + ply;
@@ -89,13 +91,6 @@ namespace Meetra {
         Key32 key_32 = Make32Key(key);
         auto ret = NOT_FOUND;
         // https://en.cppreference.com/w/cpp/atomic/atomic_flag spinlock imple example
-        // TODO make a lock for each bucket for multithreading
-        //  neco jako while(this_bucket->is_locked) {wait}
-        //  is locked bude obycejny (atomic) bool, ktery proste nastavim na true kdyz zacnu pracovat s bucketem
-        //  a false kdyz ho opustim
-        //  a dokud je true, tak nikdo nesmi vstoupit, jakmile je false tak ho muzu nastavit na true a vstoupit
-        //  akorat musi teda byt atomic
-        //  kazdy bucket ho bude mit, tj budu muset udelat nejaky struct bucket - ve kterme budou 4 structy entry
 #pragma omp critical
         {
             for (auto i = 0; i < BUCKET_SIZE; i++) {
@@ -121,7 +116,7 @@ namespace Meetra {
     }
 
     void TranspositionTable::NewSearch() {
-        if (current_epoch == 63) {
+        if (current_epoch > 62) {
             Clear();
         }
         entries = 0;

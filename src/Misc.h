@@ -8,12 +8,12 @@ namespace Meetra{
 #define STARTPOS_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 #define MAX_SEARCH_DEPTH Depth(128)
 #define DEFAULT_SEARCH_DEPTH Depth(32)
-#define DEFAULT_SEARCH_TIME (-1)
+#define DEFAULT_SEARCH_TIME 1000
 #define MAX_LEGAL_MOVES 128
 #define MAX_GAME_LENGTH 512
 #define DEFAULT_SEARCH_THREADS 4
 #define DEFAULT_UI_SPAM 1000
-#define MAX_SEARCH_THREADS 8
+#define MAX_SEARCH_THREADS 16
 
     // i think this should e define rather than functions
     // or mby not because of GetOptions? idk will see when i implement options
