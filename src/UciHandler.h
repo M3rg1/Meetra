@@ -22,6 +22,7 @@ namespace Meetra {
         void UciNewGameCommand();
         void PositionCommand(StringTokenStream &sts);
         void PerftCommand(StringTokenStream &sts);
+        void SetOptionCommand(StringTokenStream &sts);
         void StopCommand();
         void QuitCommand();
 

@@ -15,6 +15,10 @@ namespace Meetra {
 
     ABSearch::ABSearch() {
         run = false;
+        show_currline = false;
+        multi_pv = 1;
+        show_currmove = true;
+        plies_muted = 1;
         omp_set_dynamic(0);
         omp_set_num_threads(DEFAULT_SEARCH_THREADS);
     }
@@ -46,9 +50,6 @@ namespace Meetra {
 
     }
 
-    void ABSearch::SetNumThreads(int num_threads) {
-        omp_set_num_threads(std::min(MAX_SEARCH_THREADS, num_threads));
-    }
 
     void ABSearch::InitSearchTimer() {
         if (settings.infinite || settings.fixed_timer) {
@@ -85,8 +86,8 @@ namespace Meetra {
 
                 Move curr_move = root_moves[curr_move_num].move;
 
-                if (run && ElapsedTimeMs() > 1000) {
-                    UciHandler::SendToGui(GetCurrMoveInfo(curr_move, curr_move_num));
+                if (run && show_currmove && ElapsedTimeMs() > 1000) {
+                    UciHandler::SendToGui(GetCurrMoveInfo(curr_move, curr_move_num, settings.board));
                 }
 
                 settings.board.MakeMove(curr_move);
@@ -96,7 +97,7 @@ namespace Meetra {
 
                 if (run) {
                     root_moves[curr_move_num].score = score;
-                    if (settings.multi_pv == 1 && score > alpha) {
+                    if (multi_pv == 1 && score > alpha) {
                         alpha = score;
                         if (alpha > best_score) {
                             best_move = curr_move;
@@ -112,7 +113,10 @@ namespace Meetra {
                 best_score = root_moves[0].score;
                 tt.SaveEval(settings.board.GetZobristHash(), best_score, curr_max_depth, best_move, EXACT_SCORE, 0);
             }
-            UciHandler::SendToGui(GetSearchInfo(settings.board));
+
+            if (curr_max_depth > plies_muted) {
+                UciHandler::SendToGui(GetSearchInfo(settings.board));
+            }
 
             if (!run || !EnoughTimeLeft()) {
                 break;
@@ -219,14 +223,6 @@ namespace Meetra {
         return false;
     }
 
-    void ABSearch::ResizeTT(TTSize size) {
-        tt.Resize(size);
-    }
-
-    void ABSearch::ClearTT() {
-        tt.Clear();
-    }
-
     std::string ABSearch::GetBestMove() const {
         std::string ret = "bestmove ";
         ret.append(GetMoveName(best_move));
@@ -304,7 +300,7 @@ namespace Meetra {
 
         std::stringstream ss;
         Move pv_stack[MAX_SEARCH_DEPTH];
-        auto pvs_to_send = std::min(settings.multi_pv, root_moves_cnt);
+        auto pvs_to_send = std::min(multi_pv, root_moves_cnt);
         for (auto i = 0; i < pvs_to_send; i++) {
             ss << "info";
             if (pvs_to_send > 1) ss << " multipv " << i + 1;
@@ -338,16 +334,27 @@ namespace Meetra {
             while ((pv_move = *pv_stack_ptr++)) {
                 ss << " " << GetMoveName(pv_move);
             }
+            ss << "\n";
         }
 
         return ss.str();
     }
 
-    std::string ABSearch::GetCurrMoveInfo(Move move, int num) const {
-        std::string ret = "info currmove ";
-        ret.append(GetMoveName(move));
-        ret.append(" currmovenumber ");
-        ret.append(std::to_string(num + 1));
-        return ret;
+    std::string ABSearch::GetCurrMoveInfo(Move move, int num, Board &board) {
+        Move pv_stack[MAX_SEARCH_DEPTH];
+        std::stringstream ss;
+        ss << "info currmove " << GetMoveName(move) << " currmovenumber " << (num + 1);
+        if (show_currline) {
+            ss << " currline " << GetMoveName(move);
+            board.MakeMove(move);
+            RetrievePv(board, pv_stack, curr_max_depth - 1);
+            board.UnmakeMove(move);
+            Move *pv_stack_ptr = pv_stack;
+            Move pv_move;
+            while ((pv_move = *pv_stack_ptr++)) {
+                ss << " " << GetMoveName(pv_move);
+            }
+        }
+        return ss.str();
     }
 }

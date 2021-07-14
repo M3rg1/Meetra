@@ -13,7 +13,6 @@ namespace Meetra {
 
         struct SearchSettings {
             Board board;
-            int multi_pv;
             Depth max_allowed_depth;
             bool fixed_timer;
             bool infinite;
@@ -31,13 +30,18 @@ namespace Meetra {
         void StartSearch(SearchSettings settings);
         [[nodiscard]] std::string GetSearchInfo(Board &board);
         [[nodiscard]] std::string GetBestMove() const;
-        [[nodiscard]] std::string GetCurrMoveInfo(Move move, int num) const;
+        [[nodiscard]] std::string GetCurrMoveInfo(Move move, int num, Board &board);
         [[nodiscard]] std::string GetUpdateSearchInfo() const;
-        void SetNumThreads(int num_threads);
-        void ResizeTT(TTSize size);
-        void ClearTT();
-
+        inline void SetNumThreads(int num_threads) {
+            //omp_set_num_threads(std::min(MAX_SEARCH_THREADS, num_threads));
+        }
+        inline void ClearTT() { tt.Clear(); }
+        inline void SetTTSize(size_t size_mb) { tt.Resize(size_mb); }
+        inline void ShowShowCurrLine(bool show) { show_currline = show; }
+        inline void SetPliesMuted(int ply_muted) { plies_muted = ply_muted; }
+        inline void ShowCurrMoveInfo(bool show) { show_currmove = show; }
         inline void StopSearch() { run = false; }
+        inline void SetMultiPv(int pv_num) { if(pv_num < 1) return; multi_pv = pv_num; }
         [[nodiscard]] inline bool IsSearching() const { return run; }
 
     private:
@@ -65,6 +69,10 @@ namespace Meetra {
 
 
         SearchSettings settings;
+        bool show_currline;
+        bool show_currmove;
+        int plies_muted;
+        int multi_pv;
 
         Score best_score;
         Move best_move;

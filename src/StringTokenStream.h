@@ -12,8 +12,9 @@ namespace Meetra {
     class StringTokenStream {
 
     public:
-        explicit StringTokenStream(std::string str, bool make_lower = false, char delimiter = ' ');
+        explicit StringTokenStream(std::string str, char delimiter = ' ');
         std::string NextToken();
+        void MakeLower();
         bool HasNext();
 
     private:

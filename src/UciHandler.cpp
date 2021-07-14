@@ -26,17 +26,20 @@ namespace Meetra {
             std::getline(std::cin, input);
             // TODO make lower for sts.GetNextToken - not for the entire string - so we can get the FEN properly capitalized
             // but other shit lowered
-            StringTokenStream sts(input, false);
+            StringTokenStream sts(input);
             token = sts.NextToken();
+
+            if(token != "position") sts.MakeLower();
 
             if (token == "uci") UciCommand();
             else if (token == "isready") IsReadyCommand();
             else if (token == "go") GoCommand(sts);
             else if (token == "position") PositionCommand(sts);
-            else if (token == "quit") QuitCommand();
+            else if (token == "setoption") SetOptionCommand(sts);
             else if (token == "stop") StopCommand();
             else if (token == "ucinewgame") UciNewGameCommand();
             else if (token == "perft") PerftCommand(sts);
+            else if (token == "quit") QuitCommand();
 
         } while (listen && !std::cin.eof());
 
@@ -82,6 +85,7 @@ namespace Meetra {
     void UciHandler::PositionCommand(StringTokenStream &sts) {
 
         std::string token = sts.NextToken();
+        std::transform(token.begin(), token.end(), token.begin(), ::tolower);
         std::string fen;
         if (token == "startpos") {
             fen = STARTPOS_FEN;
@@ -95,6 +99,7 @@ namespace Meetra {
 
         board = Board(fen);
 
+        sts.MakeLower();
         if (token == "moves") {
             while (sts.HasNext()) {
                 MakeUciMove(sts.NextToken());
@@ -119,6 +124,47 @@ namespace Meetra {
         search.ClearTT();
     }
 
+    void UciHandler::SetOptionCommand(StringTokenStream &sts) {
+        if (sts.NextToken() != "name") return;
+        std::string option = sts.NextToken();
+        if (option == "hash") {
+            if (sts.HasNext() && sts.NextToken() == "value") {
+                auto hash_size = std::stoi(sts.NextToken());
+                //search.SetTTSize(hash_size);
+            }
+        } else if (option == "clear") {
+            if (sts.HasNext() && sts.NextToken() == "hash") {
+                search.ClearTT();
+            }
+        } else if (option == "multipv") {
+            if (sts.HasNext() && sts.NextToken() == "value") {
+                auto pv_num = std::stoi(sts.NextToken());
+                search.SetMultiPv(pv_num);
+            }
+        } else if (option == "uci_showcurrline") {
+            if (sts.HasNext() && sts.NextToken() == "value") {
+                bool show = sts.NextToken() == "true";
+                search.ShowShowCurrLine(show);
+            }
+        } else if (option == "mute") {
+            if (sts.HasNext() && sts.NextToken() == "plies" && sts.HasNext() && sts.NextToken() == "value") {
+                auto plies_muted = std::stoi(sts.NextToken());
+                search.SetPliesMuted(plies_muted);
+            }
+        } else if (option == "cores") {
+            if (sts.HasNext() && sts.NextToken() == "value") {
+                auto num_threads = std::stoi(sts.NextToken());
+                search.SetNumThreads(num_threads);
+            }
+        } else if (option == "show") {
+            if (sts.HasNext() && sts.NextToken() == "current" && sts.HasNext() && sts.NextToken() == "move" &&
+                sts.HasNext() && sts.NextToken() == "value") {
+                bool show = sts.NextToken() == "true";
+                search.ShowCurrMoveInfo(show);
+            }
+        }
+    }
+
     void UciHandler::MakeUciMove(const std::string &move_string) {
         Move move_made = NewMoveFromName(move_string);
         MoveGen move_gen(board);
@@ -139,7 +185,6 @@ namespace Meetra {
         settings.max_allowed_depth = DEFAULT_SEARCH_DEPTH;
         settings.allowed_time = DEFAULT_SEARCH_TIME;
         settings.info_to_ui_ms_timer = DEFAULT_UI_SPAM;
-        settings.multi_pv = 1;
         settings.board = board;
         ParseSearchOptions(sts, settings);
         return settings;

@@ -8,7 +8,7 @@ namespace Meetra {
 
     // https://en.cppreference.com/w/cpp/atomic/atomic_flag spinlock
 
-    TranspositionTable::TranspositionTable(size_t size) : size(size) {
+    TranspositionTable::TranspositionTable(size_t size) : size_entries(size) {
         table = new TTEntry[sizeof(TTEntry) * size];
         index_mask = size - 1;
         Clear();
@@ -44,7 +44,7 @@ namespace Meetra {
                     entry_score -= (current_epoch - curr_entry->GetEpoch()) << 6;
                 }
             }
-            // two epochs back = 2 << 6 = 128, but 3 = 192 == keeping exact entries 2 epochs old
+            // two epochs back = 2 << 6 = 128, but 3 = 192 == keeping exact used_entries 2 epochs old
             if (curr_entry->GetFlag() == EXACT_SCORE) {
                 entry_score += 150;
             }
@@ -56,7 +56,7 @@ namespace Meetra {
 
         if (entry_to_write) {
             if (entry_to_write->GetEpoch() != current_epoch) {
-                entries++;
+                used_entries++;
             }
             entry_to_write->SaveEntry(key_32, score, depth, move, flag, current_epoch);
         }
@@ -112,22 +112,23 @@ namespace Meetra {
         if (current_epoch > 62) {
             Clear();
         }
-        entries = 0;
+        used_entries = 0;
         current_epoch++;
     }
 
-    void TranspositionTable::Resize(TTSize new_size) {
+    void TranspositionTable::Resize(size_t new_size_mb) {
+        // TODO convert from size mb to entries count
         delete[] table;
-        size = new_size;
-        index_mask = new_size - 1;
-        table = new TTEntry[sizeof(TTEntry) * new_size];
+        size_entries = new_size_mb;
+        index_mask = new_size_mb - 1;
+        table = new TTEntry[sizeof(TTEntry) * new_size_mb];
         Clear();
     }
 
     void TranspositionTable::Clear() {
-        entries = 0;
+        used_entries = 0;
         current_epoch = 0;
-        memset(table, 0, sizeof(TTEntry) * size);
+        memset(table, 0, sizeof(TTEntry) * size_entries);
     }
 
     Move TranspositionTable::GetPVMove(ZobristHash key) const {
