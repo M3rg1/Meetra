@@ -212,6 +212,7 @@ namespace Meetra {
                 settings.infinite = true;
             }
             //else if (token == "ponder") infinite = true; - need to implement ponderhit command for this (there we set search_timer)
+            //else if movestogo - thats when we get time increment
         }
     }
 }

@@ -45,6 +45,7 @@ namespace Meetra {
 
         InitSearchTimer();
 
+        // TODO timer se obcas rozije a prestane fungovat dokud se engine cely nerestartuje
         if (!settings.infinite) {
             search_timer.SetTimeout([&]() { StopSearch(); }, settings.allowed_time);
         }
@@ -77,12 +78,15 @@ namespace Meetra {
 
         if (!root_moves_cnt) {
             run = false;
+            search_timer.Stop();
+            info_timer.Stop();
             UciHandler::SendToGui("bestmove 0000");
             return;
         }
 
         for (curr_max_depth = 2; curr_max_depth <= settings.max_allowed_depth; curr_max_depth++) {
 
+            Move best_move_this_iter = INVALID_MOVE;
             Score alpha = NEGATIVE_INF;
             Score beta = POSITIVE_INF;
             qsearch_depth = 0;
@@ -101,8 +105,8 @@ namespace Meetra {
                 settings.board.UnmakeMove(curr_move);
 
                 if (run) {
-                    root_moves[curr_move_num].score = score;
                     if (multi_pv > 1) {
+                        root_moves[curr_move_num].score = score;
                         continue;
                     } else if (score > best_score) {
                         best_score = score;
@@ -112,14 +116,19 @@ namespace Meetra {
                     }
                     if (score > alpha) {
                         alpha = score;
+                        best_move_this_iter = curr_move;
                     }
                 }
             }
 
-            SortRootMoves();
+            // if multi_pv -> sort according to their exact scores, just like we do now, otherwise we need to do some special sorting
+            // because they all have some random shitty alpha/beta scores in them
+            // and now we dont even need stable sort! because before the first element was the one that first found the score increase
+            // eg. the exact score - and then all the other filled it with the same score but that time it was betas or whatever, not a real score
+            //SortRootMoves();
             if (run) {
-                best_move = root_moves[0].move;
-                best_score = root_moves[0].score;
+                best_score = alpha;
+                best_move = best_move_this_iter;
                 tt.SaveEval(settings.board.GetZobristHash(), best_score, curr_max_depth, best_move, EXACT_SCORE, 1);
             }
 
