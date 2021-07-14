@@ -1,7 +1,7 @@
 #include <cstring>
 #include "TranspositionTable.h"
 #include "Evaluation.h"
-#include "omp.h"
+//#include "omp.h"
 
 namespace Meetra {
 
@@ -21,8 +21,8 @@ namespace Meetra {
         int worst_entry_score = 1000000;
         score = RemoveMatePly(score, ply);
 
-#pragma omp critical
-        {
+//#pragma omp critical
+        //{
             for (auto i = 0; i < BUCKET_SIZE; i++) {
                 auto index = (key + i) & index_mask;
                 // TODO a good way to test if my & index is working is to let it analyze for a long time
@@ -66,7 +66,7 @@ namespace Meetra {
                 entry_to_write->SaveEntry(key_32, score, depth, move, flag, current_epoch);
             }
         }
-    }
+    //}
 
     Score TranspositionTable::RemoveMatePly(Score score, Depth ply) const {
         if (score > MATE_SCORE - MAX_SEARCH_DEPTH) {
@@ -79,9 +79,9 @@ namespace Meetra {
     }
 
     Score TranspositionTable::AddMatePly(Score score, Depth ply) const {
-        if (score >= MATE_SCORE - MAX_SEARCH_DEPTH) {
+        if (score > MATE_SCORE - MAX_SEARCH_DEPTH) {
             return score - ply;
-        } else if (score <= -MATE_SCORE + MAX_SEARCH_DEPTH) {
+        } else if (score < -MATE_SCORE + MAX_SEARCH_DEPTH) {
             return score + ply;
         } else {
             return score;
@@ -93,8 +93,8 @@ namespace Meetra {
         Key32 key_32 = Make32Key(key);
         auto ret = NOT_FOUND;
         // https://en.cppreference.com/w/cpp/atomic/atomic_flag spinlock imple example
-#pragma omp critical
-        {
+//#pragma omp critical
+        //{
             for (auto i = 0; i < BUCKET_SIZE; i++) {
                 auto index = (key + i) & index_mask;
                 TTEntry *ttEntry = &table[index];
@@ -113,7 +113,7 @@ namespace Meetra {
                     break;
                 }
             }
-        }
+        //}
         return ret;
     }
 

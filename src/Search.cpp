@@ -69,13 +69,13 @@ namespace Meetra {
         run = true;
         InitSearch(s);
 
-        for (curr_max_depth = 1; curr_max_depth <= settings.max_allowed_depth; curr_max_depth++) {
+        for (curr_max_depth = 2; curr_max_depth <= settings.max_allowed_depth; curr_max_depth++) {
 
             Score alpha = NEGATIVE_INF;
             Score beta = POSITIVE_INF;
             qsearch_depth = 0;
-
-#pragma omp parallel for default(none) ordered schedule(static, 1) firstprivate(settings) shared(alpha, beta)
+// TODO really just test the multithread vs single thread versions against each other ...
+//#pragma omp parallel for default(none) ordered schedule(static) firstprivate(settings) shared(alpha, beta)
             for (int curr_move_num = 0; curr_move_num < root_moves_cnt; curr_move_num++) {
 
                 Move curr_move = root_moves[curr_move_num].move;
@@ -91,7 +91,7 @@ namespace Meetra {
 
                 if (run) {
                     root_moves[curr_move_num].score = score;
-#pragma omp critical
+//#pragma omp critical
                     if (score > alpha) {
                         alpha = score;
                         if (alpha > best_score) {
@@ -107,9 +107,6 @@ namespace Meetra {
                 best_move = root_moves[0].move;
                 best_score = root_moves[0].score;
                 tt.SaveEval(settings.board.GetZobristHash(), best_score, curr_max_depth, best_move, EXACT_SCORE, 0);
-                if (IsScoreMate(best_score)) {
-                    run = false;
-                }
             }
             UciHandler::SendToGui(GetSearchInfo(settings.board));
 
@@ -126,7 +123,7 @@ namespace Meetra {
 
     Score ABSearch::NegaMax(Board &board, Score alpha, Score beta, Depth depth, Depth ply) {
 
-        if (board.IsRepetition() || board.Ply() >= 75) {
+        if (board.IsRepetition() || board.Ply() >= 50) {
             return DRAW_SCORE;
         } else if (depth == 0) {
             return QuiescenceSearch(board, alpha, beta, 0);
@@ -166,7 +163,7 @@ namespace Meetra {
 
         if (no_legal_moves) {
             if (move_gen.IsKingInCheck()) {
-                return -MATE_SCORE + ply + 1;
+                return -(MATE_SCORE - ply);
             }
             return DRAW_SCORE;
         }
@@ -320,10 +317,10 @@ namespace Meetra {
 
             if (score >= MATE_SCORE - MAX_SEARCH_DEPTH) {
                 mate_length_ply = static_cast<int>(MATE_SCORE - score);
-                ss << "mate " << mate_length_ply / 2;
+                ss << "mate " << (mate_length_ply + 1) / 2;
             } else if (score <= -MATE_SCORE + MAX_SEARCH_DEPTH) {
                 mate_length_ply = static_cast<int>(MATE_SCORE + score);
-                ss << "mate " << -mate_length_ply / 2;
+                ss << "mate " << -(mate_length_ply + 1) / 2;
             } else {
                 ss << "cp " << score;
             }
