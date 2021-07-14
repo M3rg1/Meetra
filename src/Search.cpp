@@ -29,24 +29,24 @@ namespace Meetra {
         root_moves_cnt = 0;
         GenRootNodes();
         SortRootNodes();
-        best_score = root_moves[0].score;
-        best_move = root_moves[0].move;
+        best_score = NEGATIVE_INF;
+        best_move = INVALID_MOVE;
         settings.max_allowed_depth = std::min(settings.max_allowed_depth, MAX_SEARCH_DEPTH);
         using namespace std::chrono;
         timer_start = time_point_cast<milliseconds>(system_clock::now()).time_since_epoch().count();
 
 
-
         InitSearchTimer();
-        if (!settings.infinite && !settings.fixed_timer) {
+        if (!settings.infinite) {
             search_timer.SetTimeout([&]() { StopSearch(); }, settings.allowed_time);
         }
         info_timer.SetInterval([&]() {
             UciHandler::SendToGui(GetUpdateSearchInfo());
         }, settings.info_to_ui_ms_timer);
+
     }
 
-    void ABSearch::SetNumThreads(int num_threads){
+    void ABSearch::SetNumThreads(int num_threads) {
         omp_set_num_threads(std::min(MAX_SEARCH_THREADS, num_threads));
     }
 
@@ -69,13 +69,18 @@ namespace Meetra {
         run = true;
         InitSearch(s);
 
+        if (!root_moves_cnt) {
+            run = false;
+            UciHandler::SendToGui("bestmove 0000");
+            return;
+        }
+
         for (curr_max_depth = 2; curr_max_depth <= settings.max_allowed_depth; curr_max_depth++) {
 
             Score alpha = NEGATIVE_INF;
             Score beta = POSITIVE_INF;
             qsearch_depth = 0;
-// TODO really just test the multithread vs single thread versions against each other ...
-//#pragma omp parallel for default(none) ordered schedule(static) firstprivate(settings) shared(alpha, beta)
+
             for (int curr_move_num = 0; curr_move_num < root_moves_cnt; curr_move_num++) {
 
                 Move curr_move = root_moves[curr_move_num].move;
@@ -91,8 +96,7 @@ namespace Meetra {
 
                 if (run) {
                     root_moves[curr_move_num].score = score;
-//#pragma omp critical
-                    if (score > alpha) {
+                    if (settings.multi_pv == 1 && score > alpha) {
                         alpha = score;
                         if (alpha > best_score) {
                             best_move = curr_move;
@@ -163,7 +167,7 @@ namespace Meetra {
 
         if (no_legal_moves) {
             if (move_gen.IsKingInCheck()) {
-                return -(MATE_SCORE - ply);
+                return -MATE_SCORE + ply;
             }
             return DRAW_SCORE;
         }
@@ -302,8 +306,9 @@ namespace Meetra {
         Move pv_stack[MAX_SEARCH_DEPTH];
         auto pvs_to_send = std::min(settings.multi_pv, root_moves_cnt);
         for (auto i = 0; i < pvs_to_send; i++) {
-            ss << "info multipv " << i + 1
-               << " depth " << +curr_max_depth
+            ss << "info";
+            if (pvs_to_send > 1) ss << " multipv " << i + 1;
+            ss << " depth " << +curr_max_depth
                << " seldepth " << qsearch_depth + curr_max_depth
                << " nodes " << (normal_nodes + qsearch_nodes)
                << " time " << elapsed_ms
@@ -312,8 +317,8 @@ namespace Meetra {
                << " score ";
 
             int mate_length_ply = 0;
-            Score score = best_score; //root_moves[i].score;
-            Move move = best_move; //root_moves[i].move;
+            Score score = pvs_to_send > 1 ? root_moves[i].score : best_score;
+            Move move = pvs_to_send > 1 ? root_moves[i].move : best_move;
 
             if (score >= MATE_SCORE - MAX_SEARCH_DEPTH) {
                 mate_length_ply = static_cast<int>(MATE_SCORE - score);
