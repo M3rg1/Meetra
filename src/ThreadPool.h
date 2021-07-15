@@ -4,8 +4,7 @@
 
 #include <condition_variable>
 #include <functional>
-#include <iostream>
-#include <future>
+#include <mutex>
 #include <vector>
 #include <thread>
 #include <queue>
@@ -32,6 +31,7 @@ namespace Meetra {
         }
 
         explicit ThreadPool(int num_threads);
+
         ~ThreadPool();
 
         static void InitThreadPool(auto thread_num) {

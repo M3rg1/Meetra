@@ -40,8 +40,10 @@ namespace Meetra {
         }
 
         void Stop() {
-            std::scoped_lock<std::recursive_mutex> lock(mtx);
-            active = false;
+            {
+                std::scoped_lock<std::recursive_mutex> lock(mtx);
+                active = false;
+            }
             cond_var.notify_all();
         }
 
