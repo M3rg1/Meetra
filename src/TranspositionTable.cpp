@@ -1,6 +1,7 @@
 #include <cstring>
 #include "TranspositionTable.h"
 #include "Evaluation.h"
+#include <iostream>
 
 namespace Meetra {
 
@@ -97,9 +98,9 @@ namespace Meetra {
                     if (ttEntry->GetFlag() == EXACT_SCORE) {
                         ret = AddMatePly(ttEntry->GetScore(), ply);
                     } else if (ttEntry->GetFlag() == ALPHA && ttEntry->GetScore() <= alpha) {
-                        ret = alpha;
+                        ret = AddMatePly(alpha, ply);
                     } else if (ttEntry->GetFlag() == BETA && ttEntry->GetScore() >= beta) {
-                        ret = beta;
+                        ret = AddMatePly(beta, ply);
                     }
                 }
                 break;

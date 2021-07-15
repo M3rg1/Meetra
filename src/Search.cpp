@@ -104,6 +104,11 @@ namespace Meetra {
                 Score score = -NegaMax(settings.board, -beta, -alpha, curr_max_depth - 1, 2);
                 settings.board.UnmakeMove(curr_move);
 
+                // TODO test mate on this 8/8/5R2/3K4/8/4k3/8/8 b - - 26 112
+
+                // could try to move it again back to negamax with check if current position is root -
+                // this shouldnt be too hard and its foolproof
+
                 if (run) {
                     if (multi_pv > 1) {
                         root_moves[curr_move_num].score = score;
@@ -129,7 +134,7 @@ namespace Meetra {
             if (run) {
                 best_score = alpha;
                 best_move = best_move_this_iter;
-                tt.SaveEval(settings.board.GetZobristHash(), best_score, curr_max_depth, best_move, EXACT_SCORE, 1);
+                //tt.SaveEval(settings.board.GetZobristHash(), best_score, curr_max_depth, best_move, EXACT_SCORE, 1);
             }
 
             if (curr_max_depth > plies_muted) {
@@ -174,6 +179,8 @@ namespace Meetra {
             normal_nodes++;
             score = -NegaMax(board, -beta, -alpha, depth - 1, ply + 1);
             board.UnmakeMove(move);
+            /*    if run    if (score > MATE_SCORE - MAX_GAME_LENGTH && score < POSITIVE_INF) score--;
+        else if (score < -MATE_SCORE + MAX_GAME_LENGTH && score > NEGATIVE_INF) score++;*/
             if (!run) {
                 return 0;
             } else if (score >= beta) {
@@ -334,10 +341,10 @@ namespace Meetra {
             Score score = pvs_to_send > 1 ? root_moves[i].score : best_score;
             Move move = pvs_to_send > 1 ? root_moves[i].move : best_move;
 
-            if (score >= MATE_SCORE - MAX_SEARCH_DEPTH) {
+            if (score > MATE_SCORE - MAX_SEARCH_DEPTH) {
                 mate_length_ply = static_cast<int>(MATE_SCORE - score);
                 ss << "mate " << (mate_length_ply) / 2;
-            } else if (score <= -MATE_SCORE + MAX_SEARCH_DEPTH) {
+            } else if (score < -MATE_SCORE + MAX_SEARCH_DEPTH) {
                 mate_length_ply = static_cast<int>(MATE_SCORE + score);
                 ss << "mate " << -(mate_length_ply) / 2;
             } else {

@@ -8,6 +8,7 @@
 #include <thread>
 #include "ThreadPool.h"
 #include "ZobristHash.h"
+#include "Evaluation.h"
 
 //  Variables: snake_case
 //  Function names: UpperCamelCase (unless its a accessor/mutator)
