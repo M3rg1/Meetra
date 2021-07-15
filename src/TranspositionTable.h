@@ -60,6 +60,7 @@ namespace Meetra {
             uint8_t depth;
             uint16_t move;
             uint8_t epoch_and_flag; // 2 low bits for flag, rest for epoch
+            // epoch would be fine with 3 bits, leaving another 3 for whatever else is needed
 
         public:
             [[nodiscard]] Key32 Get32Key() const { return static_cast<Key32>(key); }

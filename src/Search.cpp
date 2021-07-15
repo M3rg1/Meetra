@@ -36,16 +36,14 @@ namespace Meetra {
         qsearch_depth = 0;
         curr_max_depth = 0;
         root_moves_cnt = 0;
-        best_score = NEGATIVE_INF;
-        best_move = INVALID_MOVE;
 
         GenRootNodes();
-        SortRootMovesMultiPv();
+        SortRootMoves();
+
         settings.max_allowed_depth = std::min(settings.max_allowed_depth, MAX_SEARCH_DEPTH);
 
         InitSearchTimer();
 
-        // TODO timer se obcas rozije a prestane fungovat dokud se engine cely nerestartuje
         if (!settings.infinite) {
             search_timer.SetTimeout([&]() { StopSearch(); }, settings.allowed_time);
         }
@@ -86,7 +84,7 @@ namespace Meetra {
 
         for (curr_max_depth = 2; curr_max_depth <= settings.max_allowed_depth; curr_max_depth++) {
 
-            Move best_move_this_iter = INVALID_MOVE;
+            Score temp_scores[root_moves_cnt];
             Score alpha = NEGATIVE_INF;
             Score beta = POSITIVE_INF;
             qsearch_depth = 0;
@@ -105,33 +103,26 @@ namespace Meetra {
                 settings.board.UnmakeMove(curr_move);
 
                 if (run) {
-                    if (multi_pv > 1) {
+                    temp_scores[curr_move_num] = score;
+                    if (score > root_moves[curr_move_num].score) {
                         root_moves[curr_move_num].score = score;
-                        continue;
-                    } else if (score > best_score) {
-                        best_score = score;
-                        best_move = curr_move;
-                    } else if (curr_move == best_move) {
-                        best_score = score;
                     }
-                    if (score > alpha) {
+                    if (score > alpha && multi_pv == 1) {
                         alpha = score;
-                        best_move_this_iter = curr_move;
                     }
                 }
             }
 
-            // if multi_pv -> sort according to their exact scores, just like we do now, otherwise we need to do some special sorting
-            // because they all have some random shitty alpha/beta scores in them
-            // and now we dont even need stable sort! because before the first element was the one that first found the score increase
-            // eg. the exact score - and then all the other filled it with the same score but that time it was betas or whatever, not a real score
-            //SortRootMovesMultiPv();
             if (run) {
-                best_score = alpha;
-                best_move = best_move_this_iter;
-                //tt.SaveEval(settings.board.GetZobristHash(), best_score, curr_max_depth, best_move, EXACT_SCORE, 1);
+                for (int i = 0; i < root_moves_cnt; i++) {
+                    root_moves[i].score = temp_scores[i];
+                }
             }
-            // TODO If(mate found && isinhorizon){run = false}
+            SortRootMoves();
+
+            // TODO If(mate found && isinhorizon && is not infinite or fixed search){run = false}
+            // todo i'' initiliazie the mate distance var here, and it will be either - or + plies
+            // and then i dont have to do that at all in the sendtouiinfo foo
 
             if (curr_max_depth > plies_muted) {
                 UciHandler::SendToGui(GetSearchInfo(settings.board));
@@ -246,7 +237,7 @@ namespace Meetra {
 
     std::string ABSearch::GetBestMove() const {
         std::string ret = "bestmove ";
-        ret.append(GetMoveName(best_move));
+        ret.append(GetMoveName(root_moves[0].move));
         return ret;
     }
 
@@ -288,8 +279,8 @@ namespace Meetra {
         }
     }
 
-    void ABSearch::SortRootMovesMultiPv() {
-        std::sort(std::execution::seq, root_moves, root_moves + root_moves_cnt,
+    void ABSearch::SortRootMoves() {
+        std::stable_sort(std::execution::seq, root_moves, root_moves + root_moves_cnt,
                          [](const MoveAndEval &mae1, const MoveAndEval &mae2) {
                              return mae1.score > mae2.score;
                          });
@@ -321,9 +312,6 @@ namespace Meetra {
 
         std::stringstream ss;
         Move pv_stack[MAX_SEARCH_DEPTH];
-        if(multi_pv > 1){
-            SortRootMovesMultiPv();
-        }
         auto pvs_to_send = std::min(multi_pv, root_moves_cnt);
         for (auto i = 0; i < pvs_to_send; i++) {
             ss << "info";
@@ -336,10 +324,9 @@ namespace Meetra {
                << " hashfull " << static_cast<int>(tt.Usage() * 1000)
                << " score ";
 
+            Score score = root_moves[i].score;
+            Move move = root_moves[i].move;
             int mate_length_ply = 0;
-            Score score = pvs_to_send > 1 ? root_moves[i].score : best_score;
-            Move move = pvs_to_send > 1 ? root_moves[i].move : best_move;
-
             if (score > MIN_MATE_EVAL) {
                 mate_length_ply = static_cast<int>(MATE_SCORE - score);
                 ss << "mate " << (mate_length_ply) / 2;

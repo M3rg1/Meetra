@@ -131,7 +131,6 @@ namespace Meetra {
     enum MoveType : uint16_t {
         INVALID_MOVE = 0, NO_FLAG = 0, EN_PASSANT = 1 << 12, CASTLING = 2 << 12, TWO_FORWARD = 3 << 12,
         PROMOTE_KNIGHT = 4 << 13, PROMOTE_BISHOP = 5 << 13, PROMOTE_ROOK = 6 << 13, PROMOTE_QUEEN = 7 << 13,
-        MOVE_TYPE_NR = 9
     };
 
 

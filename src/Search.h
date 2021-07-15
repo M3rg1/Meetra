@@ -50,7 +50,7 @@ namespace Meetra {
         Score QuiescenceSearch(Board &board, Score alpha, Score beta, Depth depth);
         Score NegaMax(Board &board, Score alpha, Score beta, Depth depth, Depth ply);
         void RetrievePv(Board &board, Move *pv_line, Depth depth);
-        void SortRootMovesMultiPv();
+        void SortRootMoves();
         void GenRootNodes();
         [[nodiscard]] bool EnoughTimeLeft() const;
         [[nodiscard]] long ElapsedTimeMs() const;
@@ -74,8 +74,7 @@ namespace Meetra {
         int plies_muted;
         int multi_pv;
 
-        Score best_score;
-        Move best_move;
+        // TODO this should be in some sort of SearchResults struct
         MoveAndEval root_moves[MAX_LEGAL_MOVES];
         int root_moves_cnt;
         ulong normal_nodes;

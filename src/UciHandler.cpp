@@ -124,6 +124,7 @@ namespace Meetra {
         search.ClearTT();
     }
 
+    // TODO implement search only certain moves, search only max amount of nodes, etc.
     void UciHandler::SetOptionCommand(StringTokenStream &sts) {
         if (sts.NextToken() != "name") return;
         std::string option = sts.NextToken();
