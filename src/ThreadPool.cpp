@@ -5,6 +5,8 @@ namespace Meetra {
     std::unique_ptr<ThreadPool> ThreadPool::instance = nullptr;
 
     ThreadPool::ThreadPool(int num_threads) {
+        num_threads = std::min(num_threads, MIN_THREADS_NUM);
+        num_threads = std::max(num_threads, MAX_THREADS_NUM);
         running = true;
         for (auto i = 0; i < num_threads; i++) {
             threads.emplace_back([&] {

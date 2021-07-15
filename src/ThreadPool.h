@@ -12,11 +12,15 @@
 
 namespace Meetra {
 
+#define MIN_THREADS_NUM 8
+#define MAX_THREADS_NUM 256
+#define DEFAULT_THREADS_NUM 8
+
     class ThreadPool {
     public:
         static ThreadPool *GetInstance() {
             if (!instance) {
-                InitThreadPool(4);
+                InitThreadPool(DEFAULT_THREADS_NUM);
                 return instance.get();
             }
             return instance.get();
@@ -53,7 +57,7 @@ namespace Meetra {
 
         static std::unique_ptr<ThreadPool> instance;
 
-        std::vector<std::thread> threads;
+        std::vector<std::jthread> threads;
         std::queue<std::function<void()>> task_queue;
         std::condition_variable task_wait_var;
         std::mutex mtx;

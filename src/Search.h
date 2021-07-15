@@ -40,7 +40,11 @@ namespace Meetra {
         inline void ShowShowCurrLine(bool show) { show_currline = show; }
         inline void SetPliesMuted(int ply_muted) { plies_muted = ply_muted; }
         inline void ShowCurrMoveInfo(bool show) { show_currmove = show; }
-        inline void StopSearch() { run = false; }
+        inline void StopSearch() {
+            run = false;
+            search_timer.Stop();
+            info_timer.Stop();
+        }
         inline void SetMultiPv(int pv_num) { if(pv_num < 1) return; multi_pv = pv_num; }
         [[nodiscard]] inline bool IsSearching() const { return run; }
 

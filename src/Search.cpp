@@ -66,6 +66,8 @@ namespace Meetra {
             double factor = 2.0 - moves_made / 10.0;
             double target = static_cast<double>(time_left) / 50.0 - moves_made;
             settings.allowed_time = static_cast<long>(factor * target);
+        } else {
+            settings.allowed_time = DEFAULT_SEARCH_TIME;
         }
     }
 
@@ -74,17 +76,16 @@ namespace Meetra {
         run = true;
         InitSearch(s);
 
-        if (!root_moves_cnt) {
-            run = false;
-            search_timer.Stop();
-            info_timer.Stop();
-            UciHandler::SendToGui("bestmove 0000");
+        if (root_moves_cnt < 2) {
+            StopSearch();
+            Move bm = root_moves_cnt == 0 ? INVALID_MOVE : root_moves[0].move;
+            UciHandler::SendToGui("bestmove " + GetMoveName(bm));
             return;
         }
 
+        Score temp_scores[root_moves_cnt];
         for (curr_max_depth = 2; curr_max_depth <= settings.max_allowed_depth; curr_max_depth++) {
 
-            Score temp_scores[root_moves_cnt];
             Score alpha = NEGATIVE_INF;
             Score beta = POSITIVE_INF;
             qsearch_depth = 0;
@@ -120,9 +121,12 @@ namespace Meetra {
             }
             SortRootMoves();
 
-            // TODO If(mate found && isinhorizon && is not infinite or fixed search){run = false}
-            // todo i'' initiliazie the mate distance var here, and it will be either - or + plies
-            // and then i dont have to do that at all in the sendtouiinfo foo
+            if(!settings.infinite && !settings.fixed_timer && std::abs(root_moves[0].score) > MIN_MATE_EVAL) {
+                int distance_to_mate = MATE_SCORE - std::abs(root_moves[0].score);
+                if (curr_max_depth > distance_to_mate) {
+                    run = false;
+                }
+            }
 
             if (curr_max_depth > plies_muted) {
                 UciHandler::SendToGui(GetSearchInfo(settings.board));
@@ -133,9 +137,7 @@ namespace Meetra {
             }
         }
 
-        run = false;
-        search_timer.Stop();
-        info_timer.Stop();
+        StopSearch();
         UciHandler::SendToGui(GetBestMove());
     }
 
@@ -166,8 +168,7 @@ namespace Meetra {
             normal_nodes++;
             score = -NegaMax(board, -beta, -alpha, depth - 1, ply + 1);
             board.UnmakeMove(move);
-            /*    if run    if (score > MATE_SCORE - MAX_GAME_LENGTH && score < POSITIVE_INF) score--;
-        else if (score < -MATE_SCORE + MAX_GAME_LENGTH && score > NEGATIVE_INF) score++;*/
+
             if (!run) {
                 return 0;
             } else if (score >= beta) {
@@ -294,7 +295,7 @@ namespace Meetra {
 
         std::stringstream ss;
 
-        ss << "info depth " << +curr_max_depth
+        ss << "info depth " << static_cast<int>(curr_max_depth)
            << " seldepth " << qsearch_depth + curr_max_depth
            << " nodes " << (normal_nodes + qsearch_nodes)
            << " time " << elapsed_ms
@@ -316,7 +317,7 @@ namespace Meetra {
         for (auto i = 0; i < pvs_to_send; i++) {
             ss << "info";
             if (pvs_to_send > 1) ss << " multipv " << i + 1;
-            ss << " depth " << +curr_max_depth
+            ss << " depth " << static_cast<int>(curr_max_depth)
                << " seldepth " << qsearch_depth + curr_max_depth
                << " nodes " << (normal_nodes + qsearch_nodes)
                << " time " << elapsed_ms
@@ -326,19 +327,19 @@ namespace Meetra {
 
             Score score = root_moves[i].score;
             Move move = root_moves[i].move;
-            int mate_length_ply = 0;
+            int distance_to_mate = 0;
             if (score > MIN_MATE_EVAL) {
-                mate_length_ply = static_cast<int>(MATE_SCORE - score);
-                ss << "mate " << (mate_length_ply) / 2;
+                distance_to_mate = static_cast<int>(MATE_SCORE - score);
+                ss << "mate " << (distance_to_mate) / 2;
             } else if (score < -MIN_MATE_EVAL) {
-                mate_length_ply = static_cast<int>(MATE_SCORE + score);
-                ss << "mate " << -(mate_length_ply) / 2;
+                distance_to_mate = static_cast<int>(MATE_SCORE + score);
+                ss << "mate " << -(distance_to_mate) / 2;
             } else {
                 ss << "cp " << score;
             }
             ss << " pv " << GetMoveName(move);
             board.MakeMove(move);
-            RetrievePv(board, pv_stack, std::max(curr_max_depth - 1, mate_length_ply));
+            RetrievePv(board, pv_stack, std::max(curr_max_depth - 1, distance_to_mate));
             board.UnmakeMove(move);
             Move *pv_stack_ptr = pv_stack;
             Move pv_move;

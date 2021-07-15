@@ -2,7 +2,6 @@
 #include "Misc.h"
 #include <string>
 #include <iostream>
-#include <sstream>
 #include "MoveGen.h"
 #include "Perft.h"
 #include "ThreadPool.h"
@@ -29,7 +28,7 @@ namespace Meetra {
             StringTokenStream sts(input);
             token = sts.NextToken();
 
-            if(token != "position") sts.MakeLower();
+            if (token != "position") sts.MakeLower();
 
             if (token == "uci") UciCommand();
             else if (token == "isready") IsReadyCommand();
@@ -53,12 +52,11 @@ namespace Meetra {
     }
 
     void UciHandler::UciCommand() {
-        std::stringstream ss;
-        ss << "id name " << GetName() << " v. " << GetVersion() << '\n'
-           << "id author " << GetAuthor() << '\n'
-           << GetOptions() << '\n'
-           << "uciok";
-        SendToGui(ss.str());
+        std::string info = "id name " + GetName() + " v. " + GetVersion() + '\n'
+                           + "id author " + GetAuthor() + '\n'
+                           + GetOptions() + '\n'
+                           + "uciok";
+        SendToGui(info);
     }
 
     void UciHandler::GoCommand(StringTokenStream &sts) {
@@ -92,8 +90,7 @@ namespace Meetra {
             if (sts.HasNext()) token = sts.NextToken();
         } else if (token == "fen") {
             while (sts.HasNext() && ((token = sts.NextToken()) != "moves")) {
-                fen.append(token);
-                fen.push_back(' ');
+                fen += token + ' ';
             }
         }
 
@@ -188,6 +185,12 @@ namespace Meetra {
         settings.max_allowed_depth = DEFAULT_SEARCH_DEPTH;
         settings.allowed_time = DEFAULT_SEARCH_TIME;
         settings.info_to_ui_ms_timer = DEFAULT_UI_SPAM;
+        settings.infinite = false;
+        settings.fixed_timer = false;
+        settings.black_increment = 0;
+        settings.white_increment = 0;
+        settings.white_time = 0;
+        settings.black_time = 0;
         settings.board = board;
         ParseSearchOptions(sts, settings);
         return settings;
@@ -196,6 +199,7 @@ namespace Meetra {
     void UciHandler::ParseSearchOptions(StringTokenStream &sts, ABSearch::SearchSettings &settings) {
         settings.fixed_timer = false;
         while (sts.HasNext()) {
+            // go wtime 108005 btime 227738 winc 0 binc 0 movestogo 7
             std::string token = sts.NextToken();
             if (token == "wtime") settings.white_time = std::stoi(sts.NextToken());
             else if (token == "btime") settings.black_time = std::stoi(sts.NextToken());

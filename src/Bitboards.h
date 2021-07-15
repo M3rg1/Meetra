@@ -2,6 +2,7 @@
 #define MEETRA_BITBOARDS_H
 
 #include "Types.h"
+#include <bit>
 
 namespace Meetra {
 
@@ -62,7 +63,7 @@ namespace Meetra {
     }
 
     inline bool MoreThanOne(Bitboard b) { return (b & (b - 1)); }
-    inline int PopCount(Bitboard b) { return __builtin_popcountll(b); }
+    inline int PopCount(Bitboard b) { return std::__popcount(b); }
     inline Square Lsb(Bitboard b) { return static_cast<Square>(__builtin_ctzll(b)); }
     inline Square PopLsb(Bitboard &b) {
         const Square s = Lsb(b);
