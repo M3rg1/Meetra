@@ -50,7 +50,7 @@ namespace Meetra {
         Score QuiescenceSearch(Board &board, Score alpha, Score beta, Depth depth);
         Score NegaMax(Board &board, Score alpha, Score beta, Depth depth, Depth ply);
         void RetrievePv(Board &board, Move *pv_line, Depth depth);
-        void SortRootMoves();
+        void SortRootMovesMultiPv();
         void GenRootNodes();
         [[nodiscard]] bool EnoughTimeLeft() const;
         [[nodiscard]] long ElapsedTimeMs() const;

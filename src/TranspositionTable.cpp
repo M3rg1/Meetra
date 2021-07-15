@@ -64,9 +64,9 @@ namespace Meetra {
     }
 
     Score TranspositionTable::RemoveMatePly(Score score, Depth ply) const {
-        if (score > MATE_SCORE - MAX_SEARCH_DEPTH) {
+        if (score > MIN_MATE_EVAL) {
             return score + ply;
-        } else if (score < -MATE_SCORE + MAX_SEARCH_DEPTH) {
+        } else if (score < -MIN_MATE_EVAL) {
             return score - ply;
         } else {
             return score;
@@ -74,9 +74,9 @@ namespace Meetra {
     }
 
     Score TranspositionTable::AddMatePly(Score score, Depth ply) const {
-        if (score > MATE_SCORE - MAX_SEARCH_DEPTH) {
+        if (score > MIN_MATE_EVAL) {
             return score - ply;
-        } else if (score < -MATE_SCORE + MAX_SEARCH_DEPTH) {
+        } else if (score < -MIN_MATE_EVAL) {
             return score + ply;
         } else {
             return score;
@@ -86,7 +86,6 @@ namespace Meetra {
     Score TranspositionTable::ProbeEval(ZobristHash key, Score alpha, Score beta, Depth depth, Depth ply) const {
 
         Key32 key_32 = Make32Key(key);
-        auto ret = NOT_FOUND;
 
         for (auto i = 0; i < BUCKET_SIZE; i++) {
             auto index = (key + i) & index_mask;
@@ -95,18 +94,16 @@ namespace Meetra {
             if (ttEntry->Get32Key() == key_32) {
                 if (ttEntry->GetDepth() >= depth) {
                     ttEntry->SetEpoch(current_epoch);
-                    if (ttEntry->GetFlag() == EXACT_SCORE) {
-                        ret = AddMatePly(ttEntry->GetScore(), ply);
-                    } else if (ttEntry->GetFlag() == ALPHA && ttEntry->GetScore() <= alpha) {
-                        ret = AddMatePly(alpha, ply);
-                    } else if (ttEntry->GetFlag() == BETA && ttEntry->GetScore() >= beta) {
-                        ret = AddMatePly(beta, ply);
+                    if (ttEntry->GetFlag() == EXACT_SCORE ||
+                        ttEntry->GetFlag() == ALPHA && ttEntry->GetScore() <= alpha ||
+                        ttEntry->GetFlag() == BETA && ttEntry->GetScore() >= beta) {
+                        return AddMatePly(ttEntry->GetScore(), ply);
                     }
                 }
                 break;
             }
         }
-        return ret;
+        return NOT_FOUND;
     }
 
     void TranspositionTable::NewSearch() {
