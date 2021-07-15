@@ -20,7 +20,7 @@ namespace Meetra {
         void SetTimeout(auto function, long delay) {
             active = true;
             ThreadPool::PushTask([&, delay, function]() {
-                std::unique_lock<std::recursive_mutex> lock(mtx);
+                std::unique_lock lock(mtx);
                 cond_var.wait_for(lock, std::chrono::milliseconds(delay), [&]() { return !active; });
                 if (!active) return;
                 function();
@@ -31,7 +31,7 @@ namespace Meetra {
             active = true;
             ThreadPool::PushTask([&, interval, function]() {
                 while (active) {
-                    std::unique_lock<std::recursive_mutex> lock(mtx);
+                    std::unique_lock lock(mtx);
                     cond_var.wait_for(mtx, std::chrono::milliseconds(interval), [&]() { return !active; });
                     if (!active) return;
                     function();
@@ -41,7 +41,7 @@ namespace Meetra {
 
         void Stop() {
             {
-                std::scoped_lock<std::recursive_mutex> lock(mtx);
+                std::scoped_lock lock(mtx);
                 active = false;
             }
             cond_var.notify_all();
