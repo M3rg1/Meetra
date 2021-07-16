@@ -20,13 +20,12 @@ namespace Meetra {
     };
 
 #define DEFAULT_TT_SIZE TT64MB
+#define NOT_FOUND Score(-32013)
 
     enum EntryFlag : uint8_t {
         EXACT_SCORE, ALPHA, BETA
     };
     typedef uint8_t Epoch;
-
-    constexpr Score NOT_FOUND = -32013;
 
     class TranspositionTable {
 
@@ -40,18 +39,13 @@ namespace Meetra {
 
         [[nodiscard]] Score ProbeEval(ZobristHash key, Score alpha, Score beta, Depth depth, Depth ply) const;
         [[nodiscard]] Move GetPVMove(ZobristHash key) const;
-        [[nodiscard]] size_t EntriesCount() const { return used_entries; }
+        [[nodiscard]] inline size_t EntriesCount() const { return used_entries; }
         // 0.01 == 1% usage, 0.1 == 10% usage, 1 == 100% usage
-        [[nodiscard]] double Usage() const {
+        [[nodiscard]] inline double Usage() const {
             return static_cast<double>(used_entries) / static_cast<double>(size_entries);
         }
 
-
-    public:
-
-        [[nodiscard]] Score RemoveMatePly(Score score, Depth ply) const;
-        [[nodiscard]] Score AddMatePly(Score score, Depth ply) const;
-
+    private:
 #pragma pack(push, 1)
         // 10 bytes
         class TTEntry {
@@ -61,20 +55,21 @@ namespace Meetra {
             uint16_t move;
             uint8_t epoch_and_flag; // 2 low bits for flag, rest for epoch
             // epoch would be fine with 3 bits, leaving another 3 for whatever else is needed
-
         public:
-            [[nodiscard]] Key32 Get32Key() const { return static_cast<Key32>(key); }
-            [[nodiscard]] Score GetScore() const { return static_cast<Score>(score); }
-            [[nodiscard]] Depth GetDepth() const { return static_cast<Depth>(depth); }
-            [[nodiscard]] Move GetMove() const { return static_cast<Move>(move); }
-            [[nodiscard]] EntryFlag GetFlag() const { return static_cast<EntryFlag>(epoch_and_flag & 0x3); }
-            [[nodiscard]] Epoch GetEpoch() const { return static_cast<Epoch>(epoch_and_flag >> 2); }
+            [[nodiscard]] inline Key32 Get32Key() const { return static_cast<Key32>(key); }
+            [[nodiscard]] inline Score GetScore() const { return static_cast<Score>(score); }
+            [[nodiscard]] inline Depth GetDepth() const { return static_cast<Depth>(depth); }
+            [[nodiscard]] inline Move GetMove() const { return static_cast<Move>(move); }
+            [[nodiscard]] inline EntryFlag GetFlag() const { return static_cast<EntryFlag>(epoch_and_flag & 0x3); }
+            [[nodiscard]] inline Epoch GetEpoch() const { return static_cast<Epoch>(epoch_and_flag >> 2); }
+            [[nodiscard]] inline bool IsEmpty() const { return GetEpoch() == 0; }
 
-            void SetEpoch(Epoch e) {
+            inline void SetEpoch(Epoch e) {
                 epoch_and_flag &= 0x3;
                 epoch_and_flag |= static_cast<uint8_t>(e) << 2;
             }
-            void SaveEntry(Key32 k, Score s, Depth d, Move m, EntryFlag f, Epoch e) {
+
+            inline void SaveEntry(Key32 k, Score s, Depth d, Move m, EntryFlag f, Epoch e) {
                 key = static_cast<uint32_t>(k);
                 score = static_cast<int16_t>(s);
                 depth = static_cast<uint8_t>(d);

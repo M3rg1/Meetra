@@ -15,8 +15,8 @@ using namespace Meetra;
 
 int main(int argc, char *arv[]) {
 
-    InitBitboards();
-    InitZobrist();
+    Bitboards::Init();
+    Zobrist::Init();
     //ThreadPool::InitThreadPool(4);
 
 /*    Board board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");

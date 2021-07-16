@@ -4,24 +4,18 @@
 
 #include "Types.h"
 
-namespace Meetra{
 
-
-    // TODO make this into namespace
-    //  tbh just redo everything into namespaces, except for some obvious classes (i think search is fine as class since it has some internal data?)
-    //  anywayt, TODO this
-
+namespace Meetra {
 
     class Board;
 
-    typedef uint64_t ZobristHash;
-    typedef uint32_t Key32;
+    namespace Zobrist {
 
-    void InitZobrist();
-    ZobristHash GenZobristHash(Board &board);
-    inline Key32 Make32Key(ZobristHash zobrist_hash) { return zobrist_hash >> 32; }
+        void Init();
+        ZobristHash GenHash(Board &board);
+        inline Key32 Make32Key(ZobristHash zobrist_hash) { return zobrist_hash >> 32; }
 
-
+    }
 }
 
 

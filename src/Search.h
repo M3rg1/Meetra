@@ -75,12 +75,6 @@ namespace Meetra {
         int plies_muted;
         int multi_pv;
 
-        // TODO this should be in some sort of SearchResults struct
-        struct MoveAndEval {
-            Move move;
-            Score score;
-        };
-
         MoveAndEval root_moves[MAX_LEGAL_MOVES];
         int root_moves_cnt;
         ulong normal_nodes;

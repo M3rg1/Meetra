@@ -1,7 +1,7 @@
 #include "Bitboards.h"
 #include "MagicNumbers.h"
 
-namespace Meetra {
+namespace Meetra::Bitboards {
 
     constexpr Bitboard rank_masks[RANK_NR]{
             0x00000000000000FFUL,
@@ -37,6 +37,13 @@ namespace Meetra {
             0x804020100000000L, 0x402010000000000L, 0x201000000000000L, 0x100000000000000L
     };
 
+    struct Magic {
+        Bitboard *attacks;
+        Bitboard inner_board_mask;
+        uint64_t magic_num;
+        uint8_t shift;
+    };
+
     Magic bishop_magics[SQUARE_NR];
     Magic rook_magics[SQUARE_NR];
 
@@ -56,6 +63,11 @@ namespace Meetra {
 
     Bitboard rook_table[88064];
     Bitboard bishop_table[4800];
+
+    Bitboard GetUnboundRookMoves(Square s) { return rook_unbound_moves[s]; }
+    Bitboard GetUnboundBishopMoves(Square s) { return bishop_unbound_moves[s]; }
+    Bitboard GetRayBetweenEdges(Square s1, Square s2) { return rays_between_board_edges[s1][s2]; }
+    Bitboard GetRayBetweenSquares(Square s1, Square s2) { return rays_between_squares[s1][s2]; }
 
 
 #pragma region ===== Hyperbola Quintessence, Reverse Bitboards (for magics initialization) =====
@@ -202,7 +214,8 @@ namespace Meetra {
                     moves |= SquareToBB(s + m);
                 }
             }
-            moves &= FileFromSquare(s) > FILE_D ? ~file_masks[FILE_A] & ~file_masks[FILE_B] : ~file_masks[FILE_H] & ~file_masks[FILE_G];
+            moves &= FileFromSquare(s) > FILE_D ? ~file_masks[FILE_A] & ~file_masks[FILE_B] : ~file_masks[FILE_H] &
+                                                                                              ~file_masks[FILE_G];
             knight_moves[s] = moves;
         }
     }
@@ -294,7 +307,7 @@ namespace Meetra {
         }
     }
 
-    Bitboard GetRayToEdge(Square s1, Square s2) {
+    Bitboard MakeRayToEdge(Square s1, Square s2) {
 
         File f1 = FileFromSquare(s1);
         Rank r1 = RankFromSquare(s1);
@@ -317,7 +330,7 @@ namespace Meetra {
     }
 
 
-    Bitboard GetRay(Square s1, Square s2) {
+    Bitboard MakeRay(Square s1, Square s2) {
 
         Square min, max;
 
@@ -355,15 +368,18 @@ namespace Meetra {
     void InitRaysBetweenSquares() {
         for (Square origin = A1; origin <= H8; ++origin) {
             for (Square destination = A1; destination <= H8; ++destination) {
-                rays_between_squares[origin][destination] = GetRay(origin, destination);
-                rays_between_board_edges[origin][destination] = GetRayToEdge(origin, destination);
+                rays_between_squares[origin][destination] = MakeRay(origin, destination);
+                rays_between_board_edges[origin][destination] = MakeRayToEdge(origin, destination);
             }
-            rook_unbound_moves[origin] = rays[origin][NORTH_IDX] | rays[origin][WEST_IDX] | rays[origin][EAST_IDX] | rays[origin][SOUTH_IDX];
-            bishop_unbound_moves[origin] = rays[origin][NORTH_WEST_IDX] | rays[origin][SOUTH_WEST_IDX] | rays[origin][SOUTH_EAST_IDX] | rays[origin][NORTH_EAST_IDX];
+            rook_unbound_moves[origin] =
+                    rays[origin][NORTH_IDX] | rays[origin][WEST_IDX] | rays[origin][EAST_IDX] | rays[origin][SOUTH_IDX];
+            bishop_unbound_moves[origin] =
+                    rays[origin][NORTH_WEST_IDX] | rays[origin][SOUTH_WEST_IDX] | rays[origin][SOUTH_EAST_IDX] |
+                    rays[origin][NORTH_EAST_IDX];
         }
     }
 
-    void InitBitboards() {
+    void Init() {
         InitRays();
         InitRaysBetweenSquares();
         InitMagic();
@@ -372,7 +388,42 @@ namespace Meetra {
         InitPawnAttacks();
     }
 
-    std::string PPBitboard(Bitboard b) {
+    Bitboard GetRookAttacks(Square s, Bitboard occ) {
+        Magic m = rook_magics[s];
+        return m.attacks[((occ & m.inner_board_mask) * m.magic_num) >> m.shift];
+    }
+
+    Bitboard GetBishopAttacks(Square s, Bitboard occ) {
+        Magic m = bishop_magics[s];
+        return m.attacks[((occ & m.inner_board_mask) * m.magic_num) >> m.shift];
+    }
+
+    template<PieceType PT>
+    Bitboard GetAttacksForPiece(Square s, Bitboard occ, Color c) {
+        switch (PT) {
+            case PAWN:
+                return pawn_attacks[c][s];
+            case BISHOP :
+                return GetBishopAttacks(s, occ);
+            case ROOK :
+                return GetRookAttacks(s, occ);
+            case QUEEN :
+                return GetBishopAttacks(s, occ) | GetRookAttacks(s, occ);
+            case KNIGHT :
+                return knight_moves[s];
+            case KING :
+                return king_moves[s];
+        }
+    }
+
+    template Bitboard GetAttacksForPiece<PAWN>(Square, Bitboard, Color);
+    template Bitboard GetAttacksForPiece<KNIGHT>(Square, Bitboard, Color);
+    template Bitboard GetAttacksForPiece<BISHOP>(Square, Bitboard, Color);
+    template Bitboard GetAttacksForPiece<ROOK>(Square, Bitboard, Color);
+    template Bitboard GetAttacksForPiece<QUEEN>(Square, Bitboard, Color);
+    template Bitboard GetAttacksForPiece<KING>(Square, Bitboard, Color);
+
+    std::string PrettyPrint(Bitboard b) {
         std::string ret;
         for (Rank r = RANK_8; r >= RANK_1; --r) {
             ret.append(std::to_string(r + 1));

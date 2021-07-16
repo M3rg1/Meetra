@@ -7,8 +7,8 @@
 
 namespace Meetra {
 
-
     class MoveGen {
+
     public:
         MoveGen(const Board &board, const TranspositionTable *tt);
         explicit MoveGen(const Board &board);
@@ -24,9 +24,8 @@ namespace Meetra {
 
         GenPhase genPhase;
 
-        Move moves[MAX_LEGAL_MOVES];
-        Score move_evals[MAX_LEGAL_MOVES];
-        uint8_t moves_cnt;
+        MoveAndEval move_eval[MAX_LEGAL_MOVES];
+        size_t moves_cnt;
 
         Bitboard checkers;
         Bitboard blockers;
@@ -40,15 +39,19 @@ namespace Meetra {
         Color my_color;
         Color enemy_color;
 
-        [[nodiscard]] inline bool Empty() const { return !moves_cnt; }
-        inline Move PopMove() { return moves[--moves_cnt]; }
-        inline Move PopAtIdx(int idx) {
-            Move ret = moves[idx];
-            move_evals[idx] = move_evals[--moves_cnt];
-            moves[idx] = moves[moves_cnt];
+        [[nodiscard]] inline bool Empty() const { return moves_cnt == 0; }
+        inline Move PopMove() { return move_eval[--moves_cnt].move; }
+        inline Move PopAtIdx(size_t idx) {
+            Move ret = move_eval[idx].move;
+            move_eval[idx] = move_eval[--moves_cnt];
             return ret;
         }
-        inline void PutMove(Move m) { moves[moves_cnt++] = m; }
+        inline Move PopRef(MoveAndEval &it) {
+            Move ret = it.move;
+            it = move_eval[--moves_cnt];
+            return ret;
+        }
+        inline void PutMove(Move m) { move_eval[moves_cnt++].move = m; }
         inline void PutPromMoves(Square from, Square to) {
             PutMove(NewMove(from, to, PROMOTE_QUEEN));
             PutMove(NewMove(from, to, PROMOTE_ROOK));
@@ -57,7 +60,7 @@ namespace Meetra {
         }
 
         Move PickBestMove();
-        void SortMoves();
+        void EvalMoves();
 
         template<Color C, bool QSearch>
         void NextPhase();
@@ -81,64 +84,11 @@ namespace Meetra {
         void GenCastlingMoves();
 
         template<Color C>
-        bool CanCastleLong(CastlingRights cr);
-
+        [[nodiscard]] bool CanCastleLong(CastlingRights cr) const;
         template<Color C>
-        bool CanCastleShort(CastlingRights cr);
-
-        bool DiscoveryCheck(Square origin, Square destination);
+        [[nodiscard]] bool CanCastleShort(CastlingRights cr) const;
+        [[nodiscard]] bool DiscoveryCheck(Square origin, Square destination) const;
     };
-
-    template<Color C>
-    constexpr Direction PawnFwdDir() {
-        return C == WHITE ? NORTH : SOUTH;
-    }
-
-    template<Color C>
-    constexpr Direction PawnCaptureLeftDir() {
-        return C == WHITE ? NORTH_WEST : SOUTH_EAST;
-    }
-
-    template<Color C>
-    constexpr Direction PawnCaptureRightDir() {
-        return C == WHITE ? NORTH_EAST : SOUTH_WEST;
-    }
-
-    template<Color C>
-    constexpr Bitboard PromotionRank() {
-        return C == WHITE ? 0xFF00000000000000UL : 0xFF000000000000FFUL;
-    }
-
-    template<Color C>
-    constexpr Bitboard TwoFwdRank() {
-        return C == WHITE ? 0x00000000FF000000UL : 0x000000FF00000000UL;
-    }
-
-    template<Direction D>
-    constexpr Bitboard BitShift(Bitboard b) {
-        return D == NORTH ? b << 8 : D == SOUTH ? b >> 8 : D == EAST ? (b & ~0x8080808080808080UL) << 1 :
-                                                           D == WEST ? (b & ~0x0101010101010101UL) >> 1 : D ==
-                                                                                                          NORTH_EAST ?
-                                                                                                          (b &
-                                                                                                           ~0x8080808080808080UL)
-                                                                                                                  << 9 :
-                                                                                                          D ==
-                                                                                                          NORTH_WEST ?
-                                                                                                          (b &
-                                                                                                           ~0x0101010101010101UL)
-                                                                                                                  << 7 :
-                                                                                                          D ==
-                                                                                                          SOUTH_EAST ?
-                                                                                                          (b &
-                                                                                                           ~0x8080808080808080UL)
-                                                                                                                  >> 7 :
-                                                                                                          D ==
-                                                                                                          SOUTH_WEST ?
-                                                                                                          (b &
-                                                                                                           ~0x0101010101010101UL)
-                                                                                                                  >> 9
-                                                                                                                     : 0;
-    }
 
 }
 

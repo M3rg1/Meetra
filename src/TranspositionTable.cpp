@@ -1,13 +1,18 @@
 #include <cstring>
 #include "TranspositionTable.h"
 #include "Evaluation.h"
-#include <iostream>
 
 namespace Meetra {
 
 #define BUCKET_SIZE 4
 
-    // https://en.cppreference.com/w/cpp/atomic/atomic_flag spinlock
+    Score RemoveMatePly(Score score, Depth ply) {
+        return score > MIN_MATE_EVAL ? score + ply : score < -MIN_MATE_EVAL ? score - ply : score;
+    }
+
+    Score AddMatePly(Score score, Depth ply) {
+        return score > MIN_MATE_EVAL ? score - ply : score < -MIN_MATE_EVAL ? score + ply : score;
+    }
 
     TranspositionTable::TranspositionTable(size_t size) : size_entries(size) {
         table = std::make_unique<TTEntry[]>(size);
@@ -17,7 +22,7 @@ namespace Meetra {
 
     void TranspositionTable::SaveEval(ZobristHash key, Score score, Depth depth, Move move, EntryFlag flag, Depth ply) {
 
-        Key32 key_32 = Make32Key(key);
+        Key32 key_32 = Zobrist::Make32Key(key);
         TTEntry *entry_to_write;
         int worst_entry_score = 1000000;
         score = RemoveMatePly(score, ply);
@@ -38,12 +43,11 @@ namespace Meetra {
 
             int entry_score = static_cast<int>(curr_entry->GetDepth());
             if (curr_entry->GetEpoch() < current_epoch) {
-                if (curr_entry->GetEpoch() == 0) {
+                if (curr_entry->IsEmpty()) {
                     entry_to_write = curr_entry;
                     break;
-                } else {
-                    entry_score -= (current_epoch - curr_entry->GetEpoch()) << 6;
                 }
+                entry_score -= (current_epoch - curr_entry->GetEpoch()) << 6;
             }
             // two epochs back = 2 << 6 = 128, but 3 = 192 == keeping exact used_entries 2 epochs old
             if (curr_entry->GetFlag() == EXACT_SCORE) {
@@ -63,29 +67,9 @@ namespace Meetra {
         }
     }
 
-    Score TranspositionTable::RemoveMatePly(Score score, Depth ply) const {
-        if (score > MIN_MATE_EVAL) {
-            return score + ply;
-        } else if (score < -MIN_MATE_EVAL) {
-            return score - ply;
-        } else {
-            return score;
-        }
-    }
-
-    Score TranspositionTable::AddMatePly(Score score, Depth ply) const {
-        if (score > MIN_MATE_EVAL) {
-            return score - ply;
-        } else if (score < -MIN_MATE_EVAL) {
-            return score + ply;
-        } else {
-            return score;
-        }
-    }
-
     Score TranspositionTable::ProbeEval(ZobristHash key, Score alpha, Score beta, Depth depth, Depth ply) const {
 
-        Key32 key_32 = Make32Key(key);
+        Key32 key_32 = Zobrist::Make32Key(key);
 
         for (auto i = 0; i < BUCKET_SIZE; i++) {
             auto index = (key + i) & index_mask;
@@ -94,12 +78,12 @@ namespace Meetra {
                 if (ttEntry->GetDepth() >= depth) {
                     ttEntry->SetEpoch(current_epoch);
                     if (ttEntry->GetFlag() == EXACT_SCORE ||
-                        ttEntry->GetFlag() == ALPHA && ttEntry->GetScore() <= alpha ||
-                        ttEntry->GetFlag() == BETA && ttEntry->GetScore() >= beta) {
+                        (ttEntry->GetFlag() == ALPHA && ttEntry->GetScore() <= alpha) ||
+                        (ttEntry->GetFlag() == BETA && ttEntry->GetScore() >= beta)) {
                         return AddMatePly(ttEntry->GetScore(), ply);
                     }
                 }
-                break;
+                return NOT_FOUND;
             }
         }
         return NOT_FOUND;
@@ -115,11 +99,9 @@ namespace Meetra {
 
     void TranspositionTable::Resize(size_t new_size_mb) {
         // TODO convert from size mb to entries count
-        //delete[] table;
         table.reset();
         size_entries = new_size_mb;
         index_mask = new_size_mb - 1;
-        //table = new TTEntry[sizeof(TTEntry) * new_size_mb];
         table = std::make_unique<TTEntry[]>(new_size_mb);
         Clear();
     }
@@ -132,7 +114,7 @@ namespace Meetra {
 
     Move TranspositionTable::GetPVMove(ZobristHash key) const {
 
-        Key32 key_32 = Make32Key(key);
+        Key32 key_32 = Zobrist::Make32Key(key);
 
         for (auto i = 0; i < BUCKET_SIZE; i++) {
             auto index = (key + i) & index_mask;

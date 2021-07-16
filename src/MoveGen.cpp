@@ -1,13 +1,48 @@
 #include "MoveGen.h"
 #include "Bitboards.h"
 #include "Evaluation.h"
-#include "Macros.h"
-#include <iostream>
 
 
 namespace Meetra {
 
-    // TODO quiescence will stop searching when no captures, but leave king in check
+
+    template<Color C>
+    constexpr Direction PawnFwdDir() {
+        return C == WHITE ? NORTH : SOUTH;
+    }
+
+    template<Color C>
+    constexpr Direction PawnCaptureLeftDir() {
+        return C == WHITE ? NORTH_WEST : SOUTH_EAST;
+    }
+
+    template<Color C>
+    constexpr Direction PawnCaptureRightDir() {
+        return C == WHITE ? NORTH_EAST : SOUTH_WEST;
+    }
+
+    template<Color C>
+    constexpr Bitboard PromotionRank() {
+        return C == WHITE ? 0xFF00000000000000UL : 0xFF000000000000FFUL;
+    }
+
+    template<Color C>
+    constexpr Bitboard TwoFwdRank() {
+        return C == WHITE ? 0x00000000FF000000UL : 0x000000FF00000000UL;
+    }
+
+    template<Direction D>
+    constexpr Bitboard BitShift(Bitboard b) {
+        if constexpr (D == NORTH) return b << 8;
+        else if constexpr (D == SOUTH) return b >> 8;
+        else if constexpr (D == EAST) return (b & ~0x8080808080808080UL) << 1;
+        else if constexpr (D == WEST) return (b & ~0x0101010101010101UL) >> 1;
+        else if constexpr (D == NORTH_EAST) return (b & ~0x8080808080808080UL) << 9;
+        else if constexpr (D == NORTH_WEST) return (b & ~0x0101010101010101UL) << 7;
+        else if constexpr (D == SOUTH_EAST) return (b & ~0x8080808080808080UL) >> 7;
+        else if constexpr (D == SOUTH_WEST) return (b & ~0x0101010101010101UL) >> 9;
+        else return 0;
+    }
 
     MoveGen::MoveGen(const Board &board, const TranspositionTable *tt) : board(board), tt(tt) {
 
@@ -17,56 +52,46 @@ namespace Meetra {
         enemy_pieces = board.GetPieces(enemy_color);
         all_pieces = board.GetPieces(ALL_TYPES);
         empty_squares = board.GetEmptySquares();
-        checkers = board.SquareAttackers(Lsb(board.GetPieces(KING, my_color)), enemy_color, all_pieces);
+        checkers = board.SquareAttackers(Bitboards::Lsb(board.GetPieces(KING, my_color)), enemy_color, all_pieces);
         legal_moves = 0xFFFFFFFFFFFFFFFFUL;
-        king_square = Lsb(board.GetPieces(KING, my_color));
+        king_square = Bitboards::Lsb(board.GetPieces(KING, my_color));
         blockers = board.PinnedPiecesForSquare(king_square, enemy_color);
         genPhase = BEST_MOVE;
 
         if (checkers) {
-            if (MoreThanOne(checkers)) {
+            if (Bitboards::MoreThanOne(checkers)) {
                 if (my_color == WHITE) {
                     GenMovesForPieceType<KING, WHITE>(enemy_pieces | empty_squares);
                 } else {
                     GenMovesForPieceType<KING, BLACK>(enemy_pieces | empty_squares);
                 }
-                SortMoves();
+                EvalMoves();
                 genPhase = END;
                 return;
             }
             Bitboard capture_mask = checkers;
-            Square attacker_square = Lsb(capture_mask);
-            Bitboard block_mask = rays_between_squares[king_square][attacker_square];
+            Square attacker_square = Bitboards::Lsb(capture_mask);
+            Bitboard block_mask = Bitboards::GetRayBetweenSquares(king_square, attacker_square);
             legal_moves = capture_mask | block_mask;
         }
     }
 
     MoveGen::MoveGen(const Board &board) : MoveGen(board, nullptr) {
-        if(genPhase != END) {
+        if (genPhase != END) {
             genPhase = CAPTURE;
         }
     }
 
-    void MoveGen::SortMoves() {
+    void MoveGen::EvalMoves() {
         for (int i = 0; i < moves_cnt; i++) {
-            if (moves[i] == INVALID_MOVE) {
-                move_evals[i] = NEGATIVE_INF;
-            } else {
-                move_evals[i] = MoveEval(board, moves[i]);
-            }
+            move_eval[i].score =
+                    IsValidMove(move_eval[i].move) ? Evaluation::MoveEval(board, move_eval[i].move) : NEGATIVE_INF;
         }
     }
 
     Move MoveGen::PickBestMove() {
-        int idx_best_move = 0;
-        Score max_eval = NEGATIVE_INF;
-        for (int i = 0; i < moves_cnt; i++) {
-            if (move_evals[i] > max_eval) {
-                max_eval = move_evals[i];
-                idx_best_move = i;
-            }
-        }
-        return PopAtIdx(idx_best_move);
+        auto it = std::max_element(move_eval, move_eval + moves_cnt, CompMaELesser);
+        return PopRef(*it);
     }
 
     template<bool QSearch>
@@ -77,8 +102,10 @@ namespace Meetra {
             } else {
                 NextPhase<BLACK, QSearch>();
             }
-            SortMoves();
+            EvalMoves();
+            //std::sort(move_eval, move_eval + moves_cnt, CompMaELesser);
         }
+        //return PopMove();
         return PickBestMove();
     }
 
@@ -102,7 +129,7 @@ namespace Meetra {
                 case BEST_MOVE:
                     Move m;
                     m = tt->GetPVMove(board.GetZobristHash());
-                    if (m != INVALID_MOVE) {
+                    if (IsValidMove(m)) {
                         PutMove(m);
                     }
                     ++genPhase;
@@ -150,13 +177,13 @@ namespace Meetra {
     void MoveGen::GenMovesForPieceType(Bitboard legality_mask) {
         Bitboard pieces = board.GetPieces(PT, C);
         while (pieces) {
-            Square origin_s = PopLsb(pieces);
-            Bitboard possible_moves = GetAttacksForPiece<PT>(origin_s, all_pieces) & legality_mask;
+            Square origin_s = Bitboards::PopLsb(pieces);
+            Bitboard possible_moves = Bitboards::GetAttacksForPiece<PT>(origin_s, all_pieces) & legality_mask;
             if (blockers & SquareToBB(origin_s)) {
-                possible_moves &= rays_between_board_edges[king_square][origin_s];
+                possible_moves &= Bitboards::GetRayBetweenEdges(king_square, origin_s);
             }
             while (possible_moves) {
-                Square destination_s = PopLsb(possible_moves);
+                Square destination_s = Bitboards::PopLsb(possible_moves);
                 PutMove(NewMove(origin_s, destination_s));
             }
         }
@@ -172,7 +199,7 @@ namespace Meetra {
         pawns_one_fw &= phase_mask & ~PromotionRank<C>();
 
         while (pawn_prom) {
-            Square dest_s = PopLsb(pawn_prom);
+            Square dest_s = Bitboards::PopLsb(pawn_prom);
             Square origin_s = dest_s - push_dir;
             if (!DiscoveryCheck(origin_s, dest_s)) {
                 PutPromMoves(origin_s, dest_s);
@@ -180,7 +207,7 @@ namespace Meetra {
         }
 
         while (pawns_two_fw) {
-            Square dest_s = PopLsb(pawns_two_fw);
+            Square dest_s = Bitboards::PopLsb(pawns_two_fw);
             Square origin_s = dest_s - push_dir - push_dir;
             if (!DiscoveryCheck(origin_s, dest_s)) {
                 PutMove(NewMove(origin_s, dest_s, TWO_FORWARD));
@@ -188,7 +215,7 @@ namespace Meetra {
         }
 
         while (pawns_one_fw) {
-            Square dest_s = PopLsb(pawns_one_fw);
+            Square dest_s = Bitboards::PopLsb(pawns_one_fw);
             Square origin_s = dest_s - push_dir;
             if (!DiscoveryCheck(origin_s, dest_s)) {
                 PutMove(NewMove(origin_s, dest_s));
@@ -214,28 +241,28 @@ namespace Meetra {
         right_captures &= ~PromotionRank<C>();
 
         while (left_prom) {
-            Square dest_s = PopLsb(left_prom);
+            Square dest_s = Bitboards::PopLsb(left_prom);
             Square origin_s = dest_s - left_dir;
             if (!DiscoveryCheck(origin_s, dest_s)) {
                 PutPromMoves(origin_s, dest_s);
             }
         }
         while (right_prom) {
-            Square dest_s = PopLsb(right_prom);
+            Square dest_s = Bitboards::PopLsb(right_prom);
             Square origin_s = dest_s - right_dir;
             if (!DiscoveryCheck(origin_s, dest_s)) {
                 PutPromMoves(origin_s, dest_s);
             }
         }
         while (left_captures) {
-            Square dest_s = PopLsb(left_captures);
+            Square dest_s = Bitboards::PopLsb(left_captures);
             Square origin_s = dest_s - left_dir;
             if (!DiscoveryCheck(origin_s, dest_s)) {
                 PutMove(NewMove(origin_s, dest_s));
             }
         }
         while (right_captures) {
-            Square dest_s = PopLsb(right_captures);
+            Square dest_s = Bitboards::PopLsb(right_captures);
             Square origin_s = dest_s - right_dir;
             if (!DiscoveryCheck(origin_s, dest_s)) {
                 PutMove(NewMove(origin_s, dest_s));
@@ -243,18 +270,20 @@ namespace Meetra {
         }
     }
 
-    bool MoveGen::DiscoveryCheck(Square origin, Square destination) {
+    // allow movement only on a line between piece and king, if piece is a blocker
+    bool MoveGen::DiscoveryCheck(Square origin, Square destination) const {
         return (blockers & SquareToBB(origin)) &&
-               !(rays_between_board_edges[king_square][origin] & SquareToBB(destination));
+               !(Bitboards::GetRayBetweenEdges(king_square, origin) & SquareToBB(destination));
     }
 
     template<Color C>
     void MoveGen::GenEnPassantMoves() {
         if (board.EpSquare()) {
             Square ep_s = board.EpSquare();
-            Bitboard attackers = GetAttacksForPiece<PAWN>(ep_s, all_pieces, OtherColor(C)) & board.GetPieces(PAWN, C);
+            Bitboard attackers =
+                    Bitboards::GetAttacksForPiece<PAWN>(ep_s, all_pieces, OtherColor(C)) & board.GetPieces(PAWN, C);
             while (attackers) {
-                PutMove(NewMove(PopLsb(attackers), ep_s, EN_PASSANT));
+                PutMove(NewMove(Bitboards::PopLsb(attackers), ep_s, EN_PASSANT));
             }
         }
     }
@@ -273,16 +302,16 @@ namespace Meetra {
     }
 
     template<Color C>
-    bool MoveGen::CanCastleShort(CastlingRights cr) {
+    bool MoveGen::CanCastleShort(CastlingRights cr) const {
         return cr & (C == WHITE ? WHITE_SHORT : BLACK_SHORT) &&
-               (rays_between_squares[C == WHITE ? E1 : E8][C == WHITE ? H1 : H8] & all_pieces) == EMPTY_BB &&
+               (Bitboards::GetRayBetweenSquares(C == WHITE ? E1 : E8, C == WHITE ? H1 : H8) & all_pieces) == EMPTY_BB &&
                !board.IsSquareAttacked(C == WHITE ? F1 : F8, OtherColor(C), all_pieces);
     }
 
     template<Color C>
-    bool MoveGen::CanCastleLong(CastlingRights cr) {
+    bool MoveGen::CanCastleLong(CastlingRights cr) const {
         return cr & (C == WHITE ? WHITE_LONG : BLACK_LONG) &&
-               (rays_between_squares[C == WHITE ? E1 : E8][C == WHITE ? A1 : A8] & all_pieces) == EMPTY_BB &&
+               (Bitboards::GetRayBetweenSquares(C == WHITE ? E1 : E8, C == WHITE ? A1 : A8) & all_pieces) == EMPTY_BB &&
                !board.IsSquareAttacked(C == WHITE ? D1 : D8, OtherColor(C), all_pieces);
     }
 

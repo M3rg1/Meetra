@@ -5,7 +5,6 @@
 #include "TranspositionTable.h"
 #include <sstream>
 #include "UciHandler.h"
-#include <execution>
 #include "omp.h"
 
 namespace Meetra {
@@ -195,7 +194,7 @@ namespace Meetra {
             qsearch_depth = depth;
         }
 
-        auto score = BoardEval(board);
+        auto score = Evaluation::BoardEval(board);
         if (score >= beta) {
             return beta;
         } else if (score > alpha) {
@@ -265,7 +264,7 @@ namespace Meetra {
             }
             Score score = tt.ProbeEval(settings.board.GetZobristHash(), NEGATIVE_INF, POSITIVE_INF, 0, 1);
             settings.board.UnmakeMove(move);
-            if (score == NOT_FOUND) score = MoveEval(settings.board, move);
+            if (score == NOT_FOUND) score = Evaluation::MoveEval(settings.board, move);
             root_moves[root_moves_cnt].move = move;
             root_moves[root_moves_cnt].score = score;
             root_moves_cnt++;
@@ -273,10 +272,19 @@ namespace Meetra {
     }
 
     void ABSearch::SortRootMoves() {
-        std::stable_sort(std::execution::seq, root_moves, root_moves + root_moves_cnt,
-                         [](const MoveAndEval &mae1, const MoveAndEval &mae2) {
-                             return mae1.score > mae2.score;
-                         });
+        // TODO TODO
+        // the moves are already sorted by move gen
+        // this sort should really be called only at the end when printing the multipv
+        // otherwise we just sort them according to some full shallow search first (3 depth, full search without changing alpha)
+        // and then use that order, and only swap them around if a new best node is found - put that on the first place
+        // and the best move is picked just by going through them all and finding the first move with highest score
+        // oor we can actually sort them anyway even if we are in multipv = 1, thats fine at the end when printing
+        // just not before! (before we only sort them this way for multipv) - i think at least ... rather check again
+        // if really they all have the same score when we are changing alpha
+        // also i wonder if using TT inside of movegen to pick a move is actually good for anything, since we use TT
+        // anyway to cut off
+        // also make movegen<quiescence, normal, all> - for qsearch, normal search, perft
+        std::stable_sort(root_moves, root_moves + root_moves_cnt, CompMaEGreater);
     }
 
     std::string ABSearch::GetUpdateSearchInfo() const {

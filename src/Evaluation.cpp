@@ -2,7 +2,7 @@
 #include "Bitboards.h"
 #include "EvalValues.h"
 
-namespace Meetra {
+namespace Meetra::Evaluation {
 
 
     Score MoveEval(const Board &board, Move move) {
@@ -49,9 +49,9 @@ namespace Meetra {
         Score black_eval = 0;
         for (PieceType pt = PAWN; pt < KING; ++pt) {
             Bitboard b = board.GetPieces(pt, WHITE);
-            white_eval += PopCount(b) * piece_values[pt];
+            white_eval += Bitboards::PopCount(b) * piece_values[pt];
             b = board.GetPieces(pt, BLACK);
-            black_eval += PopCount(b) * piece_values[pt];
+            black_eval += Bitboards::PopCount(b) * piece_values[pt];
         }
         return board.ColorToMove() == WHITE ? (white_eval - black_eval) : -(white_eval - black_eval);
     }
@@ -62,12 +62,12 @@ namespace Meetra {
         for (PieceType pt = PAWN; pt < KING; ++pt) {
             Bitboard pieces = board.GetPieces(pt, WHITE);
             while (pieces) {
-                Square s = PopLsb(pieces);
+                Square s = Bitboards::PopLsb(pieces);
                 white_eval += eval_maps[WHITE][pt][s];
             }
             pieces = board.GetPieces(pt, BLACK);
             while (pieces) {
-                Square s = PopLsb(pieces);
+                Square s = Bitboards::PopLsb(pieces);
                 black_eval += eval_maps[BLACK][pt][s];
             }
         }

@@ -9,12 +9,15 @@ namespace Meetra {
 
     typedef int_fast16_t Score;
 
-    enum GenPhase : uint8_t {
-        BEST_MOVE, CAPTURE, QUIET, END
-    };
+    typedef uint64_t ZobristHash;
+    typedef uint32_t Key32;
 
     typedef uint64_t Bitboard;
 #define EMPTY_BB 0UL
+
+    enum GenPhase : uint8_t {
+        BEST_MOVE, CAPTURE, QUIET, END
+    };
 
     enum Color : uint8_t {
         WHITE, BLACK,
@@ -34,7 +37,6 @@ namespace Meetra {
         NO_PIECE,
         W_PAWN, W_KNIGHT, W_BISHOP, W_ROOK, W_QUEEN, W_KING,
         B_PAWN = 9, B_KNIGHT = 10, B_BISHOP = 11, B_ROOK = 12, B_QUEEN = 13, B_KING = 14,
-        PIECE_NR = 15
     };
 
     inline Color ColorOfPiece(Piece p) { return static_cast<Color>(p >> 3); }
@@ -52,8 +54,7 @@ namespace Meetra {
     };
 
     enum Direction : int8_t {
-        NORTH = 8, NORTH_EAST = 9, EAST = 1, SOUTH_EAST = -7, SOUTH = -8, SOUTH_WEST = -9, WEST = -1, NORTH_WEST = 7,
-        DIRECTION_NR = 8
+        NORTH = 8, NORTH_EAST = 9, EAST = 1, SOUTH_EAST = -7, SOUTH = -8, SOUTH_WEST = -9, WEST = -1, NORTH_WEST = 7
     };
 
     enum DirectionIndex : uint8_t {
@@ -133,74 +134,70 @@ namespace Meetra {
         PROMOTE_KNIGHT = 4 << 13, PROMOTE_BISHOP = 5 << 13, PROMOTE_ROOK = 6 << 13, PROMOTE_QUEEN = 7 << 13,
     };
 
-
-    const std::string file_names = "abcdefgh";
-    const std::string rank_names = "12345678";
-
 #pragma region ===== Initialization =====
     inline Move NewMove(Square from, Square to) { return static_cast<Move>(from | to << 6); }
     inline Move NewMove(Square from, Square to, MoveType flag) { return static_cast<Move>(NewMove(from, to) | flag); }
     inline Move NewMoveFromName(const std::string &move_name) {
-        File f_from = static_cast<File>(file_names.find(move_name[0]));
+
+        auto it = std::find(FileNames, FileNames + FILE_NR, move_name[0]);
+        File f_from = static_cast<File>(std::distance(FileNames, it));
         Rank r_from = static_cast<Rank>((move_name[1] - '0') - 1);
-        Square from = SquareFromFiRa(f_from, r_from);
+        Square s_from = SquareFromFiRa(f_from, r_from);
 
-        File f_to = static_cast<File>(file_names.find(move_name[2]));
+        it = std::find(FileNames, FileNames + FILE_NR, move_name[2]);
+        File f_to = static_cast<File>(std::distance(FileNames, it));
         Rank r_to = static_cast<Rank>((move_name[3] - '0') - 1);
-        Square to = SquareFromFiRa(f_to, r_to);
-
-        const std::string asd = std::string("qwewq");
+        Square s_to = SquareFromFiRa(f_to, r_to);
 
         MoveType flag = NO_FLAG;
         if (move_name.length() > 4) {
-            switch (move_name[4]) {
-                case 'q':
-                    flag = PROMOTE_QUEEN;
-                    break;
-                case 'r':
-                    flag = PROMOTE_ROOK;
-                    break;
-                case 'b':
-                    flag = PROMOTE_BISHOP;
-                    break;
-                case 'n':
-                    flag = PROMOTE_KNIGHT;
-                    break;
-            }
+            flag = move_name[4] == 'q' ? PROMOTE_QUEEN :
+                   move_name[4] == 'r' ? PROMOTE_ROOK :
+                   move_name[4] == 'b' ? PROMOTE_BISHOP :
+                   PROMOTE_KNIGHT;
         }
-        return NewMove(from, to, flag);
+        return NewMove(s_from, s_to, flag);
     }
 #pragma endregion
 
 #pragma region ===== Utils =====
+
+    struct MoveAndEval {
+        Move move;
+        Score score;
+    };
+    inline bool CompMaEGreater(const MoveAndEval &mae1, const MoveAndEval &mae2) {
+        return mae1.score > mae2.score;
+    }
+    inline bool CompMaELesser(const MoveAndEval &mae1, const MoveAndEval &mae2) {
+        return mae1.score < mae2.score;
+    }
+
     inline PieceType PieceTypeFromFlag(MoveType mt) { return static_cast<PieceType >((mt >> 13) - 2); }
     inline Square FromSquare(Move m) { return static_cast<Square>(m & 0x3F); }
     inline Square ToSquare(Move m) { return static_cast<Square>((m & 0xFC0) >> 6); }
     inline bool IsPromotion(Move m) { return m >> 15; }
     inline MoveType GetMoveType(Move m) { return static_cast<MoveType>(m & 0xF000); }
-    inline bool IsValid(Move m) { return m != INVALID_MOVE; }
+    inline bool IsValidMove(Move m) { return m != INVALID_MOVE; }
     inline std::string GetMoveName(Move m) {
         if (m == INVALID_MOVE) {
             return "0000";
         }
-        std::string ret;
-        ret.push_back(FileNames[FileFromSquare(FromSquare(m))]);
-        ret.push_back(RankNames[RankFromSquare(FromSquare(m))]);
-        ret.push_back(FileNames[FileFromSquare(ToSquare(m))]);
-        ret.push_back(RankNames[RankFromSquare(ToSquare(m))]);
+        std::string ret = {FileNames[FileFromSquare(FromSquare(m))], RankNames[RankFromSquare(FromSquare(m))],
+                           FileNames[FileFromSquare(ToSquare(m))], RankNames[RankFromSquare(ToSquare(m))]};
         if (IsPromotion(m)) {
             switch (GetMoveType(m)) {
                 case PROMOTE_QUEEN:
-                    ret.push_back('q');
+                    ret += 'q';
                     break;
                 case PROMOTE_ROOK:
-                    ret.push_back('r');
+                    ret += 'r';
                     break;
                 case PROMOTE_BISHOP:
-                    ret.push_back('b');
+                    ret += 'b';
                     break;
                 case PROMOTE_KNIGHT:
-                    ret.push_back('n');
+                    ret += 'n';
                     break;
                 default:
                     break;
@@ -208,7 +205,6 @@ namespace Meetra {
         }
         return ret;
     }
-    //inline constexpr bool IsValid(Move m) { return (m & 0x7FF) != INVALID_MOVE; }
 #pragma endregion
 #pragma endregion
 

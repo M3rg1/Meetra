@@ -30,7 +30,6 @@ namespace Meetra {
         static void ParseSearchOptions(StringTokenStream &sts, ABSearch::SearchSettings &settings);
 
         inline static std::mutex output_mtx;
-        //inline static ABSearch search;
     };
 
 }

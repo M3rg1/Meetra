@@ -3,6 +3,7 @@
 #include "FenLoader.h"
 #include "Misc.h"
 #include <cstring>
+#include "ZobristHash.h"
 
 namespace Meetra {
 
@@ -41,7 +42,7 @@ namespace Meetra {
             }
         }
 
-        zobrist_hash = GenZobristHash(*this);
+        zobrist_hash = Zobrist::GenHash(*this);
     }
 
     Bitboard Board::PinnedPiecesForSquare(Square s, Color attackers_color) const {
@@ -51,20 +52,20 @@ namespace Meetra {
 
         Bitboard bishop_queen_attackers = GetPieces(BISHOP, attackers_color) | GetPieces(QUEEN, attackers_color);
         while (bishop_queen_attackers) {
-            Square attacker_s = PopLsb(bishop_queen_attackers);
-            Bitboard blockers =
-                    rays_between_squares[attacker_s][s] & potential_blockers & bishop_unbound_moves[attacker_s];
-            if (blockers && !MoreThanOne(blockers)) {
+            Square attacker_s = Bitboards::PopLsb(bishop_queen_attackers);
+            Bitboard blockers = Bitboards::GetRayBetweenSquares(attacker_s, s) & potential_blockers &
+                                Bitboards::GetUnboundBishopMoves(attacker_s);
+            if (blockers && !Bitboards::MoreThanOne(blockers)) {
                 pinned_pieces |= blockers;
             }
         }
 
         Bitboard rook_queen_attackers = GetPieces(ROOK, attackers_color) | GetPieces(QUEEN, attackers_color);
         while (rook_queen_attackers) {
-            Square attacker_s = PopLsb(rook_queen_attackers);
-            Bitboard blockers =
-                    rays_between_squares[attacker_s][s] & potential_blockers & rook_unbound_moves[attacker_s];
-            if (blockers && !MoreThanOne(blockers)) {
+            Square attacker_s = Bitboards::PopLsb(rook_queen_attackers);
+            Bitboard blockers = Bitboards::GetRayBetweenSquares(attacker_s, s) & potential_blockers &
+                                Bitboards::GetUnboundRookMoves(attacker_s);
+            if (blockers && !Bitboards::MoreThanOne(blockers)) {
                 pinned_pieces |= blockers;
             }
         }
@@ -73,21 +74,23 @@ namespace Meetra {
     }
 
     bool Board::IsSquareAttacked(Square s, Color attacked_by, Bitboard occ) const {
-        return GetAttacksForPiece<ROOK>(s, occ) & (GetPieces(ROOK, attacked_by) | GetPieces(QUEEN, attacked_by)) ||
-               GetAttacksForPiece<BISHOP>(s, occ) & (GetPieces(BISHOP, attacked_by) | GetPieces(QUEEN, attacked_by)) ||
-               GetAttacksForPiece<KNIGHT>(s) & GetPieces(KNIGHT, attacked_by) ||
-               GetAttacksForPiece<PAWN>(s, occ, OtherColor(attacked_by)) & GetPieces(PAWN, attacked_by) ||
-               GetAttacksForPiece<KING>(s) & GetPieces(KING, attacked_by);
+        return Bitboards::GetAttacksForPiece<ROOK>(s, occ) &
+               (GetPieces(ROOK, attacked_by) | GetPieces(QUEEN, attacked_by)) ||
+               Bitboards::GetAttacksForPiece<BISHOP>(s, occ) &
+               (GetPieces(BISHOP, attacked_by) | GetPieces(QUEEN, attacked_by)) ||
+               Bitboards::GetAttacksForPiece<KNIGHT>(s) & GetPieces(KNIGHT, attacked_by) ||
+               Bitboards::GetAttacksForPiece<PAWN>(s, occ, OtherColor(attacked_by)) & GetPieces(PAWN, attacked_by) ||
+               Bitboards::GetAttacksForPiece<KING>(s) & GetPieces(KING, attacked_by);
     }
 
     Bitboard Board::SquareAttackers(Square s, Color attacked_by, Bitboard occ) const {
-        return (GetAttacksForPiece<PAWN>(s, occ, OtherColor(attacked_by)) & GetPieces(PAWN, attacked_by)) |
-               (GetAttacksForPiece<KNIGHT>(s) & GetPieces(KNIGHT, attacked_by)) |
-               (GetAttacksForPiece<BISHOP>(s, occ) &
+        return (Bitboards::GetAttacksForPiece<PAWN>(s, occ, OtherColor(attacked_by)) & GetPieces(PAWN, attacked_by)) |
+               (Bitboards::GetAttacksForPiece<KNIGHT>(s) & GetPieces(KNIGHT, attacked_by)) |
+               (Bitboards::GetAttacksForPiece<BISHOP>(s, occ) &
                 (GetPieces(BISHOP, attacked_by) | GetPieces(QUEEN, attacked_by))) |
-               (GetAttacksForPiece<ROOK>(s, occ) &
+               (Bitboards::GetAttacksForPiece<ROOK>(s, occ) &
                 (GetPieces(ROOK, attacked_by) | GetPieces(QUEEN, attacked_by))) |
-               (GetAttacksForPiece<KING>(s) & GetPieces(KING, attacked_by));
+               (Bitboards::GetAttacksForPiece<KING>(s) & GetPieces(KING, attacked_by));
     }
 
     bool Board::MakeMove(Move m) {
@@ -136,21 +139,24 @@ namespace Meetra {
                 SetEpSquare(next_move_col ? to + SOUTH : to + NORTH);
             } else if (move_type == CASTLING) {
                 MovePiece(RookFromCastling(to), RookToCastling(to));
-                zobrist_hash = GenZobristHash(*this);
-                return !IsSquareAttacked(Lsb(GetPieces(KING, this_move_col)), next_move_col, GetPieces(ALL_TYPES));
+                zobrist_hash = Zobrist::GenHash(*this);
+                return !IsSquareAttacked(Bitboards::Lsb(GetPieces(KING, this_move_col)), next_move_col,
+                                         GetPieces(ALL_TYPES));
             } else if (IsPromotion(m)) {
                 RemovePiece(to);
                 PutPiece(to, NewPiece(PieceTypeFromFlag(move_type), this_move_col));
             } else if (move_type == EN_PASSANT) {
-                zobrist_hash = GenZobristHash(*this);
-                return !IsSquareAttacked(Lsb(GetPieces(KING, this_move_col)), next_move_col, GetPieces(ALL_TYPES));
+                zobrist_hash = Zobrist::GenHash(*this);
+                return !IsSquareAttacked(Bitboards::Lsb(GetPieces(KING, this_move_col)), next_move_col,
+                                         GetPieces(ALL_TYPES));
             }
         } else if (moved_piece_type == KING) {
-            zobrist_hash = GenZobristHash(*this);
-            return !IsSquareAttacked(Lsb(GetPieces(KING, this_move_col)), next_move_col, GetPieces(ALL_TYPES));
+            zobrist_hash = Zobrist::GenHash(*this);
+            return !IsSquareAttacked(Bitboards::Lsb(GetPieces(KING, this_move_col)), next_move_col,
+                                     GetPieces(ALL_TYPES));
         }
 
-        zobrist_hash = GenZobristHash(*this);
+        zobrist_hash = Zobrist::GenHash(*this);
         return true;
     }
 
