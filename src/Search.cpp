@@ -4,7 +4,7 @@
 #include <chrono>
 #include "TranspositionTable.h"
 #include <sstream>
-#include "UciHandler.h"
+#include "Uci.h"
 #include "omp.h"
 
 namespace Meetra {
@@ -46,7 +46,7 @@ namespace Meetra {
         }
 
         info_timer.SetInterval([&]() {
-            UciHandler::SendToGui(GetUpdateSearchInfo());
+            Uci::SendToGui(GetUpdateSearchInfo());
         }, settings.info_to_ui_ms_timer);
     }
 
@@ -73,15 +73,15 @@ namespace Meetra {
         if (root_moves_cnt < 2) {
             StopSearch();
             Move bm = root_moves_cnt == 0 ? INVALID_MOVE : root_moves[0].move;
-            UciHandler::SendToGui("bestmove " + GetMoveName(bm));
+            Uci::SendToGui("bestmove " + GetMoveName(bm));
             return;
         }
 
         Score temp_scores[root_moves_cnt];
         for (curr_max_depth = 2; curr_max_depth <= settings.max_allowed_depth; curr_max_depth++) {
 
-            Score alpha = NEGATIVE_INF;
-            Score beta = POSITIVE_INF;
+            auto alpha = NEGATIVE_INF;
+            auto beta = POSITIVE_INF;
             qsearch_depth = 0;
 
             for (int curr_move_num = 0; curr_move_num < root_moves_cnt; curr_move_num++) {
@@ -89,7 +89,7 @@ namespace Meetra {
                 Move curr_move = root_moves[curr_move_num].move;
 
                 if (show_currmove && ElapsedTimeMs() > 1000) {
-                    UciHandler::SendToGui(GetCurrMoveInfo(curr_move, curr_move_num, settings.board));
+                    Uci::SendToGui(GetCurrMoveInfo(curr_move, curr_move_num, settings.board));
                 }
 
                 settings.board.MakeMove(curr_move);
@@ -123,7 +123,7 @@ namespace Meetra {
             }
 
             if (curr_max_depth > plies_muted) {
-                UciHandler::SendToGui(GetSearchInfo(settings.board));
+                Uci::SendToGui(GetSearchInfo(settings.board));
             }
 
             if (!run || !EnoughTimeLeft()) {
@@ -132,7 +132,7 @@ namespace Meetra {
         }
 
         StopSearch();
-        UciHandler::SendToGui(GetBestMove());
+        Uci::SendToGui(GetBestMove());
     }
 
     Score ABSearch::NegaMax(Board &board, Score alpha, Score beta, Depth depth, Depth ply) {

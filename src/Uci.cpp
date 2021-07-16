@@ -1,15 +1,31 @@
-#include "UciHandler.h"
+#include "Uci.h"
 #include "Misc.h"
-#include <string>
 #include <iostream>
 #include "MoveGen.h"
 #include "Perft.h"
 #include "ThreadPool.h"
 #include "Search.h"
+#include "StringTokenStream.h"
+#include <mutex>
 
-namespace Meetra {
+namespace Meetra::Uci {
 
-    void UciHandler::Listen() {
+    void UciCommand();
+    void IsReadyCommand();
+    void GoCommand(StringTokenStream &sts, Board &board, ABSearch &search);
+    void UciNewGameCommand(ABSearch &search);
+    void PositionCommand(StringTokenStream &sts, Board &board);
+    void PerftCommand(StringTokenStream &sts, Board &board);
+    void SetOptionCommand(StringTokenStream &sts, ABSearch &search);
+    void StopCommand(ABSearch &search);
+    void QuitCommand(ABSearch& search);
+    ABSearch::SearchSettings InitSearchOptions(StringTokenStream &sts);
+    void MakeUciMove(const std::string &move_string, Board &board);
+    void ParseSearchOptions(StringTokenStream &sts, ABSearch::SearchSettings &settings);
+
+    std::mutex output_mtx;
+
+    void Listen() {
 
         Board board;
         ABSearch search;
@@ -38,12 +54,12 @@ namespace Meetra {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
-    void UciHandler::SendToGui(const std::string &data) {
-        std::scoped_lock<std::mutex> lock{output_mtx};
+    void SendToGui(const std::string &data) {
+        std::scoped_lock<std::mutex> lock(output_mtx);
         std::cout << data << std::endl;
     }
 
-    void UciHandler::UciCommand() {
+    void UciCommand() {
         std::string info = "id name " + GetName() + " v. " + GetVersion() + '\n'
                            + "id author " + GetAuthor() + '\n'
                            + GetOptions() + '\n'
@@ -51,7 +67,7 @@ namespace Meetra {
         SendToGui(info);
     }
 
-    void UciHandler::GoCommand(StringTokenStream &sts, Board &board, ABSearch &search) {
+    void GoCommand(StringTokenStream &sts, Board &board, ABSearch &search) {
         if (search.IsSearching()) {
             return;
         }
@@ -62,18 +78,18 @@ namespace Meetra {
         });
     }
 
-    void UciHandler::PerftCommand(StringTokenStream &sts, Board &board) {
+    void PerftCommand(StringTokenStream &sts, Board &board) {
         if (sts.HasNext()) {
             Depth depth = std::stoi(sts.NextToken());
             RunPerft(depth, board);
         }
     }
 
-    void UciHandler::IsReadyCommand() {
+    void IsReadyCommand() {
         SendToGui("readyok");
     }
 
-    void UciHandler::PositionCommand(StringTokenStream &sts, Board &board) {
+    void PositionCommand(StringTokenStream &sts, Board &board) {
 
         std::string token = sts.NextToken();
         std::transform(token.begin(), token.end(), token.begin(), ::tolower);
@@ -97,7 +113,7 @@ namespace Meetra {
         }
     }
 
-    void UciHandler::QuitCommand(ABSearch &search) {
+    void QuitCommand(ABSearch &search) {
         StopCommand(search);
         ThreadPool::Shutdown();
         // await search shutdown
@@ -105,17 +121,17 @@ namespace Meetra {
         //  (shutdown = true - static var in destructor set to true)
     }
 
-    void UciHandler::StopCommand(ABSearch &search) {
+    void StopCommand(ABSearch &search) {
         search.StopSearch();
         // should await search completion here maybe?
     }
 
-    void UciHandler::UciNewGameCommand(ABSearch &search) {
+    void UciNewGameCommand(ABSearch &search) {
         search.ClearTT();
     }
 
     // TODO implement search only certain moves, search only max amount of nodes, etc.
-    void UciHandler::SetOptionCommand(StringTokenStream &sts, ABSearch &search) {
+    void SetOptionCommand(StringTokenStream &sts, ABSearch &search) {
         if (sts.NextToken() != "name") return;
         sts.MakeLower();
         std::string option = sts.NextToken();
@@ -158,7 +174,7 @@ namespace Meetra {
         }
     }
 
-    void UciHandler::MakeUciMove(const std::string &move_string, Board &board) {
+    void MakeUciMove(const std::string &move_string, Board &board) {
         Move move_made = NewMoveFromName(move_string);
         MoveGen move_gen(board);
         Move move;
@@ -173,13 +189,13 @@ namespace Meetra {
         }
     }
 
-    ABSearch::SearchSettings UciHandler::InitSearchOptions(StringTokenStream &sts) {
+    ABSearch::SearchSettings InitSearchOptions(StringTokenStream &sts) {
         ABSearch::SearchSettings settings;
         ParseSearchOptions(sts, settings);
         return settings;
     }
 
-    void UciHandler::ParseSearchOptions(StringTokenStream &sts, ABSearch::SearchSettings &settings) {
+    void ParseSearchOptions(StringTokenStream &sts, ABSearch::SearchSettings &settings) {
         while (sts.HasNext()) {
             std::string token = sts.NextToken();
             if (token == "wtime") settings.white_time = std::stoi(sts.NextToken());

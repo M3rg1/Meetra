@@ -1,5 +1,5 @@
 #include <iostream>
-#include "UciHandler.h"
+#include "Uci.h"
 #include "Bitboards.h"
 #include "ThreadPool.h"
 #include "ZobristHash.h"
@@ -27,7 +27,7 @@ int main(int argc, char *arv[]) {
     */
 
     //UciHandler::Init();
-    UciHandler::Listen();
+    Uci::Listen();
 
     return 0;
 }
