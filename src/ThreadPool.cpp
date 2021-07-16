@@ -6,8 +6,7 @@ namespace Meetra {
 
     ThreadPool::ThreadPool(int num_threads) {
         running = true;
-        num_threads = std::max(num_threads, MIN_THREADS_NUM);
-        num_threads = std::min(num_threads, MAX_THREADS_NUM);
+        num_threads = std::clamp(num_threads, MIN_THREADS_NUM, MAX_THREADS_NUM);
         for (auto i = 0; i < num_threads; i++) {
             threads.emplace_back([&] {
                 while (true) {
@@ -24,6 +23,29 @@ namespace Meetra {
                     task();
                 }
             });
+        }
+    }
+
+    ThreadPool *ThreadPool::GetInstance() {
+        if (!instance) {
+            InitThreadPool(DEFAULT_THREADS_NUM);
+            return instance.get();
+        }
+        return instance.get();
+    }
+
+    void ThreadPool::Resize(int num_threads) {
+        Shutdown();
+        InitThreadPool(num_threads);
+    }
+
+    void ThreadPool::Shutdown(){
+        instance.reset();
+    }
+
+    void ThreadPool::InitThreadPool(int thread_num) {
+        if (!instance) {
+            instance = std::make_unique<ThreadPool>(thread_num);
         }
     }
 

@@ -6,13 +6,10 @@
 
 namespace Meetra {
 
-    /**
-     * Splits a string delimited by whitespace into tokens and converts them to lowercase.
-     */
     class StringTokenStream {
 
     public:
-        explicit StringTokenStream(std::string str, char delimiter = ' ');
+        explicit StringTokenStream(const std::string& str, char delimiter = ' ');
         std::string NextToken();
         void MakeLower();
         bool HasNext();

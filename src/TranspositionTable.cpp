@@ -10,7 +10,7 @@ namespace Meetra {
     // https://en.cppreference.com/w/cpp/atomic/atomic_flag spinlock
 
     TranspositionTable::TranspositionTable(size_t size) : size_entries(size) {
-        table = new TTEntry[sizeof(TTEntry) * size];
+        table = std::make_unique<TTEntry[]>(size);
         index_mask = size - 1;
         Clear();
     }
@@ -90,7 +90,6 @@ namespace Meetra {
         for (auto i = 0; i < BUCKET_SIZE; i++) {
             auto index = (key + i) & index_mask;
             TTEntry *ttEntry = &table[index];
-
             if (ttEntry->Get32Key() == key_32) {
                 if (ttEntry->GetDepth() >= depth) {
                     ttEntry->SetEpoch(current_epoch);
@@ -116,17 +115,19 @@ namespace Meetra {
 
     void TranspositionTable::Resize(size_t new_size_mb) {
         // TODO convert from size mb to entries count
-        delete[] table;
+        //delete[] table;
+        table.reset();
         size_entries = new_size_mb;
         index_mask = new_size_mb - 1;
-        table = new TTEntry[sizeof(TTEntry) * new_size_mb];
+        //table = new TTEntry[sizeof(TTEntry) * new_size_mb];
+        table = std::make_unique<TTEntry[]>(new_size_mb);
         Clear();
     }
 
     void TranspositionTable::Clear() {
         used_entries = 0;
         current_epoch = 0;
-        memset(table, 0, sizeof(TTEntry) * size_entries);
+        memset(table.get(), 0, sizeof(TTEntry) * size_entries);
     }
 
     Move TranspositionTable::GetPVMove(ZobristHash key) const {
@@ -145,9 +146,5 @@ namespace Meetra {
             }
         }
         return INVALID_MOVE;
-    }
-
-    TranspositionTable::~TranspositionTable() {
-        delete[] table;
     }
 }

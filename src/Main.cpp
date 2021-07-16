@@ -26,8 +26,8 @@ int main(int argc, char *arv[]) {
     std::cout << board.PPBoard() << std::endl;
     */
 
-    UciHandler uciHandler;
-    uciHandler.Listen();
+    //UciHandler::Init();
+    UciHandler::Listen();
 
     return 0;
 }

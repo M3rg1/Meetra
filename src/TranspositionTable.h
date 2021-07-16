@@ -5,6 +5,7 @@
 #include "Bitboards.h"
 #include "Board.h"
 #include "ZobristHash.h"
+#include <memory>
 
 namespace Meetra {
 
@@ -44,10 +45,9 @@ namespace Meetra {
         [[nodiscard]] double Usage() const {
             return static_cast<double>(used_entries) / static_cast<double>(size_entries);
         }
-        ~TranspositionTable();
 
 
-    private:
+    public:
 
         [[nodiscard]] Score RemoveMatePly(Score score, Depth ply) const;
         [[nodiscard]] Score AddMatePly(Score score, Depth ply) const;
@@ -89,7 +89,7 @@ namespace Meetra {
         size_t used_entries;
         size_t size_entries;
         size_t index_mask;
-        TTEntry *table;
+        std::unique_ptr<TTEntry[]> table;
     };
 
 }

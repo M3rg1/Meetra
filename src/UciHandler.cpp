@@ -9,38 +9,30 @@
 
 namespace Meetra {
 
-    std::mutex UciHandler::output_mtx;
-
-    UciHandler::UciHandler() {
-        board = Board(STARTPOS_FEN);
-        listen = false;
-    }
-
     void UciHandler::Listen() {
-        listen = true;
+
+        Board board;
+        ABSearch search;
+
         std::string token;
         std::string input;
 
         do {
             std::getline(std::cin, input);
-            // TODO make lower for sts.GetNextToken - not for the entire string - so we can get the FEN properly capitalized
-            // but other shit lowered
             StringTokenStream sts(input);
             token = sts.NextToken();
 
-            if (token != "position") sts.MakeLower();
-
             if (token == "uci") UciCommand();
             else if (token == "isready") IsReadyCommand();
-            else if (token == "go") GoCommand(sts);
-            else if (token == "position") PositionCommand(sts);
-            else if (token == "setoption") SetOptionCommand(sts);
-            else if (token == "stop") StopCommand();
-            else if (token == "ucinewgame") UciNewGameCommand();
-            else if (token == "perft") PerftCommand(sts);
-            else if (token == "quit") QuitCommand();
+            else if (token == "go") GoCommand(sts, board, search);
+            else if (token == "position") PositionCommand(sts, board);
+            else if (token == "setoption") SetOptionCommand(sts, search);
+            else if (token == "stop") StopCommand(search);
+            else if (token == "ucinewgame") UciNewGameCommand(search);
+            else if (token == "perft") PerftCommand(sts, board);
+            else if (token == "quit") QuitCommand(search);
 
-        } while (listen && !std::cin.eof());
+        } while (token != "quit" && !std::cin.eof());
 
         // TODO fix this have some sort of terminating function that waits for everything (also call it in the quit command i guess)
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -59,17 +51,18 @@ namespace Meetra {
         SendToGui(info);
     }
 
-    void UciHandler::GoCommand(StringTokenStream &sts) {
+    void UciHandler::GoCommand(StringTokenStream &sts, Board &board, ABSearch &search) {
         if (search.IsSearching()) {
             return;
         }
         ABSearch::SearchSettings settings = InitSearchOptions(sts);
+        settings.board = board;
         ThreadPool::PushTask([&, settings]() {
             search.StartSearch(settings);
         });
     }
 
-    void UciHandler::PerftCommand(StringTokenStream &sts) {
+    void UciHandler::PerftCommand(StringTokenStream &sts, Board &board) {
         if (sts.HasNext()) {
             Depth depth = std::stoi(sts.NextToken());
             RunPerft(depth, board);
@@ -80,11 +73,12 @@ namespace Meetra {
         SendToGui("readyok");
     }
 
-    void UciHandler::PositionCommand(StringTokenStream &sts) {
+    void UciHandler::PositionCommand(StringTokenStream &sts, Board &board) {
 
         std::string token = sts.NextToken();
         std::transform(token.begin(), token.end(), token.begin(), ::tolower);
         std::string fen;
+
         if (token == "startpos") {
             fen = STARTPOS_FEN;
             if (sts.HasNext()) token = sts.NextToken();
@@ -94,42 +88,41 @@ namespace Meetra {
             }
         }
 
-        board = Board(fen);
+        board.NewPosition(fen);
 
-        sts.MakeLower();
         if (token == "moves") {
             while (sts.HasNext()) {
-                MakeUciMove(sts.NextToken());
+                MakeUciMove(sts.NextToken(), board);
             }
         }
     }
 
-    void UciHandler::QuitCommand() {
-        StopCommand();
-        listen = false;
+    void UciHandler::QuitCommand(ABSearch &search) {
+        StopCommand(search);
+        ThreadPool::Shutdown();
         // await search shutdown
-        // TODO will shutdown threadpool as well, and await here in while loop until thread pool running = false
+        // TODO will shutdown ThreadPool as well, and await here in while loop until thread pool running = false1
         //  (shutdown = true - static var in destructor set to true)
     }
 
-    void UciHandler::StopCommand() {
+    void UciHandler::StopCommand(ABSearch &search) {
         search.StopSearch();
         // should await search completion here maybe?
     }
 
-    void UciHandler::UciNewGameCommand() {
+    void UciHandler::UciNewGameCommand(ABSearch &search) {
         search.ClearTT();
     }
 
     // TODO implement search only certain moves, search only max amount of nodes, etc.
-    void UciHandler::SetOptionCommand(StringTokenStream &sts) {
+    void UciHandler::SetOptionCommand(StringTokenStream &sts, ABSearch &search) {
         if (sts.NextToken() != "name") return;
+        sts.MakeLower();
         std::string option = sts.NextToken();
         if (option == "hash") {
             if (sts.HasNext() && sts.NextToken() == "value") {
-                auto hash_size = std::stoi(sts.NextToken());
-                //std::min(hash_size, MAX_HASH_SIZE);
-                //std::max(hash_size, MIN_HASH_SIZE;
+                //auto hash_size = std::stoi(sts.NextToken());
+                //hash_size = std::clamp(hash_size, MIN_HASH_SIZE, MAX_HASH_SIZE);
                 //search.SetTTSize(hash_size);
             }
         } else if (option == "clear") {
@@ -165,7 +158,7 @@ namespace Meetra {
         }
     }
 
-    void UciHandler::MakeUciMove(const std::string &move_string) {
+    void UciHandler::MakeUciMove(const std::string &move_string, Board &board) {
         Move move_made = NewMoveFromName(move_string);
         MoveGen move_gen(board);
         Move move;
@@ -182,24 +175,12 @@ namespace Meetra {
 
     ABSearch::SearchSettings UciHandler::InitSearchOptions(StringTokenStream &sts) {
         ABSearch::SearchSettings settings;
-        settings.max_allowed_depth = DEFAULT_SEARCH_DEPTH;
-        settings.allowed_time = DEFAULT_SEARCH_TIME;
-        settings.info_to_ui_ms_timer = DEFAULT_UI_SPAM;
-        settings.infinite = false;
-        settings.fixed_timer = false;
-        settings.black_increment = 0;
-        settings.white_increment = 0;
-        settings.white_time = 0;
-        settings.black_time = 0;
-        settings.board = board;
         ParseSearchOptions(sts, settings);
         return settings;
     }
 
     void UciHandler::ParseSearchOptions(StringTokenStream &sts, ABSearch::SearchSettings &settings) {
-        settings.fixed_timer = false;
         while (sts.HasNext()) {
-            // go wtime 108005 btime 227738 winc 0 binc 0 movestogo 7
             std::string token = sts.NextToken();
             if (token == "wtime") settings.white_time = std::stoi(sts.NextToken());
             else if (token == "btime") settings.black_time = std::stoi(sts.NextToken());

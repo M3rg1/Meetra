@@ -10,14 +10,14 @@ namespace Meetra {
     class Board {
 
     public:
-        explicit Board(std::string Fen = STARTPOS_FEN);
-
+        Board();
+        void NewPosition(const std::string &fen);
         bool MakeMove(Move m);
         void UnmakeMove(Move m);
         [[nodiscard]] bool IsSquareAttacked(Square s, Color attacked_by, Bitboard occ) const;
         [[nodiscard]] Bitboard SquareAttackers(Square s, Color attacked_by, Bitboard occ) const;
         [[nodiscard]] Bitboard PinnedPiecesForSquare(Square s, Color blockers_color) const;
-        [[nodiscard]] int MovesMadeCount() const { return history_cnt; }
+        [[nodiscard]] int_fast16_t MovesMadeCount() const { return history_cnt; }
 
 #pragma region ===== Piece getters =====
         [[nodiscard]] inline Bitboard GetPieces(PieceType pt, Color c) const { return type_bbs[pt] & color_bbs[c]; }
@@ -131,9 +131,9 @@ namespace Meetra {
 
         ZobristHash zobrist_hash;
         GameState game_state;
-        Piece board[SQUARE_NR]{NO_PIECE};
-        Bitboard color_bbs[COLOR_NR]{0};
-        Bitboard type_bbs[PIECE_TYPE_NR]{NONE_PIECE_TYPE};
+        Piece board[SQUARE_NR];
+        Bitboard color_bbs[COLOR_NR];
+        Bitboard type_bbs[PIECE_TYPE_NR];
 #pragma endregion
     };
 }

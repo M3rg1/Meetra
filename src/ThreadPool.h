@@ -17,28 +17,13 @@ namespace Meetra {
 
     class ThreadPool {
     public:
-        static ThreadPool *GetInstance() {
-            if (!instance) {
-                InitThreadPool(DEFAULT_THREADS_NUM);
-                return instance.get();
-            }
-            return instance.get();
-        }
-
-        static void Resize(int num_threads) {
-            instance.reset();
-            InitThreadPool(num_threads);
-        }
-
+        static ThreadPool *GetInstance();
+        static void Resize(int num_threads);
         explicit ThreadPool(int num_threads);
-
         ~ThreadPool();
+        static void InitThreadPool(int thread_num);
+        static void Shutdown();
 
-        static void InitThreadPool(auto thread_num) {
-            if (!instance) {
-                instance = std::make_unique<ThreadPool>(thread_num);
-            }
-        }
 
         template<typename F, typename... Args>
         static void PushTask(F f, Args &&... args) {
@@ -64,16 +49,6 @@ namespace Meetra {
 
         bool running;
     };
-
-/*    std::vector<std::thread> ThreadPool::threads = std::vector<std::thread>();
-    std::queue<std::function<void()>> ThreadPool::task_queue = std::queue<std::function<void()>>();
-    std::mutex ThreadPool::mtx = std::mutex();
-    bool ThreadPool::running = true;*/
-
-/*    inline void InitThreadPool() {
-        ThreadPool *tp = Meetra::ThreadPool::GetInstance();
-        Meetra::ThreadPool::i_PushTask()
-    }*/
 
 }
 

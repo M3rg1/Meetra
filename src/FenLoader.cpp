@@ -5,12 +5,12 @@
 
 namespace Meetra {
 
-    std::unique_ptr<FenLoader::LoadedInfo> FenLoader::ParseFen(std::string fen) {
+    std::unique_ptr<FenLoader::LoadedInfo> FenLoader::ParseFen(const std::string& fen) {
 
         // TODO make some basic validity checks for the fen, throw error if invalid
 
         auto loadedInfo = std::make_unique<LoadedInfo>();
-        StringTokenStream sts(std::move(fen));
+        StringTokenStream sts(fen);
 
         // parse board position
         std::string board_pos_fen = sts.NextToken();

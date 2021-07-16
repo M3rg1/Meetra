@@ -10,19 +10,26 @@ namespace Meetra {
     // bitboards, arrays, game state and such so we dont have to copy everything, this takes forever
     // make LoadFen function that takes in game state and other arrays as arguments and fills them
 
-    Board::Board(std::string fen) {
+    Board::Board() {
+        NewPosition(STARTPOS_FEN);
+    }
+
+    void Board::NewPosition(const std::string &fen) {
         history_cnt = 0;
         game_state = NEW_GAME_STATE;
-        auto loadedInfo = Meetra::FenLoader::ParseFen(std::move(fen));
+        auto loadedInfo = FenLoader::ParseFen(fen);
         SetColorToMove(loadedInfo->color_to_move);
-        if (loadedInfo->w_castle_short) { SetCastlingRights(WHITE_SHORT); }
-        if (loadedInfo->w_castle_long) { SetCastlingRights(WHITE_LONG); }
-        if (loadedInfo->b_castle_short) { SetCastlingRights(BLACK_SHORT); }
-        if (loadedInfo->b_castle_long) { SetCastlingRights(BLACK_LONG); }
+        if (loadedInfo->w_castle_short) SetCastlingRights(WHITE_SHORT);
+        if (loadedInfo->w_castle_long) SetCastlingRights(WHITE_LONG);
+        if (loadedInfo->b_castle_short) SetCastlingRights(BLACK_SHORT);
+        if (loadedInfo->b_castle_long) SetCastlingRights(BLACK_LONG);
         SetEpSquare(loadedInfo->ep_square);
         SetPly(loadedInfo->ply);
         SetMoveNumber(loadedInfo->full_move_count);
-        std::memcpy(board, loadedInfo->board_occ, sizeof(Piece) * SQUARE_NR);
+
+        std::memcpy(board, loadedInfo->board_occ, sizeof(*board) * SQUARE_NR);
+        std::memset(color_bbs, 0, sizeof(*color_bbs) * COLOR_NR);
+        std::memset(type_bbs, 0, sizeof(*type_bbs) * PIECE_TYPE_NR);
 
         for (Square s = A1; s <= H8; ++s) {
             Piece p = board[s];
@@ -33,6 +40,7 @@ namespace Meetra {
                 type_bbs[ALL_TYPES] |= pos;
             }
         }
+
         zobrist_hash = GenZobristHash(*this);
     }
 
@@ -44,7 +52,8 @@ namespace Meetra {
         Bitboard bishop_queen_attackers = GetPieces(BISHOP, attackers_color) | GetPieces(QUEEN, attackers_color);
         while (bishop_queen_attackers) {
             Square attacker_s = PopLsb(bishop_queen_attackers);
-            Bitboard blockers = rays_between_squares[attacker_s][s] & potential_blockers & bishop_unbound_moves[attacker_s];
+            Bitboard blockers =
+                    rays_between_squares[attacker_s][s] & potential_blockers & bishop_unbound_moves[attacker_s];
             if (blockers && !MoreThanOne(blockers)) {
                 pinned_pieces |= blockers;
             }
@@ -53,7 +62,8 @@ namespace Meetra {
         Bitboard rook_queen_attackers = GetPieces(ROOK, attackers_color) | GetPieces(QUEEN, attackers_color);
         while (rook_queen_attackers) {
             Square attacker_s = PopLsb(rook_queen_attackers);
-            Bitboard blockers = rays_between_squares[attacker_s][s] & potential_blockers & rook_unbound_moves[attacker_s];
+            Bitboard blockers =
+                    rays_between_squares[attacker_s][s] & potential_blockers & rook_unbound_moves[attacker_s];
             if (blockers && !MoreThanOne(blockers)) {
                 pinned_pieces |= blockers;
             }
@@ -157,12 +167,12 @@ namespace Meetra {
         if (captured_piece) {
             if (move_type == EN_PASSANT) {
                 to = ColorToMove() ? to + SOUTH : to + NORTH;
-            } else if(IsPromotion(m)){
+            } else if (IsPromotion(m)) {
                 RemovePiece(from);
                 PutPiece(from, NewPiece(PAWN, static_cast<Color>(!ColorToMove())));
             }
             PutPiece(to, captured_piece);
-        } else if(move_type) {
+        } else if (move_type) {
             if (move_type == CASTLING) {
                 MovePiece(RookToCastling(to), RookFromCastling(to));
             } else if (IsPromotion(m)) {

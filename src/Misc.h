@@ -1,7 +1,6 @@
 #ifndef MEETRA_MISC_H
 #define MEETRA_MISC_H
 
-#include <sstream>
 #include "Types.h"
 
 namespace Meetra {
@@ -20,7 +19,7 @@ namespace Meetra {
     // or mby not because of GetOptions? idk will see when i implement options
 
     inline std::string GetLogo() {
-        return "  __  __         _            \n"
+        return "  __  __          _            \n"
                " |  \\/  |___ ___| |_ _ _ __ _ \n"
                " | |\\/| / -_) -_)  _| '_/ _  |\n"
                " |_|  |_\\___\\___|\\__|_| \\__,_|";

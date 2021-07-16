@@ -1,10 +1,7 @@
 #ifndef MEETRA_TIMER_H
 #define MEETRA_TIMER_H
 
-#include <thread>
 #include <chrono>
-#include <atomic>
-#include <iostream>
 #include <condition_variable>
 #include <mutex>
 #include "ThreadPool.h"

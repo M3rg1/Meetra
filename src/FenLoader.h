@@ -21,7 +21,7 @@ namespace Meetra {
             int full_move_count;
         };
 
-        static std::unique_ptr<LoadedInfo> ParseFen(std::string fen);
+        static std::unique_ptr<LoadedInfo> ParseFen(const std::string& fen);
 
     };
 

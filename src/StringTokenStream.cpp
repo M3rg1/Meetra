@@ -3,10 +3,8 @@
 
 namespace Meetra {
 
-    StringTokenStream::StringTokenStream(std::string str, char delimiter) {
-
+    StringTokenStream::StringTokenStream(const std::string& str, char delimiter) {
         std::stringstream ss(str);
-
         std::string section;
         while (getline(ss, section, delimiter)) {
             token_holder.push_back(section);
@@ -14,8 +12,8 @@ namespace Meetra {
     }
 
     void StringTokenStream::MakeLower() {
-        for (auto &item : token_holder) {
-            std::transform(item.begin(), item.end(), item.begin(), ::tolower);
+        for (auto &str : token_holder) {
+            std::transform(str.begin(), str.end(), str.begin(), ::tolower);
         }
     }
 

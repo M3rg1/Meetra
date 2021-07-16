@@ -11,31 +11,26 @@ namespace Meetra {
     class UciHandler {
 
     public:
-        UciHandler();
-        void Listen();
-        static void SendToGui(const std::string& data);
+        static void Listen();
+        static void SendToGui(const std::string &data);
 
     private:
-        void UciCommand();
-        void IsReadyCommand();
-        void GoCommand(StringTokenStream &sts);
-        void UciNewGameCommand();
-        void PositionCommand(StringTokenStream &sts);
-        void PerftCommand(StringTokenStream &sts);
-        void SetOptionCommand(StringTokenStream &sts);
-        void StopCommand();
-        void QuitCommand();
+        static void UciCommand();
+        static void IsReadyCommand();
+        static void GoCommand(StringTokenStream &sts, Board &board, ABSearch &search);
+        static void UciNewGameCommand(ABSearch &search);
+        static void PositionCommand(StringTokenStream &sts, Board &board);
+        static void PerftCommand(StringTokenStream &sts, Board &board);
+        static void SetOptionCommand(StringTokenStream &sts, ABSearch &search);
+        static void StopCommand(ABSearch &search);
+        static void QuitCommand(ABSearch& search);
 
-        ABSearch::SearchSettings InitSearchOptions(StringTokenStream &sts);
-        void MakeUciMove(const std::string& move_string);
-        void ParseSearchOptions(StringTokenStream &sts, ABSearch::SearchSettings &settings);
+        static ABSearch::SearchSettings InitSearchOptions(StringTokenStream &sts);
+        static void MakeUciMove(const std::string &move_string, Board &board);
+        static void ParseSearchOptions(StringTokenStream &sts, ABSearch::SearchSettings &settings);
 
-
-        static std::mutex output_mtx;
-
-        Board board;
-        bool listen;
-        ABSearch search;
+        inline static std::mutex output_mtx;
+        //inline static ABSearch search;
     };
 
 }
