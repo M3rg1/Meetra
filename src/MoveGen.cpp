@@ -58,7 +58,7 @@ namespace Meetra {
         blockers = board.PinnedPiecesForSquare(king_square, enemy_color);
         genPhase = BEST_MOVE;
 
-        if (checkers) {
+        if (IsKingInCheck()) {
             if (Bitboards::MoreThanOne(checkers)) {
                 if (my_color == WHITE) {
                     GenMovesForPieceType<KING, WHITE>(enemy_pieces | empty_squares);
@@ -290,7 +290,7 @@ namespace Meetra {
 
     template<Color C>
     void MoveGen::GenCastlingMoves() {
-        if (checkers) {
+        if (IsKingInCheck()) {
             return;
         }
         if (CanCastleShort<C>(board.GetCR())) {

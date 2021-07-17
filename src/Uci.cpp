@@ -89,10 +89,11 @@ namespace Meetra::Uci {
         if (search.IsSearching()) {
             return;
         }
+
         ABSearch::SearchSettings settings = InitSearchOptions(sts);
-        settings.board = board;
-        ThreadPool::PushTask([&, settings]() {
-            search.StartSearch(settings);
+
+        ThreadPool::PushTask([&, settings, board]() {
+            search.StartSearch(settings, board);
         });
     }
 

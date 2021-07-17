@@ -20,12 +20,12 @@ namespace Meetra {
         omp_set_num_threads(DEFAULT_SEARCH_THREADS);
     }
 
-    void ABSearch::InitSearch(SearchSettings &s) {
-
-        settings = s;
+    void ABSearch::InitSearch(SearchSettings &s, Board &board) {
 
         timer_start = time_point_cast<std::chrono::milliseconds>(
                 std::chrono::system_clock::now()).time_since_epoch().count();
+
+        settings = s;
 
         tt.NewSearch();
         normal_nodes = 0;
@@ -34,12 +34,12 @@ namespace Meetra {
         curr_max_depth = 0;
         root_moves_cnt = 0;
 
-        GenRootMoves();
+        GenRootMoves(board);
         SortRootMoves();
 
         settings.max_allowed_depth = std::min(settings.max_allowed_depth, MAX_SEARCH_DEPTH);
 
-        InitSearchTimer();
+        InitSearchTimer(board);
 
         if (!settings.infinite) {
             search_timer.SetTimeout([&]() { StopSearch(); }, settings.allowed_time);
@@ -51,24 +51,24 @@ namespace Meetra {
     }
 
 
-    void ABSearch::InitSearchTimer() {
+    void ABSearch::InitSearchTimer(Board &board) {
 
         if (settings.infinite || settings.fixed_timer) {
             return;
         }
 
-        auto time_left = settings.board.ColorToMove() == WHITE ? settings.white_time : settings.black_time;
+        auto time_left = board.ColorToMove() == WHITE ? settings.white_time : settings.black_time;
         if (time_left) {
-            int moves_made = std::min(static_cast<int>(settings.board.MovesMadeCount() + 1), 10);
+            int moves_made = std::min(static_cast<int>(board.MovesMadeCount() + 1), 10);
             double factor = 2.0 - moves_made / 10.0;
             double target = static_cast<double>(time_left) / 50.0 - moves_made;
             settings.allowed_time = static_cast<long>(factor * target);
         }
     }
 
-    void ABSearch::StartSearch(SearchSettings s) {
+    void ABSearch::StartSearch(SearchSettings s, Board board) {
         run = true;
-        InitSearch(s);
+        InitSearch(s, board);
 
         if (root_moves_cnt < 2) {
             StopSearch();
@@ -80,8 +80,8 @@ namespace Meetra {
         Score temp_scores[root_moves_cnt];
         for (curr_max_depth = 2; curr_max_depth <= settings.max_allowed_depth; curr_max_depth++) {
 
-            auto alpha = NEGATIVE_INF;
-            auto beta = POSITIVE_INF;
+            Score alpha = NEGATIVE_INF;
+            Score beta = POSITIVE_INF;
             qsearch_depth = 0;
 
             for (int curr_move_num = 0; curr_move_num < root_moves_cnt; curr_move_num++) {
@@ -89,13 +89,13 @@ namespace Meetra {
                 Move curr_move = root_moves[curr_move_num].move;
 
                 if (show_currmove && ElapsedTimeMs() > 1000) {
-                    Uci::SendToGui(GetCurrMoveInfo(curr_move, curr_move_num, settings.board));
+                    Uci::SendToGui(GetCurrMoveInfo(curr_move, curr_move_num, board));
                 }
 
-                settings.board.MakeMove(curr_move);
+                board.MakeMove(curr_move);
                 normal_nodes++;
-                Score score = -NegaMax(settings.board, -beta, -alpha, curr_max_depth - 1, 2);
-                settings.board.UnmakeMove(curr_move);
+                Score score = -NegaMax(board, -beta, -alpha, curr_max_depth - 1, 2);
+                board.UnmakeMove(curr_move);
 
                 if (run) {
                     temp_scores[curr_move_num] = score;
@@ -123,7 +123,7 @@ namespace Meetra {
             }
 
             if (curr_max_depth > plies_muted) {
-                Uci::SendToGui(GetSearchInfo(settings.board));
+                Uci::SendToGui(GetSearchInfo(board));
             }
 
             if (!run || !EnoughTimeLeft()) {
@@ -138,7 +138,7 @@ namespace Meetra {
     Score ABSearch::NegaMax(Board &board, Score alpha, Score beta, Depth depth, Depth ply) {
 
         if (board.IsRepetition() || board.Ply() >= 50) {
-            return DRAW_SCORE;
+            return -DRAW_SCORE;
         } else if (depth == 0) {
             return QuiescenceSearch(board, alpha, beta, 0);
         }
@@ -254,17 +254,17 @@ namespace Meetra {
         board.UnmakeMove(move);
     }
 
-    void ABSearch::GenRootMoves() {
-        MoveGen move_gen(settings.board);
+    void ABSearch::GenRootMoves(Board &board) {
+        MoveGen move_gen(board);
         Move move;
         while ((move = move_gen.GetNextMove<false>())) {
-            if (!settings.board.MakeMove(move)) {
-                settings.board.UnmakeMove(move);
+            if (!board.MakeMove(move)) {
+                board.UnmakeMove(move);
                 continue;
             }
-            Score score = tt.ProbeEval(settings.board.GetZobristHash(), NEGATIVE_INF, POSITIVE_INF, 0, 1);
-            settings.board.UnmakeMove(move);
-            if (score == NOT_FOUND) score = Evaluation::MoveEval(settings.board, move);
+            Score score = tt.ProbeEval(board.GetZobristHash(), NEGATIVE_INF, POSITIVE_INF, 0, 1);
+            board.UnmakeMove(move);
+            if (score == NOT_FOUND) score = Evaluation::MoveEval(board, move);
             root_moves[root_moves_cnt].move = move;
             root_moves[root_moves_cnt].score = score;
             root_moves_cnt++;
@@ -344,9 +344,9 @@ namespace Meetra {
             Move *pv_stack_ptr = pv_stack;
             Move pv_move;
             while ((pv_move = *pv_stack_ptr++)) {
-                ss << " " << GetMoveName(pv_move);
+                ss << ' ' << GetMoveName(pv_move);
             }
-            ss << "\n";
+            ss << '\n';
         }
 
         return ss.str();

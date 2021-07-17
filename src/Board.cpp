@@ -146,27 +146,23 @@ namespace Meetra {
 
         Square from = FromSquare(m);
         Square to = ToSquare(m);
-        MoveType move_type = GetMoveType(m);
-
         Piece captured_piece = CapturedPiece();
 
         MovePiece(to, from);
 
         if (captured_piece) {
-            if (move_type == EN_PASSANT) {
+            if (GetMoveType(m) == EN_PASSANT) {
                 to = ColorToMove() ? to + SOUTH : to + NORTH;
-            } else if (IsPromotion(m)) {
-                RemovePiece(from);
-                PutPiece(from, NewPiece(PAWN, static_cast<Color>(!ColorToMove())));
             }
             PutPiece(to, captured_piece);
-        } else if (move_type) {
-            if (move_type == CASTLING) {
-                MovePiece(RookToCastling(to), RookFromCastling(to));
-            } else if (IsPromotion(m)) {
-                RemovePiece(from);
-                PutPiece(from, NewPiece(PAWN, static_cast<Color>(!ColorToMove())));
-            }
+        }
+
+        if (GetMoveType(m) == CASTLING) {
+            MovePiece(RookToCastling(to), RookFromCastling(to));
+            PutPiece(from, NewPiece(KING, OtherColor(ColorToMove())));
+        } else if (IsPromotion(m)) {
+            RemovePiece(from);
+            PutPiece(from, NewPiece(PAWN, OtherColor(ColorToMove())));
         }
 
         current_state = board_history[--history_cnt];
@@ -231,6 +227,7 @@ namespace Meetra {
     std::string Board::PPBoard() const {
 
         std::stringstream ss;
+
         for (Rank r = RANK_8; r >= RANK_1; --r) {
             ss << std::to_string(r + 1) << " |";
             for (File f = FILE_A; f <= FILE_H; ++f) {
@@ -241,7 +238,6 @@ namespace Meetra {
         ss << "---------------------------\n"
            << "  | A  B  C  D  E  F  G  H\n\n"
            << "Player to move: " << (ColorToMove() == WHITE ? "white\n" : "black\n")
-           << "Move count: " << TotalMoves() << " | Ply since last capture: " << Ply() << '\n'
            << "Castling rights: ";
         if (!CanCastleAny()) {
             ss << '-';
@@ -251,7 +247,8 @@ namespace Meetra {
             if (CanBlackShortCR()) ss << 'k';
             if (CanBlackLongCR()) ss << 'q';
         }
-        ss << " | EP square: " << (EpSquare() == SQUARE_ZERO ? "-" : std::to_string(EpSquare()));
+        ss << " | EP square: " << (EpSquare() == SQUARE_ZERO ? "-" : std::to_string(EpSquare())) << '\n'
+           << "Fullmove clock: " << TotalMoves() << " | Halfmove clock: " << Ply();
 
         return ss.str();
     }

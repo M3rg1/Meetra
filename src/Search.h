@@ -13,7 +13,6 @@ namespace Meetra {
     public:
 
         struct SearchSettings {
-            Board board;
             Depth max_allowed_depth = DEFAULT_SEARCH_DEPTH;
             bool fixed_timer = false;
             bool infinite = false;
@@ -28,7 +27,7 @@ namespace Meetra {
         };
 
         ABSearch();
-        void StartSearch(SearchSettings settings);
+        void StartSearch(SearchSettings settings, Board board);
         [[nodiscard]] std::string GetSearchInfo(Board &board);
         [[nodiscard]] std::string GetBestMove() const;
         [[nodiscard]] std::string GetCurrMoveInfo(Move move, int num, Board &board) const;
@@ -54,17 +53,16 @@ namespace Meetra {
         [[nodiscard]] inline bool IsSearching() const { return run; }
 
     private:
-        void InitSearchTimer();
-        void InitSearch(SearchSettings &settings);
+        void InitSearchTimer(Board &board);
+        void InitSearch(SearchSettings &settings, Board &board);
         Score QuiescenceSearch(Board &board, Score alpha, Score beta, Depth depth);
         Score NegaMax(Board &board, Score alpha, Score beta, Depth depth, Depth ply);
         void RetrievePv(Board &board, Move *pv_line, Depth depth) const;
         void SortRootMoves();
-        void GenRootMoves();
+        void GenRootMoves(Board &board);
         [[nodiscard]] bool EnoughTimeLeft() const;
         [[nodiscard]] long ElapsedTimeMs() const;
 
-    public:
         TranspositionTable tt;
         volatile bool run;
         SearchSettings settings;
