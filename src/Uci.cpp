@@ -7,6 +7,7 @@
 #include "Search.h"
 #include "StringTokenStream.h"
 #include <mutex>
+#include <sstream>
 
 namespace Meetra::Uci {
 
@@ -22,9 +23,8 @@ namespace Meetra::Uci {
     void HelpCommand();
     void UnknownCommand();
     void QuitCommand(ABSearch &search);
-    ABSearch::SearchSettings InitSearchOptions(StringTokenStream &sts);
     void MakeUciMove(const std::string &move_string, Board &board);
-    void ParseSearchOptions(StringTokenStream &sts, ABSearch::SearchSettings &settings);
+    ABSearch::SearchSettings ParseSearchOptions(StringTokenStream &sts);
 
     std::mutex output_mtx;
 
@@ -65,7 +65,7 @@ namespace Meetra::Uci {
     }
 
     void UnknownCommand(){
-        SendToGui("Unknown command, please type 'help' to display available commands.");
+        SendToGui("Unknown command, type 'help' to display available commands.");
     }
 
     void ShowCommand(Board &board) {
@@ -78,11 +78,12 @@ namespace Meetra::Uci {
     }
 
     void UciCommand() {
-        std::string info = "id name " + GetName() + " v. " + GetVersion() + '\n'
-                           + "id author " + GetAuthor() + '\n'
-                           + GetOptions() + '\n'
-                           + "uciok";
-        SendToGui(info);
+        std::stringstream ss;
+        ss << "id name " << NAME << " v. " << VERSION << '\n'
+           << "id author " << AUTHOR << '\n'
+           << OPTIONS << '\n'
+           << "uciok";
+        SendToGui(ss.str());
     }
 
     void GoCommand(StringTokenStream &sts, Board &board, ABSearch &search) {
@@ -90,7 +91,7 @@ namespace Meetra::Uci {
             return;
         }
 
-        ABSearch::SearchSettings settings = InitSearchOptions(sts);
+        ABSearch::SearchSettings settings = ParseSearchOptions(sts);
 
         ThreadPool::PushTask([&, settings, board]() {
             search.StartSearch(settings, board);
@@ -111,7 +112,6 @@ namespace Meetra::Uci {
     void PositionCommand(StringTokenStream &sts, Board &board) {
 
         std::string token = sts.NextToken();
-        std::transform(token.begin(), token.end(), token.begin(), ::tolower);
         std::string fen;
 
         if (token == "startpos") {
@@ -142,7 +142,6 @@ namespace Meetra::Uci {
 
     void StopCommand(ABSearch &search) {
         search.StopSearch();
-        // should await search completion here maybe?
     }
 
     void UciNewGameCommand(ABSearch &search) {
@@ -208,13 +207,11 @@ namespace Meetra::Uci {
         }
     }
 
-    ABSearch::SearchSettings InitSearchOptions(StringTokenStream &sts) {
-        ABSearch::SearchSettings settings;
-        ParseSearchOptions(sts, settings);
-        return settings;
-    }
 
-    void ParseSearchOptions(StringTokenStream &sts, ABSearch::SearchSettings &settings) {
+    ABSearch::SearchSettings ParseSearchOptions(StringTokenStream &sts) {
+
+        ABSearch::SearchSettings settings;
+
         while (sts.HasNext()) {
             std::string token = sts.NextToken();
             if (token == "wtime") settings.white_time = std::stoi(sts.NextToken());
@@ -235,5 +232,7 @@ namespace Meetra::Uci {
             //else if (token == "ponder") infinite = true; - need to implement ponderhit command for this (there we set search_timer)
             //else if movestogo - thats when we get time increment
         }
+
+        return settings;
     }
 }

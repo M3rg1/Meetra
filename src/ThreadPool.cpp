@@ -14,9 +14,7 @@ namespace Meetra {
                     {
                         std::unique_lock lock{mtx};
                         task_wait_var.wait(lock, [&] { return !running || !task_queue.empty(); });
-                        if (!running && task_queue.empty()) {
-                            break;
-                        }
+                        if (!running && task_queue.empty()) return;
                         task = std::move(task_queue.front());
                         task_queue.pop();
                     }
@@ -28,7 +26,7 @@ namespace Meetra {
 
     ThreadPool *ThreadPool::GetInstance() {
         if (!instance) {
-            InitThreadPool(DEFAULT_THREADS_NUM);
+            Init(DEFAULT_THREADS_NUM);
             return instance.get();
         }
         return instance.get();
@@ -36,14 +34,14 @@ namespace Meetra {
 
     void ThreadPool::Resize(int num_threads) {
         Shutdown();
-        InitThreadPool(num_threads);
+        Init(num_threads);
     }
 
     void ThreadPool::Shutdown(){
         instance.reset();
     }
 
-    void ThreadPool::InitThreadPool(int thread_num) {
+    void ThreadPool::Init(int thread_num) {
         if (!instance) {
             instance = std::make_unique<ThreadPool>(thread_num);
         }

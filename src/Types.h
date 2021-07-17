@@ -13,7 +13,7 @@ namespace Meetra {
     typedef uint32_t Key32;
 
     typedef uint64_t Bitboard;
-#define EMPTY_BB static_cast<Bitboard>(0)
+#define EMPTY_BB 0
 
     enum GenPhase : uint8_t {
         BEST_MOVE, CAPTURE, QUIET, END

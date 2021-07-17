@@ -21,7 +21,7 @@ namespace Meetra {
         static void Resize(int num_threads);
         explicit ThreadPool(int num_threads);
         ~ThreadPool();
-        static void InitThreadPool(int thread_num);
+        static void Init(int thread_num);
         static void Shutdown();
 
 

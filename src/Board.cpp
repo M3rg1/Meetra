@@ -5,6 +5,7 @@
 #include "ZobristHash.h"
 #include "StringTokenStream.h"
 #include <sstream>
+#include <iostream>
 
 namespace Meetra {
 

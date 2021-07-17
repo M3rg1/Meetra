@@ -37,7 +37,7 @@ namespace Meetra {
         GenRootMoves(board);
         SortRootMoves();
 
-        settings.max_allowed_depth = std::min(settings.max_allowed_depth, MAX_SEARCH_DEPTH);
+        settings.max_allowed_depth = std::min(settings.max_allowed_depth, static_cast<Depth>(MAX_SEARCH_DEPTH));
 
         InitSearchTimer(board);
 

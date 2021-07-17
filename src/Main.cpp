@@ -17,7 +17,7 @@ int main(int argc, char *arv[]) {
 
     Bitboards::Init();
     Zobrist::Init();
-    //ThreadPool::InitThreadPool(4);
+    ThreadPool::Init(DEFAULT_THREADS_NUM);
 
 /*    Board board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     std::cout << GetLogo() << std::endl;
