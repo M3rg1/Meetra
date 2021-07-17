@@ -78,8 +78,6 @@ namespace Meetra {
                (Bitboards::GetAttacksForPiece<KING>(s) & GetPieces(KING, attacked_by));
     }
 
-    int err = 0;
-
     bool Board::MakeMove(Move m) {
 
         board_history[history_cnt++] = current_state;
