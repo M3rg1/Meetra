@@ -85,9 +85,13 @@ namespace Meetra {
         Color this_move_col = ColorToMove();
         ChangeColorToMove();
         Color next_move_col = ColorToMove();
+        Zobrist::UpdateColor(current_state.zobrist_hash, next_move_col);
 
         ClearCapturedPiece();
-        ClearEpSquare();
+        if (EpSquare()) {
+            Zobrist::RemoveEp(current_state.zobrist_hash, EpSquare());
+            ClearEpSquare();
+        }
         IncrementPly();
 
         IncrementMoveNumber(this_move_col);
@@ -95,12 +99,14 @@ namespace Meetra {
         Square from = FromSquare(m);
         Square to = ToSquare(m);
 
+        CastlingRights previous_cr = GetCR();
         RemoveCastlingRights(static_cast<CastlingRights>(castling_mask[from] | castling_mask[to]));
+        CastlingRights current_cr = GetCR();
+        Zobrist::UpdateCr(current_state.zobrist_hash, previous_cr, current_cr);
 
         MoveType move_type = GetMoveType(m);
         Piece captured_piece = board[to];
         PieceType moved_piece_type = TypeOfPiece(board[from]);
-
 
         if (captured_piece || move_type == EN_PASSANT) {
             Square capture_square = to;
@@ -108,38 +114,35 @@ namespace Meetra {
                 capture_square += next_move_col ? SOUTH : NORTH;
                 captured_piece = NewPiece(PAWN, next_move_col);
             }
-            RemovePiece(capture_square);
+            RemovePiece(capture_square, current_state.zobrist_hash);
             SetCapturedPiece(captured_piece);
             ResetPly();
         } else if (moved_piece_type == PAWN) {
             ResetPly();
         }
 
-        MovePiece(from, to);
+        MovePiece(from, to, current_state.zobrist_hash);
 
         if (move_type) {
             if (move_type == TWO_FORWARD) {
                 SetEpSquare(next_move_col ? to + SOUTH : to + NORTH);
+                Zobrist::RemoveEp(current_state.zobrist_hash, EpSquare());
             } else if (move_type == CASTLING) {
-                MovePiece(RookFromCastling(to), RookToCastling(to));
-                current_state.zobrist_hash = Zobrist::GenHash(*this);
+                MovePiece(RookFromCastling(to), RookToCastling(to), current_state.zobrist_hash);
                 return !IsSquareAttacked(Bitboards::Lsb(GetPieces(KING, this_move_col)), next_move_col,
                                          GetPieces(ALL_TYPES));
             } else if (IsPromotion(m)) {
-                RemovePiece(to);
-                PutPiece(to, NewPiece(PieceTypeFromFlag(move_type), this_move_col));
+                RemovePiece(to, current_state.zobrist_hash);
+                PutPiece(to, NewPiece(PieceTypeFromFlag(move_type), this_move_col), current_state.zobrist_hash);
             } else if (move_type == EN_PASSANT) {
-                current_state.zobrist_hash = Zobrist::GenHash(*this);
                 return !IsSquareAttacked(Bitboards::Lsb(GetPieces(KING, this_move_col)), next_move_col,
                                          GetPieces(ALL_TYPES));
             }
         } else if (moved_piece_type == KING) {
-            current_state.zobrist_hash = Zobrist::GenHash(*this);
             return !IsSquareAttacked(Bitboards::Lsb(GetPieces(KING, this_move_col)), next_move_col,
                                      GetPieces(ALL_TYPES));
         }
 
-        current_state.zobrist_hash = Zobrist::GenHash(*this);
         return true;
     }
 
@@ -160,10 +163,10 @@ namespace Meetra {
 
         if (GetMoveType(m) == CASTLING) {
             MovePiece(RookToCastling(to), RookFromCastling(to));
-            PutPiece(from, NewPiece(KING, OtherColor(ColorToMove())));
+            PutPiece(from, NewPiece(KING, ColorToMove()));
         } else if (IsPromotion(m)) {
             RemovePiece(from);
-            PutPiece(from, NewPiece(PAWN, OtherColor(ColorToMove())));
+            PutPiece(from, NewPiece(PAWN, ColorToMove()));
         }
 
         current_state = board_history[--history_cnt];

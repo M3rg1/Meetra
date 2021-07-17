@@ -85,7 +85,7 @@ namespace Meetra {
         // modify current game state
         inline void ResetPly() { current_state.game_state &= static_cast<GameState>(~0x3F8000); }
         inline void RemoveCastlingRights(CastlingRights cr) { current_state.game_state &= static_cast<GameState>(~cr); }
-        inline void IncrementMoveNumber(uint32_t increment) { current_state.game_state += increment << 22; }
+        inline void IncrementMoveNumber(Color col_to_move) { current_state.game_state += col_to_move << 22; }
         inline void IncrementPly() { current_state.game_state += 1 << 15; }
         inline void ClearCapturedPiece() { current_state.game_state &= static_cast<GameState>(~0x7800); }
         inline void ChangeColorToMove() { current_state.game_state ^= 1 << 10; }
@@ -94,6 +94,36 @@ namespace Meetra {
 
 #pragma region ===== Update inner structures =====
         void ParseFen(const std::string &fen);
+
+        inline void RemovePiece(Square s, ZobristHash &h) {
+            Piece p = board[s];
+            board[s] = NO_PIECE;
+            Bitboard pos = SquareToBB(s);
+            color_bbs[ColorOfPiece(p)] ^= pos;
+            type_bbs[TypeOfPiece(p)] ^= pos;
+            type_bbs[ALL_TYPES] ^= pos;
+            Zobrist::RemovePiece(h, TypeOfPiece(p), ColorOfPiece(p), s);
+        }
+
+        inline void PutPiece(Square s, Piece p, ZobristHash &h) {
+            board[s] = p;
+            Bitboard pos = SquareToBB(s);
+            color_bbs[ColorOfPiece(p)] |= pos;
+            type_bbs[TypeOfPiece(p)] |= pos;
+            type_bbs[ALL_TYPES] |= pos;
+            Zobrist::AddPiece(h, TypeOfPiece(p), ColorOfPiece(p), s);
+        }
+
+        inline void MovePiece(Square from, Square to, ZobristHash &h) {
+            Piece p = board[from];
+            board[to] = p;
+            board[from] = NO_PIECE;
+            Bitboard from_to = SquareToBB(from) | SquareToBB(to);
+            color_bbs[ColorOfPiece(p)] ^= from_to;
+            type_bbs[TypeOfPiece(p)] ^= from_to;
+            type_bbs[ALL_TYPES] ^= from_to;
+            Zobrist::MovePiece(h, TypeOfPiece(p), ColorOfPiece(p), from, to);
+        }
 
         inline void RemovePiece(Square s) {
             Piece p = board[s];

@@ -230,9 +230,7 @@ namespace Meetra {
     }
 
     std::string ABSearch::GetBestMove() const {
-        std::string ret = "bestmove ";
-        ret.append(GetMoveName(root_moves[0].move));
-        return ret;
+        return "bestmove " + GetMoveName(root_moves[0].move);
     }
 
     long ABSearch::ElapsedTimeMs() const {

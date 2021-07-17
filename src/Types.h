@@ -10,6 +10,8 @@ namespace Meetra {
     typedef int_fast16_t Score;
 
     typedef uint64_t ZobristHash;
+#define NEW_HASH 0
+
     typedef uint32_t Key32;
 
     typedef uint64_t Bitboard;

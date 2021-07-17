@@ -33,9 +33,42 @@ namespace Meetra::Zobrist {
         }
     }
 
+    void AddPiece(ZobristHash &h, PieceType p, Color c, Square s){
+        h ^= piece_keys[s][c == WHITE ? p - 1 : p + 5];
+    }
+
+    void RemovePiece(ZobristHash &h, PieceType p, Color c, Square s){
+        AddPiece(h, p, c, s);
+    }
+
+    void AddEp(ZobristHash &h, Square s) {
+        h ^= ep_keys[FileFromSquare(s)];
+    }
+
+    void RemoveEp(ZobristHash &h, Square s){
+        AddEp(h, s);
+    }
+
+    void UpdateCr(ZobristHash &h, CastlingRights previous, CastlingRights current){
+        h ^= castling_keys[previous >> 6] ^ castling_keys[current >> 6];
+    }
+
+    void SetCr(ZobristHash &h, CastlingRights cr){
+        h ^= castling_keys[cr >> 6];
+    }
+
+    void UpdateColor(ZobristHash &h, Color to_move){
+        h ^= to_move_keys[OtherColor(to_move)] ^ to_move_keys[to_move];
+    }
+
+    void MovePiece(ZobristHash &h, PieceType p, Color c, Square from, Square to){
+        RemovePiece(h, p, c, from);
+        AddPiece(h, p, c, to);
+    }
+
     ZobristHash GenHash(Board &board) {
 
-        ZobristHash hash = 0;
+        ZobristHash hash = NEW_HASH;
 
         for (PieceType pt = PAWN; pt <= KING; ++pt) {
             Bitboard pieces = board.GetPieces(pt, WHITE);
