@@ -50,15 +50,13 @@ namespace Meetra::Zobrist {
     }
 
     void UpdateCr(ZobristHash &h, CastlingRights previous, CastlingRights current){
-        h ^= castling_keys[previous >> 6] ^ castling_keys[current >> 6];
-    }
-
-    void SetCr(ZobristHash &h, CastlingRights cr){
-        h ^= castling_keys[cr >> 6];
+        h ^= castling_keys[previous >> 6];
+        h ^= castling_keys[current >> 6];
     }
 
     void UpdateColor(ZobristHash &h, Color to_move){
-        h ^= to_move_keys[OtherColor(to_move)] ^ to_move_keys[to_move];
+        h ^= to_move_keys[OtherColor(to_move)];
+        h ^= to_move_keys[to_move];
     }
 
     void MovePiece(ZobristHash &h, PieceType p, Color c, Square from, Square to){

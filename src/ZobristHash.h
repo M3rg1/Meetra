@@ -12,6 +12,7 @@ namespace Meetra {
     namespace Zobrist {
 
         void Init();
+
         ZobristHash GenHash(Board &board);
         inline Key32 Make32Key(ZobristHash zobrist_hash) { return zobrist_hash >> 32; }
 
@@ -21,7 +22,6 @@ namespace Meetra {
         void RemoveEp(ZobristHash &h, Square s);
         void AddEp(ZobristHash &h, Square s);
         void UpdateCr(ZobristHash &h, CastlingRights previous, CastlingRights current);
-        void SetCr(ZobristHash &h, CastlingRights cr);
         void UpdateColor(ZobristHash &h, Color to_move);
 
     }

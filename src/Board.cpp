@@ -78,6 +78,8 @@ namespace Meetra {
                (Bitboards::GetAttacksForPiece<KING>(s) & GetPieces(KING, attacked_by));
     }
 
+    int err = 0;
+
     bool Board::MakeMove(Move m) {
 
         board_history[history_cnt++] = current_state;
@@ -88,21 +90,22 @@ namespace Meetra {
         Zobrist::UpdateColor(current_state.zobrist_hash, next_move_col);
 
         ClearCapturedPiece();
+
+        IncrementPly();
+
+        IncrementMoveNumber(this_move_col);
+
         if (EpSquare()) {
             Zobrist::RemoveEp(current_state.zobrist_hash, EpSquare());
             ClearEpSquare();
         }
-        IncrementPly();
-
-        IncrementMoveNumber(this_move_col);
 
         Square from = FromSquare(m);
         Square to = ToSquare(m);
 
         CastlingRights previous_cr = GetCR();
         RemoveCastlingRights(static_cast<CastlingRights>(castling_mask[from] | castling_mask[to]));
-        CastlingRights current_cr = GetCR();
-        Zobrist::UpdateCr(current_state.zobrist_hash, previous_cr, current_cr);
+        Zobrist::UpdateCr(current_state.zobrist_hash, previous_cr, GetCR());
 
         MoveType move_type = GetMoveType(m);
         Piece captured_piece = board[to];
@@ -126,7 +129,7 @@ namespace Meetra {
         if (move_type) {
             if (move_type == TWO_FORWARD) {
                 SetEpSquare(next_move_col ? to + SOUTH : to + NORTH);
-                Zobrist::RemoveEp(current_state.zobrist_hash, EpSquare());
+                Zobrist::AddEp(current_state.zobrist_hash, EpSquare());
             } else if (move_type == CASTLING) {
                 MovePiece(RookFromCastling(to), RookToCastling(to), current_state.zobrist_hash);
                 return !IsSquareAttacked(Bitboards::Lsb(GetPieces(KING, this_move_col)), next_move_col,
@@ -148,15 +151,18 @@ namespace Meetra {
 
     void Board::UnmakeMove(Move m) {
 
+
         Square from = FromSquare(m);
         Square to = ToSquare(m);
         Piece captured_piece = CapturedPiece();
+
+        current_state = board_history[--history_cnt];
 
         MovePiece(to, from);
 
         if (captured_piece) {
             if (GetMoveType(m) == EN_PASSANT) {
-                to = ColorToMove() ? to + SOUTH : to + NORTH;
+                to = ColorToMove() ? to + NORTH : to + SOUTH;
             }
             PutPiece(to, captured_piece);
         }
@@ -168,8 +174,6 @@ namespace Meetra {
             RemovePiece(from);
             PutPiece(from, NewPiece(PAWN, ColorToMove()));
         }
-
-        current_state = board_history[--history_cnt];
     }
 
     void Board::ParseFen(const std::string &fen) {

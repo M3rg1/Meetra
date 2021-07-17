@@ -70,7 +70,7 @@ namespace Meetra {
         // bits 15-21 = ply since last capture/pawn moves - 50 move rule
         // bits 22+ - total moves made
         typedef uint32_t GameState;
-#define NEW_GAME_STATE static_cast<GameState>(0)
+#define NEW_GAME_STATE 0
 #pragma endregion
 
 #pragma region ===== Game State modifications =====
