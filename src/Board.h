@@ -28,25 +28,26 @@ namespace Meetra {
 #pragma endregion
 
 #pragma region ===== Game State info getters =====
-        [[nodiscard]] inline ZobristHash GetZobristHash() const { return zobrist_hash; }
-        [[nodiscard]] inline CastlingRights GetCR() const { return static_cast<CastlingRights>(game_state & ALL_CR); }
-        [[nodiscard]] inline bool CanWhiteShortCR() const { return (game_state & WHITE_SHORT) != 0; }
-        [[nodiscard]] inline bool CanWhiteLongCR() const { return (game_state & WHITE_LONG) != 0; }
-        [[nodiscard]] inline bool CanBlackShortCR() const { return (game_state & BLACK_SHORT) != 0; }
-        [[nodiscard]] inline bool CanBlackLongCR() const { return (game_state & BLACK_LONG) != 0; }
+        [[nodiscard]] inline ZobristHash GetZobristHash() const { return current_state.zobrist_hash; }
+        [[nodiscard]] inline CastlingRights GetCR() const { return static_cast<CastlingRights>(current_state.game_state & ALL_CR); }
+        [[nodiscard]] inline bool CanWhiteShortCR() const { return (current_state.game_state & WHITE_SHORT) != 0; }
+        [[nodiscard]] inline bool CanWhiteLongCR() const { return (current_state.game_state & WHITE_LONG) != 0; }
+        [[nodiscard]] inline bool CanBlackShortCR() const { return (current_state.game_state & BLACK_SHORT) != 0; }
+        [[nodiscard]] inline bool CanBlackLongCR() const { return (current_state.game_state & BLACK_LONG) != 0; }
         [[nodiscard]] inline bool CanColorCastleAny(Color c) const {
-            return c == WHITE ? CanWhiteShortCR() || CanWhiteLongCR() : CanBlackShortCR() || CanBlackLongCR();
+            return c == WHITE ? current_state.game_state & WHITE_ALL_CR : current_state.game_state & BLACK_ALL_CR;
         }
-        [[nodiscard]] inline Square EpSquare() const { return static_cast<Square >(game_state & 0x3F); }
-        [[nodiscard]] inline Color ColorToMove() const { return static_cast<Color>(game_state >> 10 & 0x1); }
-        [[nodiscard]] inline Piece CapturedPiece() const { return static_cast<Piece>(game_state >> 11 & 0xF); }
-        [[nodiscard]] inline int Ply() const { return static_cast<int>(game_state >> 15 & 0x3F); }
-        [[nodiscard]] inline int TotalMoves() const { return static_cast<int>(game_state >> 22); }
+        [[nodiscard]] inline bool CanCastleAny() const { return current_state.game_state & ALL_CR; }
+        [[nodiscard]] inline Square EpSquare() const { return static_cast<Square >(current_state.game_state & 0x3F); }
+        [[nodiscard]] inline Color ColorToMove() const { return static_cast<Color>(current_state.game_state >> 10 & 0x1); }
+        [[nodiscard]] inline Piece CapturedPiece() const { return static_cast<Piece>(current_state.game_state >> 11 & 0xF); }
+        [[nodiscard]] inline int Ply() const { return static_cast<int>(current_state.game_state >> 15 & 0x3F); }
+        [[nodiscard]] inline int TotalMoves() const { return static_cast<int>(current_state.game_state >> 22); }
         [[nodiscard]] inline bool IsRepetition() const {
             for (auto i = history_cnt - 2; i >= 0; i -= 2) {
                 if (board_history[i].game_state & 0x7800) {
                     return false;
-                } else if (board_history[i].zobrist_hash == zobrist_hash) {
+                } else if (board_history[i].zobrist_hash == current_state.zobrist_hash) {
                     return true;
                 }
             }
@@ -69,29 +70,31 @@ namespace Meetra {
         // bits 15-21 = ply since last capture/pawn moves - 50 move rule
         // bits 22+ - total moves made
         typedef uint32_t GameState;
-#define NEW_GAME_STATE 0
+#define NEW_GAME_STATE static_cast<GameState>(0)
 #pragma endregion
 
 #pragma region ===== Game State modifications =====
         // requires new game state
-        inline void SetEpSquare(Square s) { game_state |= static_cast<GameState>(s); }
-        inline void SetCastlingRights(CastlingRights cr) { game_state |= static_cast<GameState>(cr); }
-        inline void SetColorToMove(Color c) { game_state |= static_cast<GameState>(c << 10); }
-        inline void SetCapturedPiece(Piece p) { game_state |= static_cast<GameState>(p << 11); }
-        inline void SetPly(int ply) { game_state |= static_cast<GameState>(ply << 15); }
-        inline void SetMoveNumber(int move_num) { game_state |= static_cast<GameState>(move_num << 22); }
+        inline void SetEpSquare(Square s) { current_state.game_state |= static_cast<GameState>(s); }
+        inline void SetCastlingRights(CastlingRights cr) { current_state.game_state |= static_cast<GameState>(cr); }
+        inline void SetColorToMove(Color c) { current_state.game_state |= static_cast<GameState>(c << 10); }
+        inline void SetCapturedPiece(Piece p) { current_state.game_state |= static_cast<GameState>(p << 11); }
+        inline void SetPly(int ply) { current_state.game_state |= static_cast<GameState>(ply << 15); }
+        inline void SetMoveNumber(int move_num) { current_state.game_state |= static_cast<GameState>(move_num << 22); }
 
         // modify current game state
-        inline void ResetPly() { game_state &= static_cast<GameState>(~0x3F8000); }
-        inline void RemoveCastlingRights(CastlingRights cr) { game_state &= static_cast<GameState>(~cr); }
-        inline void IncrementMoveNumber(uint32_t increment) { game_state += increment << 22; }
-        inline void IncrementPly() { game_state += 1 << 15; }
-        inline void ClearCapturedPiece() { game_state &= static_cast<GameState>(~0x7800); }
-        inline void ChangeColorToMove() { game_state ^= 1 << 10; }
-        inline void ClearEpSquare() { game_state &= static_cast<GameState>(~0x3F); }
+        inline void ResetPly() { current_state.game_state &= static_cast<GameState>(~0x3F8000); }
+        inline void RemoveCastlingRights(CastlingRights cr) { current_state.game_state &= static_cast<GameState>(~cr); }
+        inline void IncrementMoveNumber(uint32_t increment) { current_state.game_state += increment << 22; }
+        inline void IncrementPly() { current_state.game_state += 1 << 15; }
+        inline void ClearCapturedPiece() { current_state.game_state &= static_cast<GameState>(~0x7800); }
+        inline void ChangeColorToMove() { current_state.game_state ^= 1 << 10; }
+        inline void ClearEpSquare() { current_state.game_state &= static_cast<GameState>(~0x3F); }
 #pragma endregion
 
 #pragma region ===== Update inner structures =====
+        void ParseFen(const std::string &fen);
+
         inline void RemovePiece(Square s) {
             Piece p = board[s];
             board[s] = NO_PIECE;
@@ -127,10 +130,9 @@ namespace Meetra {
         };
 
         BoardData board_history[MAX_GAME_LENGTH];
-        int_fast16_t history_cnt;
+        size_t history_cnt;
 
-        ZobristHash zobrist_hash;
-        GameState game_state;
+        BoardData current_state;
         Piece board[SQUARE_NR];
         Bitboard color_bbs[COLOR_NR];
         Bitboard type_bbs[PIECE_TYPE_NR];

@@ -180,7 +180,7 @@ namespace Meetra {
             if (move_gen.IsKingInCheck()) {
                 return -MATE_SCORE + ply;
             }
-            return DRAW_SCORE;
+            return -DRAW_SCORE;
         }
 
         tt.SaveEval(board.GetZobristHash(), alpha, depth, best_move_this_iter, tt_flag, ply);

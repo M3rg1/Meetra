@@ -18,7 +18,10 @@ namespace Meetra::Uci {
     void PerftCommand(StringTokenStream &sts, Board &board);
     void SetOptionCommand(StringTokenStream &sts, ABSearch &search);
     void StopCommand(ABSearch &search);
-    void QuitCommand(ABSearch& search);
+    void ShowCommand(Board &board);
+    void HelpCommand();
+    void UnknownCommand();
+    void QuitCommand(ABSearch &search);
     ABSearch::SearchSettings InitSearchOptions(StringTokenStream &sts);
     void MakeUciMove(const std::string &move_string, Board &board);
     void ParseSearchOptions(StringTokenStream &sts, ABSearch::SearchSettings &settings);
@@ -46,12 +49,27 @@ namespace Meetra::Uci {
             else if (token == "stop") StopCommand(search);
             else if (token == "ucinewgame") UciNewGameCommand(search);
             else if (token == "perft") PerftCommand(sts, board);
+            else if (token == "show") ShowCommand(board);
+            else if (token == "help") HelpCommand();
             else if (token == "quit") QuitCommand(search);
+            else { UnknownCommand(); }
 
         } while (token != "quit" && !std::cin.eof());
 
         // TODO fix this have some sort of terminating function that waits for everything (also call it in the quit command i guess)
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+
+    void HelpCommand(){
+        SendToGui("This is help.");
+    }
+
+    void UnknownCommand(){
+        SendToGui("Unknown command, please type 'help' to display available commands.");
+    }
+
+    void ShowCommand(Board &board) {
+        SendToGui(board.PPBoard());
     }
 
     void SendToGui(const std::string &data) {

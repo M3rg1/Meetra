@@ -1,9 +1,10 @@
 #include "Board.h"
 #include "Bitboards.h"
-#include "FenLoader.h"
 #include "Misc.h"
 #include <cstring>
 #include "ZobristHash.h"
+#include "StringTokenStream.h"
+#include <sstream>
 
 namespace Meetra {
 
@@ -17,32 +18,15 @@ namespace Meetra {
 
     void Board::NewPosition(const std::string &fen) {
         history_cnt = 0;
-        game_state = NEW_GAME_STATE;
-        auto loadedInfo = FenLoader::ParseFen(fen);
-        SetColorToMove(loadedInfo->color_to_move);
-        if (loadedInfo->w_castle_short) SetCastlingRights(WHITE_SHORT);
-        if (loadedInfo->w_castle_long) SetCastlingRights(WHITE_LONG);
-        if (loadedInfo->b_castle_short) SetCastlingRights(BLACK_SHORT);
-        if (loadedInfo->b_castle_long) SetCastlingRights(BLACK_LONG);
-        SetEpSquare(loadedInfo->ep_square);
-        SetPly(loadedInfo->ply);
-        SetMoveNumber(loadedInfo->full_move_count);
+        current_state.game_state = NEW_GAME_STATE;
 
-        std::memcpy(board, loadedInfo->board_occ, sizeof(*board) * SQUARE_NR);
+        std::memset(board, 0, sizeof(*board) * SQUARE_NR);
         std::memset(color_bbs, 0, sizeof(*color_bbs) * COLOR_NR);
         std::memset(type_bbs, 0, sizeof(*type_bbs) * PIECE_TYPE_NR);
 
-        for (Square s = A1; s <= H8; ++s) {
-            Piece p = board[s];
-            if (p != NO_PIECE) {
-                Bitboard pos = SquareToBB(s);
-                color_bbs[ColorOfPiece(p)] |= pos;
-                type_bbs[TypeOfPiece(p)] |= pos;
-                type_bbs[ALL_TYPES] |= pos;
-            }
-        }
+        ParseFen(fen);
 
-        zobrist_hash = Zobrist::GenHash(*this);
+        current_state.zobrist_hash = Zobrist::GenHash(*this);
     }
 
     Bitboard Board::PinnedPiecesForSquare(Square s, Color attackers_color) const {
@@ -95,9 +79,7 @@ namespace Meetra {
 
     bool Board::MakeMove(Move m) {
 
-        board_history[history_cnt].game_state = game_state;
-        board_history[history_cnt].zobrist_hash = zobrist_hash;
-        history_cnt++;
+        board_history[history_cnt++] = current_state;
 
         Color this_move_col = ColorToMove();
         ChangeColorToMove();
@@ -139,24 +121,24 @@ namespace Meetra {
                 SetEpSquare(next_move_col ? to + SOUTH : to + NORTH);
             } else if (move_type == CASTLING) {
                 MovePiece(RookFromCastling(to), RookToCastling(to));
-                zobrist_hash = Zobrist::GenHash(*this);
+                current_state.zobrist_hash = Zobrist::GenHash(*this);
                 return !IsSquareAttacked(Bitboards::Lsb(GetPieces(KING, this_move_col)), next_move_col,
                                          GetPieces(ALL_TYPES));
             } else if (IsPromotion(m)) {
                 RemovePiece(to);
                 PutPiece(to, NewPiece(PieceTypeFromFlag(move_type), this_move_col));
             } else if (move_type == EN_PASSANT) {
-                zobrist_hash = Zobrist::GenHash(*this);
+                current_state.zobrist_hash = Zobrist::GenHash(*this);
                 return !IsSquareAttacked(Bitboards::Lsb(GetPieces(KING, this_move_col)), next_move_col,
                                          GetPieces(ALL_TYPES));
             }
         } else if (moved_piece_type == KING) {
-            zobrist_hash = Zobrist::GenHash(*this);
+            current_state.zobrist_hash = Zobrist::GenHash(*this);
             return !IsSquareAttacked(Bitboards::Lsb(GetPieces(KING, this_move_col)), next_move_col,
                                      GetPieces(ALL_TYPES));
         }
 
-        zobrist_hash = Zobrist::GenHash(*this);
+        current_state.zobrist_hash = Zobrist::GenHash(*this);
         return true;
     }
 
@@ -187,54 +169,91 @@ namespace Meetra {
             }
         }
 
-        history_cnt--;
-        game_state = board_history[history_cnt].game_state;
-        zobrist_hash = board_history[history_cnt].zobrist_hash;
+        current_state = board_history[--history_cnt];
+    }
+
+    void Board::ParseFen(const std::string &fen) {
+
+        StringTokenStream sts(fen);
+
+        std::string board_pos_fen = sts.NextToken();
+        File f = FILE_A;
+        Rank r = RANK_8;
+        for (char c : board_pos_fen) {
+            if (c == '/') {
+                f = FILE_A;
+                --r;
+            } else if (std::isdigit(c)) {
+                int empty_squares = c - '0';
+                f += empty_squares;
+            } else {
+                PutPiece(SquareFromFiRa(f, r), CharToPiece(c));
+                ++f;
+            }
+        }
+
+        if (sts.HasNext()) {
+            SetColorToMove(sts.NextToken() == "w" ? WHITE : BLACK);
+        }
+
+        if (sts.HasNext()) {
+            std::string castling_rights = sts.NextToken();
+            if (castling_rights.find('K') != std::string::npos) SetCastlingRights(WHITE_SHORT);
+            if (castling_rights.find('Q') != std::string::npos) SetCastlingRights(WHITE_LONG);
+            if (castling_rights.find('k') != std::string::npos) SetCastlingRights(BLACK_SHORT);
+            if (castling_rights.find('q') != std::string::npos) SetCastlingRights(BLACK_LONG);
+        }
+
+        if (sts.HasNext()) {
+            std::string ep_info = sts.NextToken();
+            if (ep_info != "-") {
+                File file = FileFromChar(ep_info[0]);
+                Rank rank = RankFromChar(ep_info[1]);
+                SetEpSquare(SquareFromFiRa(file, rank));
+            }
+        }
+
+        if (sts.HasNext()) {
+            std::string ply = sts.NextToken();
+            if (ply != "-") {
+                SetPly(std::stoi(ply));
+            }
+        }
+
+        if (sts.HasNext()) {
+            std::string move_count = sts.NextToken();
+            if (move_count != "-") {
+                SetMoveNumber(std::stoi(move_count));
+            }
+        }
     }
 
     std::string Board::PPBoard() const {
-        std::string ret;
+
+        std::stringstream ss;
         for (Rank r = RANK_8; r >= RANK_1; --r) {
-            ret.append(std::to_string(r + 1));
-            ret.append(" |");
+            ss << std::to_string(r + 1) << " |";
             for (File f = FILE_A; f <= FILE_H; ++f) {
-                ret.push_back(' ');
-                ret.push_back(PieceToChar(board[SquareFromFiRa(f, r)]));
-                ret.push_back(' ');
+                ss << ' ' << PieceToChar(board[SquareFromFiRa(f, r)]) << ' ';
             }
-            ret.append("\n");
+            ss << '\n';
         }
-        ret.append("---------------------------\n");
-        ret.append("  | A  B  C  D  E  F  G  H\n\n");
-        ret.append("Player to move: ");
-        ColorToMove() == WHITE ? ret.append("white\n") : ret.append("black\n");
-        ret.append("Move count: ");
-        ret.append(std::to_string(TotalMoves()));
-        ret.append(" | Ply since last capture: ");
-        ret.append(std::to_string(Ply()));
-        ret.append("\nCastling rights: ");
-        bool castling_available = false;
-        if (CanWhiteShortCR()) {
-            ret.push_back('K');
-            castling_available = true;
+        ss << "---------------------------\n"
+           << "  | A  B  C  D  E  F  G  H\n\n"
+           << "Player to move: " << (ColorToMove() == WHITE ? "white\n" : "black\n")
+           << "Move count: " << TotalMoves() << " | Ply since last capture: " << Ply() << '\n'
+           << "Castling rights: ";
+        if (!CanCastleAny()) {
+            ss << '-';
+        } else {
+            if (CanWhiteShortCR()) ss << 'K';
+            if (CanWhiteLongCR()) ss << 'Q';
+            if (CanBlackShortCR()) ss << 'k';
+            if (CanBlackLongCR()) ss << 'q';
         }
-        if (CanWhiteLongCR()) {
-            ret.push_back('Q');
-            castling_available = true;
-        }
-        if (CanBlackShortCR()) {
-            ret.push_back('k');
-            castling_available = true;
-        }
-        if (CanBlackLongCR()) {
-            ret.push_back('q');
-            castling_available = true;
-        }
-        if (!castling_available) { ret.push_back('-'); }
-        ret.append(" | EP square: ");
-        if (EpSquare() != SQUARE_ZERO) { ret.append(std::to_string(EpSquare())); }
-        else { ret.push_back('-'); }
-        return ret;
+        ss << " | EP square: " << (EpSquare() == SQUARE_ZERO ? "-" : std::to_string(EpSquare()));
+
+        return ss.str();
     }
 
 

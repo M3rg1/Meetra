@@ -13,7 +13,7 @@ namespace Meetra {
     typedef uint32_t Key32;
 
     typedef uint64_t Bitboard;
-#define EMPTY_BB 0UL
+#define EMPTY_BB static_cast<Bitboard>(0)
 
     enum GenPhase : uint8_t {
         BEST_MOVE, CAPTURE, QUIET, END
@@ -53,6 +53,13 @@ namespace Meetra {
         FILE_NR
     };
 
+    inline Rank RankFromChar(char c) { return static_cast<Rank>(c - '1'); }
+    inline char CharFromRank(Rank r) { return static_cast<char>(r + '1'); }
+    inline File FileFromChar(char c) { return static_cast<File>(c - 'a'); }
+    inline char CharFromFile(File f) { return static_cast<char>(f + 'a'); }
+
+
+
     enum Direction : int8_t {
         NORTH = 8, NORTH_EAST = 9, EAST = 1, SOUTH_EAST = -7, SOUTH = -8, SOUTH_WEST = -9, WEST = -1, NORTH_WEST = 7
     };
@@ -60,13 +67,6 @@ namespace Meetra {
     enum DirectionIndex : uint8_t {
         NORTH_IDX, NORTH_EAST_IDX, EAST_IDX, SOUTH_EAST_IDX, SOUTH_IDX, SOUTH_WEST_IDX, WEST_IDX, NORTH_WEST_IDX,
         DIRECTION_IDX_NR
-    };
-
-    constexpr char FileNames[FILE_NR]{
-            'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'
-    };
-    constexpr char RankNames[RANK_NR]{
-            '1', '2', '3', '4', '5', '6', '7', '8'
     };
 
     constexpr Direction Directions[DIRECTION_IDX_NR]{
@@ -139,15 +139,8 @@ namespace Meetra {
     inline Move NewMove(Square from, Square to, MoveType flag) { return static_cast<Move>(NewMove(from, to) | flag); }
     inline Move NewMoveFromName(const std::string &move_name) {
 
-        auto it = std::find(FileNames, FileNames + FILE_NR, move_name[0]);
-        File f_from = static_cast<File>(std::distance(FileNames, it));
-        Rank r_from = static_cast<Rank>((move_name[1] - '0') - 1);
-        Square s_from = SquareFromFiRa(f_from, r_from);
-
-        it = std::find(FileNames, FileNames + FILE_NR, move_name[2]);
-        File f_to = static_cast<File>(std::distance(FileNames, it));
-        Rank r_to = static_cast<Rank>((move_name[3] - '0') - 1);
-        Square s_to = SquareFromFiRa(f_to, r_to);
+        Square s_from = SquareFromFiRa(FileFromChar(move_name[0]), RankFromChar(move_name[1]));
+        Square s_to = SquareFromFiRa(FileFromChar(move_name[2]),  RankFromChar(move_name[3]));
 
         MoveType flag = NO_FLAG;
         if (move_name.length() > 4) {
@@ -156,6 +149,7 @@ namespace Meetra {
                    move_name[4] == 'b' ? PROMOTE_BISHOP :
                    PROMOTE_KNIGHT;
         }
+
         return NewMove(s_from, s_to, flag);
     }
 #pragma endregion
@@ -180,29 +174,26 @@ namespace Meetra {
     inline MoveType GetMoveType(Move m) { return static_cast<MoveType>(m & 0xF000); }
     inline bool IsValidMove(Move m) { return m != INVALID_MOVE; }
     inline std::string GetMoveName(Move m) {
+
         if (m == INVALID_MOVE) {
             return "0000";
         }
-        std::string ret = {FileNames[FileFromSquare(FromSquare(m))], RankNames[RankFromSquare(FromSquare(m))],
-                           FileNames[FileFromSquare(ToSquare(m))], RankNames[RankFromSquare(ToSquare(m))]};
+
+        std::string ret = {
+                CharFromFile(FileFromSquare(FromSquare(m))),
+                CharFromRank(RankFromSquare(FromSquare(m))),
+                CharFromFile(FileFromSquare(ToSquare(m))),
+                CharFromRank(RankFromSquare(ToSquare(m)))
+        };
+
         if (IsPromotion(m)) {
-            switch (GetMoveType(m)) {
-                case PROMOTE_QUEEN:
-                    ret += 'q';
-                    break;
-                case PROMOTE_ROOK:
-                    ret += 'r';
-                    break;
-                case PROMOTE_BISHOP:
-                    ret += 'b';
-                    break;
-                case PROMOTE_KNIGHT:
-                    ret += 'n';
-                    break;
-                default:
-                    break;
-            }
+            MoveType prom_flag = GetMoveType(m);
+            ret += prom_flag == PROMOTE_QUEEN ? 'q' :
+                   prom_flag == PROMOTE_ROOK ? 'r' :
+                   prom_flag == PROMOTE_BISHOP ? 'b' :
+                   'n';
         }
+
         return ret;
     }
 #pragma endregion
