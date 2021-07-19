@@ -80,12 +80,6 @@ namespace Meetra {
                         ttEntry->SetEpoch(current_epoch);
                         return beta;
                     }
-/*                    if (ttEntry->GetFlag() == EXACT_SCORE ||
-                        (ttEntry->GetFlag() == ALPHA && ttEntry->GetScore() <= alpha) ||
-                        (ttEntry->GetFlag() == BETA && ttEntry->GetScore() >= beta)) {
-                        ttEntry->SetEpoch(current_epoch);
-                        return AddMatePly(ttEntry->GetScore(), ply);
-                    }*/
                 }
                 return NOT_FOUND;
             }

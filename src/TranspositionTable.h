@@ -10,13 +10,13 @@
 namespace Meetra {
 
     enum TTSize : size_t {
-        TT512MB =   67108864, //51200000,
-        TT256MB =   33554432, //25600000,
-        TT128MB =   16777216, //12800000,
-        TT64MB =    8388608, //6400000,
-        TT32MB =    4194304, //3200000,
-        TT16MB =    2097152, //1600000,
-        TT8MB =     1048576, //800000
+        TT512MB = 67108864, //51200000,
+        TT256MB = 33554432, //25600000,
+        TT128MB = 16777216, //12800000,
+        TT64MB = 8388608, //6400000,
+        TT32MB = 4194304, //3200000,
+        TT16MB = 2097152, //1600000,
+        TT8MB = 1048576, //800000
     };
 
 #define DEFAULT_TT_SIZE TT64MB
@@ -47,6 +47,7 @@ namespace Meetra {
 
     private:
 #pragma pack(push, 1)
+
         // 10 bytes
         class TTEntry {
             uint32_t key;
@@ -78,6 +79,7 @@ namespace Meetra {
                 epoch_and_flag |= static_cast<uint8_t>(e) << 2;
             }
         };
+
 #pragma pack(pop)
 
         Epoch current_epoch;

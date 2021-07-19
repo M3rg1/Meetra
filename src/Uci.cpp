@@ -60,11 +60,11 @@ namespace Meetra::Uci {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
-    void HelpCommand(){
+    void HelpCommand() {
         SendToGui("This is help.");
     }
 
-    void UnknownCommand(){
+    void UnknownCommand() {
         SendToGui("Unknown command, type 'help' to display available commands.");
     }
 

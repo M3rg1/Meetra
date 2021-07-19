@@ -38,7 +38,7 @@ namespace Meetra {
             PVBucket *bucket = &table[k % size];
             k = Zobrist::Make44Key(k);
             int worst_score = 10000;
-            PVEntry * entry_to_write;
+            PVEntry *entry_to_write;
 
             for (auto &e : bucket->bucket_entries) {
                 if (e.Get44Key() == k) {
@@ -46,14 +46,14 @@ namespace Meetra {
                     break;
                 }
                 int entry_score = 0;
-                if(e.GetEpoch() != current_epoch) {
-                    if(e.GetEpoch() < current_epoch){
+                if (e.GetEpoch() != current_epoch) {
+                    if (e.GetEpoch() < current_epoch) {
                         entry_score -= (current_epoch - e.GetEpoch()) << 2;
                     } else {
                         entry_score -= (current_epoch + (15 - e.GetEpoch())) << 2;
                     }
                 }
-                if(entry_score < worst_score){
+                if (entry_score < worst_score) {
                     worst_score = entry_score;
                     entry_to_write = &e;
                 }
