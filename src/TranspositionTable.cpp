@@ -32,7 +32,7 @@ namespace Meetra {
             TTEntry *curr_entry = &table[index];
 
             if (curr_entry->Get32Key() == key_32) {
-                if (curr_entry->GetEpoch() != current_epoch || flag == EXACT_SCORE
+                if (curr_entry->GetEpoch() != current_epoch /*|| flag == EXACT_SCORE*/
                     || curr_entry->GetDepth() < depth /*&& curr_entry->GetFlag() != EXACT_SCORE)*/) {
                     /*(flag == EXACT_SCORE && curr_entry->GetFlag() == EXACT_SCORE && depth > curr_entry->GetDepth())
                     || (curr_entry->GetFlag() != EXACT_SCORE && flag == EXACT_SCORE) || (curr_entry->GetFlag() != EXACT_SCORE && depth > curr_entry->GetDepth()))*/
@@ -51,9 +51,9 @@ namespace Meetra {
                 entry_score -= (current_epoch - curr_entry->GetEpoch()) << 6;
             }
             // two epochs back = 2 << 6 = 128, but 3 = 192 == keeping exact used_entries 2 epochs old
-            if (curr_entry->GetFlag() == EXACT_SCORE) {
+/*            if (curr_entry->GetFlag() == EXACT_SCORE) {
                 entry_score += 150;
-            }
+            }*/
             if (entry_score < worst_entry_score) {
                 worst_entry_score = entry_score;
                 entry_to_write = curr_entry;
@@ -68,21 +68,35 @@ namespace Meetra {
 
     }
 
-    Score TranspositionTable::ProbeEval(ZobristHash key, Score alpha, Score beta, Depth depth, Depth ply) const {
+    Score
+    TranspositionTable::ProbeEval(ZobristHash key, Score alpha, Score beta, Depth depth, Depth ply, Move &m) const {
 
         Key32 key_32 = Zobrist::Make32Key(key);
+        m = INVALID_MOVE;
 
         for (auto i = 0; i < BUCKET_SIZE; i++) {
             auto index = (key + i) & index_mask;
             TTEntry *ttEntry = &table[index];
             if (ttEntry->Get32Key() == key_32) {
                 if (ttEntry->GetDepth() >= depth) {
-                    ttEntry->SetEpoch(current_epoch);
-                    if (ttEntry->GetFlag() == EXACT_SCORE ||
+                    if (ttEntry->GetFlag() == EXACT_SCORE) {
+                        ttEntry->SetEpoch(current_epoch);
+                        m = ttEntry->GetMove();
+                        return AddMatePly(ttEntry->GetScore(), ply);
+                    } else if (ttEntry->GetFlag() == ALPHA && ttEntry->GetScore() <= alpha) {
+                        ttEntry->SetEpoch(current_epoch);
+                        return alpha;
+                    } else if (ttEntry->GetFlag() == BETA && ttEntry->GetScore() >= beta) {
+                        ttEntry->SetEpoch(current_epoch);
+                        return beta;
+                    }
+/*                    if (ttEntry->GetFlag() == EXACT_SCORE ||
                         (ttEntry->GetFlag() == ALPHA && ttEntry->GetScore() <= alpha) ||
                         (ttEntry->GetFlag() == BETA && ttEntry->GetScore() >= beta)) {
+                        ttEntry->SetEpoch(current_epoch);
+                        m = ttEntry->GetMove();
                         return AddMatePly(ttEntry->GetScore(), ply);
-                    }
+                    }*/
                 }
                 return NOT_FOUND;
             }

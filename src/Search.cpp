@@ -6,6 +6,7 @@
 #include <sstream>
 #include "Uci.h"
 #include "omp.h"
+#include "iostream"
 
 namespace Meetra {
 
@@ -28,6 +29,7 @@ namespace Meetra {
         settings = s;
 
         tt.NewSearch();
+        pvt.NewSearch();
         nodes_explored = 0;
         qsearch_depth = 0;
         curr_max_depth = 0;
@@ -70,25 +72,23 @@ namespace Meetra {
 
         if (root_moves_cnt < 2) {
             StopSearch();
-            Move bm = root_moves_cnt == 0 ? INVALID_MOVE : root_moves[0].move;
-            Uci::SendToGui("bestmove " + GetMoveName(bm));
+            Move only_move = root_moves_cnt == 0 ? INVALID_MOVE : root_moves[0].move;
+            Uci::SendToGui("bestmove " + GetMoveName(only_move));
             return;
         }
 
-/*        ulong dummy = 0;
+/*        ulong nd = 0;
         for(int i = 0; i < root_moves_cnt; i++){
-            root_moves[i].score = -QuiescenceSearch(board, NEGATIVE_INF, POSITIVE_INF, 0, dummy);
-            //root_moves[i].score = -NegaMax(board, NEGATIVE_INF, POSITIVE_INF, 3, 1, dummy);
+            //root_moves[i].score = -QuiescenceSearch(board, NEGATIVE_INF, POSITIVE_INF, 0, dummy);
+            root_moves[i].score = -NegaMax(board, NEGATIVE_INF, POSITIVE_INF, 5, 1, nd);
         }
-        std::sort(root_moves, root_moves + root_moves_cnt, CompScoreGreatersMAN);*/
+        std::sort(root_moves, root_moves + root_moves_cnt, CompScoreGreaterMAN);*/
 
-        int best_idx = 0;
-        Score best_score = NEGATIVE_INF;
         for (curr_max_depth = 2; curr_max_depth <= settings.max_allowed_depth; curr_max_depth++) {
 
             Score alpha = NEGATIVE_INF;
             Score beta = POSITIVE_INF;
-            int best_idx_this_iter = 0;
+            long best_idx = 0;
             qsearch_depth = 0;
 
             for (int curr_move_num = 0; curr_move_num < root_moves_cnt; curr_move_num++) {
@@ -110,26 +110,15 @@ namespace Meetra {
                     root_moves[curr_move_num].score = score;
                     if (score > alpha && multi_pv == 1) {
                         alpha = score;
-                        best_idx_this_iter = curr_move_num;
-                        if (score > best_score) {
-                            best_score = score;
+                        if (score > root_moves[best_idx].score) {
                             best_idx = curr_move_num;
-                        } else if (curr_move_num == 0) {
-                            best_score = score;
-                            best_idx = 0;
                         }
                     }
                 }
             }
 
             if (multi_pv == 1) {
-                if (run) {
-                    best_idx = best_idx_this_iter;
-                    std::swap(root_moves[0], root_moves[best_idx]);
-                } else if (best_idx != 0){
-                    std::swap(root_moves[0], root_moves[best_idx]);
-                }
-                best_score = root_moves[0].score;
+                std::swap(root_moves[0], root_moves[best_idx]);
                 std::sort(root_moves + 1, root_moves + root_moves_cnt, CompNodesLesserMAN);
             } else {
                 std::sort(root_moves, root_moves + root_moves_cnt, CompScoreGreaterMAN);
@@ -139,8 +128,11 @@ namespace Meetra {
                 Uci::SendToGui(GetSearchInfo(board));
             }
 
-            if (std::abs(best_score) > MIN_MATE_EVAL && multi_pv == 1 && !settings.infinite && !settings.fixed_timer) {
-                int distance_to_mate = MATE_SCORE - std::abs(best_score);
+            if (std::abs(root_moves[0].score) > MIN_MATE_EVAL && multi_pv == 1 && !settings.infinite &&
+                !settings.fixed_timer) {
+                int distance_to_mate = MATE_SCORE - std::abs(root_moves[0].score);
+                // mozna by to bylo lepsi serit primo pri ukladani skore, ze proste kdyz je to mate score moc daleko, tak
+                // to nove skore proste neulozim a necham tam to predchozi
                 // TODO if mate is beyond horizon instead of showing in gui MATE in X, show some score
                 // otherwise the mate is going up and down randomly its shiiet
                 if (curr_max_depth > distance_to_mate) {
@@ -165,16 +157,18 @@ namespace Meetra {
             return QuiescenceSearch(board, alpha, beta, 0, nodes);
         }
 
-        Score score = tt.ProbeEval(board.GetZobristHash(), alpha, beta, depth, ply);
+        Move move;
+        Score score = tt.ProbeEval(board.GetZobristHash(), alpha, beta, depth, ply, move);
         if (score != NOT_FOUND) {
+            if (move) {
+                BackupPv(board, depth);
+            }
             return score;
         }
 
         MoveGen move_gen(board, &tt);
-        Move move;
         Move best_move_this_iter = INVALID_MOVE;
         EntryFlag tt_flag = ALPHA;
-        bool no_legal_moves = true;
 
         while ((move = move_gen.GetNextMove<false>())) {
             if (!board.MakeMove(move)) {
@@ -188,22 +182,27 @@ namespace Meetra {
 
             if (!run) {
                 return 0;
-            } else if (score >= beta) {
-                tt.SaveEval(board.GetZobristHash(), beta, depth, move, BETA, ply);
-                return beta;
             } else if (score > alpha) {
+                if (score >= beta) {
+                    tt.SaveEval(board.GetZobristHash(), beta, depth, move, BETA, ply);
+                    return beta;
+                }
                 tt_flag = EXACT_SCORE;
                 alpha = score;
                 best_move_this_iter = move;
             }
-            no_legal_moves = false;
         }
 
-        if (no_legal_moves) {
+
+        if (score == NOT_FOUND) {
             if (move_gen.IsKingInCheck()) {
                 return -MATE_SCORE + ply;
             }
             return -DRAW_SCORE;
+        }
+
+        if (tt_flag == EXACT_SCORE) {
+            pvt.AddEntry(board.GetZobristHash(), best_move_this_iter);
         }
 
         tt.SaveEval(board.GetZobristHash(), alpha, depth, best_move_this_iter, tt_flag, ply);
@@ -218,9 +217,10 @@ namespace Meetra {
         }
 
         auto score = Evaluation::BoardEval(board);
-        if (score >= beta) {
-            return beta;
-        } else if (score > alpha) {
+        if (score > alpha) {
+            if (score >= beta) {
+                return beta;
+            }
             alpha = score;
         }
 
@@ -236,9 +236,10 @@ namespace Meetra {
             nodes_explored++;
             score = -QuiescenceSearch(board, -beta, -alpha, depth + 1, nodes);
             board.UnmakeMove(move);
-            if (score >= beta) {
-                return beta;
-            } else if (score > alpha) {
+            if (score > alpha) {
+                if (score >= beta) {
+                    return beta;
+                }
                 alpha = score;
             }
         }
@@ -264,8 +265,30 @@ namespace Meetra {
         return std::max(1l, elapsed_ms);
     }
 
-    void ABSearch::RetrievePv(Board &board, Move *pv_line, Depth depth) const {
+
+    void ABSearch::BackupPv(Board &board, Depth depth) {
         Move move = tt.GetPVMove(board.GetZobristHash());
+        if (!move || depth == 0) {
+            return;
+        }
+        pvt.AddEntry(board.GetZobristHash(), move);
+        board.MakeMove(move);
+        BackupPv(board, depth - 1);
+        board.UnmakeMove(move);
+    }
+
+    void ABSearch::RetrievePv(Board &board, Move *pv_line, Depth depth) const {
+/*        Move move = tt.GetPVMove(board.GetZobristHash());
+        if (!move || depth == 0) {
+            *pv_line = INVALID_MOVE;
+            return;
+        }
+        *pv_line++ = move;
+        board.MakeMove(move);
+        RetrievePv(board, pv_line, depth - 1);
+        board.UnmakeMove(move);*/
+
+        Move move = pvt.ProbePv(board.GetZobristHash());
         if (!move || depth == 0) {
             *pv_line = INVALID_MOVE;
             return;
@@ -284,11 +307,8 @@ namespace Meetra {
                 board.UnmakeMove(move);
                 continue;
             }
-            //Score score = tt.ProbeEval(board.GetZobristHash(), NEGATIVE_INF, POSITIVE_INF, 0, 1);
             board.UnmakeMove(move);
-            //if (score == NOT_FOUND) score = Evaluation::MoveEval(board, move);
             root_moves[root_moves_cnt].move = move;
-            //root_moves[root_moves_cnt].score = score;
             root_moves_cnt++;
         }
     }

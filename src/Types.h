@@ -5,6 +5,8 @@
 
 namespace Meetra {
 
+    typedef uint8_t Epoch;
+
     typedef uint_fast8_t Depth;
 
     typedef int_fast16_t Score;

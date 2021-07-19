@@ -5,6 +5,7 @@
 #include "TranspositionTable.h"
 #include "Timer.h"
 #include "Misc.h"
+#include "PVTable.h"
 
 namespace Meetra {
 
@@ -58,11 +59,13 @@ namespace Meetra {
         Score QuiescenceSearch(Board &board, Score alpha, Score beta, Depth depth, ulong &nodes);
         Score NegaMax(Board &board, Score alpha, Score beta, Depth depth, Depth ply, ulong &nodes);
         void RetrievePv(Board &board, Move *pv_line, Depth depth) const;
+        void BackupPv(Board &board, Depth depth);
         void GenRootMoves(Board &board);
         [[nodiscard]] bool EnoughTimeLeft() const;
         [[nodiscard]] long ElapsedTimeMs() const;
 
         TranspositionTable tt;
+        PVTable pvt;
         volatile bool run;
         SearchSettings settings;
         Timer search_timer;
