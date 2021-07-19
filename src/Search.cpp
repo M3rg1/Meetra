@@ -111,19 +111,24 @@ namespace Meetra {
                     if (score > alpha && multi_pv == 1) {
                         alpha = score;
                         best_idx_this_iter = curr_move_num;
-                        if(score > best_score){
+                        if (score > best_score) {
                             best_score = score;
                             best_idx = curr_move_num;
+                        } else if (curr_move_num == 0) {
+                            best_score = score;
+                            best_idx = 0;
                         }
                     }
                 }
             }
 
-            if(multi_pv == 1){
+            if (multi_pv == 1) {
                 if (run) {
                     best_idx = best_idx_this_iter;
+                    std::swap(root_moves[0], root_moves[best_idx]);
+                } else if (best_idx != 0){
+                    std::swap(root_moves[0], root_moves[best_idx]);
                 }
-                std::swap(root_moves[0], root_moves[best_idx]);
                 best_score = root_moves[0].score;
                 std::sort(root_moves + 1, root_moves + root_moves_cnt, CompNodesLesserMAN);
             } else {
