@@ -125,10 +125,6 @@ namespace Meetra {
             if (std::abs(root_moves[0].score) > MIN_MATE_EVAL && multi_pv == 1 && !settings.infinite &&
                 !settings.fixed_timer) {
                 int distance_to_mate = MATE_SCORE - std::abs(root_moves[0].score);
-                // mozna by to bylo lepsi serit primo pri ukladani skore, ze proste kdyz je to mate score moc daleko, tak
-                // to nove skore proste neulozim a necham tam to predchozi
-                // TODO if mate is beyond horizon instead of showing in gui MATE in X, show some score
-                // otherwise the mate is going up and down randomly its shiiet
                 if (curr_max_depth > distance_to_mate) {
                     break;
                 }
@@ -151,18 +147,15 @@ namespace Meetra {
             return QuiescenceSearch(board, alpha, beta, 0);
         }
 
-        Move move;
-        Score score = tt.ProbeEval(board.GetZobristHash(), alpha, beta, depth, ply, move);
+        Score score = tt.ProbeEval(board.GetZobristHash(), alpha, beta, depth, ply);
         if (score != NOT_FOUND) {
-/*            if(move != INVALID_MOVE){
-                BackupPv(board, move);
-            }*/
             return score;
         }
 
         MoveGen move_gen(board, &tt);
         Move best_move_this_iter = INVALID_MOVE;
         EntryFlag tt_flag = ALPHA;
+        Move move;
 
         while ((move = move_gen.GetNextMove<false>())) {
             if (!board.MakeMove(move)) {
@@ -270,18 +263,8 @@ namespace Meetra {
     }
 
     void ABSearch::RetrievePv(Board &board, Move *pv_line, Depth depth) const {
-/*        Move move = tt.GetPVMove(board.GetZobristHash());
-        if (!move || depth == 0) {
-            *pv_line = INVALID_MOVE;
-            return;
-        }
-        *pv_line++ = move;
-        board.MakeMove(move);
-        RetrievePv(board, pv_line, depth - 1);
-        board.UnmakeMove(move);*/
-
         Move move = pvt.ProbePv(board.GetZobristHash());
-        if (!move || depth == 0) {
+        if (!move || depth == 0  || board.IsRepetition() || board.Ply() >= 50) {
             *pv_line = INVALID_MOVE;
             return;
         }

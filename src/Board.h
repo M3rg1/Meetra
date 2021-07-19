@@ -53,6 +53,19 @@ namespace Meetra {
             }
             return false;
         }
+        [[nodiscard]] inline bool IsFullRepetition() const {
+            int rep_cnt = 0;
+            for (auto i = history_cnt - 2; i >= 0; i -= 2) {
+                if (board_history[i].game_state & 0x7800) {
+                    return false;
+                } else if (board_history[i].zobrist_hash == current_state.zobrist_hash) {
+                    if(++rep_cnt > 1){
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
 #pragma endregion
 
 #pragma region ===== Misc =====

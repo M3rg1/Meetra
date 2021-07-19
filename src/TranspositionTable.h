@@ -28,7 +28,7 @@ namespace Meetra {
         void NewSearch();
         void Clear();
 
-        [[nodiscard]] Score ProbeEval(ZobristHash key, Score alpha, Score beta, Depth depth, Depth ply, Move &m) const;
+        [[nodiscard]] Score ProbeEval(ZobristHash key, Score alpha, Score beta, Depth depth, Depth ply) const;
         [[nodiscard]] Move GetPVMove(ZobristHash key) const;
         [[nodiscard]] Move GetAnyMove(ZobristHash key) const;
         // 0.01 == 1% usage, 0.1 == 10% usage, 1 == 100% usage
