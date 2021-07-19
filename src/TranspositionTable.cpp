@@ -60,10 +60,9 @@ namespace Meetra {
     }
 
     Score
-    TranspositionTable::ProbeEval(ZobristHash key, Score alpha, Score beta, Depth depth, Depth ply, Move &m) const {
+    TranspositionTable::ProbeEval(ZobristHash key, Score alpha, Score beta, Depth depth, Depth ply) const {
 
         Key32 key_32 = Zobrist::Make32Key(key);
-        m = INVALID_MOVE;
 
         for (auto i = 0; i < BUCKET_SIZE; i++) {
             auto index = (key + i) & index_mask;
@@ -85,9 +84,6 @@ namespace Meetra {
                         (ttEntry->GetFlag() == ALPHA && ttEntry->GetScore() <= alpha) ||
                         (ttEntry->GetFlag() == BETA && ttEntry->GetScore() >= beta)) {
                         ttEntry->SetEpoch(current_epoch);
-                        if(ttEntry->GetFlag() == EXACT_SCORE) {
-                            m = ttEntry->GetMove();
-                        }
                         return AddMatePly(ttEntry->GetScore(), ply);
                     }
                 }

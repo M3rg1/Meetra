@@ -36,7 +36,7 @@ namespace Meetra {
         void NewSearch();
         void Clear();
 
-        [[nodiscard]] Score ProbeEval(ZobristHash key, Score alpha, Score beta, Depth depth, Depth ply, Move &m) const;
+        [[nodiscard]] Score ProbeEval(ZobristHash key, Score alpha, Score beta, Depth depth, Depth ply) const;
         [[nodiscard]] Move GetPVMove(ZobristHash key) const;
         [[nodiscard]] Move GetAnyMove(ZobristHash key) const;
         [[nodiscard]] inline size_t EntriesCount() const { return used_entries; }
