@@ -55,10 +55,9 @@ namespace Meetra {
     private:
         void InitSearchTimer(Board &board);
         void InitSearch(SearchSettings &settings, Board &board);
-        Score QuiescenceSearch(Board &board, Score alpha, Score beta, Depth depth);
-        Score NegaMax(Board &board, Score alpha, Score beta, Depth depth, Depth ply);
+        Score QuiescenceSearch(Board &board, Score alpha, Score beta, Depth depth, ulong &nodes);
+        Score NegaMax(Board &board, Score alpha, Score beta, Depth depth, Depth ply, ulong &nodes);
         void RetrievePv(Board &board, Move *pv_line, Depth depth) const;
-        void SortRootMoves();
         void GenRootMoves(Board &board);
         [[nodiscard]] bool EnoughTimeLeft() const;
         [[nodiscard]] long ElapsedTimeMs() const;
@@ -73,10 +72,9 @@ namespace Meetra {
         int plies_muted;
         int multi_pv;
 
-        MoveAndEval root_moves[MAX_LEGAL_MOVES];
+        MoveAndNodes root_moves[MAX_LEGAL_MOVES];
         int root_moves_cnt;
-        ulong normal_nodes;
-        ulong qsearch_nodes;
+        ulong nodes_explored;
         Depth qsearch_depth;
         Depth curr_max_depth;
         long timer_start;

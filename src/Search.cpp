@@ -28,13 +28,15 @@ namespace Meetra {
         settings = s;
 
         tt.NewSearch();
-        normal_nodes = 0;
-        qsearch_nodes = 0;
+        nodes_explored = 0;
         qsearch_depth = 0;
         curr_max_depth = 0;
         root_moves_cnt = 0;
 
         GenRootMoves(board);
+
+        best_score = NEGATIVE_INF;
+        best_move = root_moves[0].move;
 
         settings.max_allowed_depth = std::min(settings.max_allowed_depth, static_cast<Depth>(MAX_SEARCH_DEPTH));
 
@@ -80,13 +82,13 @@ namespace Meetra {
             root_moves[i].score = -NegaMax(board, NEGATIVE_INF, POSITIVE_INF, 5, 1);
         }*/
 
-        SortRootMoves();
-
-        Score temp_scores[root_moves_cnt];
+        int best_idx = 0;
+        Score best_score = NEGATIVE_INF;
         for (curr_max_depth = 2; curr_max_depth <= settings.max_allowed_depth; curr_max_depth++) {
 
             Score alpha = NEGATIVE_INF;
             Score beta = POSITIVE_INF;
+            int best_idx_this_iter = 0;
             qsearch_depth = 0;
 
             for (int curr_move_num = 0; curr_move_num < root_moves_cnt; curr_move_num++) {
@@ -97,34 +99,42 @@ namespace Meetra {
                     Uci::SendToGui(GetCurrMoveInfo(curr_move, curr_move_num, board));
                 }
 
+                ulong nodes = 0;
                 board.MakeMove(curr_move);
-                normal_nodes++;
-                Score score = -NegaMax(board, -beta, -alpha, curr_max_depth - 1, 2);
+                Score score = -NegaMax(board, -beta, -alpha, curr_max_depth - 1, 2, nodes);
                 board.UnmakeMove(curr_move);
+                nodes_explored += nodes;
 
                 if (run) {
-                    temp_scores[curr_move_num] = score;
-                    if (score > root_moves[curr_move_num].score) {
-                        root_moves[curr_move_num].score = score;
-                    }
+                    root_moves[curr_move_num].nodes = nodes;
+                    root_moves[curr_move_num].score = score;
                     if (score > alpha && multi_pv == 1) {
                         alpha = score;
+                        best_idx_this_iter = curr_move_num;
+                        if(score > best_score){
+                            best_score = score;
+                            best_idx = curr_move_num;
+                        }
                     }
                 }
             }
 
-            if (run) {
-                for (int i = 0; i < root_moves_cnt; i++) {
-                    root_moves[i].score = temp_scores[i];
+            if(multi_pv == 1){
+                if (run) {
+                    best_idx = best_idx_this_iter;
                 }
+                std::swap(root_moves[0], root_moves[best_idx]);
+                best_score = root_moves[0].score;
+                std::sort(root_moves + 1, root_moves + root_moves_cnt, CompMaNNodes);
+            } else {
+                std::sort(root_moves, root_moves + root_moves_cnt, CompMaNScore);
             }
-            SortRootMoves();
 
-            if (!settings.infinite && !settings.fixed_timer && std::abs(root_moves[0].score) > MIN_MATE_EVAL) {
-                int distance_to_mate = MATE_SCORE - std::abs(root_moves[0].score);
+            if (!settings.infinite && !settings.fixed_timer && std::abs(best_score) > MIN_MATE_EVAL) {
+                int distance_to_mate = MATE_SCORE - std::abs(best_score);
                 // TODO if mate is beyond horizon instead of showing in gui MATE in X, show some score
                 // otherwise the mate is going up and down randomly its shiiet
-                if (curr_max_depth > distance_to_mate) {
+                if (curr_max_depth > distance_to_mate && multi_pv == 1) {
                     run = false;
                 }
             }
@@ -142,12 +152,12 @@ namespace Meetra {
         Uci::SendToGui(GetBestMove());
     }
 
-    Score ABSearch::NegaMax(Board &board, Score alpha, Score beta, Depth depth, Depth ply) {
+    Score ABSearch::NegaMax(Board &board, Score alpha, Score beta, Depth depth, Depth ply, ulong &nodes) {
 
         if (board.IsRepetition() || board.Ply() >= 50) {
             return -DRAW_SCORE;
         } else if (depth == 0) {
-            return QuiescenceSearch(board, alpha, beta, 0);
+            return QuiescenceSearch(board, alpha, beta, 0, nodes);
         }
 
         Score score = tt.ProbeEval(board.GetZobristHash(), alpha, beta, depth, ply);
@@ -166,8 +176,8 @@ namespace Meetra {
                 board.UnmakeMove(move);
                 continue;
             }
-            normal_nodes++;
-            score = -NegaMax(board, -beta, -alpha, depth - 1, ply + 1);
+            nodes++;
+            score = -NegaMax(board, -beta, -alpha, depth - 1, ply + 1, nodes);
             board.UnmakeMove(move);
 
             if (!run) {
@@ -195,7 +205,7 @@ namespace Meetra {
         return alpha;
     }
 
-    Score ABSearch::QuiescenceSearch(Board &board, Score alpha, Score beta, Depth depth) {
+    Score ABSearch::QuiescenceSearch(Board &board, Score alpha, Score beta, Depth depth, ulong &nodes) {
 
         if (depth > qsearch_depth) {
             qsearch_depth = depth;
@@ -216,8 +226,8 @@ namespace Meetra {
                 board.UnmakeMove(move);
                 continue;
             }
-            qsearch_nodes++;
-            score = -QuiescenceSearch(board, -beta, -alpha, depth + 1);
+            nodes++;
+            score = -QuiescenceSearch(board, -beta, -alpha, depth + 1, nodes);
             board.UnmakeMove(move);
             if (score >= beta) {
                 return beta;
@@ -267,42 +277,25 @@ namespace Meetra {
                 board.UnmakeMove(move);
                 continue;
             }
-            Score score = tt.ProbeEval(board.GetZobristHash(), NEGATIVE_INF, POSITIVE_INF, 0, 1);
+            //Score score = tt.ProbeEval(board.GetZobristHash(), NEGATIVE_INF, POSITIVE_INF, 0, 1);
             board.UnmakeMove(move);
-            if (score == NOT_FOUND) score = Evaluation::MoveEval(board, move);
+            //if (score == NOT_FOUND) score = Evaluation::MoveEval(board, move);
             root_moves[root_moves_cnt].move = move;
-            root_moves[root_moves_cnt].score = score;
+            //root_moves[root_moves_cnt].score = score;
             root_moves_cnt++;
         }
-    }
-
-    void ABSearch::SortRootMoves() {
-        // TODO TODO
-        // the moves are already sorted by move gen
-        // this sort should really be called only at the end when printing the multipv
-        // otherwise we just sort them according to some full shallow search first (3 depth, full search without changing alpha)
-        // and then use that order, and only swap them around if a new best node is found - put that on the first place
-        // and the best move is picked just by going through them all and finding the first move with highest score
-        // oor we can actually sort them anyway even if we are in multipv = 1, thats fine at the end when printing
-        // just not before! (before we only sort them this way for multipv) - i think at least ... rather check again
-        // if really they all have the same score when we are changing alpha
-        // also i wonder if using TT inside of movegen to pick a move is actually good for anything, since we use TT
-        // anyway to cut off
-        // also make movegen<quiescence, normal, all> - for qsearch, normal search, perft
-        std::stable_sort(root_moves, root_moves + root_moves_cnt, CompMaEGreater);
     }
 
     std::string ABSearch::GetUpdateSearchInfo() const {
 
         auto elapsed_ms = ElapsedTimeMs();
-        long nps = static_cast<long>(static_cast<double>(normal_nodes + qsearch_nodes) * 1000.0 /
-                                     static_cast<double>(elapsed_ms));
+        long nps = static_cast<long>(static_cast<double>(nodes_explored) * 1000.0 / static_cast<double>(elapsed_ms));
 
         std::stringstream ss;
 
         ss << "info depth " << static_cast<int>(curr_max_depth)
            << " seldepth " << qsearch_depth + curr_max_depth
-           << " nodes " << (normal_nodes + qsearch_nodes)
+           << " nodes " << (nodes_explored)
            << " time " << elapsed_ms
            << " nps " << nps
            << " hashfull " << static_cast<int>(tt.Usage() * 1000);
@@ -313,8 +306,7 @@ namespace Meetra {
     std::string ABSearch::GetSearchInfo(Board &board) {
 
         long elapsed_ms = ElapsedTimeMs();
-        long nps = static_cast<long>(static_cast<double>(normal_nodes + qsearch_nodes) * 1000.0 /
-                                     static_cast<double>(elapsed_ms));
+        long nps = static_cast<long>(static_cast<double>(nodes_explored) * 1000.0 / static_cast<double>(elapsed_ms));
 
         std::stringstream ss;
         Move pv_stack[MAX_SEARCH_DEPTH];
@@ -324,7 +316,7 @@ namespace Meetra {
             if (pvs_to_send > 1) ss << " multipv " << i + 1;
             ss << " depth " << static_cast<int>(curr_max_depth)
                << " seldepth " << qsearch_depth + curr_max_depth
-               << " nodes " << (normal_nodes + qsearch_nodes)
+               << " nodes " << nodes_explored
                << " time " << elapsed_ms
                << " nps " << nps
                << " hashfull " << static_cast<int>(tt.Usage() * 1000)

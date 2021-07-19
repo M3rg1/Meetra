@@ -162,11 +162,20 @@ namespace Meetra {
         Move move;
         Score score;
     };
-    inline bool CompMaEGreater(const MoveAndEval &mae1, const MoveAndEval &mae2) {
-        return mae1.score > mae2.score;
-    }
     inline bool CompMaELesser(const MoveAndEval &mae1, const MoveAndEval &mae2) {
         return mae1.score < mae2.score;
+    }
+
+    struct MoveAndNodes {
+        Move move;
+        Score score;
+        ulong nodes;
+    };
+    inline bool CompMaNNodes(const MoveAndNodes &man1, const MoveAndNodes &man2) {
+        return man1.nodes < man2.nodes;
+    }
+    inline bool CompMaNScore(const MoveAndNodes &man1, const MoveAndNodes &man2) {
+        return man1.score < man2.score;
     }
 
     inline PieceType PieceTypeFromFlag(MoveType mt) { return static_cast<PieceType >((mt >> 13) - 2); }
