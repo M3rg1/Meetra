@@ -151,6 +151,7 @@ namespace Meetra {
             return QuiescenceSearch(board, alpha, beta, 0);
         }
 
+        Move move;
         Score score = tt.ProbeEval(board.GetZobristHash(), alpha, beta, depth, ply);
         if (score != NOT_FOUND) {
             return score;
@@ -159,7 +160,6 @@ namespace Meetra {
         MoveGen move_gen(board, &tt);
         Move best_move_this_iter = INVALID_MOVE;
         EntryFlag tt_flag = ALPHA;
-        Move move;
 
         while ((move = move_gen.GetNextMove<false>())) {
             if (!board.MakeMove(move)) {
