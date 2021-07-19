@@ -35,9 +35,6 @@ namespace Meetra {
 
         GenRootMoves(board);
 
-        best_score = NEGATIVE_INF;
-        best_move = root_moves[0].move;
-
         settings.max_allowed_depth = std::min(settings.max_allowed_depth, static_cast<Depth>(MAX_SEARCH_DEPTH));
 
         InitSearchTimer(board);
@@ -78,9 +75,12 @@ namespace Meetra {
             return;
         }
 
-/*        for(int i = 0; i < root_moves_cnt; i++){
-            root_moves[i].score = -NegaMax(board, NEGATIVE_INF, POSITIVE_INF, 5, 1);
-        }*/
+/*        ulong dummy = 0;
+        for(int i = 0; i < root_moves_cnt; i++){
+            root_moves[i].score = -QuiescenceSearch(board, NEGATIVE_INF, POSITIVE_INF, 0, dummy);
+            //root_moves[i].score = -NegaMax(board, NEGATIVE_INF, POSITIVE_INF, 3, 1, dummy);
+        }
+        std::sort(root_moves, root_moves + root_moves_cnt, CompScoreGreatersMAN);*/
 
         int best_idx = 0;
         Score best_score = NEGATIVE_INF;
@@ -99,11 +99,11 @@ namespace Meetra {
                     Uci::SendToGui(GetCurrMoveInfo(curr_move, curr_move_num, board));
                 }
 
-                ulong nodes = 0;
                 board.MakeMove(curr_move);
+                ulong nodes = 1;
+                nodes_explored++;
                 Score score = -NegaMax(board, -beta, -alpha, curr_max_depth - 1, 2, nodes);
                 board.UnmakeMove(curr_move);
-                nodes_explored += nodes;
 
                 if (run) {
                     root_moves[curr_move_num].nodes = nodes;
@@ -125,22 +125,22 @@ namespace Meetra {
                 }
                 std::swap(root_moves[0], root_moves[best_idx]);
                 best_score = root_moves[0].score;
-                std::sort(root_moves + 1, root_moves + root_moves_cnt, CompMaNNodes);
+                std::sort(root_moves + 1, root_moves + root_moves_cnt, CompNodesLesserMAN);
             } else {
-                std::sort(root_moves, root_moves + root_moves_cnt, CompMaNScore);
-            }
-
-            if (!settings.infinite && !settings.fixed_timer && std::abs(best_score) > MIN_MATE_EVAL) {
-                int distance_to_mate = MATE_SCORE - std::abs(best_score);
-                // TODO if mate is beyond horizon instead of showing in gui MATE in X, show some score
-                // otherwise the mate is going up and down randomly its shiiet
-                if (curr_max_depth > distance_to_mate && multi_pv == 1) {
-                    run = false;
-                }
+                std::sort(root_moves, root_moves + root_moves_cnt, CompScoreGreaterMAN);
             }
 
             if (curr_max_depth > plies_muted) {
                 Uci::SendToGui(GetSearchInfo(board));
+            }
+
+            if (std::abs(best_score) > MIN_MATE_EVAL && multi_pv == 1 && !settings.infinite && !settings.fixed_timer) {
+                int distance_to_mate = MATE_SCORE - std::abs(best_score);
+                // TODO if mate is beyond horizon instead of showing in gui MATE in X, show some score
+                // otherwise the mate is going up and down randomly its shiiet
+                if (curr_max_depth > distance_to_mate) {
+                    break;
+                }
             }
 
             if (!run || !EnoughTimeLeft()) {
@@ -177,6 +177,7 @@ namespace Meetra {
                 continue;
             }
             nodes++;
+            nodes_explored++;
             score = -NegaMax(board, -beta, -alpha, depth - 1, ply + 1, nodes);
             board.UnmakeMove(move);
 
@@ -227,6 +228,7 @@ namespace Meetra {
                 continue;
             }
             nodes++;
+            nodes_explored++;
             score = -QuiescenceSearch(board, -beta, -alpha, depth + 1, nodes);
             board.UnmakeMove(move);
             if (score >= beta) {

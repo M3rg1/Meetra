@@ -90,7 +90,7 @@ namespace Meetra {
     }
 
     Move MoveGen::PickBestMove() {
-        auto it = std::max_element(move_eval, move_eval + moves_cnt, CompMaELesser);
+        auto it = std::max_element(move_eval, move_eval + moves_cnt, CompScoreLesserMAE);
         return PopRef(*it);
     }
 
@@ -103,7 +103,7 @@ namespace Meetra {
                 NextPhase<BLACK, QSearch>();
             }
             EvalMoves();
-            //std::sort(move_eval, move_eval + moves_cnt, CompMaELesser);
+            //std::sort(move_eval, move_eval + moves_cnt, CompScoreGreatersMAN);
         }
         //return PopMove();
         return PickBestMove();
