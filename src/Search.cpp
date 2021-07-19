@@ -67,6 +67,7 @@ namespace Meetra {
     }
 
     void ABSearch::StartSearch(SearchSettings s, Board board) {
+
         run = true;
         InitSearch(s, board);
 
@@ -92,14 +93,14 @@ namespace Meetra {
                     Uci::SendToGui(GetCurrMoveInfo(curr_move, curr_move_num, board));
                 }
 
+                ulong nodes = nodes_explored;
                 board.MakeMove(curr_move);
-                ulong nodes = 1;
                 nodes_explored++;
-                Score score = -NegaMax(board, -beta, -alpha, curr_max_depth - 1, 2, nodes);
+                Score score = -NegaMax(board, -beta, -alpha, curr_max_depth - 1, 2);
                 board.UnmakeMove(curr_move);
 
                 if (run) {
-                    root_moves[curr_move_num].nodes = nodes;
+                    root_moves[curr_move_num].nodes = nodes_explored - nodes;
                     root_moves[curr_move_num].score = score;
                     if (score > alpha && multi_pv == 1) {
                         alpha = score;
@@ -142,19 +143,16 @@ namespace Meetra {
         Uci::SendToGui(GetBestMove());
     }
 
-    Score ABSearch::NegaMax(Board &board, Score alpha, Score beta, Depth depth, Depth ply, ulong &nodes) {
+    Score ABSearch::NegaMax(Board &board, Score alpha, Score beta, Depth depth, Depth ply) {
 
         if (board.IsRepetition() || board.Ply() >= 50) {
             return -DRAW_SCORE;
         } else if (depth == 0) {
-            return QuiescenceSearch(board, alpha, beta, 0, nodes);
+            return QuiescenceSearch(board, alpha, beta, 0);
         }
 
         Score score = tt.ProbeEval(board.GetZobristHash(), alpha, beta, depth, ply);
         if (score != NOT_FOUND) {
-/*            if (move) {
-                BackupPv(board, depth);
-            }*/
             return score;
         }
 
@@ -168,9 +166,8 @@ namespace Meetra {
                 board.UnmakeMove(move);
                 continue;
             }
-            nodes++;
             nodes_explored++;
-            score = -NegaMax(board, -beta, -alpha, depth - 1, ply + 1, nodes);
+            score = -NegaMax(board, -beta, -alpha, depth - 1, ply + 1);
             board.UnmakeMove(move);
 
             if (!run) {
@@ -195,7 +192,7 @@ namespace Meetra {
         }
 
         if (tt_flag == EXACT_SCORE) {
-            pvt.AddEntry(board.GetZobristHash(), best_move_this_iter);
+            pvt.SavePv(board.GetZobristHash(), best_move_this_iter);
         }
 
         tt.SaveEval(board.GetZobristHash(), alpha, depth, best_move_this_iter, tt_flag, ply);
@@ -203,7 +200,7 @@ namespace Meetra {
         return alpha;
     }
 
-    Score ABSearch::QuiescenceSearch(Board &board, Score alpha, Score beta, Depth depth, ulong &nodes) {
+    Score ABSearch::QuiescenceSearch(Board &board, Score alpha, Score beta, Depth depth) {
 
         if (depth > qsearch_depth) {
             qsearch_depth = depth;
@@ -225,9 +222,8 @@ namespace Meetra {
                 board.UnmakeMove(move);
                 continue;
             }
-            nodes++;
             nodes_explored++;
-            score = -QuiescenceSearch(board, -beta, -alpha, depth + 1, nodes);
+            score = -QuiescenceSearch(board, -beta, -alpha, depth + 1);
             board.UnmakeMove(move);
             if (score > alpha) {
                 if (score >= beta) {
@@ -264,7 +260,7 @@ namespace Meetra {
         if (!move || depth == 0) {
             return;
         }
-        pvt.AddEntry(board.GetZobristHash(), move);
+        pvt.SavePv(board.GetZobristHash(), move);
         board.MakeMove(move);
         BackupPv(board, depth - 1);
         board.UnmakeMove(move);
@@ -356,7 +352,7 @@ namespace Meetra {
             }
             ss << " pv " << GetMoveName(move);
             board.MakeMove(move);
-            RetrievePv(board, pv_stack, 64 /*std::max(curr_max_depth - 1, distance_to_mate)*/);
+            RetrievePv(board, pv_stack, std::max(32, distance_to_mate));
             board.UnmakeMove(move);
             Move *pv_stack_ptr = pv_stack;
             Move pv_move;

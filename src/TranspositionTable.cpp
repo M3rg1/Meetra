@@ -32,10 +32,7 @@ namespace Meetra {
             TTEntry *curr_entry = &table[index];
 
             if (curr_entry->Get32Key() == key_32) {
-                if (curr_entry->GetEpoch() != current_epoch /*|| flag == EXACT_SCORE*/
-                    || curr_entry->GetDepth() < depth /*&& curr_entry->GetFlag() != EXACT_SCORE)*/) {
-                    /*(flag == EXACT_SCORE && curr_entry->GetFlag() == EXACT_SCORE && depth > curr_entry->GetDepth())
-                    || (curr_entry->GetFlag() != EXACT_SCORE && flag == EXACT_SCORE) || (curr_entry->GetFlag() != EXACT_SCORE && depth > curr_entry->GetDepth()))*/
+                if (curr_entry->GetEpoch() != current_epoch || curr_entry->GetDepth() < depth) {
                     entry_to_write = curr_entry;
                     break;
                 }
@@ -44,7 +41,11 @@ namespace Meetra {
 
             int entry_score = static_cast<int>(curr_entry->GetDepth());
             if (curr_entry->GetEpoch() != current_epoch) {
-                entry_score -= 500;
+                if (curr_entry->GetEpoch() < current_epoch) {
+                    entry_score -= (current_epoch - curr_entry->GetEpoch()) << 2;
+                } else {
+                    entry_score -= (current_epoch + (63 - curr_entry->GetEpoch())) << 2;
+                }
             }
             if (entry_score < worst_entry_score) {
                 worst_entry_score = entry_score;
@@ -69,17 +70,6 @@ namespace Meetra {
             TTEntry *ttEntry = &table[index];
             if (ttEntry->Get32Key() == key_32) {
                 if (ttEntry->GetDepth() >= depth) {
-/*                    if (ttEntry->GetFlag() == EXACT_SCORE) {
-                        ttEntry->SetEpoch(current_epoch);
-                        m = ttEntry->GetMove();
-                        return AddMatePly(ttEntry->GetScore(), ply);
-                    } else if (ttEntry->GetFlag() == ALPHA && ttEntry->GetScore() <= alpha) {
-                        ttEntry->SetEpoch(current_epoch);
-                        return alpha;
-                    } else if (ttEntry->GetFlag() == BETA && ttEntry->GetScore() >= beta) {
-                        ttEntry->SetEpoch(current_epoch);
-                        return beta;
-                    }*/
                     if (ttEntry->GetFlag() == EXACT_SCORE ||
                         (ttEntry->GetFlag() == ALPHA && ttEntry->GetScore() <= alpha) ||
                         (ttEntry->GetFlag() == BETA && ttEntry->GetScore() >= beta)) {

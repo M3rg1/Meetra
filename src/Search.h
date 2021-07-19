@@ -37,8 +37,8 @@ namespace Meetra {
         inline void SetNumThreads(int num_threads) {
             //omp_set_num_threads(std::min(MAX_SEARCH_THREADS, num_threads));
         }
-        inline void ClearTT() { tt.Clear(); }
-        inline void SetTTSize(size_t size_mb) { tt.Resize(size_mb); }
+        inline void ClearTT() { tt.Clear(); pvt.Clear(); }
+        inline void SetTTSize(size_t size_mb) { tt.Resize(size_mb);  pvt.Clear(); }
         inline void ShowShowCurrLine(bool show) { show_currline = show; }
         inline void SetPliesMuted(int ply_muted) { plies_muted = ply_muted; }
         inline void ShowCurrMoveInfo(bool show) { show_currmove = show; }
@@ -56,8 +56,8 @@ namespace Meetra {
     private:
         void InitSearchTimer(Board &board);
         void InitSearch(SearchSettings &settings, Board &board);
-        Score QuiescenceSearch(Board &board, Score alpha, Score beta, Depth depth, ulong &nodes);
-        Score NegaMax(Board &board, Score alpha, Score beta, Depth depth, Depth ply, ulong &nodes);
+        Score QuiescenceSearch(Board &board, Score alpha, Score beta, Depth depth);
+        Score NegaMax(Board &board, Score alpha, Score beta, Depth depth, Depth ply);
         void RetrievePv(Board &board, Move *pv_line, Depth depth) const;
         void BackupPv(Board &board, Depth depth);
         void GenRootMoves(Board &board);

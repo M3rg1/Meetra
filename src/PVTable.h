@@ -12,7 +12,7 @@ namespace Meetra {
 
     class PVTable {
 
-#define PVT_ENTRIES_PER_BUCKET 8
+#define PVT_ENTRIES_PER_BUCKET 12
 #define PVT_BUCKETS_COUNT 20000
 
     public:
@@ -29,7 +29,12 @@ namespace Meetra {
             current_epoch++;
         }
 
-        void AddEntry(ZobristHash k, Move m) {
+        void Clear() {
+            current_epoch = 0;
+            memset(table.get(), 0, sizeof(PVBucket) * size);
+        }
+
+        void SavePv(ZobristHash k, Move m) {
             PVBucket *bucket = &table[k % size];
             k = Zobrist::Make44Key(k);
 
