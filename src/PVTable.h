@@ -12,16 +12,16 @@ namespace Meetra {
 
     class PVTable {
 
-#define PVT_ENTRIES_PER_BUCKET 8
-#define PVT_BUCKETS_COUNT 20000
+#define PVT_ENTRIES_PER_BUCKET 4
+#define PVT_BUCKETS_COUNT 100000
 
     public:
 
         PVTable() {
-            size = PVT_BUCKETS_COUNT;
-            table = std::make_unique<PVBucket[]>(size);
+            buckets_count = PVT_BUCKETS_COUNT;
+            table = std::make_unique<PVBucket[]>(buckets_count);
             current_epoch = 0;
-            memset(table.get(), 0, sizeof(PVBucket) * size);
+            memset(table.get(), 0, sizeof(PVBucket) * buckets_count);
         }
 
         void NewSearch() {
@@ -31,46 +31,63 @@ namespace Meetra {
 
         void Clear() {
             current_epoch = 0;
-            memset(table.get(), 0, sizeof(PVBucket) * size);
+            memset(table.get(), 0, sizeof(PVBucket) * buckets_count);
         }
 
         void SavePv(ZobristHash k, Move m) {
-            PVBucket *bucket = &table[k % size];
+
+            PVBucket *bucket = &table[k % buckets_count];
             k = Zobrist::Make44Key(k);
-            int worst_score = 10000;
+            int max_epoch_diff = -1;
             PVEntry *entry_to_write;
 
+            bucket->Lock();
+
             for (auto &e : bucket->bucket_entries) {
+
                 if (e.Get44Key() == k) {
                     entry_to_write = &e;
                     break;
                 }
-                int entry_score = 0;
+
+                int epoch_diff = 0;
                 if (e.GetEpoch() != current_epoch) {
-                    if (e.GetEpoch() < current_epoch) {
-                        entry_score -= (current_epoch - e.GetEpoch()) << 2;
+                    if (current_epoch > e.GetEpoch()) {
+                        epoch_diff = (current_epoch - e.GetEpoch());
                     } else {
-                        entry_score -= (current_epoch + (15 - e.GetEpoch())) << 2;
+                        epoch_diff = (current_epoch + (15 - e.GetEpoch()));
                     }
                 }
-                if (entry_score < worst_score) {
-                    worst_score = entry_score;
+                if (epoch_diff > max_epoch_diff) {
+                    max_epoch_diff = epoch_diff;
                     entry_to_write = &e;
                 }
             }
+
             entry_to_write->SaveEntry(m, k, current_epoch);
+
+            bucket->Unlock();
         }
 
         [[nodiscard]] Move ProbePv(ZobristHash k) const {
-            PVBucket *bucket = &table[k % size];
+
+            PVBucket *bucket = &table[k % buckets_count];
             k = Zobrist::Make44Key(k);
+            Move ret = INVALID_MOVE;
+
+            bucket->Lock();
+
             for (auto &e : bucket->bucket_entries) {
                 if (e.Get44Key() == k) {
                     e.SetEpoch(current_epoch);
-                    return e.GetMove();
+                    ret = e.GetMove();
+                    break;
                 }
             }
-            return INVALID_MOVE;
+
+            bucket->Unlock();
+
+            return ret;
         }
 
 
@@ -99,13 +116,28 @@ namespace Meetra {
             uint64_t entry;
         };
 
-        struct PVBucket {
+        class PVBucket {
+
+        public:
             PVEntry bucket_entries[PVT_ENTRIES_PER_BUCKET];
+
+            void Lock(){
+                while (lock.test_and_set(std::memory_order_acquire)) {
+                    while (lock.test(std::memory_order_relaxed));
+                }
+            }
+
+            void Unlock(){
+                lock.clear(std::memory_order_release);
+            }
+
+        private:
             std::atomic_flag lock;
+
         };
 //#pragma pack(pop)
 
-        int size;
+        int buckets_count;
         Epoch current_epoch;
         std::unique_ptr<PVBucket[]> table;
 

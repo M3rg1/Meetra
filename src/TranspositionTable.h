@@ -6,21 +6,13 @@
 #include "Board.h"
 #include "ZobristHash.h"
 #include <memory>
+#include <atomic>
 
 namespace Meetra {
 
-    enum TTSize : size_t {
-        TT512MB = 67108864, //51200000,
-        TT256MB = 33554432, //25600000,
-        TT128MB = 16777216, //12800000,
-        TT64MB = 8388608, //6400000,
-        TT32MB = 4194304, //3200000,
-        TT16MB = 2097152, //1600000,
-        TT8MB = 1048576, //800000
-    };
-
-#define DEFAULT_TT_SIZE TT64MB
-#define NOT_FOUND Score(-32013)
+#define DEFAULT_TT_SIZE_MB 64
+#define NOT_FOUND (-32013)
+#define TT_ENTRIES_PER_BUCKET 4
 
     enum EntryFlag : uint8_t {
         EXACT_SCORE, ALPHA, BETA
@@ -30,24 +22,22 @@ namespace Meetra {
 
     public:
 
-        explicit TranspositionTable(size_t size = DEFAULT_TT_SIZE);
+        explicit TranspositionTable(size_t size = DEFAULT_TT_SIZE_MB);
         void SaveEval(ZobristHash key, Score score, Depth depth, Move move, EntryFlag flag, Depth ply);
         void Resize(size_t new_size_mb);
         void NewSearch();
         void Clear();
 
-        [[nodiscard]] Score ProbeEval(ZobristHash key, Score alpha, Score beta, Depth depth, Depth ply) const;
+        [[nodiscard]] Score ProbeEval(ZobristHash key, Score alpha, Score beta, Depth depth, Depth ply, Move &m) const;
         [[nodiscard]] Move GetPVMove(ZobristHash key) const;
         [[nodiscard]] Move GetAnyMove(ZobristHash key) const;
-        [[nodiscard]] inline size_t EntriesCount() const { return used_entries; }
         // 0.01 == 1% usage, 0.1 == 10% usage, 1 == 100% usage
         [[nodiscard]] inline double Usage() const {
-            return static_cast<double>(used_entries) / static_cast<double>(size_entries);
+            return static_cast<double>(used_entries) / static_cast<double>(buckets_count * TT_ENTRIES_PER_BUCKET);
         }
 
     private:
 #pragma pack(push, 1)
-
         // 10 bytes
         class TTEntry {
             uint32_t key;
@@ -80,13 +70,32 @@ namespace Meetra {
             }
         };
 
+        class TTBucket {
+
+        public:
+            TTEntry bucket_entries[TT_ENTRIES_PER_BUCKET];
+
+            void Lock() {
+                while (lock.test_and_set(std::memory_order_acquire)) {
+                    while (lock.test(std::memory_order_relaxed));
+                }
+            }
+
+            void Unlock() {
+                lock.clear(std::memory_order_release);
+            }
+
+        private:
+            std::atomic_flag lock;
+
+        };
+
 #pragma pack(pop)
 
         Epoch current_epoch;
-        size_t used_entries;
-        size_t size_entries;
-        size_t index_mask;
-        std::unique_ptr<TTEntry[]> table;
+        std::atomic<size_t> used_entries; // todo this should be atomic
+        size_t buckets_count;
+        std::unique_ptr<TTBucket[]> table;
     };
 
 }

@@ -4,8 +4,6 @@
 
 namespace Meetra {
 
-#define BUCKET_SIZE 4
-
     Score RemoveMatePly(Score score, Depth ply) {
         return score > MIN_MATE_EVAL ? score + ply : score < -MIN_MATE_EVAL ? score - ply : score;
     }
@@ -14,9 +12,9 @@ namespace Meetra {
         return score > MIN_MATE_EVAL ? score - ply : score < -MIN_MATE_EVAL ? score + ply : score;
     }
 
-    TranspositionTable::TranspositionTable(size_t size) : size_entries(size) {
-        table = std::make_unique<TTEntry[]>(size);
-        index_mask = size - 1;
+    TranspositionTable::TranspositionTable(size_t mega_bytes) {
+        buckets_count = (mega_bytes * 1000000) / sizeof(TTBucket);
+        table = std::make_unique<TTBucket[]>(buckets_count);
         Clear();
     }
 
@@ -26,118 +24,132 @@ namespace Meetra {
         TTEntry *entry_to_write;
         int worst_entry_score = 1000000;
         score = RemoveMatePly(score, ply);
+        TTBucket *bucket = &table[key % buckets_count];
 
-        for (auto i = 0; i < BUCKET_SIZE; i++) {
-            auto index = (key + i) & index_mask;
-            TTEntry *curr_entry = &table[index];
+        bucket->Lock();
 
-            if (curr_entry->Get32Key() == key_32) {
-                if (curr_entry->GetEpoch() != current_epoch || curr_entry->GetDepth() < depth) {
-                    entry_to_write = curr_entry;
+        for (auto &entry : bucket->bucket_entries) {
+
+            if (entry.Get32Key() == key_32) {
+                if (entry.GetEpoch() != current_epoch || entry.GetDepth() < depth) {
+                    entry_to_write = &entry;
                     break;
                 }
+                bucket->Unlock();
                 return;
             }
 
-            int entry_score = static_cast<int>(curr_entry->GetDepth());
-            if (curr_entry->GetEpoch() != current_epoch) {
-                if (curr_entry->GetEpoch() < current_epoch) {
-                    entry_score -= (current_epoch - curr_entry->GetEpoch()) << 2;
+            int entry_score = static_cast<int>(entry.GetDepth());
+            if (entry.GetEpoch() != current_epoch) {
+                if (entry.GetEpoch() < current_epoch) {
+                    entry_score -= (current_epoch - entry.GetEpoch()) << 2;
                 } else {
-                    entry_score -= (current_epoch + (63 - curr_entry->GetEpoch())) << 2;
+                    entry_score -= (current_epoch + (63 - entry.GetEpoch())) << 2;
                 }
             }
             if (entry_score < worst_entry_score) {
                 worst_entry_score = entry_score;
-                entry_to_write = curr_entry;
+                entry_to_write = &entry;
             }
         }
 
         if (entry_to_write->GetEpoch() != current_epoch) {
-            used_entries++;
+            used_entries.fetch_add(1, std::memory_order::relaxed);
         }
         entry_to_write->SaveEntry(key_32, score, depth, move, flag, current_epoch);
 
+        bucket->Unlock();
     }
 
     Score
-    TranspositionTable::ProbeEval(ZobristHash key, Score alpha, Score beta, Depth depth, Depth ply) const {
+    TranspositionTable::ProbeEval(ZobristHash key, Score alpha, Score beta, Depth depth, Depth ply, Move &m) const {
 
         Key32 key_32 = Zobrist::Make32Key(key);
+        m = INVALID_MOVE;
+        Score ret = NOT_FOUND;
 
-        for (auto i = 0; i < BUCKET_SIZE; i++) {
-            auto index = (key + i) & index_mask;
-            TTEntry *ttEntry = &table[index];
-            if (ttEntry->Get32Key() == key_32) {
-                if (ttEntry->GetDepth() >= depth) {
-                    if (ttEntry->GetFlag() == EXACT_SCORE) {
-                        ttEntry->SetEpoch(current_epoch);
-                        return AddMatePly(ttEntry->GetScore(), ply);
-                    } else if (ttEntry->GetFlag() == ALPHA && ttEntry->GetScore() <= alpha) {
-                        ttEntry->SetEpoch(current_epoch);
-                        return alpha;
-                    } else if (ttEntry->GetFlag() == BETA && ttEntry->GetScore() >= beta) {
-                        ttEntry->SetEpoch(current_epoch);
-                        return beta;
+        TTBucket *bucket = &table[key % buckets_count];
+
+        bucket->Lock();
+
+        for (auto &entry : bucket->bucket_entries) {
+            if (entry.Get32Key() == key_32) {
+                if (entry.GetDepth() >= depth) {
+                    if (entry.GetFlag() == EXACT_SCORE) {
+                        entry.SetEpoch(current_epoch);
+                        m = entry.GetMove();
+                        ret = AddMatePly(entry.GetScore(), ply);
+                    } else if (entry.GetFlag() == ALPHA && entry.GetScore() <= alpha) {
+                        entry.SetEpoch(current_epoch);
+                        ret = alpha;
+                    } else if (entry.GetFlag() == BETA && entry.GetScore() >= beta) {
+                        entry.SetEpoch(current_epoch);
+                        ret = beta;
                     }
                 }
-                return NOT_FOUND;
+                break;
             }
         }
-        return NOT_FOUND;
+
+        bucket->Unlock();
+        return ret;
     }
 
     void TranspositionTable::NewSearch() {
         current_epoch %= 63;
         current_epoch++;
-        used_entries = 0;
+        used_entries.store(0, std::memory_order::relaxed);
     }
 
     void TranspositionTable::Resize(size_t new_size_mb) {
-        // TODO convert from size mb to entries count
         table.reset();
-        size_entries = new_size_mb;
-        index_mask = new_size_mb - 1;
-        table = std::make_unique<TTEntry[]>(new_size_mb);
+        buckets_count = (new_size_mb * 1000000) / sizeof(TTBucket);
+        table = std::make_unique<TTBucket[]>(buckets_count);
         Clear();
     }
 
     void TranspositionTable::Clear() {
-        used_entries = 0;
+        used_entries.store(0, std::memory_order::relaxed);
         current_epoch = 0;
-        memset(table.get(), 0, sizeof(TTEntry) * size_entries);
+        memset(table.get(), 0, sizeof(TTBucket) * buckets_count);
     }
 
     Move TranspositionTable::GetPVMove(ZobristHash key) const {
 
         Key32 key_32 = Zobrist::Make32Key(key);
+        TTBucket *bucket = &table[key % buckets_count];
+        Move ret = INVALID_MOVE;
 
-        for (auto i = 0; i < BUCKET_SIZE; i++) {
-            auto index = (key + i) & index_mask;
-            TTEntry *ttEntry = &table[index];
+        bucket->Lock();
 
-            if (ttEntry->Get32Key() == key_32) {
-                if (ttEntry->GetFlag() == EXACT_SCORE) {
-                    return ttEntry->GetMove();
+        for (auto &entry : bucket->bucket_entries) {
+            if (entry.Get32Key() == key_32) {
+                if (entry.GetFlag() == EXACT_SCORE) {
+                    ret = entry.GetMove();
                 }
-                return INVALID_MOVE;
+                break;
             }
         }
-        return INVALID_MOVE;
+
+        bucket->Unlock();
+        return ret;
     }
 
     Move TranspositionTable::GetAnyMove(ZobristHash key) const {
 
         Key32 key_32 = Zobrist::Make32Key(key);
+        TTBucket *bucket = &table[key % buckets_count];
+        Move ret = INVALID_MOVE;
 
-        for (auto i = 0; i < BUCKET_SIZE; i++) {
-            auto index = (key + i) & index_mask;
-            TTEntry *ttEntry = &table[index];
+        bucket->Lock();
 
-            if (ttEntry->Get32Key() == key_32) {
-                return ttEntry->GetMove();
+        for (auto &entry : bucket->bucket_entries) {
+            if (entry.Get32Key() == key_32) {
+                ret = entry.GetMove();
             }
         }
-        return INVALID_MOVE;
+
+        bucket->Unlock();
+        return ret;
     }
 }

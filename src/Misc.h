@@ -14,6 +14,8 @@ namespace Meetra {
 #define DEFAULT_SEARCH_THREADS 4
 #define DEFAULT_UI_SPAM 1000
 #define MAX_SEARCH_THREADS 16
+#define MIN_HASH_SIZE 16
+#define MAX_HASH_SIZE 4096
 
 #define LOGO   " __  __         _\n"               \
                 "|  \\/  |___ ___| |_ _ _ __ _\n"   \
@@ -22,7 +24,7 @@ namespace Meetra {
 #define NAME "Meetra"
 #define VERSION "0.0.1"
 #define AUTHOR "M3rgi"
-#define OPTIONS "option name Hash type spin default 64 min 8 max 512\n"\
+#define OPTIONS "option name Hash type spin default 64 min 16 max 4096 \n"\
                 "option name Clear Hash type button\n"\
                 "option name MultiPV type spin default 1 min 1 max 32\n"\
                 "option name UCI_ShowCurrLine type check default false\n"\

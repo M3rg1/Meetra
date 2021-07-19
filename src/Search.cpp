@@ -152,8 +152,11 @@ namespace Meetra {
         }
 
         Move move;
-        Score score = tt.ProbeEval(board.GetZobristHash(), alpha, beta, depth, ply);
+        Score score = tt.ProbeEval(board.GetZobristHash(), alpha, beta, depth, ply, move);
         if (score != NOT_FOUND) {
+/*            if(move != INVALID_MOVE){
+                BackupPv(board, move);
+            }*/
             return score;
         }
 
