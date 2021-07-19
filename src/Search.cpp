@@ -363,7 +363,7 @@ namespace Meetra {
             }
             ss << " pv " << GetMoveName(move);
             board.MakeMove(move);
-            RetrievePv(board, pv_stack, std::max(curr_max_depth - 1, distance_to_mate));
+            RetrievePv(board, pv_stack, 64 /*std::max(curr_max_depth - 1, distance_to_mate)*/);
             board.UnmakeMove(move);
             Move *pv_stack_ptr = pv_stack;
             Move pv_move;

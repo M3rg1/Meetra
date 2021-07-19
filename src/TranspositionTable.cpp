@@ -105,12 +105,9 @@ namespace Meetra {
     }
 
     void TranspositionTable::NewSearch() {
-        if (current_epoch > 62) {
-            //Clear();
-            current_epoch = 0;
-        }
-        used_entries = 0;
         current_epoch++;
+        current_epoch &= 64;
+        used_entries = 0;
     }
 
     void TranspositionTable::Resize(size_t new_size_mb) {

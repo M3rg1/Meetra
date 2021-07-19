@@ -5,15 +5,15 @@
 #include "ZobristHash.h"
 #include <memory>
 #include <cstring>
-#include "iostream"
 #include <atomic>
+
 
 namespace Meetra {
 
     class PVTable {
 
-#define PVT_BUCKET_SIZE 8
-#define PVT_BUCKETS_COUNT 10000
+#define PVT_ENTRIES_PER_BUCKET 8
+#define PVT_BUCKETS_COUNT 20000
 
     public:
 
@@ -25,15 +25,16 @@ namespace Meetra {
         }
 
         void NewSearch() {
-            current_epoch %= 255;
             current_epoch++;
+            current_epoch &= 16;
         }
 
         void AddEntry(ZobristHash k, Move m) {
             PVBucket *bucket = &table[k % size];
-            k = Zobrist::Make56Key(k);
+            k = Zobrist::Make44Key(k);
+
             for (auto &e : bucket->bucket_entries) {
-                if (e.Get56Key() == k || e.GetEpoch() != current_epoch) {
+                if (e.Get44Key() == k || e.GetEpoch() != current_epoch) {
                     e.SaveEntry(m, k, current_epoch);
                     return;
                 }
@@ -42,9 +43,9 @@ namespace Meetra {
 
         [[nodiscard]] Move ProbePv(ZobristHash k) const {
             PVBucket *bucket = &table[k % size];
-            k = Zobrist::Make56Key(k);
+            k = Zobrist::Make44Key(k);
             for (auto &e : bucket->bucket_entries) {
-                if (e.Get56Key() == k) {
+                if (e.Get44Key() == k) {
                     e.SetEpoch(current_epoch);
                     return e.GetMove();
                 }
@@ -55,35 +56,34 @@ namespace Meetra {
 
     private:
 
-#pragma pack(push, 1)
+//#pragma pack(push, 1)
         class PVEntry {
 
-        private:
-            uint16_t move;
-            uint64_t key_epoch;
-
         public:
-            [[nodiscard]] inline Move GetMove() const { return static_cast<Move>(move); }
-            [[nodiscard]] inline uint64_t Get56Key() const { return key_epoch & 0xFFFFFFFFFFFFFF; }
-            [[nodiscard]] inline Epoch GetEpoch() const { return static_cast<Epoch>(key_epoch >> 56); }
+            [[nodiscard]] inline Move GetMove() const { return static_cast<Move>(entry >> 4); }
+            [[nodiscard]] inline uint64_t Get44Key() const { return entry >> 20; }
+            [[nodiscard]] inline Epoch GetEpoch() const { return static_cast<Epoch>(entry & 0xF); }
 
-            inline void SaveEntry(Move m, ZobristHash k, Epoch e) {
-                move = static_cast<uint16_t>(m);
-                key_epoch = static_cast<uint64_t>(k & 0xFFFFFFFFFFFFFF);
-                key_epoch |= static_cast<uint64_t>(e) << 56;
+            inline void SaveEntry(Move m, uint64_t key44, Epoch e) {
+                entry = key44 << 20; // 44 bit
+                entry |= static_cast<uint64_t>(m) << 4; // 16 bit
+                entry |= static_cast<uint64_t>(e); // 4 bit
             }
 
             inline void SetEpoch(Epoch e) {
-                key_epoch &= (static_cast<uint64_t>(e) << 56) | 0xFFFFFFFFFFFFFF;
+                entry &= 0xFFFFFFFFFFFFFFF0;
+                entry |= static_cast<uint64_t>(e);
             }
 
+        private:
+            uint64_t entry;
         };
 
         struct PVBucket {
-            PVEntry bucket_entries[PVT_BUCKET_SIZE];
+            PVEntry bucket_entries[PVT_ENTRIES_PER_BUCKET];
             std::atomic_flag lock;
         };
-#pragma pack(pop)
+//#pragma pack(pop)
 
         int size;
         Epoch current_epoch;
