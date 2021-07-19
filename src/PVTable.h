@@ -25,8 +25,8 @@ namespace Meetra {
         }
 
         void NewSearch() {
+            current_epoch %= 15;
             current_epoch++;
-            current_epoch &= 16;
         }
 
         void AddEntry(ZobristHash k, Move m) {

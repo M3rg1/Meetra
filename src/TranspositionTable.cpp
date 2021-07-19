@@ -43,22 +43,13 @@ namespace Meetra {
             }
 
             int entry_score = static_cast<int>(curr_entry->GetDepth());
-            if (curr_entry->GetEpoch() < current_epoch) {
-                if (curr_entry->IsEmpty()) {
-                    entry_to_write = curr_entry;
-                    break;
-                }
-                entry_score -= (current_epoch - curr_entry->GetEpoch()) << 6;
+            if (curr_entry->GetEpoch() != current_epoch) {
+                entry_score -= 500;
             }
-            // two epochs back = 2 << 6 = 128, but 3 = 192 == keeping exact used_entries 2 epochs old
-/*            if (curr_entry->GetFlag() == EXACT_SCORE) {
-                entry_score += 150;
-            }*/
             if (entry_score < worst_entry_score) {
                 worst_entry_score = entry_score;
                 entry_to_write = curr_entry;
             }
-
         }
 
         if (entry_to_write->GetEpoch() != current_epoch) {
@@ -79,7 +70,7 @@ namespace Meetra {
             TTEntry *ttEntry = &table[index];
             if (ttEntry->Get32Key() == key_32) {
                 if (ttEntry->GetDepth() >= depth) {
-                    if (ttEntry->GetFlag() == EXACT_SCORE) {
+/*                    if (ttEntry->GetFlag() == EXACT_SCORE) {
                         ttEntry->SetEpoch(current_epoch);
                         m = ttEntry->GetMove();
                         return AddMatePly(ttEntry->GetScore(), ply);
@@ -89,14 +80,16 @@ namespace Meetra {
                     } else if (ttEntry->GetFlag() == BETA && ttEntry->GetScore() >= beta) {
                         ttEntry->SetEpoch(current_epoch);
                         return beta;
-                    }
-/*                    if (ttEntry->GetFlag() == EXACT_SCORE ||
+                    }*/
+                    if (ttEntry->GetFlag() == EXACT_SCORE ||
                         (ttEntry->GetFlag() == ALPHA && ttEntry->GetScore() <= alpha) ||
                         (ttEntry->GetFlag() == BETA && ttEntry->GetScore() >= beta)) {
                         ttEntry->SetEpoch(current_epoch);
-                        m = ttEntry->GetMove();
+                        if(ttEntry->GetFlag() == EXACT_SCORE) {
+                            m = ttEntry->GetMove();
+                        }
                         return AddMatePly(ttEntry->GetScore(), ply);
-                    }*/
+                    }
                 }
                 return NOT_FOUND;
             }
@@ -105,8 +98,8 @@ namespace Meetra {
     }
 
     void TranspositionTable::NewSearch() {
+        current_epoch %= 63;
         current_epoch++;
-        current_epoch &= 64;
         used_entries = 0;
     }
 

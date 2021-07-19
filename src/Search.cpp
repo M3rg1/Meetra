@@ -77,13 +77,6 @@ namespace Meetra {
             return;
         }
 
-/*        ulong nd = 0;
-        for(int i = 0; i < root_moves_cnt; i++){
-            //root_moves[i].score = -QuiescenceSearch(board, NEGATIVE_INF, POSITIVE_INF, 0, dummy);
-            root_moves[i].score = -NegaMax(board, NEGATIVE_INF, POSITIVE_INF, 5, 1, nd);
-        }
-        std::sort(root_moves, root_moves + root_moves_cnt, CompScoreGreaterMAN);*/
-
         for (curr_max_depth = 2; curr_max_depth <= settings.max_allowed_depth; curr_max_depth++) {
 
             Score alpha = NEGATIVE_INF;
