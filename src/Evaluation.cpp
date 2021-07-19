@@ -22,7 +22,7 @@ namespace Meetra::Evaluation {
         Square to = ToSquare(move);
         PieceType pt = board.GetPieceTypeOnSq(from);
         Score eval = eval_maps[board.ColorToMove()][pt][to] - eval_maps[board.ColorToMove()][pt][from];
-        eval += MoveCastlingEval(board, move);
+        //eval += MoveCastlingEval(board, move);
         return eval;
     }
 

@@ -39,6 +39,7 @@ namespace Meetra {
 
         [[nodiscard]] Score ProbeEval(ZobristHash key, Score alpha, Score beta, Depth depth, Depth ply) const;
         [[nodiscard]] Move GetPVMove(ZobristHash key) const;
+        [[nodiscard]] Move GetAnyMove(ZobristHash key) const;
         [[nodiscard]] inline size_t EntriesCount() const { return used_entries; }
         // 0.01 == 1% usage, 0.1 == 10% usage, 1 == 100% usage
         [[nodiscard]] inline double Usage() const {

@@ -128,7 +128,7 @@ namespace Meetra {
             switch (genPhase) {
                 case BEST_MOVE:
                     Move m;
-                    m = tt->GetPVMove(board.GetZobristHash());
+                    m = tt->GetAnyMove(board.GetZobristHash());
                     if (IsValidMove(m)) {
                         PutMove(m);
                     }

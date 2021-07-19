@@ -32,13 +32,14 @@ namespace Meetra {
             TTEntry *curr_entry = &table[index];
 
             if (curr_entry->Get32Key() == key_32) {
-                if (curr_entry->GetEpoch() != current_epoch || flag == EXACT_SCORE ||
-                    (depth > curr_entry->GetDepth() && curr_entry->GetFlag() != EXACT_SCORE)) {
+                if (curr_entry->GetEpoch() != current_epoch || flag == EXACT_SCORE
+                    || curr_entry->GetDepth() < depth /*&& curr_entry->GetFlag() != EXACT_SCORE)*/) {
+                    /*(flag == EXACT_SCORE && curr_entry->GetFlag() == EXACT_SCORE && depth > curr_entry->GetDepth())
+                    || (curr_entry->GetFlag() != EXACT_SCORE && flag == EXACT_SCORE) || (curr_entry->GetFlag() != EXACT_SCORE && depth > curr_entry->GetDepth()))*/
                     entry_to_write = curr_entry;
-                } else {
-                    entry_to_write = nullptr;
+                    break;
                 }
-                break;
+                return;
             }
 
             int entry_score = static_cast<int>(curr_entry->GetDepth());
@@ -57,14 +58,14 @@ namespace Meetra {
                 worst_entry_score = entry_score;
                 entry_to_write = curr_entry;
             }
+
         }
 
-        if (entry_to_write) {
-            if (entry_to_write->GetEpoch() != current_epoch) {
-                used_entries++;
-            }
-            entry_to_write->SaveEntry(key_32, score, depth, move, flag, current_epoch);
+        if (entry_to_write->GetEpoch() != current_epoch) {
+            used_entries++;
         }
+        entry_to_write->SaveEntry(key_32, score, depth, move, flag, current_epoch);
+
     }
 
     Score TranspositionTable::ProbeEval(ZobristHash key, Score alpha, Score beta, Depth depth, Depth ply) const {
@@ -91,7 +92,8 @@ namespace Meetra {
 
     void TranspositionTable::NewSearch() {
         if (current_epoch > 62) {
-            Clear();
+            //Clear();
+            current_epoch = 0;
         }
         used_entries = 0;
         current_epoch++;
@@ -125,6 +127,21 @@ namespace Meetra {
                     return ttEntry->GetMove();
                 }
                 return INVALID_MOVE;
+            }
+        }
+        return INVALID_MOVE;
+    }
+
+    Move TranspositionTable::GetAnyMove(ZobristHash key) const {
+
+        Key32 key_32 = Zobrist::Make32Key(key);
+
+        for (auto i = 0; i < BUCKET_SIZE; i++) {
+            auto index = (key + i) & index_mask;
+            TTEntry *ttEntry = &table[index];
+
+            if (ttEntry->Get32Key() == key_32) {
+                return ttEntry->GetMove();
             }
         }
         return INVALID_MOVE;

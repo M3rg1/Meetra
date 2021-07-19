@@ -35,7 +35,6 @@ namespace Meetra {
         root_moves_cnt = 0;
 
         GenRootMoves(board);
-        SortRootMoves();
 
         settings.max_allowed_depth = std::min(settings.max_allowed_depth, static_cast<Depth>(MAX_SEARCH_DEPTH));
 
@@ -77,6 +76,12 @@ namespace Meetra {
             return;
         }
 
+/*        for(int i = 0; i < root_moves_cnt; i++){
+            root_moves[i].score = -NegaMax(board, NEGATIVE_INF, POSITIVE_INF, 5, 1);
+        }*/
+
+        SortRootMoves();
+
         Score temp_scores[root_moves_cnt];
         for (curr_max_depth = 2; curr_max_depth <= settings.max_allowed_depth; curr_max_depth++) {
 
@@ -117,6 +122,8 @@ namespace Meetra {
 
             if (!settings.infinite && !settings.fixed_timer && std::abs(root_moves[0].score) > MIN_MATE_EVAL) {
                 int distance_to_mate = MATE_SCORE - std::abs(root_moves[0].score);
+                // TODO if mate is beyond horizon instead of showing in gui MATE in X, show some score
+                // otherwise the mate is going up and down randomly its shiiet
                 if (curr_max_depth > distance_to_mate) {
                     run = false;
                 }
@@ -202,7 +209,7 @@ namespace Meetra {
         }
 
         // TODO in qsearch try not to order moves by position, just by victim/attacker .. maybe?
-        MoveGen move_gen(board);
+        MoveGen move_gen(board, &tt);
         Move move;
         while ((move = move_gen.GetNextMove<true>())) {
             if (!board.MakeMove(move)) {
