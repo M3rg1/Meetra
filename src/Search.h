@@ -42,6 +42,7 @@ namespace Meetra {
         inline void SetPliesMuted(int ply_muted) { plies_muted = ply_muted; }
         inline void ShowCurrMoveInfo(bool show) { show_currmove = show; }
         inline void StopSearch() {
+            std::scoped_lock lock(mtx);
             run = false;
             search_timer.Stop();
             info_timer.Stop();
@@ -64,7 +65,7 @@ namespace Meetra {
         [[nodiscard]] long ElapsedTimeMs() const;
 
 
-        std::mutex mtx;
+        std::recursive_mutex mtx;
         std::vector<std::future<void>> futures;
         TranspositionTable tt;
         PVTable pvt;

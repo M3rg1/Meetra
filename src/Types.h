@@ -174,6 +174,7 @@ namespace Meetra {
         ulong nodes;
         Depth depth;
         Depth seldepth;
+        bool exact;
     };
     inline bool CompNodesLesserMAN(const MoveAndNodes &man1, const MoveAndNodes &man2) {
         return man1.nodes < man2.nodes;

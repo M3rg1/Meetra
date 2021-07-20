@@ -1,7 +1,6 @@
 #ifndef MEETRA_THREADPOOL_H
 #define MEETRA_THREADPOOL_H
 
-
 #include <condition_variable>
 #include <functional>
 #include <mutex>

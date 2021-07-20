@@ -7,7 +7,6 @@
 #include "Uci.h"
 #include "iostream"
 #include <random>
-#include <algorithm>
 
 namespace Meetra {
 
@@ -100,11 +99,17 @@ namespace Meetra {
                     {
                         std::scoped_lock lock(mtx);
                         memcpy(root, root_moves, root_moves_cnt * sizeof(MoveAndNodes));
-                        if (curr_max_depth >= curr_depth) {
-                            curr_depth = curr_max_depth + 1;
-                        }
                     }
-                    std::shuffle(root + 1, root + root_moves_cnt, g);
+                    if (thread_num == 0) {
+                        curr_max_depth = curr_depth;
+                    } else {
+                        //std::shuffle(root + (thread_num % root_moves_cnt), root + root_moves_cnt, g);
+                        //curr_depth = curr_max_depth + 1 + thread_num / 2;
+/*                        std::shuffle(root + 1, root + root_moves_cnt, g);
+                        curr_depth = curr_max_depth + 1;*/
+                        std::shuffle(root + (thread_num % root_moves_cnt), root + root_moves_cnt, g);
+                        curr_depth = curr_max_depth + thread_num;
+                    }
 
                     for (int curr_move_num = 0; curr_move_num < root_moves_cnt; curr_move_num++) {
 
@@ -120,15 +125,17 @@ namespace Meetra {
                         board.UnmakeMove(curr_move);
 
                         if (run) {
-                            if (curr_depth <= curr_max_depth) {
+                            if (curr_depth < curr_max_depth) {
                                 break;
                             }
                             root[curr_move_num].seldepth = max_ply;
                             root[curr_move_num].nodes = nodes;
                             root[curr_move_num].score = score;
                             root[curr_move_num].depth = curr_depth;
+                            root[curr_move_num].exact = false;
                             if (score > alpha && multi_pv == 1) {
                                 alpha = score;
+                                root[curr_move_num].exact = true;
                                 if (score > root[best_idx].score) {
                                     best_idx = curr_move_num;
                                 }
@@ -136,10 +143,15 @@ namespace Meetra {
                         }
                     }
 
-                    {
-                        std::scoped_lock lock(mtx);
-                        if (run && curr_depth > curr_max_depth) {
-                            curr_max_depth = curr_depth;
+                    // we will have a LEADER, who will be the last one
+                    // and everyone else is in front of the leader making new hash entries
+                    // if by some chance someone in front finishes before the leader
+                    // the leader will change and previous leader becomes regular worker
+/*                    {
+                        std::scoped_lock lock(mtx);*/
+                        if (run && thread_num == 0) {
+                            // curr_max_depth = curr_depth; - new leader will have to set new curr max depth
+                            // also will have to have a check if the thread that finished has higher depth
                             std::swap(root[0], root[best_idx]);
                             std::sort(root + 1, root + root_moves_cnt, CompNodesLesserMAN);
                             memcpy(root_moves, root, sizeof(MoveAndNodes) * root_moves_cnt);
@@ -156,7 +168,7 @@ namespace Meetra {
                                 }
                             }
                         }
-                    }
+                    //}
 
                     if (!run || !EnoughTimeLeft()) {
                         break;
@@ -167,11 +179,14 @@ namespace Meetra {
                     // find the best move that wasn't refuted - root_moves[0] might not be root[0] anymore, since other
                     // thread might've already replaced it, so we must find the corresponding move in our root move list
                     // and check whether we've refuted that move, if we did, we have new best root_moves[0] move
-                    for (int i = 0; i < root_moves_cnt; i++) {
-                        if (root_moves[0].move == root[i].move &&
-                            root_moves[0].score <= root[i].score &&
-                            root_moves[0].depth <= root[i].depth) {
-                            root_moves[0] = root[best_idx];
+                    if (multi_pv == 1) {
+                        for (int i = 0; i < root_moves_cnt; i++) {
+                            if (root_moves[0].move == root[i].move &&
+                                root_moves[0].score < root[i].score &&
+                                root_moves[0].depth <= root[i].depth &&
+                                root[i].exact) {
+                                root_moves[0] = root[best_idx];
+                            }
                         }
                     }
                 }
@@ -181,7 +196,9 @@ namespace Meetra {
             future.wait();
         }
         futures.clear();
-        Uci::SendToGui(GetSearchInfo(board));
+        if (curr_max_depth != root_moves[0].depth) {
+            Uci::SendToGui(GetSearchInfo(board));
+        }
         Uci::SendToGui("bestmove " + GetMoveName(root_moves[0].move));
     }
 
