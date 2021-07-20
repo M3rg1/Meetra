@@ -31,7 +31,7 @@ namespace Meetra {
 
         ABSearch();
         void StartSearch(SearchSettings settings, Board board);
-        [[nodiscard]] std::string GetSearchInfo(Board &board, Depth depth, Depth ply);
+        [[nodiscard]] std::string GetSearchInfo(Board &board);
         [[nodiscard]] std::string GetCurrMoveInfo(Move move, int num, Board &board) const;
         [[nodiscard]] std::string GetUpdateSearchInfo() const;
 

@@ -86,18 +86,21 @@ namespace Meetra {
                 MoveAndNodes root[MAX_LEGAL_MOVES];
                 std::random_device rd;
                 std::mt19937 g(rd());
+                long best_idx;
+                int curr_depth;
+                Depth max_ply;
 
-                for (int curr_depth = 2; curr_depth <= settings.max_allowed_depth; curr_depth++) {
+                for (curr_depth = 2; curr_depth <= settings.max_allowed_depth; curr_depth++) {
 
                     Score alpha = NEGATIVE_INF;
                     Score beta = POSITIVE_INF;
-                    Depth max_ply = 0;
-                    long best_idx = 0;
+                    max_ply = 0;
+                    best_idx = 0;
 
                     {
                         std::scoped_lock lock(mtx);
                         memcpy(root, root_moves, root_moves_cnt * sizeof(MoveAndNodes));
-                        if (curr_max_depth > curr_depth) {
+                        if (curr_max_depth >= curr_depth) {
                             curr_depth = curr_max_depth + 1;
                         }
                     }
@@ -106,9 +109,9 @@ namespace Meetra {
                     for (int curr_move_num = 0; curr_move_num < root_moves_cnt; curr_move_num++) {
 
                         Move curr_move = root[curr_move_num].move;
-                        //if (show_currmove && ElapsedTimeMs() > 1000) {
-                        //    Uci::SendToGui(GetCurrMoveInfo(curr_move, curr_move_num, board));
-                        //}
+                        if (show_currmove && ElapsedTimeMs() > 1000 && thread_num == 0) {
+                            Uci::SendToGui(GetCurrMoveInfo(curr_move, curr_move_num, board));
+                        }
 
                         ulong nodes = 1;
                         board.MakeMove(curr_move);
@@ -117,8 +120,13 @@ namespace Meetra {
                         board.UnmakeMove(curr_move);
 
                         if (run) {
+                            if (curr_depth <= curr_max_depth) {
+                                break;
+                            }
+                            root[curr_move_num].seldepth = max_ply;
                             root[curr_move_num].nodes = nodes;
                             root[curr_move_num].score = score;
+                            root[curr_move_num].depth = curr_depth;
                             if (score > alpha && multi_pv == 1) {
                                 alpha = score;
                                 if (score > root[best_idx].score) {
@@ -137,7 +145,7 @@ namespace Meetra {
                             memcpy(root_moves, root, sizeof(MoveAndNodes) * root_moves_cnt);
 
                             if (curr_depth > plies_muted) {
-                                Uci::SendToGui(GetSearchInfo(board, curr_depth, max_ply));
+                                Uci::SendToGui(GetSearchInfo(board));
                             }
 
                             if (std::abs(root[0].score) > MIN_MATE_EVAL && multi_pv == 1 && !settings.infinite &&
@@ -151,20 +159,34 @@ namespace Meetra {
                     }
 
                     if (!run || !EnoughTimeLeft()) {
-                        return;
+                        break;
+                    }
+                }
+                {
+                    std::scoped_lock lock(mtx);
+                    // find the best move that wasn't refuted - root_moves[0] might not be root[0] anymore, since other
+                    // thread might've already replaced it, so we must find the corresponding move in our root move list
+                    // and check whether we've refuted that move, if we did, we have new best root_moves[0] move
+                    for (int i = 0; i < root_moves_cnt; i++) {
+                        if (root_moves[0].move == root[i].move &&
+                            root_moves[0].score <= root[i].score &&
+                            root_moves[0].depth <= root[i].depth) {
+                            root_moves[0] = root[best_idx];
+                        }
                     }
                 }
             }));
         }
-
         for (auto &future : futures) {
             future.wait();
         }
         futures.clear();
+        Uci::SendToGui(GetSearchInfo(board));
         Uci::SendToGui("bestmove " + GetMoveName(root_moves[0].move));
     }
 
-    Score ABSearch::NegaMax(Board &board, Score alpha, Score beta, Depth depth, Depth ply, Depth &max_reached_ply, ulong &nodes) {
+    Score ABSearch::NegaMax(Board &board, Score alpha, Score beta, Depth depth, Depth ply, Depth &max_reached_ply,
+                            ulong &nodes) {
 
         if (board.IsRepetition() || board.Ply() >= 50) {
             return -DRAW_SCORE;
@@ -172,7 +194,7 @@ namespace Meetra {
             return QuiescenceSearch(board, alpha, beta, ply, max_reached_ply, nodes);
         }
 
-        if(ply > max_reached_ply){
+        if (ply > max_reached_ply) {
             max_reached_ply = ply;
         }
 
@@ -229,9 +251,10 @@ namespace Meetra {
         return alpha;
     }
 
-    Score ABSearch::QuiescenceSearch(Board &board, Score alpha, Score beta, Depth ply, Depth &max_reached_ply, ulong &nodes) {
+    Score
+    ABSearch::QuiescenceSearch(Board &board, Score alpha, Score beta, Depth ply, Depth &max_reached_ply, ulong &nodes) {
 
-        if(ply > max_reached_ply){
+        if (ply > max_reached_ply) {
             max_reached_ply = ply;
         }
 
@@ -314,6 +337,7 @@ namespace Meetra {
             }
             board.UnmakeMove(move);
             root_moves[root_moves_cnt].move = move;
+            root_moves[root_moves_cnt].depth = 0;
             root_moves_cnt++;
         }
     }
@@ -325,8 +349,8 @@ namespace Meetra {
 
         std::stringstream ss;
 
-        ss << "info depth " << static_cast<int>(curr_max_depth)
-           << " seldepth " << static_cast<int>(curr_max_depth)
+        ss << "info depth " << static_cast<int>(root_moves[0].depth)
+           << " seldepth " << static_cast<int>(root_moves[0].seldepth)
            << " nodes " << (nodes_explored)
            << " time " << elapsed_ms
            << " nps " << nps
@@ -335,7 +359,7 @@ namespace Meetra {
         return ss.str();
     }
 
-    std::string ABSearch::GetSearchInfo(Board &board, Depth depth, Depth ply) {
+    std::string ABSearch::GetSearchInfo(Board &board) {
 
         long elapsed_ms = ElapsedTimeMs();
         long nps = static_cast<long>(static_cast<double>(nodes_explored) * 1000.0 / static_cast<double>(elapsed_ms));
@@ -346,8 +370,8 @@ namespace Meetra {
         for (auto i = 0; i < pvs_to_send; i++) {
             ss << "info";
             if (pvs_to_send > 1) ss << " multipv " << i + 1;
-            ss << " depth " << static_cast<int>(depth)
-               << " seldepth " << static_cast<int>(ply)
+            ss << " depth " << static_cast<int>(root_moves[i].depth)
+               << " seldepth " << static_cast<int>(root_moves[i].seldepth)
                << " nodes " << nodes_explored
                << " time " << elapsed_ms
                << " nps " << nps

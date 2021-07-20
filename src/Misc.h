@@ -29,7 +29,7 @@ namespace Meetra {
                 "option name MultiPV type spin default 1 min 1 max 32\n"\
                 "option name UCI_ShowCurrLine type check default false\n"\
                 "option name Mute plies type spin default 1 min 1 max 64\n"\
-                "option name Cores type spin default 1 min 1 max 16\n"\
+                "option name Cores type spin default 4 min 1 max 16\n"\
                 "option name Show current move type check default true"
 
 
