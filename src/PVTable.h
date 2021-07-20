@@ -12,7 +12,7 @@ namespace Meetra {
 
     class PVTable {
 
-#define PVT_ENTRIES_PER_BUCKET 4
+#define PVT_ENTRIES_PER_BUCKET 6
 #define PVT_BUCKETS_COUNT 100000
 
     public:
@@ -93,7 +93,7 @@ namespace Meetra {
 
     private:
 
-//#pragma pack(push, 1)
+#pragma pack(push, 1)
         class PVEntry {
 
         public:
@@ -123,7 +123,8 @@ namespace Meetra {
 
             void Lock(){
                 while (lock.test_and_set(std::memory_order_acquire)) {
-                    while (lock.test(std::memory_order_relaxed));
+                    while (lock.test(std::memory_order_relaxed))
+                        ;
                 }
             }
 
@@ -135,7 +136,7 @@ namespace Meetra {
             std::atomic_flag lock;
 
         };
-//#pragma pack(pop)
+#pragma pack(pop)
 
         int buckets_count;
         Epoch current_epoch;

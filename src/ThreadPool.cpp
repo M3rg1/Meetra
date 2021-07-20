@@ -12,7 +12,7 @@ namespace Meetra {
                 while (true) {
                     std::function<void()> task;
                     {
-                        std::unique_lock lock{mtx};
+                        std::unique_lock lock(mtx);
                         task_wait_var.wait(lock, [&] { return !running || !task_queue.empty(); });
                         if (!running && task_queue.empty()) return;
                         task = std::move(task_queue.front());
@@ -50,7 +50,7 @@ namespace Meetra {
 
     ThreadPool::~ThreadPool() {
         {
-            std::scoped_lock lock{mtx};
+            std::scoped_lock lock(mtx);
             running = false;
         }
         task_wait_var.notify_all();

@@ -10,7 +10,7 @@
 
 namespace Meetra {
 
-#define DEFAULT_TT_SIZE_MB 64
+#define DEFAULT_TT_SIZE_MB 256
 #define NOT_FOUND (-32013)
 #define TT_ENTRIES_PER_BUCKET 4
 
@@ -28,7 +28,7 @@ namespace Meetra {
         void NewSearch();
         void Clear();
 
-        [[nodiscard]] Score ProbeEval(ZobristHash key, Score alpha, Score beta, Depth depth, Depth ply) const;
+        [[nodiscard]] Score ProbeEval(ZobristHash key, Score alpha, Score beta, Depth depth, Depth ply, Move &move) const;
         [[nodiscard]] Move GetPVMove(ZobristHash key) const;
         [[nodiscard]] Move GetAnyMove(ZobristHash key) const;
         // 0.01 == 1% usage, 0.1 == 10% usage, 1 == 100% usage
@@ -77,7 +77,8 @@ namespace Meetra {
 
             void Lock() {
                 while (lock.test_and_set(std::memory_order_acquire)) {
-                    while (lock.test(std::memory_order_relaxed));
+                    while (lock.test(std::memory_order_relaxed))
+                        ;
                 }
             }
 
@@ -89,11 +90,10 @@ namespace Meetra {
             std::atomic_flag lock;
 
         };
-
 #pragma pack(pop)
 
         Epoch current_epoch;
-        std::atomic<size_t> used_entries; // todo this should be atomic
+        std::atomic<size_t> used_entries;
         size_t buckets_count;
         std::unique_ptr<TTBucket[]> table;
     };

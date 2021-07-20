@@ -8,12 +8,13 @@
 #include <vector>
 #include <thread>
 #include <queue>
+#include <future>
 
 namespace Meetra {
 
-#define MIN_THREADS_NUM 8
+#define MIN_THREADS_NUM 16
 #define MAX_THREADS_NUM 256
-#define DEFAULT_THREADS_NUM 8
+#define DEFAULT_THREADS_NUM 16
 
     class ThreadPool {
     public:
@@ -26,18 +27,25 @@ namespace Meetra {
 
 
         template<typename F, typename... Args>
-        static void PushTask(F f, Args &&... args) {
-            GetInstance()->i_PushTask(f, args...);
+        static auto PushTask(F f, Args &&... args) -> std::future<typename std::result_of<F(Args...)>::type> {
+            return GetInstance()->i_PushTask(f, args...);
         }
 
     private:
         template<typename F, typename... Args>
-        void i_PushTask(F f, Args &&... args) {
+        auto i_PushTask(F f, Args &&... args) -> std::future<typename std::result_of<F(Args...)>::type> {
+            using return_type = typename std::result_of<F(Args...)>::type;
+            auto task = std::make_shared< std::packaged_task<return_type()> >(
+                    std::bind(std::forward<F>(f), std::forward<Args>(args)...)
+            );
+            std::future<return_type> res = task->get_future();
             {
-                std::scoped_lock<std::mutex> lock{mtx};
-                task_queue.emplace(std::bind(f, std::forward<Args>(args)...));
+                std::scoped_lock lock(mtx);
+                task_queue.emplace([task](){ (*task)(); });
+                //task_queue.emplace(std::bind(f, std::forward<Args>(args)...));
             }
             task_wait_var.notify_one();
+            return res;
         }
 
         static std::unique_ptr<ThreadPool> instance;

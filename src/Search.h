@@ -6,6 +6,8 @@
 #include "Timer.h"
 #include "Misc.h"
 #include "PVTable.h"
+#include <mutex>
+#include <future>
 
 namespace Meetra {
 
@@ -29,14 +31,11 @@ namespace Meetra {
 
         ABSearch();
         void StartSearch(SearchSettings settings, Board board);
-        [[nodiscard]] std::string GetSearchInfo(Board &board);
-        [[nodiscard]] std::string GetBestMove() const;
+        [[nodiscard]] std::string GetSearchInfo(Board &board, Depth depth, Depth ply);
         [[nodiscard]] std::string GetCurrMoveInfo(Move move, int num, Board &board) const;
         [[nodiscard]] std::string GetUpdateSearchInfo() const;
 
-        inline void SetNumThreads(int num_threads) {
-            //omp_set_num_threads(std::min(MAX_SEARCH_THREADS, num_threads));
-        }
+        inline void SetNumThreads(int num) { num_threads = num; }
         inline void ClearTT() { tt.Clear(); pvt.Clear(); }
         inline void SetTTSize(size_t size_mb) { tt.Resize(size_mb);  pvt.Clear(); }
         inline void ShowShowCurrLine(bool show) { show_currline = show; }
@@ -56,14 +55,17 @@ namespace Meetra {
     private:
         void InitSearchTimer(Board &board);
         void InitSearch(SearchSettings &settings, Board &board);
-        Score QuiescenceSearch(Board &board, Score alpha, Score beta, Depth depth);
-        Score NegaMax(Board &board, Score alpha, Score beta, Depth depth, Depth ply);
+        Score QuiescenceSearch(Board &board, Score alpha, Score beta, Depth ply, Depth &max_reached_ply, ulong &nodes);
+        Score NegaMax(Board &board, Score alpha, Score beta, Depth depth, Depth ply, Depth &max_reached_ply, ulong &nodes);
         void RetrievePv(Board &board, Move *pv_line, Depth depth) const;
         void BackupPv(Board &board, Depth depth);
         void GenRootMoves(Board &board);
         [[nodiscard]] bool EnoughTimeLeft() const;
         [[nodiscard]] long ElapsedTimeMs() const;
 
+
+        std::mutex mtx;
+        std::vector<std::future<void>> futures;
         TranspositionTable tt;
         PVTable pvt;
         volatile bool run;
@@ -74,11 +76,11 @@ namespace Meetra {
         bool show_currmove;
         int plies_muted;
         int multi_pv;
+        int num_threads;
 
         MoveAndNodes root_moves[MAX_LEGAL_MOVES];
         int root_moves_cnt;
         ulong nodes_explored;
-        Depth qsearch_depth;
         Depth curr_max_depth;
         long timer_start;
     };

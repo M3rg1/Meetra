@@ -5,8 +5,9 @@
 #include "TranspositionTable.h"
 #include <sstream>
 #include "Uci.h"
-#include "omp.h"
 #include "iostream"
+#include <random>
+#include <algorithm>
 
 namespace Meetra {
 
@@ -17,11 +18,12 @@ namespace Meetra {
         multi_pv = 1;
         show_currmove = true;
         plies_muted = 1;
-        omp_set_dynamic(0);
-        omp_set_num_threads(DEFAULT_SEARCH_THREADS);
+        num_threads = DEFAULT_SEARCH_THREADS;
     }
 
     void ABSearch::InitSearch(SearchSettings &s, Board &board) {
+
+        run = true;
 
         timer_start = time_point_cast<std::chrono::milliseconds>(
                 std::chrono::system_clock::now()).time_since_epoch().count();
@@ -31,9 +33,9 @@ namespace Meetra {
         tt.NewSearch();
         pvt.NewSearch();
         nodes_explored = 0;
-        qsearch_depth = 0;
         curr_max_depth = 0;
         root_moves_cnt = 0;
+        curr_max_depth = 0;
 
         GenRootMoves(board);
 
@@ -68,7 +70,6 @@ namespace Meetra {
 
     void ABSearch::StartSearch(SearchSettings s, Board board) {
 
-        run = true;
         InitSearch(s, board);
 
         if (root_moves_cnt < 2) {
@@ -78,84 +79,115 @@ namespace Meetra {
             return;
         }
 
-        for (curr_max_depth = 2; curr_max_depth <= settings.max_allowed_depth; curr_max_depth++) {
+        for (int thread_num = 0; thread_num < num_threads; thread_num++) {
 
-            Score alpha = NEGATIVE_INF;
-            Score beta = POSITIVE_INF;
-            long best_idx = 0;
-            qsearch_depth = 0;
+            futures.push_back(ThreadPool::PushTask([=, this]() mutable {
 
-            for (int curr_move_num = 0; curr_move_num < root_moves_cnt; curr_move_num++) {
+                MoveAndNodes root[MAX_LEGAL_MOVES];
+                std::random_device rd;
+                std::mt19937 g(rd());
 
-                Move curr_move = root_moves[curr_move_num].move;
+                for (int curr_depth = 2; curr_depth <= settings.max_allowed_depth; curr_depth++) {
 
-                if (show_currmove && ElapsedTimeMs() > 1000) {
-                    Uci::SendToGui(GetCurrMoveInfo(curr_move, curr_move_num, board));
-                }
+                    Score alpha = NEGATIVE_INF;
+                    Score beta = POSITIVE_INF;
+                    Depth max_ply = 0;
+                    long best_idx = 0;
 
-                ulong nodes = nodes_explored;
-                board.MakeMove(curr_move);
-                nodes_explored++;
-                Score score = -NegaMax(board, -beta, -alpha, curr_max_depth - 1, 2);
-                board.UnmakeMove(curr_move);
-
-                if (run) {
-                    root_moves[curr_move_num].nodes = nodes_explored - nodes;
-                    root_moves[curr_move_num].score = score;
-                    if (score > alpha && multi_pv == 1) {
-                        alpha = score;
-                        if (score > root_moves[best_idx].score) {
-                            best_idx = curr_move_num;
+                    {
+                        std::scoped_lock lock(mtx);
+                        memcpy(root, root_moves, root_moves_cnt * sizeof(MoveAndNodes));
+                        if (curr_max_depth > curr_depth) {
+                            curr_depth = curr_max_depth + 1;
                         }
                     }
+                    std::shuffle(root + 1, root + root_moves_cnt, g);
+
+                    for (int curr_move_num = 0; curr_move_num < root_moves_cnt; curr_move_num++) {
+
+                        Move curr_move = root[curr_move_num].move;
+                        //if (show_currmove && ElapsedTimeMs() > 1000) {
+                        //    Uci::SendToGui(GetCurrMoveInfo(curr_move, curr_move_num, board));
+                        //}
+
+                        ulong nodes = 1;
+                        board.MakeMove(curr_move);
+                        nodes_explored++;
+                        Score score = -NegaMax(board, -beta, -alpha, curr_depth - 1, 2, max_ply, nodes);
+                        board.UnmakeMove(curr_move);
+
+                        if (run) {
+                            root[curr_move_num].nodes = nodes;
+                            root[curr_move_num].score = score;
+                            if (score > alpha && multi_pv == 1) {
+                                alpha = score;
+                                if (score > root[best_idx].score) {
+                                    best_idx = curr_move_num;
+                                }
+                            }
+                        }
+                    }
+
+                    {
+                        std::scoped_lock lock(mtx);
+                        if (run && curr_depth > curr_max_depth) {
+                            curr_max_depth = curr_depth;
+                            std::swap(root[0], root[best_idx]);
+                            std::sort(root + 1, root + root_moves_cnt, CompNodesLesserMAN);
+                            memcpy(root_moves, root, sizeof(MoveAndNodes) * root_moves_cnt);
+
+                            if (curr_depth > plies_muted) {
+                                Uci::SendToGui(GetSearchInfo(board, curr_depth, max_ply));
+                            }
+
+                            if (std::abs(root[0].score) > MIN_MATE_EVAL && multi_pv == 1 && !settings.infinite &&
+                                !settings.fixed_timer) {
+                                int distance_to_mate = MATE_SCORE - std::abs(root[0].score);
+                                if (curr_depth > distance_to_mate) {
+                                    StopSearch();
+                                }
+                            }
+                        }
+                    }
+
+                    if (!run || !EnoughTimeLeft()) {
+                        return;
+                    }
                 }
-            }
-
-            if (multi_pv == 1) {
-                std::swap(root_moves[0], root_moves[best_idx]);
-                std::sort(root_moves + 1, root_moves + root_moves_cnt, CompNodesLesserMAN);
-            } else {
-                std::sort(root_moves, root_moves + root_moves_cnt, CompScoreGreaterMAN);
-            }
-
-            if (curr_max_depth > plies_muted) {
-                Uci::SendToGui(GetSearchInfo(board));
-            }
-
-            if (std::abs(root_moves[0].score) > MIN_MATE_EVAL && multi_pv == 1 && !settings.infinite &&
-                !settings.fixed_timer) {
-                int distance_to_mate = MATE_SCORE - std::abs(root_moves[0].score);
-                if (curr_max_depth > distance_to_mate) {
-                    break;
-                }
-            }
-
-            if (!run || !EnoughTimeLeft()) {
-                break;
-            }
+            }));
         }
 
-        StopSearch();
-        Uci::SendToGui(GetBestMove());
+        for (auto &future : futures) {
+            future.wait();
+        }
+        futures.clear();
+        Uci::SendToGui("bestmove " + GetMoveName(root_moves[0].move));
     }
 
-    Score ABSearch::NegaMax(Board &board, Score alpha, Score beta, Depth depth, Depth ply) {
+    Score ABSearch::NegaMax(Board &board, Score alpha, Score beta, Depth depth, Depth ply, Depth &max_reached_ply, ulong &nodes) {
 
         if (board.IsRepetition() || board.Ply() >= 50) {
             return -DRAW_SCORE;
         } else if (depth == 0) {
-            return QuiescenceSearch(board, alpha, beta, 0);
+            return QuiescenceSearch(board, alpha, beta, ply, max_reached_ply, nodes);
         }
 
-        Score score = tt.ProbeEval(board.GetZobristHash(), alpha, beta, depth, ply);
+        if(ply > max_reached_ply){
+            max_reached_ply = ply;
+        }
+
+        Move move;
+        Score score = tt.ProbeEval(board.GetZobristHash(), alpha, beta, depth, ply, move);
         if (score != NOT_FOUND) {
+            if (move != INVALID_MOVE) {
+                BackupPv(board, depth);
+            }
             return score;
         }
 
         MoveGen move_gen(board, &tt);
         Move best_move_this_iter = INVALID_MOVE;
         EntryFlag tt_flag = ALPHA;
-        Move move;
 
         while ((move = move_gen.GetNextMove<false>())) {
             if (!board.MakeMove(move)) {
@@ -163,7 +195,8 @@ namespace Meetra {
                 continue;
             }
             nodes_explored++;
-            score = -NegaMax(board, -beta, -alpha, depth - 1, ply + 1);
+            nodes++;
+            score = -NegaMax(board, -beta, -alpha, depth - 1, ply + 1, max_reached_ply, nodes);
             board.UnmakeMove(move);
 
             if (!run) {
@@ -196,10 +229,10 @@ namespace Meetra {
         return alpha;
     }
 
-    Score ABSearch::QuiescenceSearch(Board &board, Score alpha, Score beta, Depth depth) {
+    Score ABSearch::QuiescenceSearch(Board &board, Score alpha, Score beta, Depth ply, Depth &max_reached_ply, ulong &nodes) {
 
-        if (depth > qsearch_depth) {
-            qsearch_depth = depth;
+        if(ply > max_reached_ply){
+            max_reached_ply = ply;
         }
 
         auto score = Evaluation::BoardEval(board);
@@ -219,7 +252,8 @@ namespace Meetra {
                 continue;
             }
             nodes_explored++;
-            score = -QuiescenceSearch(board, -beta, -alpha, depth + 1);
+            nodes++;
+            score = -QuiescenceSearch(board, -beta, -alpha, ply + 1, max_reached_ply, nodes);
             board.UnmakeMove(move);
             if (score > alpha) {
                 if (score >= beta) {
@@ -237,10 +271,6 @@ namespace Meetra {
             return true;
         }
         return false;
-    }
-
-    std::string ABSearch::GetBestMove() const {
-        return "bestmove " + GetMoveName(root_moves[0].move);
     }
 
     long ABSearch::ElapsedTimeMs() const {
@@ -264,7 +294,7 @@ namespace Meetra {
 
     void ABSearch::RetrievePv(Board &board, Move *pv_line, Depth depth) const {
         Move move = pvt.ProbePv(board.GetZobristHash());
-        if (!move || depth == 0  || board.IsRepetition() || board.Ply() >= 50) {
+        if (!move || depth == 0 || board.IsRepetition() || board.Ply() >= 50) {
             *pv_line = INVALID_MOVE;
             return;
         }
@@ -296,7 +326,7 @@ namespace Meetra {
         std::stringstream ss;
 
         ss << "info depth " << static_cast<int>(curr_max_depth)
-           << " seldepth " << qsearch_depth + curr_max_depth
+           << " seldepth " << static_cast<int>(curr_max_depth)
            << " nodes " << (nodes_explored)
            << " time " << elapsed_ms
            << " nps " << nps
@@ -305,7 +335,7 @@ namespace Meetra {
         return ss.str();
     }
 
-    std::string ABSearch::GetSearchInfo(Board &board) {
+    std::string ABSearch::GetSearchInfo(Board &board, Depth depth, Depth ply) {
 
         long elapsed_ms = ElapsedTimeMs();
         long nps = static_cast<long>(static_cast<double>(nodes_explored) * 1000.0 / static_cast<double>(elapsed_ms));
@@ -316,8 +346,8 @@ namespace Meetra {
         for (auto i = 0; i < pvs_to_send; i++) {
             ss << "info";
             if (pvs_to_send > 1) ss << " multipv " << i + 1;
-            ss << " depth " << static_cast<int>(curr_max_depth)
-               << " seldepth " << qsearch_depth + curr_max_depth
+            ss << " depth " << static_cast<int>(depth)
+               << " seldepth " << static_cast<int>(ply)
                << " nodes " << nodes_explored
                << " time " << elapsed_ms
                << " nps " << nps

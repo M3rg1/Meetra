@@ -61,10 +61,11 @@ namespace Meetra {
         bucket->Unlock();
     }
 
-    Score TranspositionTable::ProbeEval(ZobristHash key, Score alpha, Score beta, Depth depth, Depth ply) const {
+    Score TranspositionTable::ProbeEval(ZobristHash key, Score alpha, Score beta, Depth depth, Depth ply, Move &move) const {
 
         Key32 key_32 = Zobrist::Make32Key(key);
         Score ret = NOT_FOUND;
+        move = INVALID_MOVE;
 
         TTBucket *bucket = &table[key % buckets_count];
 
@@ -75,6 +76,7 @@ namespace Meetra {
                 if (entry.GetDepth() >= depth) {
                     if (entry.GetFlag() == EXACT_SCORE) {
                         entry.SetEpoch(current_epoch);
+                        move = entry.GetMove();
                         ret = AddMatePly(entry.GetScore(), ply);
                     } else if (entry.GetFlag() == ALPHA && entry.GetScore() <= alpha) {
                         entry.SetEpoch(current_epoch);
