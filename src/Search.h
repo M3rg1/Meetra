@@ -54,10 +54,23 @@ namespace Meetra {
         [[nodiscard]] inline bool IsSearching() const { return run; }
 
     private:
+        void MainSearch(Board board, MoveAndNodes *moves, int thread_num);
+        bool MateInHorizon(Depth curr_depth);
+        std::vector<std::future<void>> threads_futures;
+        std::vector<std::unique_ptr<MoveAndNodes[]>> roots;
+        void StartParSearch(SearchSettings s, Board board);
+        Score NegaMax_Proper(Board &board, Score alpha, Score beta, Depth depth, Depth ply, ulong &nodes);
+        Score QuiescenceSearch_Proper(Board &board, Score alpha, Score beta, ulong &nodes, Depth depth);
+        void PrepareParSearch();
+        void TerminateSearchThreads();
+        void StartSearchThread(Board board, Depth search_depth, Score alpha, Score beta);
+        Score NegaMax_Helper(Board &board, Score alpha, Score beta, Depth depth, Depth ply, const std::shared_ptr<bool>& stop);
+        Score QuiescenceSearch_Helper(Board &board, Score alpha, Score beta);
+
         void InitSearchTimer(Board &board);
         void InitSearch(SearchSettings &settings, Board &board);
         Score QuiescenceSearch(Board &board, Score alpha, Score beta, Depth ply, Depth &max_reached_ply, ulong &nodes);
-        Score NegaMax(Board &board, Score alpha, Score beta, Depth depth, Depth ply, Depth &max_reached_ply, ulong &nodes);
+        Score NegaMax(Board &board, Score alpha, Score beta, Depth depth, Depth ply, Depth &max_reached_ply, ulong &nodes, Depth current_max, int thread_num);
         void RetrievePv(Board &board, Move *pv_line, Depth depth) const;
         void BackupPv(Board &board, Depth depth);
         void GenRootMoves(Board &board);
@@ -83,6 +96,7 @@ namespace Meetra {
         int root_moves_cnt;
         ulong nodes_explored;
         Depth curr_max_depth;
+        Depth qsearch_depth;
         long timer_start;
     };
 

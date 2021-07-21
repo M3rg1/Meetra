@@ -12,7 +12,7 @@ namespace Meetra {
 
 #define DEFAULT_TT_SIZE_MB 256
 #define NOT_FOUND (-32013)
-#define TT_ENTRIES_PER_BUCKET 4
+#define TT_ENTRIES_PER_BUCKET 2
 
     enum EntryFlag : uint8_t {
         EXACT_SCORE, ALPHA, BETA
