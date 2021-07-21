@@ -156,7 +156,6 @@ namespace Meetra::Uci {
         if (option == "hash") {
             if (sts.HasNext() && sts.NextToken() == "value") {
                 auto hash_size = std::stoi(sts.NextToken());
-                hash_size = std::clamp(hash_size, MIN_HASH_SIZE, MAX_HASH_SIZE);
                 search.SetTTSize(hash_size);
             }
         } else if (option == "clear") {

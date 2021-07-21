@@ -19,12 +19,21 @@ namespace Meetra {
         [[nodiscard]] inline bool IsKingInCheck() const { return checkers; }
 
     private:
+
+        struct p_MoveScore {
+            Move move;
+            Score score;
+        };
+        static inline bool CompScoreLesserMAE(const p_MoveScore &a1, const p_MoveScore &a2) {
+            return a1.score < a2.score;
+        }
+
         const Board &board;
         const TranspositionTable *tt;
 
         GenPhase genPhase;
 
-        MoveAndEval move_eval[MAX_LEGAL_MOVES];
+        p_MoveScore move_eval[MAX_LEGAL_MOVES];
         size_t moves_cnt;
 
         Bitboard checkers;
@@ -46,7 +55,7 @@ namespace Meetra {
             move_eval[idx] = move_eval[--moves_cnt];
             return ret;
         }
-        inline Move PopRef(MoveAndEval &it) {
+        inline Move PopRef(p_MoveScore &it) {
             Move ret = it.move;
             it = move_eval[--moves_cnt];
             return ret;

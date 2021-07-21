@@ -12,8 +12,8 @@ namespace Meetra {
 #define MAX_LEGAL_MOVES 128
 #define MAX_GAME_LENGTH 512
 #define DEFAULT_SEARCH_THREADS 4
-#define DEFAULT_UI_SPAM 1000
-#define MAX_SEARCH_THREADS 16
+#define DEFAULT_INFO_INTERVAL 1000
+#define MAX_SEARCH_THREADS 8
 #define MIN_HASH_SIZE 16
 #define MAX_HASH_SIZE 4096
 #define LOGO   " __  __         _\n"               \

@@ -12,8 +12,9 @@ namespace Meetra {
         return score > MIN_MATE_EVAL ? score - ply : score < -MIN_MATE_EVAL ? score + ply : score;
     }
 
-    TranspositionTable::TranspositionTable(size_t mega_bytes) {
-        buckets_count = (mega_bytes * 1000000) / sizeof(TTBucket);
+    TranspositionTable::TranspositionTable(size_t size_mb) {
+        size_mb = std::clamp(size_mb, static_cast<size_t>(MIN_HASH_SIZE), static_cast<size_t>(MAX_HASH_SIZE));
+        buckets_count = (size_mb * 1000000) / sizeof(TTBucket);
         table = std::make_unique<TTBucket[]>(buckets_count);
         Clear();
     }
@@ -45,13 +46,13 @@ namespace Meetra {
             }
 
             int entry_score = static_cast<int>(entry.GetDepth());
-            if (entry.GetEpoch() < current_epoch) {
-                entry_score -= (current_epoch - entry.GetEpoch()) << 1;
-            } else if (entry.GetEpoch() > current_epoch) {
-                entry_score -= (current_epoch + (63 - entry.GetEpoch())) << 1;
+            if (entry.GetEpoch() <= current_epoch) {
+                entry_score -= (current_epoch - entry.GetEpoch()) << 2;
+            } else {
+                entry_score -= (current_epoch + (63 - entry.GetEpoch())) << 2;
             }
-            if(entry.GetFlag() == EXACT_SCORE){
-                entry_score += 5;
+            if (entry.GetFlag() == EXACT_SCORE) {
+                entry_score += 2;
             }
 
             if (entry_score < worst_entry_score) {
@@ -106,9 +107,10 @@ namespace Meetra {
         used_entries.store(0, std::memory_order::relaxed);
     }
 
-    void TranspositionTable::Resize(size_t new_size_mb) {
+    void TranspositionTable::Resize(size_t size_mb) {
+        size_mb = std::clamp(size_mb, static_cast<size_t>(MIN_HASH_SIZE), static_cast<size_t>(MAX_HASH_SIZE));
         table.reset();
-        buckets_count = (new_size_mb * 1000000) / sizeof(TTBucket);
+        buckets_count = (size_mb * 1000000) / sizeof(TTBucket);
         table = std::make_unique<TTBucket[]>(buckets_count);
         Clear();
     }

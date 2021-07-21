@@ -22,9 +22,9 @@ namespace Meetra {
 
     public:
 
-        explicit TranspositionTable(size_t size = DEFAULT_TT_SIZE_MB);
+        explicit TranspositionTable(size_t size_mb = DEFAULT_TT_SIZE_MB);
         void SaveEval(ZobristHash key, Score score, Depth depth, Move move, EntryFlag flag, Depth ply);
-        void Resize(size_t new_size_mb);
+        void Resize(size_t size_mb);
         void NewSearch();
         void Clear();
 

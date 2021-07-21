@@ -160,25 +160,16 @@ namespace Meetra {
 
 #pragma region ===== Utils =====
 
-    struct MoveAndEval {
-        Move move;
-        Score score;
-    };
-    inline bool CompScoreLesserMAE(const MoveAndEval &mae1, const MoveAndEval &mae2) {
-        return mae1.score < mae2.score;
-    }
-
-    struct MoveAndNodes {
+    struct p_MoveNodes {
         Move move;
         Score score;
         ulong nodes;
     };
-
-    inline bool CompNodesLesserMAN(const MoveAndNodes &man1, const MoveAndNodes &man2) {
-        return man1.nodes < man2.nodes;
+    inline bool CmpNodesLesser(const p_MoveNodes &a1, const p_MoveNodes &a2) {
+        return a1.nodes < a2.nodes;
     }
-    inline bool CompScoreGreaterMAN(const MoveAndNodes &man1, const MoveAndNodes &man2) {
-        return man1.score > man2.score;
+    inline bool CmpScoreGreater(const p_MoveNodes &a1, const p_MoveNodes &a2) {
+        return a1.score > a2.score;
     }
 
     inline PieceType PieceTypeFromFlag(MoveType mt) { return static_cast<PieceType >((mt >> 13) - 2); }

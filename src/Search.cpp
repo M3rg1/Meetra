@@ -5,12 +5,13 @@
 #include "TranspositionTable.h"
 #include <sstream>
 #include "Uci.h"
-#include "iostream"
+#include <iostream>
 
 namespace Meetra {
 
 #define MAIN_THREAD 0
 #define IS_MAIN_THREAD(x) x == MAIN_THREAD
+#define IS_HELPER_THREAD(x) x != MAIN_THREAD
 
 
     ABSearch::ABSearch() {
@@ -37,6 +38,7 @@ namespace Meetra {
         curr_max_depth = 0;
         root_moves_cnt = 0;
         qsearch_depth = 0;
+        main_move = INVALID_MOVE;
 
         GenRootMoves(board);
 
@@ -64,9 +66,9 @@ namespace Meetra {
             return;
         }
 
-        MoveAndNodes moves[MAX_LEGAL_MOVES];
+        p_MoveNodes moves[MAX_LEGAL_MOVES];
         std::copy(root_moves, root_moves + root_moves_cnt, moves);
-        for (int t = 0; t < num_threads; t++) {
+        for (int t = num_threads - 1; t >= MAIN_THREAD; t--) {
             futures.push_back(ThreadPool::PushTask([=, this]() mutable {
                 MainSearch(board, moves, t);
             }));
@@ -80,21 +82,32 @@ namespace Meetra {
         Uci::SendToGui("bestmove " + GetMoveName(root_moves[0].move));
     }
 
-    void ABSearch::MainSearch(Board board, MoveAndNodes moves[], int thread) {
+    void ABSearch::MainSearch(Board board, p_MoveNodes moves[], int thread) {
 
-        for (int curr_depth = 2; curr_depth <= settings.max_allowed_depth; curr_depth++) {
+        for (int curr_depth = 2; curr_depth <= settings.max_allowed_depth && run; curr_depth++) {
 
             if (IS_MAIN_THREAD(thread)) {
                 qsearch_depth = 0;
                 curr_max_depth = curr_depth;
+            } else if (curr_depth <= curr_max_depth) {
+                curr_depth = curr_max_depth + thread;
             }
+
             Score alpha = NEGATIVE_INF;
             Score beta = POSITIVE_INF;
             int best_idx = 0;
 
-            for (int curr_move_num = 0; curr_move_num < root_moves_cnt; curr_move_num++) {
+            for (int curr_move_num = 0; curr_move_num < root_moves_cnt && run; curr_move_num++) {
 
                 Move curr_move = moves[curr_move_num].move;
+
+                if (IS_MAIN_THREAD(thread)) {
+                    main_move = curr_move;
+                } else if (main_move == curr_move && curr_depth == curr_max_depth) {
+                    continue;
+                } else if (curr_depth < curr_max_depth) {
+                    curr_depth = curr_max_depth;
+                }
 
                 if (IS_MAIN_THREAD(thread) && show_currmove && ElapsedTimeMs() > 1000) {
                     Uci::SendToGui(GetCurrMoveInfo(curr_move, curr_move_num, board));
@@ -109,7 +122,7 @@ namespace Meetra {
                 if (run) {
                     moves[curr_move_num].nodes = nodes;
                     moves[curr_move_num].score = score;
-                    if (score > alpha && multi_pv == 1) {
+                    if (score > alpha) {
                         alpha = score;
                         if (score > moves[best_idx].score) {
                             best_idx = curr_move_num;
@@ -119,42 +132,23 @@ namespace Meetra {
             }
 
             std::swap(moves[0], moves[best_idx]);
-            if (multi_pv == 1) {
-                std::sort(moves + 1, moves + root_moves_cnt, CompNodesLesserMAN);
-            } else {
-                std::sort(moves + 1, moves + root_moves_cnt, CompScoreGreaterMAN);
-            }
+            std::sort(moves + 1, moves + root_moves_cnt, CmpNodesLesser);
 
             if (IS_MAIN_THREAD(thread)) {
 
-                if (multi_pv == 1) {
-                    root_moves[0] = moves[0];
+                root_moves[0] = moves[0];
+
+                if (!EnoughTimeLeft() || MateInHorizon(curr_depth)) {
+                    StopSearch();
                 }
 
-                if (run) {
-                    if (multi_pv > 1) {
-                        std::copy(moves, moves + root_moves_cnt, root_moves);
-                    }
-                    if (!EnoughTimeLeft() || MateInHorizon(curr_depth)) {
-                        StopSearch();
-                    }
-                }
-
-                // TODO limit multipv to max root_moves_cnt
-                for (int i = 0; i < multi_pv; i++) {
-                    board.MakeMove(moves[i].move);
-                    BackupPv(board, curr_depth);
-                    board.UnmakeMove(moves[i].move);
-                }
+                board.MakeMove(moves[0].move);
+                BackupPv(board, curr_depth);
+                board.UnmakeMove(moves[0].move);
 
                 if (curr_depth > plies_muted) {
                     Uci::SendToGui(GetSearchInfo(board));
                 }
-
-            }
-
-            if (!run) {
-                break;
             }
         }
     }
