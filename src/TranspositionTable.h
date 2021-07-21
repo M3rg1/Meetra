@@ -10,7 +10,7 @@
 
 namespace Meetra {
 
-#define DEFAULT_TT_SIZE_MB 256
+#define DEFAULT_TT_SIZE_MB 128
 #define NOT_FOUND (-32013)
 #define TT_ENTRIES_PER_BUCKET 2
 
@@ -28,7 +28,7 @@ namespace Meetra {
         void NewSearch();
         void Clear();
 
-        [[nodiscard]] Score ProbeEval(ZobristHash key, Score alpha, Score beta, Depth depth, Depth ply, Move &move) const;
+        [[nodiscard]] Score ProbeEval(ZobristHash key, Score alpha, Score beta, Depth depth, Depth ply) const;
         [[nodiscard]] Move GetPVMove(ZobristHash key) const;
         [[nodiscard]] Move GetAnyMove(ZobristHash key) const;
         // 0.01 == 1% usage, 0.1 == 10% usage, 1 == 100% usage

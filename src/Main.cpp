@@ -1,4 +1,3 @@
-#include <iostream>
 #include "Uci.h"
 #include "Bitboards.h"
 #include "ThreadPool.h"

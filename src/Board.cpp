@@ -19,7 +19,7 @@ namespace Meetra {
 
     void Board::NewPosition(const std::string &fen) {
         history_cnt = 0;
-        current_state.game_state = NEW_GAME_STATE;
+        curr_data.state = NEW_GAME_STATE;
 
         std::memset(board, 0, sizeof(*board) * SQUARE_NR);
         std::memset(color_bbs, 0, sizeof(*color_bbs) * COLOR_NR);
@@ -27,7 +27,7 @@ namespace Meetra {
 
         ParseFen(fen);
 
-        current_state.zobrist_hash = Zobrist::GenHash(*this);
+        curr_data.hash = Zobrist::GenHash(*this);
     }
 
     Bitboard Board::PinnedPiecesForSquare(Square s, Color attackers_color) const {
@@ -80,12 +80,12 @@ namespace Meetra {
 
     bool Board::MakeMove(Move m) {
 
-        board_history[history_cnt++] = current_state;
+        history[history_cnt++] = curr_data;
 
         Color this_move_col = ColorToMove();
         ChangeColorToMove();
         Color next_move_col = ColorToMove();
-        Zobrist::UpdateColor(current_state.zobrist_hash, next_move_col);
+        Zobrist::UpdateColor(curr_data.hash, next_move_col);
 
         ClearCapturedPiece();
 
@@ -94,7 +94,7 @@ namespace Meetra {
         IncrementMoveNumber(this_move_col);
 
         if (EpSquare()) {
-            Zobrist::RemoveEp(current_state.zobrist_hash, EpSquare());
+            Zobrist::RemoveEp(curr_data.hash, EpSquare());
             ClearEpSquare();
         }
 
@@ -103,7 +103,7 @@ namespace Meetra {
 
         CastlingRights previous_cr = GetCR();
         RemoveCastlingRights(static_cast<CastlingRights>(castling_mask[from] | castling_mask[to]));
-        Zobrist::UpdateCr(current_state.zobrist_hash, previous_cr, GetCR());
+        Zobrist::UpdateCr(curr_data.hash, previous_cr, GetCR());
 
         MoveType move_type = GetMoveType(m);
         Piece captured_piece = board[to];
@@ -115,26 +115,26 @@ namespace Meetra {
                 capture_square += next_move_col ? SOUTH : NORTH;
                 captured_piece = NewPiece(PAWN, next_move_col);
             }
-            RemovePiece(capture_square, current_state.zobrist_hash);
+            RemovePiece(capture_square, curr_data.hash);
             SetCapturedPiece(captured_piece);
             ResetPly();
         } else if (moved_piece_type == PAWN) {
             ResetPly();
         }
 
-        MovePiece(from, to, current_state.zobrist_hash);
+        MovePiece(from, to, curr_data.hash);
 
         if (move_type) {
             if (move_type == TWO_FORWARD) {
                 SetEpSquare(next_move_col ? to + SOUTH : to + NORTH);
-                Zobrist::AddEp(current_state.zobrist_hash, EpSquare());
+                Zobrist::AddEp(curr_data.hash, EpSquare());
             } else if (move_type == CASTLING) {
-                MovePiece(RookFromCastling(to), RookToCastling(to), current_state.zobrist_hash);
+                MovePiece(RookFromCastling(to), RookToCastling(to), curr_data.hash);
                 return !IsSquareAttacked(Bitboards::Lsb(GetPieces(KING, this_move_col)), next_move_col,
                                          GetPieces(ALL_TYPES));
             } else if (IsPromotion(m)) {
-                RemovePiece(to, current_state.zobrist_hash);
-                PutPiece(to, NewPiece(PieceTypeFromFlag(move_type), this_move_col), current_state.zobrist_hash);
+                RemovePiece(to, curr_data.hash);
+                PutPiece(to, NewPiece(PieceTypeFromFlag(move_type), this_move_col), curr_data.hash);
             } else if (move_type == EN_PASSANT) {
                 return !IsSquareAttacked(Bitboards::Lsb(GetPieces(KING, this_move_col)), next_move_col,
                                          GetPieces(ALL_TYPES));
@@ -154,7 +154,7 @@ namespace Meetra {
         Square to = ToSquare(m);
         Piece captured_piece = CapturedPiece();
 
-        current_state = board_history[--history_cnt];
+        curr_data = history[--history_cnt];
 
         MovePiece(to, from);
 

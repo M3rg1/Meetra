@@ -16,7 +16,6 @@ namespace Meetra {
 #define MAX_SEARCH_THREADS 16
 #define MIN_HASH_SIZE 16
 #define MAX_HASH_SIZE 4096
-
 #define LOGO   " __  __         _\n"               \
                 "|  \\/  |___ ___| |_ _ _ __ _\n"   \
                 "| |\\/| / -_) -_)  _| '_/ _` |\n"  \
