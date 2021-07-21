@@ -51,11 +51,6 @@ namespace Meetra {
         info_timer.SetInterval([&]() {
             Uci::SendToGui(GetUpdateSearchInfo());
         }, settings.info_to_ui_ms_timer);
-
-        for (int thread_num = 0; thread_num < num_threads; thread_num++) {
-            roots.push_back(std::make_unique<MoveAndNodes[]>(root_moves_cnt));
-            std::copy(root_moves, root_moves + root_moves_cnt, roots[thread_num].get());
-        }
     }
 
     void ABSearch::StartSearch(SearchSettings s, Board board) {
@@ -69,22 +64,23 @@ namespace Meetra {
             return;
         }
 
+        MoveAndNodes moves[MAX_LEGAL_MOVES];
+        std::copy(root_moves, root_moves + root_moves_cnt, moves);
         for (int t = 0; t < num_threads; t++) {
-            threads_futures.push_back(ThreadPool::PushTask([=, this]() {
-                MainSearch(board, roots[t].get(), t);
+            futures.push_back(ThreadPool::PushTask([=, this]() mutable {
+                MainSearch(board, moves, t);
             }));
         }
 
-        for (auto &future : threads_futures) {
+        for (auto &future : futures) {
             future.wait();
         }
-        threads_futures.clear();
-        roots.clear();
+        futures.clear();
 
         Uci::SendToGui("bestmove " + GetMoveName(root_moves[0].move));
     }
 
-    void ABSearch::MainSearch(Board board, MoveAndNodes *moves, int thread) {
+    void ABSearch::MainSearch(Board board, MoveAndNodes moves[], int thread) {
 
         for (int curr_depth = 2; curr_depth <= settings.max_allowed_depth; curr_depth++) {
 

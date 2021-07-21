@@ -54,7 +54,7 @@ namespace Meetra {
         [[nodiscard]] inline bool IsSearching() const { return run; }
 
     private:
-        void MainSearch(Board board, MoveAndNodes *moves, int thread);
+        void MainSearch(Board board, MoveAndNodes moves[], int thread);
         bool MateInHorizon(Depth curr_depth);
         Score NegaMax(Board &board, Score alpha, Score beta, Depth depth, Depth ply, ulong &nodes, int thread);
         Score QSearch(Board &board, Score alpha, Score beta, Depth ply, ulong &nodes, int thread);
@@ -67,8 +67,7 @@ namespace Meetra {
         [[nodiscard]] bool EnoughTimeLeft() const;
         [[nodiscard]] long ElapsedTimeMs() const;
 
-        std::vector<std::future<void>> threads_futures;
-        std::vector<std::unique_ptr<MoveAndNodes[]>> roots;
+        std::vector<std::future<void>> futures;
 
         std::recursive_mutex mtx;
         TranspositionTable tt;
