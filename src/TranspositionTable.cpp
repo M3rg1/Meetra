@@ -22,7 +22,7 @@ namespace Meetra {
     void TranspositionTable::SaveEval(ZobristHash key, Score score, Depth depth, Move move, EntryFlag flag, Depth ply) {
 
         Key32 key_32 = Zobrist::Make32Key(key);
-        TTEntry *entry_to_write = nullptr;
+        TTEntry *entry_to_write;
         int worst_entry_score = 1000000;
         score = RemoveMatePly(score, ply);
         TTBucket *bucket = &table[key % buckets_count];
@@ -82,15 +82,12 @@ namespace Meetra {
         for (auto &entry : bucket->bucket_entries) {
             if (entry.Get32Key() == key_32) {
                 if (entry.GetDepth() >= depth) {
-                    if (entry.GetFlag() == EXACT_SCORE) {
+                    if (entry.GetFlag() == EXACT_SCORE ||
+                        entry.GetFlag() == ALPHA && entry.GetScore() <= alpha ||
+                        entry.GetFlag() == BETA && entry.GetScore() >= beta
+                            ) {
                         entry.SetEpoch(current_epoch);
                         ret = AddMatePly(entry.GetScore(), ply);
-                    } else if (entry.GetFlag() == ALPHA && entry.GetScore() <= alpha) {
-                        entry.SetEpoch(current_epoch);
-                        ret = alpha;
-                    } else if (entry.GetFlag() == BETA && entry.GetScore() >= beta) {
-                        entry.SetEpoch(current_epoch);
-                        ret = beta;
                     }
                 }
                 break;

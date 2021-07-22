@@ -160,18 +160,6 @@ namespace Meetra {
 
 #pragma region ===== Utils =====
 
-    struct p_MoveNodes {
-        Move move;
-        Score score;
-        ulong nodes;
-    };
-    inline bool CmpNodesLesser(const p_MoveNodes &a1, const p_MoveNodes &a2) {
-        return a1.nodes < a2.nodes;
-    }
-    inline bool CmpScoreGreater(const p_MoveNodes &a1, const p_MoveNodes &a2) {
-        return a1.score > a2.score;
-    }
-
     inline PieceType PieceTypeFromFlag(MoveType mt) { return static_cast<PieceType >((mt >> 13) - 2); }
     inline Square FromSquare(Move m) { return static_cast<Square>(m & 0x3F); }
     inline Square ToSquare(Move m) { return static_cast<Square>((m & 0xFC0) >> 6); }

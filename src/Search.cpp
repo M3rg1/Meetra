@@ -1,11 +1,11 @@
 #include "Search.h"
 #include "MoveGen.h"
-#include "Evaluation.h"
 #include <chrono>
 #include "TranspositionTable.h"
 #include <sstream>
 #include "Uci.h"
 #include <iostream>
+#include <random>
 
 namespace Meetra {
 
@@ -36,11 +36,8 @@ namespace Meetra {
         pvt.NewSearch();
         nodes_explored = 0;
         curr_max_depth = 0;
-        root_moves_cnt = 0;
         qsearch_depth = 0;
         main_move = INVALID_MOVE;
-
-        GenRootMoves(board);
 
         settings.max_allowed_depth = std::min(settings.max_allowed_depth, static_cast<Depth>(MAX_SEARCH_DEPTH));
 
@@ -58,107 +55,115 @@ namespace Meetra {
     void ABSearch::StartSearch(SearchSettings s, Board board) {
 
         InitSearch(s, board);
+        auto root_moves = GenRootMoves(board);
 
-        if (root_moves_cnt < 2 && !settings.infinite) {
+        if (root_moves.size() < 2 && !settings.infinite) {
             StopSearch();
-            Move only_move = root_moves_cnt == 0 ? INVALID_MOVE : root_moves[0].move;
+            Move only_move = root_moves.empty() ? INVALID_MOVE : root_moves[0].move;
             Uci::SendToGui("bestmove " + GetMoveName(only_move));
             return;
         }
 
-        p_MoveNodes moves[MAX_LEGAL_MOVES];
-        std::copy(root_moves, root_moves + root_moves_cnt, moves);
+/*        for (auto &m : root_moves) {
+            board.MakeMove(m.move);
+            m.score = -NegaMax(board, NEGATIVE_INF, POSITIVE_INF, 3, 2, 1);
+            board.UnmakeMove(m.move);
+        }*/
+
+        std::sort(root_moves.begin(), root_moves.end());
+
         for (int t = num_threads - 1; t >= MAIN_THREAD; t--) {
             futures.push_back(ThreadPool::PushTask([=, this]() mutable {
-                MainSearch(board, moves, t);
+                MainSearch(board, t, root_moves);
             }));
         }
+
+        futures.back().wait();
+        futures.pop_back();
+
+        Uci::SendToGui("bestmove " + GetMoveName(main_move));
 
         for (auto &future : futures) {
             future.wait();
         }
         futures.clear();
-
-        Uci::SendToGui("bestmove " + GetMoveName(root_moves[0].move));
     }
 
-    void ABSearch::MainSearch(Board board, p_MoveNodes moves[], int thread) {
+    void ABSearch::MainSearch(Board board, int thread, std::vector<p_MoveNodes> moves) {
 
         for (int curr_depth = 2; curr_depth <= settings.max_allowed_depth && run; curr_depth++) {
-
-            if (IS_MAIN_THREAD(thread)) {
-                qsearch_depth = 0;
-                curr_max_depth = curr_depth;
-            } else if (curr_depth <= curr_max_depth) {
-                curr_depth = curr_max_depth + thread;
-            }
 
             Score alpha = NEGATIVE_INF;
             Score beta = POSITIVE_INF;
             int best_idx = 0;
 
-            for (int curr_move_num = 0; curr_move_num < root_moves_cnt && run; curr_move_num++) {
+            if (IS_MAIN_THREAD(thread)) {
+                curr_max_depth = curr_depth;
+            } else if (curr_depth <= curr_max_depth) {
+                curr_depth = curr_max_depth + thread;
+            }
 
+            for (int curr_move_num = 0; curr_move_num < moves.size() && run; curr_move_num++) {
                 Move curr_move = moves[curr_move_num].move;
-
-                if (IS_MAIN_THREAD(thread)) {
-                    main_move = curr_move;
-                } else if (main_move == curr_move && curr_depth == curr_max_depth) {
-                    continue;
-                } else if (curr_depth < curr_max_depth) {
-                    curr_depth = curr_max_depth;
-                }
 
                 if (IS_MAIN_THREAD(thread) && show_currmove && ElapsedTimeMs() > 1000) {
                     Uci::SendToGui(GetCurrMoveInfo(curr_move, curr_move_num, board));
                 }
 
-                board.MakeMove(curr_move);
+                if (curr_depth < curr_max_depth) {
+                    break;
+                }
+
                 nodes_explored++;
-                ulong nodes = 1;
-                Score score = -NegaMax(board, -beta, -alpha, curr_depth - 1, 2, nodes, thread);
+                uint nodes = 1;
+                board.MakeMove(curr_move);
+                Score score = -NegaMax(board, -beta, -alpha, curr_depth - 1, 2, thread, nodes);
                 board.UnmakeMove(curr_move);
 
                 if (run) {
                     moves[curr_move_num].nodes = nodes;
-                    moves[curr_move_num].score = score;
                     if (score > alpha) {
                         alpha = score;
+                        moves[curr_move_num].score = score;
                         if (score > moves[best_idx].score) {
                             best_idx = curr_move_num;
                         }
+                    } else {
+                        moves[curr_move_num].score = NEGATIVE_INF;
                     }
                 }
             }
 
             std::swap(moves[0], moves[best_idx]);
-            std::sort(moves + 1, moves + root_moves_cnt, CmpNodesLesser);
+            std::sort(moves.begin() + 1, moves.end());
 
             if (IS_MAIN_THREAD(thread)) {
 
-                root_moves[0] = moves[0];
+                if (curr_depth > curr_max_depth) {
+                    curr_max_depth = curr_depth;
+                }
 
-                if (!EnoughTimeLeft() || MateInHorizon(curr_depth)) {
+                if (!EnoughTimeLeft() || MateInHorizon(curr_depth, moves[0].score)) {
                     StopSearch();
                 }
 
-                board.MakeMove(moves[0].move);
-                BackupPv(board, curr_depth);
-                board.UnmakeMove(moves[0].move);
-
                 if (curr_depth > plies_muted) {
-                    Uci::SendToGui(GetSearchInfo(board));
+                    Uci::SendToGui(GetSearchInfo(board, moves));
                 }
             }
         }
+
+        if (IS_MAIN_THREAD(thread)) {
+            main_move = moves[0].move;
+        }
     }
 
-    Score ABSearch::NegaMax(Board &board, Score alpha, Score beta, Depth depth, Depth ply, ulong &nodes, int thread) {
+    Score ABSearch::NegaMax(Board &board, Score alpha, Score beta, Depth depth, Depth ply, int thread, uint &nodes) {
 
         if (board.IsRepetition() || board.Ply() >= 50) {
             return -DRAW_SCORE;
         } else if (depth == 0) {
-            return QSearch(board, alpha, beta, 0, nodes, thread);
+            return QSearch(board, alpha, beta, 0, thread, nodes);
         }
 
         Score score = tt.ProbeEval(board.GetZobristHash(), alpha, beta, depth, ply);
@@ -178,7 +183,7 @@ namespace Meetra {
             }
             nodes_explored++;
             nodes++;
-            score = -NegaMax(board, -beta, -alpha, depth - 1, ply + 1, nodes, thread);
+            score = -NegaMax(board, -beta, -alpha, depth - 1, ply + 1, thread, nodes);
             board.UnmakeMove(move);
 
             if (!run) {
@@ -211,7 +216,7 @@ namespace Meetra {
         return alpha;
     }
 
-    Score ABSearch::QSearch(Board &board, Score alpha, Score beta, Depth ply, ulong &nodes, int thread) {
+    Score ABSearch::QSearch(Board &board, Score alpha, Score beta, Depth ply, int thread, uint &nodes) {
 
         if (IS_MAIN_THREAD(thread) && ply > qsearch_depth) {
             qsearch_depth = ply;
@@ -232,9 +237,9 @@ namespace Meetra {
                 board.UnmakeMove(move);
                 continue;
             }
-            nodes_explored++;
             nodes++;
-            score = -QSearch(board, -beta, -alpha, ply + 1, nodes, thread);
+            nodes_explored++;
+            score = -QSearch(board, -beta, -alpha, ply + 1, thread, nodes);
             board.UnmakeMove(move);
             if (score > alpha) {
                 if (score >= beta) {
@@ -247,10 +252,10 @@ namespace Meetra {
         return alpha;
     }
 
-    bool ABSearch::MateInHorizon(Depth curr_depth) {
-        if (std::abs(root_moves[0].score) > MIN_MATE_EVAL && multi_pv == 1 && !settings.infinite &&
+    bool ABSearch::MateInHorizon(Depth curr_depth, Score score) const {
+        if (std::abs(score) > MIN_MATE_EVAL && multi_pv == 1 && !settings.infinite &&
             !settings.fixed_timer) {
-            int distance_to_mate = MATE_SCORE - std::abs(root_moves[0].score);
+            int distance_to_mate = MATE_SCORE - std::abs(score);
             if (curr_depth > distance_to_mate) {
                 return true;
             }
@@ -296,20 +301,19 @@ namespace Meetra {
         board.UnmakeMove(move);
     }
 
-    void ABSearch::GenRootMoves(Board &board) {
+    std::vector<ABSearch::p_MoveNodes> ABSearch::GenRootMoves(Board &board) const {
         MoveGen move_gen(board);
         Move move;
+        std::vector<p_MoveNodes> moves;
         while ((move = move_gen.GetNextMove<false>())) {
             if (!board.MakeMove(move)) {
                 board.UnmakeMove(move);
                 continue;
             }
             board.UnmakeMove(move);
-            root_moves[root_moves_cnt].move = move;
-            root_moves[root_moves_cnt].score = 0;
-            root_moves[root_moves_cnt].nodes = 0;
-            root_moves_cnt++;
+            moves.emplace_back(move);
         }
+        return moves;
     }
 
     void ABSearch::InitSearchTimer(Board &board) {
@@ -344,14 +348,14 @@ namespace Meetra {
         return ss.str();
     }
 
-    std::string ABSearch::GetSearchInfo(Board &board) {
+    std::string ABSearch::GetSearchInfo(Board &board, std::vector<p_MoveNodes> &moves) {
 
         long elapsed_ms = ElapsedTimeMs();
         long nps = static_cast<long>(static_cast<double>(nodes_explored) * 1000.0 / static_cast<double>(elapsed_ms));
 
         std::stringstream ss;
         Move pv_stack[MAX_SEARCH_DEPTH];
-        auto pvs_to_send = std::min(multi_pv, root_moves_cnt);
+        auto pvs_to_send = std::min(multi_pv, moves.size());
         for (auto i = 0; i < pvs_to_send; i++) {
             ss << "info";
             if (pvs_to_send > 1) ss << " multipv " << i + 1;
@@ -363,8 +367,8 @@ namespace Meetra {
                << " hashfull " << static_cast<int>(tt.Usage() * 1000)
                << " score ";
 
-            Score score = root_moves[i].score;
-            Move move = root_moves[i].move;
+            Score score = moves[i].score;
+            Move move = moves[i].move;
             int distance_to_mate = 0;
             if (score > MIN_MATE_EVAL) {
                 distance_to_mate = static_cast<int>(MATE_SCORE - score);

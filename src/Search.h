@@ -8,6 +8,7 @@
 #include "PVTable.h"
 #include <mutex>
 #include <future>
+#include "Evaluation.h"
 
 namespace Meetra {
 
@@ -31,9 +32,6 @@ namespace Meetra {
 
         ABSearch();
         void StartSearch(SearchSettings settings, Board board);
-        [[nodiscard]] std::string GetSearchInfo(Board &board);
-        [[nodiscard]] std::string GetCurrMoveInfo(Move move, int num, Board &board) const;
-        [[nodiscard]] std::string GetUpdateSearchInfo() const;
 
         inline void SetNumThreads(int num) { num_threads = std::clamp(num, 1, MAX_SEARCH_THREADS); }
         inline void ClearTT() { tt.Clear(); pvt.Clear(); }
@@ -53,16 +51,45 @@ namespace Meetra {
         [[nodiscard]] inline bool IsSearching() const { return run; }
 
     private:
-        void MainSearch(Board board, p_MoveNodes moves[], int thread);
-        bool MateInHorizon(Depth curr_depth);
-        Score NegaMax(Board &board, Score alpha, Score beta, Depth depth, Depth ply, ulong &nodes, int thread);
-        Score QSearch(Board &board, Score alpha, Score beta, Depth ply, ulong &nodes, int thread);
+
+        struct p_MoveNodes {
+            Move move;
+            Score score;
+            Score previous_score;
+            Depth seldepth;
+            uint nodes;
+
+            explicit p_MoveNodes(Move m){
+                move = m;
+                score = NEGATIVE_INF;
+                previous_score = NEGATIVE_INF;
+                seldepth = 0;
+                nodes = 0;
+            }
+
+            bool operator==(const Move& m) const { return move == m; }
+            bool operator<(const p_MoveNodes& mn) const {
+                return mn.nodes != nodes ? mn.nodes < nodes : mn.score < score;
+            }
+/*            bool operator<(const p_MoveNodes& mn) const {
+                return mn.score != score ? mn.score < score : mn.previous_score < previous_score;
+            }*/
+        };
+
+        [[nodiscard]] std::string GetSearchInfo(Board &board, std::vector<p_MoveNodes> &moves);
+        [[nodiscard]] std::string GetCurrMoveInfo(Move move, int num, Board &board) const;
+        [[nodiscard]] std::string GetUpdateSearchInfo() const;
+
+        void MainSearch(Board board, int thread, std::vector<p_MoveNodes> moves);
+        Score NegaMax(Board &board, Score alpha, Score beta, Depth depth, Depth ply, int thread, uint &nodes);
+        Score QSearch(Board &board, Score alpha, Score beta, Depth ply, int thread, uint &nodes);
 
         void InitSearchTimer(Board &board);
         void InitSearch(SearchSettings &settings, Board &board);
         void RetrievePv(Board &board, Move *pv_line, Depth depth) const;
         void BackupPv(Board &board, Depth depth);
-        void GenRootMoves(Board &board);
+        [[nodiscard]] std::vector<p_MoveNodes> GenRootMoves(Board &board) const;
+        [[nodiscard]] bool MateInHorizon(Depth curr_depth, Score score) const;
         [[nodiscard]] bool EnoughTimeLeft() const;
         [[nodiscard]] long ElapsedTimeMs() const;
 
@@ -77,12 +104,10 @@ namespace Meetra {
         bool show_currline;
         bool show_currmove;
         int plies_muted;
-        int multi_pv;
+        size_t multi_pv;
         int num_threads;
         Move main_move;
 
-        p_MoveNodes root_moves[MAX_LEGAL_MOVES];
-        int root_moves_cnt;
         ulong nodes_explored;
         Depth curr_max_depth;
         Depth qsearch_depth;
