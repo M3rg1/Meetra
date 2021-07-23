@@ -34,7 +34,6 @@ namespace Meetra::Uci {
     void ShowCommand(Board &board);
     void HelpCommand();
     void UnknownCommand();
-    void QuitCommand();
     void MakeUciMove(const std::string &move_string, Board &board);
     Search::SearchSettings ParseSearchOptions(StringTokenStream &sts);
 
@@ -67,13 +66,12 @@ namespace Meetra::Uci {
             else if (token == "perft") PerftCommand(sts, board);
             else if (token == "show") ShowCommand(board);
             else if (token == "help") HelpCommand();
-            else if (token == "quit") QuitCommand();
             else { UnknownCommand(); }
 
         } while (token != "quit" && !std::cin.eof());
 
-        // TODO fix this have some sort of terminating function that waits for everything (also call it in the quit command i guess)
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        Search::StopSearch();
+        ThreadPool::Shutdown();
     }
 
     void HelpCommand() {
@@ -115,7 +113,7 @@ namespace Meetra::Uci {
 
         Search::SearchSettings settings = ParseSearchOptions(sts);
 
-        ThreadPool::PushTask([&, settings, board]() {
+        ThreadPool::PushTask([=]() {
             Search::StartSearch(settings, board);
         });
     }
@@ -154,14 +152,6 @@ namespace Meetra::Uci {
         }
     }
 
-    void QuitCommand() {
-        StopCommand();
-        ThreadPool::Shutdown();
-        // await search shutdown
-        // TODO will shutdown ThreadPool as well, and await here in while loop until thread_num pool running = false1
-        //  (shutdown = true - static var in destructor set to true)
-    }
-
     void StopCommand() {
         Search::StopSearch();
     }
@@ -170,7 +160,6 @@ namespace Meetra::Uci {
         Search::ClearTT();
     }
 
-    // TODO implement search only certain moves, search only max amount of nodes, etc.
     void SetOptionCommand(StringTokenStream &sts) {
         if (sts.NextToken() != "name") return;
         sts.MakeLower();
@@ -227,7 +216,6 @@ namespace Meetra::Uci {
             }
         }
     }
-
 
     Search::SearchSettings ParseSearchOptions(StringTokenStream &sts) {
 
