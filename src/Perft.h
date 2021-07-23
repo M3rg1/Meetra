@@ -2,17 +2,19 @@
 #define MEETRA_PERFT_H
 
 #include "MoveGen.h"
-#include "Macros.h"
+#include "Uci.h"
+#include <sstream>
+#include <chrono>
 
 namespace Meetra {
 
-    inline int Perft(int depth, Board &board) {
+    inline ulong Perft(Depth depth, Board &board) {
 
         if (depth == 0) {
             return 1;
         }
 
-        int nodes = 0;
+        ulong nodes = 0;
         MoveGen moveGen(board);
         Move m;
         while ((m = moveGen.GetNextMove<false>())) {
@@ -25,26 +27,34 @@ namespace Meetra {
         return nodes;
     }
 
-    inline void RunPerft(int depth, Board &board) {
-        INIT_TIMER
-        START_TIMER
+    inline void RunPerft(Depth depth, Board &board) {
+
+        auto start = std::chrono::high_resolution_clock::now();
+
         MoveGen moveGen(board);
         Move m;
         ulong total_nodes = 0;
         while ((m = moveGen.GetNextMove<false>())) {
             if (board.MakeMove(m)) {
-                int nodes = Perft(depth - 1, board);
+                ulong nodes = Perft(depth - 1, board);
                 total_nodes += nodes;
-                std::cout << GetMoveName(m) << ": " << nodes << std::endl;
+                Uci::SendToGui(GetMoveName(m) + ": " + std::to_string(nodes));
             }
             board.UnmakeMove(m);
         }
-        STOP_TIMER
-        auto time_elapsed_ns = TIMER_GET_TIME_NS == 0 ? 1 : TIMER_GET_TIME_NS;
-        auto nps = static_cast<ulong> (static_cast<double>(total_nodes) / (static_cast<double>(time_elapsed_ns) / 1000000000));
-        std::cout << "Time elapsed: " << TIMER_GET_TIME_MS << "ms";
-        std::cout << " | Nodes explored: " << total_nodes;
-        std::cout << " | NPS: " << nps << std::endl;
+
+        auto end = std::chrono::high_resolution_clock::now();
+        auto time_elapsed_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+        time_elapsed_ns = std::max(1l, time_elapsed_ns);
+        auto nps = static_cast<ulong> (static_cast<double>(total_nodes) /
+                                       (static_cast<double>(time_elapsed_ns) / 1000000000));
+
+        std::stringstream ss;
+        ss << "Time elapsed: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms"
+           << " | Nodes explored: " << total_nodes
+           << " | NPS: " << nps;
+
+        Uci::SendToGui(ss.str());
     }
 
 }

@@ -10,8 +10,10 @@
 
 namespace Meetra {
 
-#define DEFAULT_TT_SIZE_MB 128
-#define NOT_FOUND (-32013)
+#define TT_NOT_FOUND (-32013)
+#define MIN_HASH_SIZE 16
+#define DEFAULT_HASH_SIZE 128
+#define MAX_HASH_SIZE 4096
 #define TT_ENTRIES_PER_BUCKET 4
 
     enum EntryFlag : uint8_t {
@@ -22,7 +24,7 @@ namespace Meetra {
 
     public:
 
-        explicit TranspositionTable(size_t size_mb = DEFAULT_TT_SIZE_MB);
+        void Init(size_t size_mb = DEFAULT_HASH_SIZE);
         void SaveEval(ZobristHash key, Score score, Depth depth, Move move, EntryFlag flag, Depth ply);
         void Resize(size_t size_mb);
         void NewSearch();
@@ -75,16 +77,14 @@ namespace Meetra {
         public:
             TTEntry bucket_entries[TT_ENTRIES_PER_BUCKET];
 
-            void Lock() {
+            inline void Lock() {
                 while (lock.test_and_set(std::memory_order_acquire)) {
                     while (lock.test(std::memory_order_relaxed))
                         ;
                 }
             }
 
-            void Unlock() {
-                lock.clear(std::memory_order_release);
-            }
+            inline void Unlock() { lock.clear(std::memory_order_release); }
 
         private:
             std::atomic_flag lock;

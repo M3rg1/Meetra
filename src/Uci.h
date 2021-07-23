@@ -2,12 +2,13 @@
 #define MEETRA_UCI_H
 
 #include <string>
+#include <execution>
 
 namespace Meetra::Uci {
 
+        void Init();
         void Listen();
         void SendToGui(const std::string &data);
-
 }
 
 #endif //MEETRA_UCI_H

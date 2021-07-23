@@ -2,10 +2,13 @@
 #define MEETRA_BOARD_H
 
 #include "Types.h"
-#include "Misc.h"
 #include "ZobristHash.h"
 
 namespace Meetra {
+
+#define STARTPOS_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+#define MAX_LEGAL_MOVES 128
+#define MAX_GAME_LENGTH 512
 
     class Board {
 
@@ -17,7 +20,7 @@ namespace Meetra {
         [[nodiscard]] bool IsSquareAttacked(Square s, Color attacked_by, Bitboard occ) const;
         [[nodiscard]] Bitboard SquareAttackers(Square s, Color attacked_by, Bitboard occ) const;
         [[nodiscard]] Bitboard PinnedPiecesForSquare(Square s, Color blockers_color) const;
-        [[nodiscard]] int_fast16_t MovesMadeCount() const { return history_cnt; }
+        [[nodiscard]] int MovesMadeCount() const { return history_cnt; }
 
 #pragma region ===== Piece getters =====
         [[nodiscard]] inline Bitboard GetPieces(PieceType pt, Color c) const { return type_bbs[pt] & color_bbs[c]; }
@@ -94,63 +97,12 @@ namespace Meetra {
 
 #pragma region ===== Update inner structures =====
         void ParseFen(const std::string &fen);
-
-        inline void RemovePiece(Square s, ZobristHash &h) {
-            Piece p = board[s];
-            board[s] = NO_PIECE;
-            Bitboard pos = SquareToBB(s);
-            color_bbs[ColorOfPiece(p)] ^= pos;
-            type_bbs[TypeOfPiece(p)] ^= pos;
-            type_bbs[ALL_TYPES] ^= pos;
-            Zobrist::RemovePiece(h, TypeOfPiece(p), ColorOfPiece(p), s);
-        }
-
-        inline void PutPiece(Square s, Piece p, ZobristHash &h) {
-            board[s] = p;
-            Bitboard pos = SquareToBB(s);
-            color_bbs[ColorOfPiece(p)] |= pos;
-            type_bbs[TypeOfPiece(p)] |= pos;
-            type_bbs[ALL_TYPES] |= pos;
-            Zobrist::AddPiece(h, TypeOfPiece(p), ColorOfPiece(p), s);
-        }
-
-        inline void MovePiece(Square from, Square to, ZobristHash &h) {
-            Piece p = board[from];
-            board[to] = p;
-            board[from] = NO_PIECE;
-            Bitboard from_to = SquareToBB(from) | SquareToBB(to);
-            color_bbs[ColorOfPiece(p)] ^= from_to;
-            type_bbs[TypeOfPiece(p)] ^= from_to;
-            type_bbs[ALL_TYPES] ^= from_to;
-            Zobrist::MovePiece(h, TypeOfPiece(p), ColorOfPiece(p), from, to);
-        }
-
-        inline void RemovePiece(Square s) {
-            Piece p = board[s];
-            board[s] = NO_PIECE;
-            Bitboard pos = SquareToBB(s);
-            color_bbs[ColorOfPiece(p)] ^= pos;
-            type_bbs[TypeOfPiece(p)] ^= pos;
-            type_bbs[ALL_TYPES] ^= pos;
-        }
-
-        inline void PutPiece(Square s, Piece p) {
-            board[s] = p;
-            Bitboard pos = SquareToBB(s);
-            color_bbs[ColorOfPiece(p)] |= pos;
-            type_bbs[TypeOfPiece(p)] |= pos;
-            type_bbs[ALL_TYPES] |= pos;
-        }
-
-        inline void MovePiece(Square from, Square to) {
-            Piece p = board[from];
-            board[to] = p;
-            board[from] = NO_PIECE;
-            Bitboard from_to = SquareToBB(from) | SquareToBB(to);
-            color_bbs[ColorOfPiece(p)] ^= from_to;
-            type_bbs[TypeOfPiece(p)] ^= from_to;
-            type_bbs[ALL_TYPES] ^= from_to;
-        }
+        void RemovePiece(Square s, ZobristHash &h);
+        void PutPiece(Square s, Piece p, ZobristHash &h);
+        void MovePiece(Square from, Square to, ZobristHash &h);
+        void RemovePiece(Square s);
+        void PutPiece(Square s, Piece p);
+        void MovePiece(Square from, Square to);
 #pragma endregion
 
 #pragma region ===== Data =====

@@ -15,13 +15,14 @@ namespace Meetra {
 #define MAX_THREADS_NUM 256
 #define DEFAULT_THREADS_NUM 16
 
+
     class ThreadPool {
     public:
         static ThreadPool *GetInstance();
         static void Resize(int num_threads);
-        explicit ThreadPool(int num_threads);
+        explicit ThreadPool(int num_threads = DEFAULT_THREADS_NUM);
         ~ThreadPool();
-        static void Init(int thread_num);
+        static void Init(int thread_num = DEFAULT_THREADS_NUM);
         static void Shutdown();
 
 

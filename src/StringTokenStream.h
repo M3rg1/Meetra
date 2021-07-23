@@ -12,7 +12,7 @@ namespace Meetra {
         explicit StringTokenStream(const std::string& str, char delimiter = ' ');
         std::string NextToken();
         void MakeLower();
-        bool HasNext();
+        [[nodiscard]] bool HasNext() const;
 
     private:
         std::deque<std::string> token_holder;

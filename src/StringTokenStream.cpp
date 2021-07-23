@@ -23,7 +23,7 @@ namespace Meetra {
         return ret;
     }
 
-    bool StringTokenStream::HasNext() {
+    bool StringTokenStream::HasNext() const {
         return !token_holder.empty();
     }
 }

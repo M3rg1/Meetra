@@ -1,37 +1,53 @@
 #include "Uci.h"
-#include "Misc.h"
 #include <iostream>
-#include "MoveGen.h"
 #include "Perft.h"
 #include "ThreadPool.h"
 #include "Search.h"
 #include "StringTokenStream.h"
-#include <mutex>
-#include <sstream>
+
 
 namespace Meetra::Uci {
 
+#define LOGO   " __  __         _\n"               \
+                "|  \\/  |___ ___| |_ _ _ __ _\n"   \
+                "| |\\/| / -_) -_)  _| '_/ _` |\n"  \
+                "|_|  |_\\___\\___|\\__|_| \\__,_|"
+#define NAME "Meetra"
+#define VERSION "0.0.1"
+#define AUTHOR "M3rgi"
+#define OPTIONS "option name Hash type spin default 128 min 16 max 4096 \n"\
+                "option name Clear Hash type button\n"\
+                "option name MultiPV type spin default 1 min 1 max 32\n"\
+                "option name UCI_ShowCurrLine type check default false\n"\
+                "option name Mute plies type spin default 1 min 1 max 64\n"\
+                "option name Cores type spin default 1 min 1 max 8\n"\
+                "option name Show current move type check default true"
+
     void UciCommand();
     void IsReadyCommand();
-    void GoCommand(StringTokenStream &sts, Board &board, ABSearch &search);
-    void UciNewGameCommand(ABSearch &search);
+    void GoCommand(StringTokenStream &sts, Board &board);
+    void UciNewGameCommand();
     void PositionCommand(StringTokenStream &sts, Board &board);
     void PerftCommand(StringTokenStream &sts, Board &board);
-    void SetOptionCommand(StringTokenStream &sts, ABSearch &search);
-    void StopCommand(ABSearch &search);
+    void SetOptionCommand(StringTokenStream &sts);
+    void StopCommand();
     void ShowCommand(Board &board);
     void HelpCommand();
     void UnknownCommand();
-    void QuitCommand(ABSearch &search);
+    void QuitCommand();
     void MakeUciMove(const std::string &move_string, Board &board);
-    ABSearch::SearchSettings ParseSearchOptions(StringTokenStream &sts);
+    Search::SearchSettings ParseSearchOptions(StringTokenStream &sts);
 
-    std::mutex output_mtx;
+    std::atomic_flag lock;
+
+    void Init() {
+        std::ios_base::sync_with_stdio(false);
+        std::cin.tie(nullptr);
+    }
 
     void Listen() {
 
         Board board;
-        ABSearch search;
 
         std::string token;
         std::string input;
@@ -43,15 +59,15 @@ namespace Meetra::Uci {
 
             if (token == "uci") UciCommand();
             else if (token == "isready") IsReadyCommand();
-            else if (token == "go") GoCommand(sts, board, search);
+            else if (token == "go") GoCommand(sts, board);
             else if (token == "position") PositionCommand(sts, board);
-            else if (token == "setoption") SetOptionCommand(sts, search);
-            else if (token == "stop") StopCommand(search);
-            else if (token == "ucinewgame") UciNewGameCommand(search);
+            else if (token == "setoption") SetOptionCommand(sts);
+            else if (token == "stop") StopCommand();
+            else if (token == "ucinewgame") UciNewGameCommand();
             else if (token == "perft") PerftCommand(sts, board);
             else if (token == "show") ShowCommand(board);
             else if (token == "help") HelpCommand();
-            else if (token == "quit") QuitCommand(search);
+            else if (token == "quit") QuitCommand();
             else { UnknownCommand(); }
 
         } while (token != "quit" && !std::cin.eof());
@@ -73,8 +89,14 @@ namespace Meetra::Uci {
     }
 
     void SendToGui(const std::string &data) {
-        std::scoped_lock<std::mutex> lock(output_mtx);
+
+        while (lock.test_and_set(std::memory_order_acquire)) {
+            while (lock.test(std::memory_order_relaxed));
+        }
+
         std::cout << data << std::endl;
+
+        lock.clear(std::memory_order_release);
     }
 
     void UciCommand() {
@@ -86,15 +108,15 @@ namespace Meetra::Uci {
         SendToGui(ss.str());
     }
 
-    void GoCommand(StringTokenStream &sts, Board &board, ABSearch &search) {
-        if (search.IsSearching()) {
+    void GoCommand(StringTokenStream &sts, Board &board) {
+        if (Search::IsSearching()) {
             return;
         }
 
-        ABSearch::SearchSettings settings = ParseSearchOptions(sts);
+        Search::SearchSettings settings = ParseSearchOptions(sts);
 
         ThreadPool::PushTask([&, settings, board]() {
-            search.StartSearch(settings, board);
+            Search::StartSearch(settings, board);
         });
     }
 
@@ -132,61 +154,61 @@ namespace Meetra::Uci {
         }
     }
 
-    void QuitCommand(ABSearch &search) {
-        StopCommand(search);
+    void QuitCommand() {
+        StopCommand();
         ThreadPool::Shutdown();
         // await search shutdown
-        // TODO will shutdown ThreadPool as well, and await here in while loop until thread pool running = false1
+        // TODO will shutdown ThreadPool as well, and await here in while loop until thread_num pool running = false1
         //  (shutdown = true - static var in destructor set to true)
     }
 
-    void StopCommand(ABSearch &search) {
-        search.StopSearch();
+    void StopCommand() {
+        Search::StopSearch();
     }
 
-    void UciNewGameCommand(ABSearch &search) {
-        search.ClearTT();
+    void UciNewGameCommand() {
+        Search::ClearTT();
     }
 
     // TODO implement search only certain moves, search only max amount of nodes, etc.
-    void SetOptionCommand(StringTokenStream &sts, ABSearch &search) {
+    void SetOptionCommand(StringTokenStream &sts) {
         if (sts.NextToken() != "name") return;
         sts.MakeLower();
         std::string option = sts.NextToken();
         if (option == "hash") {
             if (sts.HasNext() && sts.NextToken() == "value") {
-                auto hash_size = std::stoi(sts.NextToken());
-                search.SetTTSize(hash_size);
+                int hash_size = std::stoi(sts.NextToken());
+                Search::SetTTSize(hash_size);
             }
         } else if (option == "clear") {
             if (sts.HasNext() && sts.NextToken() == "hash") {
-                search.ClearTT();
+                Search::ClearTT();
             }
         } else if (option == "multipv") {
             if (sts.HasNext() && sts.NextToken() == "value") {
-                auto pv_num = std::stoi(sts.NextToken());
-                search.SetMultiPv(pv_num);
+                int pv_num = std::stoi(sts.NextToken());
+                Search::SetMultiPv(pv_num);
             }
         } else if (option == "uci_showcurrline") {
             if (sts.HasNext() && sts.NextToken() == "value") {
                 bool show = sts.NextToken() == "true";
-                search.ShowShowCurrLine(show);
+                Search::ShowShowCurrLine(show);
             }
         } else if (option == "mute") {
             if (sts.HasNext() && sts.NextToken() == "plies" && sts.HasNext() && sts.NextToken() == "value") {
-                auto plies_muted = std::stoi(sts.NextToken());
-                search.SetPliesMuted(plies_muted);
+                int plies_muted = std::stoi(sts.NextToken());
+                Search::SetPliesMuted(plies_muted);
             }
         } else if (option == "cores") {
             if (sts.HasNext() && sts.NextToken() == "value") {
-                auto num_threads = std::stoi(sts.NextToken());
-                search.SetNumThreads(num_threads);
+                int num_threads = std::stoi(sts.NextToken());
+                Search::SetNumThreads(num_threads);
             }
         } else if (option == "show") {
             if (sts.HasNext() && sts.NextToken() == "current" && sts.HasNext() && sts.NextToken() == "move" &&
                 sts.HasNext() && sts.NextToken() == "value") {
                 bool show = sts.NextToken() == "true";
-                search.ShowCurrMoveInfo(show);
+                Search::ShowCurrMoveInfo(show);
             }
         }
     }
@@ -207,9 +229,9 @@ namespace Meetra::Uci {
     }
 
 
-    ABSearch::SearchSettings ParseSearchOptions(StringTokenStream &sts) {
+    Search::SearchSettings ParseSearchOptions(StringTokenStream &sts) {
 
-        ABSearch::SearchSettings settings;
+        Search::SearchSettings settings;
 
         while (sts.HasNext()) {
             std::string token = sts.NextToken();

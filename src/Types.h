@@ -5,25 +5,25 @@
 
 namespace Meetra {
 
-    typedef uint8_t Epoch;
+    typedef uint_fast8_t Epoch;
 
     typedef uint_fast8_t Depth;
 
     typedef int_fast16_t Score;
 
-    typedef uint64_t ZobristHash;
+    typedef uint_fast64_t ZobristHash;
 #define NEW_HASH 0
 
-    typedef uint32_t Key32;
+    typedef uint_fast64_t Key32;
 
     typedef uint64_t Bitboard;
 #define EMPTY_BB 0
 
-    enum GenPhase : uint8_t {
+    enum GenPhase : uint_fast8_t {
         BEST_MOVE, CAPTURE, QUIET, END
     };
 
-    enum Color : uint8_t {
+    enum Color : uint_fast8_t {
         WHITE, BLACK,
         COLOR_NR
     };
@@ -32,12 +32,12 @@ namespace Meetra {
         return static_cast<Color>(!c);
     }
 
-    enum PieceType : uint8_t {
+    enum PieceType : uint_fast8_t {
         NONE_PIECE_TYPE, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING, ALL_TYPES,
         PIECE_TYPE_NR
     };
 
-    enum Piece : uint8_t {
+    enum Piece : uint_fast8_t {
         NO_PIECE,
         W_PAWN, W_KNIGHT, W_BISHOP, W_ROOK, W_QUEEN, W_KING,
         B_PAWN = 9, B_KNIGHT = 10, B_BISHOP = 11, B_ROOK = 12, B_QUEEN = 13, B_KING = 14,
@@ -47,12 +47,12 @@ namespace Meetra {
     inline PieceType TypeOfPiece(Piece p) { return static_cast<PieceType>(p & 7); }
     inline Piece NewPiece(PieceType pt, Color c) { return static_cast<Piece>((c << 3) | pt); }
 
-    enum Rank : int8_t {
+    enum Rank : uint_fast8_t {
         RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8,
         RANK_NR
     };
 
-    enum File : int8_t {
+    enum File : uint_fast8_t {
         FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H,
         FILE_NR
     };
@@ -64,11 +64,11 @@ namespace Meetra {
 
 
 
-    enum Direction : int8_t {
+    enum Direction : int_fast8_t {
         NORTH = 8, NORTH_EAST = 9, EAST = 1, SOUTH_EAST = -7, SOUTH = -8, SOUTH_WEST = -9, WEST = -1, NORTH_WEST = 7
     };
 
-    enum DirectionIndex : uint8_t {
+    enum DirectionIndex : uint_fast8_t {
         NORTH_IDX, NORTH_EAST_IDX, EAST_IDX, SOUTH_EAST_IDX, SOUTH_IDX, SOUTH_WEST_IDX, WEST_IDX, NORTH_WEST_IDX,
         DIRECTION_IDX_NR
     };
@@ -77,7 +77,7 @@ namespace Meetra {
             NORTH, NORTH_EAST, EAST, SOUTH_EAST, SOUTH, SOUTH_WEST, WEST, NORTH_WEST
     };
 
-    enum Square : int8_t {
+    enum Square : uint_fast8_t {
         A1, B1, C1, D1, E1, F1, G1, H1,
         A2, B2, C2, D2, E2, F2, G2, H2,
         A3, B3, C3, D3, E3, F3, G3, H3,
@@ -96,7 +96,7 @@ namespace Meetra {
     inline Bitboard SquareToBB(Square s) { return static_cast<Bitboard>(0x1) << s; }
 
 #pragma region ===== Castling related stuff =====
-    enum CastlingRights : uint16_t {
+    enum CastlingRights : uint_fast16_t {
         NO_CASTLING = 0, WHITE_SHORT = 1 << 6, WHITE_LONG = 1 << 7, BLACK_SHORT = 1 << 8, BLACK_LONG = 1 << 9,
         WHITE_ALL_CR = WHITE_SHORT | WHITE_LONG,
         BLACK_ALL_CR = BLACK_LONG | BLACK_SHORT,
@@ -133,7 +133,7 @@ namespace Meetra {
      */
     typedef uint16_t Move;
 
-    enum MoveType : uint16_t {
+    enum MoveType : uint_fast16_t {
         INVALID_MOVE = 0, NO_FLAG = 0, EN_PASSANT = 1 << 12, CASTLING = 2 << 12, TWO_FORWARD = 3 << 12,
         PROMOTE_KNIGHT = 4 << 13, PROMOTE_BISHOP = 5 << 13, PROMOTE_ROOK = 6 << 13, PROMOTE_QUEEN = 7 << 13
     };

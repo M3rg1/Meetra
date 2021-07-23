@@ -7,17 +7,16 @@
 #include <cstring>
 #include <atomic>
 
-
 namespace Meetra {
-
-    class PVTable {
 
 #define PVT_ENTRIES_PER_BUCKET 6
 #define PVT_BUCKETS_COUNT 100000
 
+    class PVTable {
+
     public:
 
-        PVTable() {
+        void Init() {
             buckets_count = PVT_BUCKETS_COUNT;
             table = std::make_unique<PVBucket[]>(buckets_count);
             current_epoch = 0;
@@ -143,7 +142,6 @@ namespace Meetra {
         std::unique_ptr<PVBucket[]> table;
 
     };
-
 }
 
 

@@ -423,7 +423,7 @@ namespace Meetra::Bitboards {
     template Bitboard GetAttacksForPiece<QUEEN>(Square, Bitboard, Color);
     template Bitboard GetAttacksForPiece<KING>(Square, Bitboard, Color);
 
-    std::string PrettyPrint(Bitboard b) {
+    std::string PPBitboard(Bitboard b) {
         std::string ret;
         for (Rank r = RANK_8; r >= RANK_1; --r) {
             ret.append(std::to_string(r + 1));

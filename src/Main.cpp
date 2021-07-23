@@ -2,6 +2,7 @@
 #include "Bitboards.h"
 #include "ThreadPool.h"
 #include "ZobristHash.h"
+#include "Search.h"
 
 //  Variables: snake_case
 //  Function names: UpperCamelCase (unless its a accessor/mutator)
@@ -16,7 +17,10 @@ int main(int argc, char *arv[]) {
 
     Bitboards::Init();
     Zobrist::Init();
-    ThreadPool::Init(DEFAULT_THREADS_NUM);
+    ThreadPool::Init();
+    Search::Init();
+    Uci::Init();
+
 
 /*    Board board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     std::cout << GetLogo() << std::endl;

@@ -8,17 +8,17 @@ namespace Meetra::Bitboards {
 
     void Init();
 
-    Bitboard GetUnboundRookMoves(Square s);
-    Bitboard GetUnboundBishopMoves(Square s);
-    Bitboard GetRayBetweenEdges(Square s1, Square s2);
-    Bitboard GetRayBetweenSquares(Square s1, Square s2);
+    [[nodiscard]] Bitboard GetUnboundRookMoves(Square s);
+    [[nodiscard]] Bitboard GetUnboundBishopMoves(Square s);
+    [[nodiscard]] Bitboard GetRayBetweenEdges(Square s1, Square s2);
+    [[nodiscard]] Bitboard GetRayBetweenSquares(Square s1, Square s2);
 
     template<PieceType PT>
-    Bitboard GetAttacksForPiece(Square s, Bitboard occ = EMPTY_BB, Color c = WHITE);
-    std::string PrettyPrint(Bitboard b);
-    inline bool MoreThanOne(Bitboard b) { return (b & (b - 1)); }
-    inline int PopCount(Bitboard b) { return std::__popcount(b); }
-    inline Square Lsb(Bitboard b) { return static_cast<Square>(__builtin_ctzll(b)); }
+    [[nodiscard]] Bitboard GetAttacksForPiece(Square s, Bitboard occ = EMPTY_BB, Color c = WHITE);
+    [[nodiscard]] std::string PPBitboard(Bitboard b);
+    [[nodiscard]] inline bool MoreThanOne(Bitboard b) { return (b & (b - 1)); }
+    [[nodiscard]] inline int PopCount(Bitboard b) { return std::__popcount(b); }
+    [[nodiscard]] inline Square Lsb(Bitboard b) { return static_cast<Square>(__builtin_ctzll(b)); }
     inline Square PopLsb(Bitboard &b) {
         const Square s = Lsb(b);
         b &= b - 1;

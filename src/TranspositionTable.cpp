@@ -1,6 +1,7 @@
 #include <cstring>
 #include "TranspositionTable.h"
 #include "Evaluation.h"
+#include "SearchThread.h"
 
 namespace Meetra {
 
@@ -12,7 +13,7 @@ namespace Meetra {
         return score > MIN_MATE_EVAL ? score - ply : score < -MIN_MATE_EVAL ? score + ply : score;
     }
 
-    TranspositionTable::TranspositionTable(size_t size_mb) {
+    void TranspositionTable::Init(size_t size_mb) {
         size_mb = std::clamp(size_mb, static_cast<size_t>(MIN_HASH_SIZE), static_cast<size_t>(MAX_HASH_SIZE));
         buckets_count = (size_mb * 1000000) / sizeof(TTBucket);
         table = std::make_unique<TTBucket[]>(buckets_count);
@@ -73,7 +74,7 @@ namespace Meetra {
     TranspositionTable::ProbeEval(ZobristHash key, Score alpha, Score beta, Depth depth, Depth ply) const {
 
         Key32 key_32 = Zobrist::Make32Key(key);
-        Score ret = NOT_FOUND;
+        Score ret = TT_NOT_FOUND;
 
         TTBucket *bucket = &table[key % buckets_count];
 
@@ -107,7 +108,7 @@ namespace Meetra {
     void TranspositionTable::Resize(size_t size_mb) {
         size_mb = std::clamp(size_mb, static_cast<size_t>(MIN_HASH_SIZE), static_cast<size_t>(MAX_HASH_SIZE));
         table.reset();
-        buckets_count = (size_mb * 1000000) / sizeof(TTBucket);
+        buckets_count = (static_cast<size_t>(size_mb) * 1000000) / sizeof(TTBucket);
         table = std::make_unique<TTBucket[]>(buckets_count);
         Clear();
     }

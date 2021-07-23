@@ -9,14 +9,15 @@
 namespace Meetra {
 
     class Timer {
-        std::condition_variable_any cond_var;
-        std::recursive_mutex mtx;
+        std::condition_variable cond_var;
+        std::mutex mtx;
         bool active = false;
+        std::future<void> future;
 
     public:
-        void SetTimeout(auto function, long delay) {
+        void SetTimeout(auto function, ulong delay) {
             active = true;
-            ThreadPool::PushTask([&, delay, function]() {
+            future = ThreadPool::PushTask([&, delay, function]() {
                 std::unique_lock lock(mtx);
                 cond_var.wait_for(lock, std::chrono::milliseconds(delay), [&]() { return !active; });
                 if (!active) return;
@@ -24,12 +25,12 @@ namespace Meetra {
             });
         }
 
-        void SetInterval(auto function, long interval) {
+        void SetInterval(auto function, ulong interval) {
             active = true;
-            ThreadPool::PushTask([&, interval, function]() {
+            future = ThreadPool::PushTask([&, interval, function]() {
                 while (active) {
                     std::unique_lock lock(mtx);
-                    cond_var.wait_for(mtx, std::chrono::milliseconds(interval), [&]() { return !active; });
+                    cond_var.wait_for(lock, std::chrono::milliseconds(interval), [&]() { return !active; });
                     if (!active) return;
                     function();
                 }
@@ -42,6 +43,7 @@ namespace Meetra {
                 active = false;
             }
             cond_var.notify_all();
+            future.wait();
         }
 
     };

@@ -1,17 +1,10 @@
 #include "Board.h"
 #include "Bitboards.h"
-#include "Misc.h"
 #include <cstring>
-#include "ZobristHash.h"
 #include "StringTokenStream.h"
 #include <sstream>
-#include <iostream>
 
 namespace Meetra {
-
-    // TODO move the initialization from fen to SetPosition function, and make it more efficient (directly read into the
-    // bitboards, arrays, game state and such so we dont have to copy everything, this takes forever
-    // make LoadFen function that takes in game state and other arrays as arguments and fills them
 
     Board::Board() {
         NewPosition(STARTPOS_FEN);
@@ -21,9 +14,9 @@ namespace Meetra {
         history_cnt = 0;
         curr_data.state = NEW_GAME_STATE;
 
-        std::memset(board, 0, sizeof(*board) * SQUARE_NR);
-        std::memset(color_bbs, 0, sizeof(*color_bbs) * COLOR_NR);
-        std::memset(type_bbs, 0, sizeof(*type_bbs) * PIECE_TYPE_NR);
+        std::memset(board, 0, sizeof(Piece) * SQUARE_NR);
+        std::memset(color_bbs, 0, sizeof(Bitboard) * COLOR_NR);
+        std::memset(type_bbs, 0, sizeof(Bitboard) * PIECE_TYPE_NR);
 
         ParseFen(fen);
 
@@ -78,6 +71,50 @@ namespace Meetra {
                (Bitboards::GetAttacksForPiece<KING>(s) & GetPieces(KING, attacked_by));
     }
 
+    void Board::RemovePiece(Square s) {
+        Piece p = board[s];
+        board[s] = NO_PIECE;
+        Bitboard pos = SquareToBB(s);
+        color_bbs[ColorOfPiece(p)] ^= pos;
+        type_bbs[TypeOfPiece(p)] ^= pos;
+        type_bbs[ALL_TYPES] ^= pos;
+    }
+
+    void Board::PutPiece(Square s, Piece p) {
+        board[s] = p;
+        Bitboard pos = SquareToBB(s);
+        color_bbs[ColorOfPiece(p)] |= pos;
+        type_bbs[TypeOfPiece(p)] |= pos;
+        type_bbs[ALL_TYPES] |= pos;
+    }
+
+    void Board::MovePiece(Square from, Square to) {
+        Piece p = board[from];
+        board[to] = p;
+        board[from] = NO_PIECE;
+        Bitboard from_to = SquareToBB(from) | SquareToBB(to);
+        color_bbs[ColorOfPiece(p)] ^= from_to;
+        type_bbs[TypeOfPiece(p)] ^= from_to;
+        type_bbs[ALL_TYPES] ^= from_to;
+    }
+
+    void Board::RemovePiece(Square s, ZobristHash &h) {
+        Piece p = board[s];
+        RemovePiece(s);
+        Zobrist::RemovePiece(h, TypeOfPiece(p), ColorOfPiece(p), s);
+    }
+
+    void Board::PutPiece(Square s, Piece p, ZobristHash &h) {
+        PutPiece(s, p);
+        Zobrist::AddPiece(h, TypeOfPiece(p), ColorOfPiece(p), s);
+    }
+
+    void Board::MovePiece(Square from, Square to, ZobristHash &h) {
+        Piece p = board[from];
+        MovePiece(from, to);
+        Zobrist::MovePiece(h, TypeOfPiece(p), ColorOfPiece(p), from, to);
+    }
+
     bool Board::MakeMove(Move m) {
 
         history[history_cnt++] = curr_data;
@@ -86,11 +123,8 @@ namespace Meetra {
         ChangeColorToMove();
         Color next_move_col = ColorToMove();
         Zobrist::UpdateColor(curr_data.hash, next_move_col);
-
         ClearCapturedPiece();
-
         IncrementPly();
-
         IncrementMoveNumber(this_move_col);
 
         if (EpSquare()) {
@@ -149,7 +183,6 @@ namespace Meetra {
 
     void Board::UnmakeMove(Move m) {
 
-
         Square from = FromSquare(m);
         Square to = ToSquare(m);
         Piece captured_piece = CapturedPiece();
@@ -172,6 +205,38 @@ namespace Meetra {
             RemovePiece(from);
             PutPiece(from, NewPiece(PAWN, ColorToMove()));
         }
+    }
+
+    constexpr Piece CharToPiece(char c) {
+        if (c == 'P') return W_PAWN;
+        else if (c == 'N') return W_KNIGHT;
+        else if (c == 'B') return W_BISHOP;
+        else if (c == 'R') return W_ROOK;
+        else if (c == 'Q') return W_QUEEN;
+        else if (c == 'K') return W_KING;
+        else if (c == 'p') return B_PAWN;
+        else if (c == 'n') return B_KNIGHT;
+        else if (c == 'b') return B_BISHOP;
+        else if (c == 'r') return B_ROOK;
+        else if (c == 'q') return B_QUEEN;
+        else if (c == 'k') return B_KING;
+        else return NO_PIECE;
+    }
+
+    constexpr char PieceToChar(Piece p) {
+        if (p == W_PAWN) return 'P';
+        else if (p == W_KNIGHT) return 'N';
+        else if (p == W_BISHOP) return 'B';
+        else if (p == W_ROOK) return 'R';
+        else if (p == W_QUEEN) return 'Q';
+        else if (p == W_KING) return 'K';
+        else if (p == B_PAWN) return 'p';
+        else if (p == B_KNIGHT) return 'n';
+        else if (p == B_BISHOP) return 'b';
+        else if (p == B_ROOK) return 'r';
+        else if (p == B_QUEEN) return 'q';
+        else if (p == B_KING) return 'k';
+        else return 'o';
     }
 
     void Board::ParseFen(const std::string &fen) {
