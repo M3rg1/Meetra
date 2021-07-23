@@ -3,7 +3,7 @@
 #include <chrono>
 #include "Uci.h"
 #include <random>
-#include "SearchThread.h"
+#include "SearchTask.h"
 #include "Timer.h"
 #include "ThreadPool.h"
 #include <sstream>
@@ -125,17 +125,12 @@ namespace Meetra::Search {
         std::sort(root_moves.begin(), root_moves.end());
 
         for (auto t = Globals::num_threads - 1; t >= 0; t--) {
-            SearchThread thread(t, board, root_moves);
+            SearchTask task(t, board, root_moves);
             Globals::futures.push_back(ThreadPool::PushTask([=]() mutable {
-                thread.Search();
+                task.Search();
             }));
         }
 
-        // TODO rework how threadpool works, we should have
-        //  1 dedicated thread to pooling information
-        //  1 dedicated thread to stop timer
-        //  1 dedicated thread to gui listening
-        //  and then bunch of search threads
         if (!Globals::settings.infinite) {
             search_timer.SetTimeout([&]() { StopSearch(); }, Globals::settings.allowed_time);
         }

@@ -1,4 +1,4 @@
-#include "SearchThread.h"
+#include "SearchTask.h"
 #include "Uci.h"
 #include <sstream>
 #include "MoveGen.h"
@@ -7,7 +7,7 @@ namespace Meetra {
 
     using namespace Search;
 
-    void SearchThread::SearchThread::Search() {
+    void SearchTask::Search() {
 
         for (curr_depth = 2; curr_depth <= Globals::settings.max_allowed_depth && Globals::run; curr_depth++) {
 
@@ -77,7 +77,7 @@ namespace Meetra {
         }
     }
 
-    Score SearchThread::SearchThread::NegaMax(Score alpha, Score beta, Depth depth, Depth ply) {
+    Score SearchTask::SearchTask::NegaMax(Score alpha, Score beta, Depth depth, Depth ply) {
 
         if (board.IsRepetition() || board.Ply() >= 50) {
             return -DRAW_SCORE;
@@ -135,7 +135,7 @@ namespace Meetra {
         return alpha;
     }
 
-    Score SearchThread::QSearch(Score alpha, Score beta, Depth ply) {
+    Score SearchTask::QSearch(Score alpha, Score beta, Depth ply) {
 
         curr_rm->seldepth = std::max(ply, curr_rm->seldepth);
         if (IsMainThread()) {
@@ -171,7 +171,7 @@ namespace Meetra {
         return alpha;
     }
 
-    bool SearchThread::MateInHorizon() const {
+    bool SearchTask::MateInHorizon() const {
         if (std::abs(root_moves[0].score) > MIN_MATE_EVAL && Globals::multi_pv == 1 && !Globals::settings.infinite &&
             !Globals::settings.fixed_timer) {
             int distance_to_mate = MATE_SCORE - std::abs(root_moves[0].score);
@@ -182,7 +182,7 @@ namespace Meetra {
         return false;
     }
 
-    void SearchThread::RetrievePv(Move *pv_line, Depth depth) {
+    void SearchTask::RetrievePv(Move *pv_line, Depth depth) {
         Move move = Globals::pvt.ProbePv(board.GetZobristHash());
         // TODO if pv not found in pvt, try searching TT, if not in TT go back to pvt, if neither, too bad
         if (!move || depth == 0 || board.IsRepetition() || board.Ply() >= 50) {
@@ -195,7 +195,7 @@ namespace Meetra {
         board.UnmakeMove(move);
     }
 
-    std::string SearchThread::GetSearchInfo() {
+    std::string SearchTask::GetSearchInfo() {
 
         long elapsed_ms = ElapsedTimeMs();
         long nps = static_cast<long>(static_cast<double>(Globals::nodes_explored) * 1000.0 /
@@ -242,7 +242,7 @@ namespace Meetra {
         return ss.str();
     }
 
-    std::string SearchThread::GetCurrMoveInfo() {
+    std::string SearchTask::GetCurrMoveInfo() {
         Move pv_stack[MAX_SEARCH_DEPTH];
         std::stringstream ss;
         ss << "info currmove " << GetMoveName(curr_rm->move) << " currmovenumber " << (curr_rm_num + 1);

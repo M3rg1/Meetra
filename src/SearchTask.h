@@ -1,15 +1,15 @@
-#ifndef MEETRA_SEARCHTHREAD_H
-#define MEETRA_SEARCHTHREAD_H
+#ifndef MEETRA_SEARCHTASK_H
+#define MEETRA_SEARCHTASK_H
 
 #include <vector>
 #include "Search.h"
 
 namespace Meetra {
 
-    class SearchThread {
+    class SearchTask {
 
     public:
-        SearchThread(int t_num, Board b, std::vector<Search::RootMove> moves) {
+        SearchTask(int t_num, Board b, std::vector<Search::RootMove> moves) {
             thread_num = t_num;
             board = b;
             root_moves = std::move(moves);
@@ -45,4 +45,4 @@ namespace Meetra {
 }
 
 
-#endif //MEETRA_SEARCHTHREAD_H
+#endif //MEETRA_SEARCHTASK_H

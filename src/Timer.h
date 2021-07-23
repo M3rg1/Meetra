@@ -18,9 +18,11 @@ namespace Meetra {
         void SetTimeout(auto function, ulong delay) {
             active = true;
             future = ThreadPool::PushTask([&, delay, function]() {
-                std::unique_lock lock(mtx);
-                cond_var.wait_for(lock, std::chrono::milliseconds(delay), [&]() { return !active; });
-                if (!active) return;
+                {
+                    std::unique_lock lock(mtx);
+                    cond_var.wait_for(lock, std::chrono::milliseconds(delay), [&]() { return !active; });
+                    if (!active) return;
+                }
                 function();
             });
         }
@@ -29,9 +31,11 @@ namespace Meetra {
             active = true;
             future = ThreadPool::PushTask([&, interval, function]() {
                 while (active) {
-                    std::unique_lock lock(mtx);
-                    cond_var.wait_for(lock, std::chrono::milliseconds(interval), [&]() { return !active; });
-                    if (!active) return;
+                    {
+                        std::unique_lock lock(mtx);
+                        cond_var.wait_for(lock, std::chrono::milliseconds(interval), [&]() { return !active; });
+                        if (!active) return;
+                    }
                     function();
                 }
             });

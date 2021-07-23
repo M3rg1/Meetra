@@ -207,7 +207,7 @@ namespace Meetra {
         }
     }
 
-    constexpr Piece CharToPiece(char c) {
+    Piece CharToPiece(char c) {
         if (c == 'P') return W_PAWN;
         else if (c == 'N') return W_KNIGHT;
         else if (c == 'B') return W_BISHOP;
@@ -223,7 +223,7 @@ namespace Meetra {
         else return NO_PIECE;
     }
 
-    constexpr char PieceToChar(Piece p) {
+    char PieceToChar(Piece p) {
         if (p == W_PAWN) return 'P';
         else if (p == W_KNIGHT) return 'N';
         else if (p == W_BISHOP) return 'B';
