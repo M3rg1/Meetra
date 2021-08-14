@@ -17,6 +17,7 @@ namespace Meetra::Search {
 #define DEFAULT_SEARCH_THREADS 1
 #define MAX_SEARCH_THREADS 8
 #define MIN_MATE_EVAL (MATE_SCORE - MAX_SEARCH_DEPTH)
+#define DEFAULT_PLY_FOR_DRAW 75
 
     struct SearchSettings {
         Depth max_allowed_depth = DEFAULT_SEARCH_DEPTH;
@@ -48,8 +49,9 @@ namespace Meetra::Search {
         inline Depth curr_max_depth;
         inline Depth seldepth;
         inline long timer_start;
+        inline int plies_draw;
 
-        inline std::vector<std::future<void>> futures;
+        inline std::vector<std::future<void>> search_results;
     }
 
     void Init();
@@ -65,6 +67,7 @@ namespace Meetra::Search {
     inline void StopSearch() { Globals::run = false; }
     inline void SetMultiPv(int pv_num) { Globals::multi_pv = pv_num; }
     inline void SetNumThreads(int num) { Globals::num_threads = std::clamp(num, 1, MAX_SEARCH_THREADS); }
+    inline void SetPliesDraw(int plies) { Globals::plies_draw = plies; }
     inline void ClearTT() {
         Globals::tt.Clear();
         Globals::pvt.Clear();

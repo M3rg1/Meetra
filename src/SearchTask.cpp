@@ -77,9 +77,9 @@ namespace Meetra {
         }
     }
 
-    Score SearchTask::SearchTask::NegaMax(Score alpha, Score beta, Depth depth, Depth ply) {
+    Score SearchTask::NegaMax(Score alpha, Score beta, Depth depth, Depth ply) {
 
-        if (board.IsRepetition() || board.Ply() >= 50) {
+        if (board.IsRepetition() || board.Ply() >= Globals::plies_draw) {
             return -DRAW_SCORE;
         } else if (depth == 0) {
             return QSearch(alpha, beta, ply);
@@ -185,7 +185,7 @@ namespace Meetra {
     void SearchTask::RetrievePv(Move *pv_line, Depth depth) {
         Move move = Globals::pvt.ProbePv(board.GetZobristHash());
         // TODO if pv not found in pvt, try searching TT, if not in TT go back to pvt, if neither, too bad
-        if (!move || depth == 0 || board.IsRepetition() || board.Ply() >= 50) {
+        if (!move || depth == 0 || board.IsRepetition() || board.Ply() >= Globals::plies_draw) {
             *pv_line = INVALID_MOVE;
             return;
         }

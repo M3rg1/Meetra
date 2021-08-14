@@ -19,6 +19,7 @@ namespace Meetra::Search {
         Globals::show_currmove = true;
         Globals::plies_muted = 1;
         Globals::num_threads = DEFAULT_SEARCH_THREADS;
+        Globals::plies_draw = DEFAULT_PLY_FOR_DRAW;
         // + prepare searchthreadsmu
     }
 
@@ -112,7 +113,7 @@ namespace Meetra::Search {
         InitSearch(s, board);
         auto root_moves = GenRootMoves(board);
 
-        if (root_moves.size() < 2 && !Globals::settings.infinite) {
+        if ((root_moves.size() == 1 && !Globals::settings.infinite) || root_moves.empty()) {
             StopSearch();
             Move only_move = root_moves.empty() ? INVALID_MOVE : root_moves[0].move;
             Uci::SendToGui("bestmove " + GetMoveName(only_move));
@@ -122,15 +123,6 @@ namespace Meetra::Search {
         Timer search_timer;
         Timer info_timer;
 
-        std::sort(root_moves.begin(), root_moves.end());
-
-        for (auto t = Globals::num_threads - 1; t >= 0; t--) {
-            SearchTask task(t, board, root_moves);
-            Globals::futures.push_back(ThreadPool::PushTask([=]() mutable {
-                task.Search();
-            }));
-        }
-
         if (!Globals::settings.infinite) {
             search_timer.SetTimeout([&]() { StopSearch(); }, Globals::settings.allowed_time);
         }
@@ -139,11 +131,23 @@ namespace Meetra::Search {
             Uci::SendToGui(GetUpdateSearchInfo());
         }, Globals::settings.info_to_ui_ms_timer);
 
-        for (auto &future : Globals::futures) {
+        std::sort(root_moves.begin(), root_moves.end());
+
+        for (auto t = 1; t < Globals::num_threads; t++) {
+            SearchTask task(t, board, root_moves);
+            Globals::search_results.push_back(ThreadPool::PushTask([=]() mutable {
+                task.Search();
+            }));
+        }
+        SearchTask task(0, board, root_moves);
+        task.Search();
+
+        for (auto &future : Globals::search_results) {
             future.wait();
         }
-        Globals::futures.clear();
+        Globals::search_results.clear();
 
+        // TODO instead we select the best move from all the search results
         Uci::SendToGui("bestmove " + GetMoveName(Globals::main_move));
 
         info_timer.Stop();

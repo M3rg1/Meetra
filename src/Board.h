@@ -47,11 +47,19 @@ namespace Meetra {
         [[nodiscard]] inline int Ply() const { return static_cast<int>(curr_data.state >> 15 & 0x3F); }
         [[nodiscard]] inline int TotalMoves() const { return static_cast<int>(curr_data.state >> 22); }
         [[nodiscard]] inline bool IsRepetition() const {
+            // http://www.talkchess.com/forum3/viewtopic.php?f=7&t=51000&start=20
+            // should implement draw at 1st repetition in the search tree, 2nd in actual game history
+            // because moves played before could be sub-optimal, however moves during the search have already been
+            // examined, so repeating even once is pointless
+            int rep = 0;
             for (int i = history_cnt - 2; i >= 0; i -= 2) {
                 if (history[i].state & 0x7800) {
                     return false;
                 } else if (history[i].hash == curr_data.hash) {
-                    return true;
+                    rep++;
+                    if(rep >= 2) {
+                        return true;
+                    }
                 }
             }
             return false;

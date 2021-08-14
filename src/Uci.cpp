@@ -12,16 +12,22 @@ namespace Meetra::Uci {
                 "|  \\/  |___ ___| |_ _ _ __ _\n"   \
                 "| |\\/| / -_) -_)  _| '_/ _` |\n"  \
                 "|_|  |_\\___\\___|\\__|_| \\__,_|"
-#define NAME "Meetra"
-#define VERSION "0.0.1"
-#define AUTHOR "M3rgi"
-#define OPTIONS "option name Hash type spin default 128 min 16 max 4096 \n"\
-                "option name Clear Hash type button\n"\
-                "option name MultiPV type spin default 1 min 1 max 32\n"\
-                "option name UCI_ShowCurrLine type check default false\n"\
-                "option name Mute plies type spin default 1 min 1 max 64\n"\
-                "option name Cores type spin default 1 min 1 max 8\n"\
-                "option name Show current move type check default true"
+
+    std::string GetName() { return "Meetra"; }
+    std::string GetVersion() { return "0.0.1"; }
+    std::string GetAuthor() { return "M3rg1"; }
+    std::string GetOptions() {
+        std::stringstream ss;
+        ss << "option name Hash type spin default " << DEFAULT_HASH_SIZE << " min " << MIN_HASH_SIZE << " max " << MAX_HASH_SIZE << "\n"
+           << "option name Clear Hash type button\n"
+           << "option name MultiPV type spin default 1 min 1 max 32\n"
+           << "option name UCI_ShowCurrLine type check default false\n"
+           << "option name Mute plies type spin default 1 min 1 max 64\n"
+           << "option name Cores type spin default " << DEFAULT_SEARCH_THREADS << " min 1 max " << MAX_SEARCH_THREADS << "\n"
+           << "option name Show current move type check default true\n"
+           << "option name Plies draw type spin default " << DEFAULT_PLY_FOR_DRAW << " min 10 max 100";
+        return ss.str();
+    }
 
     void UciCommand();
     void IsReadyCommand();
@@ -66,6 +72,7 @@ namespace Meetra::Uci {
             else if (token == "perft") PerftCommand(sts, board);
             else if (token == "show") ShowCommand(board);
             else if (token == "help") HelpCommand();
+            else if (token == "quit");
             else { UnknownCommand(); }
 
         } while (token != "quit" && !std::cin.eof());
@@ -99,9 +106,9 @@ namespace Meetra::Uci {
 
     void UciCommand() {
         std::stringstream ss;
-        ss << "id name " << NAME << " v. " << VERSION << '\n'
-           << "id author " << AUTHOR << '\n'
-           << OPTIONS << '\n'
+        ss << "id name " << GetName() << " v. " << GetVersion() << '\n'
+           << "id author " << GetAuthor() << '\n'
+           << GetOptions() << '\n'
            << "uciok";
         SendToGui(ss.str());
     }
@@ -198,6 +205,11 @@ namespace Meetra::Uci {
                 sts.HasNext() && sts.NextToken() == "value") {
                 bool show = sts.NextToken() == "true";
                 Search::ShowCurrMoveInfo(show);
+            }
+        } else if (option == "plies") {
+            if (sts.HasNext() && sts.NextToken() == "draw" && sts.HasNext() && sts.NextToken() == "value") {
+                int plies_draw = std::stoi(sts.NextToken());
+                Search::SetPliesDraw(plies_draw);
             }
         }
     }
