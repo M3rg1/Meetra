@@ -94,8 +94,8 @@ namespace Meetra::Search {
 
     std::vector<RootMove> GenRootMoves(Board &board) {
         MoveGen move_gen(board);
-        Move move;
         std::vector<RootMove> moves;
+        Move move;
         while ((move = move_gen.GetNextMove<false>())) {
             if (!board.MakeMove(move)) {
                 board.UnmakeMove(move);
@@ -121,6 +121,8 @@ namespace Meetra::Search {
            << " time " << elapsed_ms
            << " nps " << nps
            << " hashfull " << static_cast<int>(Globals::tt.Usage() * 1000.0);
+
+        std::string x;
 
         return ss.str();
     }

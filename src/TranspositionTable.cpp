@@ -84,8 +84,8 @@ namespace Meetra {
             if (entry.Get32Key() == key_32) {
                 if (entry.GetDepth() >= depth) {
                     if (entry.GetFlag() == EXACT_SCORE ||
-                        entry.GetFlag() == ALPHA && entry.GetScore() <= alpha ||
-                        entry.GetFlag() == BETA && entry.GetScore() >= beta
+                        (entry.GetFlag() == ALPHA && entry.GetScore() <= alpha) ||
+                        (entry.GetFlag() == BETA && entry.GetScore() >= beta)
                             ) {
                         entry.SetEpoch(current_epoch);
                         ret = AddMatePly(entry.GetScore(), ply);
@@ -108,7 +108,7 @@ namespace Meetra {
     void TranspositionTable::Resize(size_t size_mb) {
         size_mb = std::clamp(size_mb, static_cast<size_t>(MIN_HASH_SIZE), static_cast<size_t>(MAX_HASH_SIZE));
         table.reset();
-        buckets_count = (static_cast<size_t>(size_mb) * 1000000) / sizeof(TTBucket);
+        buckets_count = (static_cast<size_t>(size_mb) * 1048576) / sizeof(TTBucket);
         table = std::make_unique<TTBucket[]>(buckets_count);
         Clear();
     }

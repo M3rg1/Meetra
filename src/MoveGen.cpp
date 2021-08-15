@@ -83,7 +83,7 @@ namespace Meetra {
     }
 
     void MoveGen::EvalMoves() {
-        for (int i = 0; i < moves_cnt; i++) {
+        for (auto i = 0; i < moves_cnt; i++) {
             move_eval[i].score =
                     IsValidMove(move_eval[i].move) ? Evaluation::MoveEval(board, move_eval[i].move) : NEGATIVE_INF;
         }
