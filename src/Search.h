@@ -6,7 +6,8 @@
 #include "TranspositionTable.h"
 #include "PVTable.h"
 #include <vector>
-#include <future>
+#include "Timer.h"
+#include "Types.h"
 
 namespace Meetra::Search {
 
@@ -18,6 +19,32 @@ namespace Meetra::Search {
 #define MAX_SEARCH_THREADS 8
 #define MIN_MATE_EVAL (MATE_SCORE - MAX_SEARCH_DEPTH)
 #define DEFAULT_PLY_FOR_DRAW 75
+
+    struct RootMove {
+        Move move;
+        Score score;
+        Score previous_score;
+        Depth depth;
+        Depth seldepth;
+        long nodes;
+
+        explicit RootMove(Move m) {
+            move = m;
+            score = NEGATIVE_INF;
+            previous_score = NEGATIVE_INF;
+            depth = 0;
+            seldepth = 0;
+            nodes = 0;
+        }
+
+        bool operator==(const Move &m) const { return move == m; }
+        bool operator<(const RootMove &mn) const {
+            return mn.nodes != nodes ? mn.nodes < nodes : mn.score < score;
+        }
+/*            bool operator<(const RootMove& mn) const {
+                return mn.score != score ? mn.score < score : mn.previous_score < previous_score;
+            }*/
+    };
 
     struct SearchSettings {
         Depth max_allowed_depth = DEFAULT_SEARCH_DEPTH;
@@ -34,7 +61,6 @@ namespace Meetra::Search {
     };
 
     namespace Globals {
-
         inline bool run;
         inline TranspositionTable tt;
         inline PVTable pvt;
@@ -44,18 +70,18 @@ namespace Meetra::Search {
         inline int plies_muted;
         inline int multi_pv;
         inline int num_threads;
-        inline Move main_move;
         inline long nodes_explored;
         inline Depth curr_max_depth;
         inline Depth seldepth;
         inline long timer_start;
         inline int plies_draw;
-
-        inline std::vector<std::future<void>> search_results;
+        inline Timer search_timer;
+        inline Timer info_timer;
     }
 
     void Init();
     void StartSearch(SearchSettings settings, Board board);
+    void Shutdown();
     std::string GetUpdateSearchInfo();
 
     [[nodiscard]] long ElapsedTimeMs();
@@ -66,8 +92,8 @@ namespace Meetra::Search {
     inline void ShowCurrMoveInfo(bool show) { Globals::show_currmove = show; }
     inline void StopSearch() { Globals::run = false; }
     inline void SetMultiPv(int pv_num) { Globals::multi_pv = pv_num; }
-    inline void SetNumThreads(int num) { Globals::num_threads = std::clamp(num, 1, MAX_SEARCH_THREADS); }
     inline void SetPliesDraw(int plies) { Globals::plies_draw = plies; }
+    void SetNumThreads(int num);
     inline void ClearTT() {
         Globals::tt.Clear();
         Globals::pvt.Clear();
@@ -77,29 +103,6 @@ namespace Meetra::Search {
         Globals::pvt.Clear();
     }
 
-    struct RootMove {
-        Move move;
-        Score score;
-        Score previous_score;
-        Depth seldepth;
-        long nodes;
-
-        explicit RootMove(Move m) {
-            move = m;
-            score = NEGATIVE_INF;
-            previous_score = NEGATIVE_INF;
-            seldepth = 0;
-            nodes = 0;
-        }
-
-        bool operator==(const Move &m) const { return move == m; }
-        bool operator<(const RootMove &mn) const {
-            return mn.nodes != nodes ? mn.nodes < nodes : mn.score < score;
-        }
-/*            bool operator<(const RootMove& mn) const {
-                return mn.score != score ? mn.score < score : mn.previous_score < previous_score;
-            }*/
-    };
 }
 
 #endif //MEETRA_SEARCH_H

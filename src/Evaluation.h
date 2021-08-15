@@ -9,6 +9,9 @@ namespace Meetra::Evaluation{
 #define NEGATIVE_INF (-32000)
 #define MATE_SCORE 31000
 #define DRAW_SCORE 0
+#define MAX_SEARCH_THREADS 8
+#define MAX_SEARCH_DEPTH 128
+#define MIN_MATE_EVAL (MATE_SCORE - MAX_SEARCH_DEPTH)
 
 
     [[nodiscard]] Score MoveEval(const Board &board, Move move);

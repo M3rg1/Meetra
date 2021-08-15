@@ -2,7 +2,6 @@
 #define MEETRA_UCI_H
 
 #include <string>
-#include <execution>
 
 namespace Meetra::Uci {
 

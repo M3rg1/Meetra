@@ -77,7 +77,7 @@ namespace Meetra::Uci {
 
         } while (token != "quit" && !std::cin.eof());
 
-        Search::StopSearch();
+        Search::Shutdown();
         ThreadPool::Shutdown();
     }
 

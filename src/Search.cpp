@@ -3,12 +3,30 @@
 #include <chrono>
 #include "Uci.h"
 #include <random>
-#include "SearchTask.h"
-#include "Timer.h"
-#include "ThreadPool.h"
+#include "SearchThread.h"
 #include <sstream>
 
 namespace Meetra::Search {
+
+    std::vector<std::unique_ptr<SearchThread>> search_threads;
+
+    void SetNumThreads(int num) {
+        Globals::num_threads = std::clamp(num, 1, MAX_SEARCH_THREADS);
+        for (auto &thread : search_threads) {
+            thread->Shutdown();
+        }
+        search_threads.clear();
+        for (int thread_id = 0; thread_id < Globals::num_threads; thread_id++) {
+            search_threads.emplace_back(new SearchThread(thread_id));
+        }
+    }
+
+    void Shutdown(){
+        StopSearch();
+        for (auto &thread : search_threads) {
+            thread->Shutdown();
+        }
+    }
 
     void Init() {
         Globals::tt.Init();
@@ -20,7 +38,9 @@ namespace Meetra::Search {
         Globals::plies_muted = 1;
         Globals::num_threads = DEFAULT_SEARCH_THREADS;
         Globals::plies_draw = DEFAULT_PLY_FOR_DRAW;
-        // + prepare searchthreadsmu
+        for (int thread_id = 0; thread_id < Globals::num_threads; thread_id++) {
+            search_threads.emplace_back(new SearchThread(thread_id));
+        }
     }
 
     long ElapsedTimeMs() {
@@ -68,7 +88,6 @@ namespace Meetra::Search {
         Globals::nodes_explored = 0;
         Globals::curr_max_depth = 0;
         Globals::seldepth = 0;
-        Globals::main_move = INVALID_MOVE;
 
         Globals::settings.max_allowed_depth = std::min(s.max_allowed_depth, static_cast<Depth>(MAX_SEARCH_DEPTH));
 
@@ -110,47 +129,71 @@ namespace Meetra::Search {
 
     void StartSearch(SearchSettings s, Board board) {
 
+        // initialize search related global variables and calculate remaining time, generate root moves
         InitSearch(s, board);
         auto root_moves = GenRootMoves(board);
 
-        if ((root_moves.size() == 1 && !Globals::settings.infinite) || root_moves.empty()) {
+        // if there's only one root move and we are not in infinite or fixed depth/time search, return the only possible
+        // move immediately
+        if ((root_moves.size() == 1 && (!Globals::settings.infinite || !Globals::settings.fixed_timer)) ||
+            root_moves.empty()) {
             StopSearch();
             Move only_move = root_moves.empty() ? INVALID_MOVE : root_moves[0].move;
             Uci::SendToGui("bestmove " + GetMoveName(only_move));
             return;
         }
 
-        Timer search_timer;
-        Timer info_timer;
-
+        // activate timeout timer for search
         if (!Globals::settings.infinite) {
-            search_timer.SetTimeout([&]() { StopSearch(); }, Globals::settings.allowed_time);
+            Globals::search_timer.SetTimeout([&]() { StopSearch(); }, Globals::settings.allowed_time);
         }
 
-        info_timer.SetInterval([]() {
+        // activate timer that updates GUI with search info on interval
+        Globals::info_timer.SetInterval([]() {
             Uci::SendToGui(GetUpdateSearchInfo());
         }, Globals::settings.info_to_ui_ms_timer);
 
+        // prepare and activate helper search threads
         std::sort(root_moves.begin(), root_moves.end());
-
-        for (auto t = 1; t < Globals::num_threads; t++) {
-            SearchTask task(t, board, root_moves);
-            Globals::search_results.push_back(ThreadPool::PushTask([=]() mutable {
-                task.Search();
-            }));
+        for (int i = 1; i < search_threads.size(); i++) {
+            search_threads[i]->InitNewSearch(board, root_moves);
+            search_threads[i]->StartHelperThread();
         }
-        SearchTask task(0, board, root_moves);
-        task.Search();
 
-        for (auto &future : Globals::search_results) {
-            future.wait();
+        // start the main search thread
+        search_threads[0]->InitNewSearch(board, root_moves);
+        search_threads[0]->Search();
+
+        // await until all threads finish searching
+        for (auto &st : search_threads) {
+            while (!st->IsFinished());
         }
-        Globals::search_results.clear();
 
-        // TODO instead we select the best move from all the search results
-        Uci::SendToGui("bestmove " + GetMoveName(Globals::main_move));
+        // update each root move with the best search result
+        for (auto &st : search_threads) {
+            for (RootMove &m : st->GetRootMoves()) {
+                for (RootMove &rm : root_moves) {
+                    if (m.move == rm.move && m.depth > rm.depth) {
+                        rm = m;
+                    }
+                }
+            }
+        }
 
-        info_timer.Stop();
-        search_timer.Stop();
+        // select the best move
+        RootMove best_move = root_moves[0];
+        for (RootMove m : root_moves) {
+            if (m.score > best_move.score) {
+                best_move = m;
+            }
+        }
+
+        // TODO need to figure out how to find out with which thread the best move is accosicated
+        //  also try printing it if it's not the main thread (id = 0), so we can actually see if it ever happens
+        Uci::SendToGui(search_threads[0]->GetSearchInfo());
+        Uci::SendToGui("bestmove " + GetMoveName(best_move.move));
+
+        Globals::info_timer.Stop();
+        Globals::search_timer.Stop();
     }
 }

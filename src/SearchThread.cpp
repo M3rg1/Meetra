@@ -1,4 +1,4 @@
-#include "SearchTask.h"
+#include "SearchThread.h"
 #include "Uci.h"
 #include <sstream>
 #include "MoveGen.h"
@@ -7,21 +7,28 @@ namespace Meetra {
 
     using namespace Search;
 
-    void SearchTask::Search() {
+    // the main search function, iterative deepening framework
+    void SearchThread::Search() {
 
+        searching = true;
+
+        // iterative deepening
         for (curr_depth = 2; curr_depth <= Globals::settings.max_allowed_depth && Globals::run; curr_depth++) {
 
             Score alpha = NEGATIVE_INF;
             Score beta = POSITIVE_INF;
 
+            // seldepth is always at least the current depth being searched
             if (IsMainThread()) {
                 Globals::seldepth = curr_depth;
             }
 
+            // if helper thread falls behind main thread, skip depth and go deeper
             if (!IsMainThread() && curr_depth <= Globals::curr_max_depth) {
                 curr_depth = Globals::curr_max_depth + thread_num;
             }
 
+            // alpha beta search over root moves
             for (curr_rm_num = 0; curr_rm_num < root_moves.size() && Globals::run; curr_rm_num++) {
 
                 curr_rm = &root_moves[curr_rm_num];
@@ -30,7 +37,8 @@ namespace Meetra {
                     Uci::SendToGui(GetCurrMoveInfo());
                 }
 
-                if (curr_depth < Globals::curr_max_depth) {
+                // if main thread already finished searching this depth, there's no reason for helper thread to remain
+                if (!IsMainThread() && curr_depth < Globals::curr_max_depth) {
                     break;
                 }
 
@@ -41,6 +49,7 @@ namespace Meetra {
                 board.UnmakeMove(curr_rm->move);
 
                 if (Globals::run) {
+                    curr_rm->depth = curr_depth;
                     if (score > alpha) {
                         alpha = score;
                         curr_rm->score = score;
@@ -53,38 +62,44 @@ namespace Meetra {
                 }
             }
 
+            // push the best move to front of root moves list and sort them
             std::swap(root_moves[0], root_moves[best_rm_num]);
             best_rm_num = 0;
             std::sort(root_moves.begin() + 1, root_moves.end());
 
+            // checking time and updating GUI when main thread finishes searching depth
             if (IsMainThread()) {
 
+                // update max depth reached by the main thread
                 Globals::curr_max_depth = curr_depth;
 
-                if (!EnoughTimeLeft() || MateInHorizon()) {
+                // if we dont have enough time left for a deeper search or mate has been found within horizon and we
+                // are not performing fixed time/depth/infinite or multipv search, stop
+                if (!EnoughTimeLeft() || (MateInHorizon() && Globals::multi_pv == 1 && !Globals::settings.infinite &&
+                                          !Globals::settings.fixed_timer)) {
                     StopSearch();
                 }
 
-                if (curr_depth > Globals::plies_muted) {
+                // update GUI with info about currently finished depth we searched
+                if (Globals::run && curr_depth > Globals::plies_muted) {
                     Uci::SendToGui(GetSearchInfo());
                 }
             }
         }
-
-        // TODO remove this and just get the best move from all the threads back in the Search method
-        if (IsMainThread()) {
-            Globals::main_move = root_moves[0].move;
-        }
+        // return the best root move that was found
+        searching = false;
     }
 
-    Score SearchTask::NegaMax(Score alpha, Score beta, Depth depth, Depth ply) {
+    Score SearchThread::NegaMax(Score alpha, Score beta, Depth depth, Depth ply) {
 
+        // terminating conditions, either we reached a draw - then stop, or max depth - in that case switch to qsearch
         if (board.IsRepetition() || board.Ply() >= Globals::plies_draw) {
             return -DRAW_SCORE;
         } else if (depth == 0) {
             return QSearch(alpha, beta, ply);
         }
 
+        // this position has already been probed for this or deeper depth and we have the results in TT
         Score score = Globals::tt.ProbeEval(board.GetZobristHash(), alpha, beta, depth, ply);
         if (score != TT_NOT_FOUND) {
             return score;
@@ -95,6 +110,7 @@ namespace Meetra {
         EntryFlag tt_flag = ALPHA;
         Move move;
 
+        // iterate over available moves
         while ((move = move_gen.GetNextMove<false>())) {
             if (!board.MakeMove(move)) {
                 board.UnmakeMove(move);
@@ -118,30 +134,37 @@ namespace Meetra {
             }
         }
 
-
+        // if score == TT_NOT_FOUND, that means we didnt search a single move, that means there are no legal moves
+        // in this position, that means we are either in check-mate or a stalemate
         if (score == TT_NOT_FOUND) {
+            // king in check = checkmate
             if (move_gen.IsKingInCheck()) {
                 return -MATE_SCORE + ply;
             }
+            // else stalemate
             return -DRAW_SCORE;
         }
 
+        // we have improved alpha, meaning this position is our PV, store it in PVTable
         if (tt_flag == EXACT_SCORE) {
             Globals::pvt.SavePv(board.GetZobristHash(), best_move_this_iter);
         }
 
+        // whatever we learnt about this position, store it in TT for later use
         Globals::tt.SaveEval(board.GetZobristHash(), alpha, depth, best_move_this_iter, tt_flag, ply);
 
         return alpha;
     }
 
-    Score SearchTask::QSearch(Score alpha, Score beta, Depth ply) {
+    Score SearchThread::QSearch(Score alpha, Score beta, Depth ply) {
 
+        // update seldepth for this root move
         curr_rm->seldepth = std::max(ply, curr_rm->seldepth);
         if (IsMainThread()) {
             Globals::seldepth = std::max(ply, Globals::seldepth);
         }
 
+        // stand pat
         auto score = Evaluation::BoardEval(board);
         if (score > alpha) {
             if (score >= beta) {
@@ -152,6 +175,7 @@ namespace Meetra {
 
         MoveGen move_gen(board, &Globals::tt);
         Move move;
+        // iterate over all available captures
         while ((move = move_gen.GetNextMove<true>())) {
             if (!board.MakeMove(move)) {
                 board.UnmakeMove(move);
@@ -171,9 +195,8 @@ namespace Meetra {
         return alpha;
     }
 
-    bool SearchTask::MateInHorizon() const {
-        if (std::abs(root_moves[0].score) > MIN_MATE_EVAL && Globals::multi_pv == 1 && !Globals::settings.infinite &&
-            !Globals::settings.fixed_timer) {
+    bool SearchThread::MateInHorizon() const {
+        if (std::abs(root_moves[0].score) > MIN_MATE_EVAL) {
             int distance_to_mate = MATE_SCORE - std::abs(root_moves[0].score);
             if (curr_depth > distance_to_mate) {
                 return true;
@@ -182,7 +205,7 @@ namespace Meetra {
         return false;
     }
 
-    void SearchTask::RetrievePv(Move *pv_line, Depth depth) {
+    void SearchThread::RetrievePv(Move *pv_line, Depth depth) {
         Move move = Globals::pvt.ProbePv(board.GetZobristHash());
         // TODO if pv not found in pvt, try searching TT, if not in TT go back to pvt, if neither, too bad
         if (!move || depth == 0 || board.IsRepetition() || board.Ply() >= Globals::plies_draw) {
@@ -195,7 +218,7 @@ namespace Meetra {
         board.UnmakeMove(move);
     }
 
-    std::string SearchTask::GetSearchInfo() {
+    std::string SearchThread::GetSearchInfo() {
 
         long elapsed_ms = ElapsedTimeMs();
         long nps = static_cast<long>(static_cast<double>(Globals::nodes_explored) * 1000.0 /
@@ -207,8 +230,9 @@ namespace Meetra {
         for (auto i = 0; i < pvs_to_send; i++) {
             ss << "info";
             if (pvs_to_send > 1) ss << " multipv " << i + 1;
-            ss << " depth " << static_cast<int>(curr_depth)
-               << " seldepth " << static_cast<int>(root_moves[i].seldepth)
+            ss << " depth " << static_cast<int>(root_moves[i].depth)
+               << " seldepth "
+               << std::max(static_cast<int>(root_moves[i].seldepth), static_cast<int>(root_moves[i].depth))
                << " nodes " << Globals::nodes_explored
                << " time " << elapsed_ms
                << " nps " << nps
@@ -242,7 +266,7 @@ namespace Meetra {
         return ss.str();
     }
 
-    std::string SearchTask::GetCurrMoveInfo() {
+    std::string SearchThread::GetCurrMoveInfo() {
         Move pv_stack[MAX_SEARCH_DEPTH];
         std::stringstream ss;
         ss << "info currmove " << GetMoveName(curr_rm->move) << " currmovenumber " << (curr_rm_num + 1);
