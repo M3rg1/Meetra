@@ -74,8 +74,6 @@ namespace Meetra::Search {
 
     void InitSearch(SearchSettings &s, Board &board) {
 
-        Globals::run = true;
-
         Globals::timer_start = time_point_cast<std::chrono::milliseconds>(
                 std::chrono::system_clock::now()).time_since_epoch().count();
 
@@ -130,6 +128,7 @@ namespace Meetra::Search {
     void StartSearch(SearchSettings s, Board board) {
 
         // initialize search related global variables and calculate remaining time, generate root moves
+        Globals::run = true;
         InitSearch(s, board);
         auto root_moves = GenRootMoves(board);
 
@@ -179,7 +178,7 @@ namespace Meetra::Search {
         // select the best move overall
         auto best_thread_id = 0;
         RootMove best_move = best_moves[0];
-        for(auto i = 0; i < best_moves.size(); i++){
+        for(auto i = 1; i < best_moves.size(); i++){
             if (best_moves[i].score > best_move.score && best_moves[i].depth >= best_move.depth) {
                 best_move = best_moves[i];
                 best_thread_id = i;
@@ -191,5 +190,7 @@ namespace Meetra::Search {
 
         Globals::info_timer.Stop();
         Globals::search_timer.Stop();
+
+        Globals::run = false;
     }
 }

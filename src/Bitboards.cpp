@@ -426,18 +426,17 @@ namespace Meetra::Bitboards {
     std::string PPBitboard(Bitboard b) {
         std::string ret;
         for (Rank r = RANK_8; r >= RANK_1; --r) {
-            ret.append(std::to_string(r + 1));
-            ret.append(" |");
+            ret += (std::to_string(r + 1)) + " |";
             for (File f = FILE_A; f <= FILE_H; ++f) {
                 if ((b >> ((r * 8) + f)) & 1) {
-                    ret.append(" x ");
+                    ret += " x ";
                 } else {
-                    ret.append(" o ");
+                    ret += " o ";
                 }
             }
-            ret.append("\n");
+            ret += "\n";
         }
-        ret.append("    A  B  C  D  E  F  G  H");
+        ret += "    A  B  C  D  E  F  G  H";
         return ret;
     }
 }

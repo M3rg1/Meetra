@@ -11,9 +11,7 @@ namespace Meetra {
 
     public:
 
-        explicit SearchThread(int t_num) {
-            thread_num = t_num;
-            searching = false;
+        explicit SearchThread(int t_num) : thread_num(t_num), searching(false) {
             thread = std::jthread([&](const std::stop_token &stop_token) {
                 while (true) {
                     {
@@ -26,7 +24,7 @@ namespace Meetra {
             });
         }
 
-        ~SearchThread(){
+        ~SearchThread() {
             Shutdown();
         }
 
@@ -40,7 +38,7 @@ namespace Meetra {
         }
 
         void Shutdown() {
-            if(thread.joinable()) {
+            if (thread.joinable()) {
                 thread.request_stop();
                 thread.join();
             }

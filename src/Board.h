@@ -51,10 +51,14 @@ namespace Meetra {
             // should implement draw at 1st repetition in the search tree, 2nd in actual game history
             // because moves played before could be sub-optimal, however moves during the search have already been
             // examined, so repeating even once is pointless
+            //int rep = 0;
             for (int i = history_cnt - 2; i >= 0; i -= 2) {
+                // capture occurred in the history
                 if (history[i].state & 0x7800) {
                     return false;
                 } else if (history[i].hash == curr_data.hash) {
+                    //rep++;
+                    //if(rep > 1) return true;
                     return true;
                 }
             }

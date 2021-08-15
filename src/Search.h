@@ -22,20 +22,13 @@ namespace Meetra::Search {
 
     struct RootMove {
         Move move;
-        Score score;
-        Score previous_score;
-        Depth depth;
-        Depth seldepth;
-        long nodes;
+        Score score = NEGATIVE_INF;
+        Score previous_score = NEGATIVE_INF;
+        Depth depth = 0;
+        Depth seldepth = 0;
+        long nodes = 0;
 
-        explicit RootMove(Move m) {
-            move = m;
-            score = NEGATIVE_INF;
-            previous_score = NEGATIVE_INF;
-            depth = 0;
-            seldepth = 0;
-            nodes = 0;
-        }
+        explicit RootMove(Move m) : move(m) {}
 
         bool operator==(const Move &m) const { return move == m; }
         bool operator<(const RootMove &mn) const {
