@@ -26,6 +26,10 @@ namespace Meetra {
             });
         }
 
+        ~SearchThread(){
+            Shutdown();
+        }
+
         void InitNewSearch(Board b, std::vector<Search::RootMove> moves) {
             board = b;
             root_moves = std::move(moves);
@@ -35,13 +39,11 @@ namespace Meetra {
             best_rm_num = 0;
         }
 
-        std::vector<Search::RootMove> GetRootMoves() {
-            return root_moves;
-        }
-
         void Shutdown() {
-            thread.request_stop();
-            thread.join();
+            if(thread.joinable()) {
+                thread.request_stop();
+                thread.join();
+            }
         }
 
         void StartHelperThread() {
@@ -53,7 +55,9 @@ namespace Meetra {
         };
 
         [[nodiscard]] std::string GetSearchInfo();
+        [[nodiscard]] std::vector<Search::RootMove> GetRootMoves() { return root_moves; }
         [[nodiscard]] bool IsFinished() const { return !searching; };
+        [[nodiscard]] Search::RootMove GetBestRootMove() const { return root_moves[best_rm_num]; };
         void Search();
 
     private:

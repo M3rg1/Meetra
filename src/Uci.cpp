@@ -39,6 +39,7 @@ namespace Meetra::Uci {
     void StopCommand();
     void ShowCommand(Board &board);
     void HelpCommand();
+    void QuitCommand();
     void UnknownCommand();
     void MakeUciMove(const std::string &move_string, Board &board);
     Search::SearchSettings ParseSearchOptions(StringTokenStream &sts);
@@ -72,11 +73,15 @@ namespace Meetra::Uci {
             else if (token == "perft") PerftCommand(sts, board);
             else if (token == "show") ShowCommand(board);
             else if (token == "help") HelpCommand();
-            else if (token == "quit");
+            else if (token == "quit") QuitCommand();
             else { UnknownCommand(); }
 
         } while (token != "quit" && !std::cin.eof());
 
+    }
+
+    void QuitCommand() {
+        StopCommand();
         Search::Shutdown();
         ThreadPool::Shutdown();
     }

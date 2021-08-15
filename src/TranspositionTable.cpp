@@ -1,6 +1,7 @@
 #include <cstring>
 #include "TranspositionTable.h"
 #include "Evaluation.h"
+#include "Search.h"
 
 namespace Meetra {
 

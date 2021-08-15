@@ -11,21 +11,19 @@ namespace Meetra::Search {
     std::vector<std::unique_ptr<SearchThread>> search_threads;
 
     void SetNumThreads(int num) {
+        Shutdown();
         Globals::num_threads = std::clamp(num, 1, MAX_SEARCH_THREADS);
-        for (auto &thread : search_threads) {
-            thread->Shutdown();
-        }
-        search_threads.clear();
         for (int thread_id = 0; thread_id < Globals::num_threads; thread_id++) {
             search_threads.emplace_back(new SearchThread(thread_id));
         }
     }
 
-    void Shutdown(){
+    void Shutdown() {
         StopSearch();
         for (auto &thread : search_threads) {
             thread->Shutdown();
         }
+        search_threads.clear();
     }
 
     void Init() {
@@ -155,7 +153,7 @@ namespace Meetra::Search {
 
         // prepare and activate helper search threads
         std::sort(root_moves.begin(), root_moves.end());
-        for (int i = 1; i < search_threads.size(); i++) {
+        for (auto i = 1; i < search_threads.size(); i++) {
             search_threads[i]->InitNewSearch(board, root_moves);
             search_threads[i]->StartHelperThread();
         }
@@ -169,28 +167,24 @@ namespace Meetra::Search {
             while (!st->IsFinished());
         }
 
-        // update each root move with the best search result
+        // collect best moves found by each search thread
+        std::vector<RootMove> best_moves;
+        best_moves.reserve(search_threads.size());
         for (auto &st : search_threads) {
-            for (RootMove &m : st->GetRootMoves()) {
-                for (RootMove &rm : root_moves) {
-                    if (m.move == rm.move && m.depth > rm.depth) {
-                        rm = m;
-                    }
-                }
+            best_moves.emplace_back(st->GetBestRootMove());
+        }
+
+        // select the best move overall
+        auto best_thread_id = 0;
+        RootMove best_move = best_moves[0];
+        for(auto i = 0; i < best_moves.size(); i++){
+            if (best_moves[i].score > best_move.score && best_moves[i].depth >= best_move.depth) {
+                best_move = best_moves[i];
+                best_thread_id = i;
             }
         }
 
-        // select the best move
-        RootMove best_move = root_moves[0];
-        for (RootMove m : root_moves) {
-            if (m.score > best_move.score) {
-                best_move = m;
-            }
-        }
-
-        // TODO need to figure out how to find out with which thread the best move is accosicated
-        //  also try printing it if it's not the main thread (id = 0), so we can actually see if it ever happens
-        Uci::SendToGui(search_threads[0]->GetSearchInfo());
+        Uci::SendToGui(search_threads[best_thread_id]->GetSearchInfo());
         Uci::SendToGui("bestmove " + GetMoveName(best_move.move));
 
         Globals::info_timer.Stop();
