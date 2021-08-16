@@ -18,7 +18,7 @@ namespace Meetra::Search {
 #define DEFAULT_SEARCH_THREADS 1
 #define MAX_SEARCH_THREADS 8
 #define MIN_MATE_EVAL (MATE_SCORE - MAX_SEARCH_DEPTH)
-#define DEFAULT_PLY_FOR_DRAW 75
+#define DEFAULT_PLY_FOR_DRAW 50
 
     struct RootMove {
         Move move;
@@ -32,8 +32,13 @@ namespace Meetra::Search {
 
         bool operator==(const Move &m) const { return move == m; }
         bool operator<(const RootMove &mn) const {
-            return mn.nodes != nodes ? mn.nodes < nodes : mn.score < score;
+            return mn.score != score ? mn.score < score :
+                   mn.previous_score != previous_score ? mn.previous_score < previous_score :
+                   mn.nodes < nodes;
         }
+/*        bool operator<(const RootMove &mn) const {
+            return mn.nodes != nodes ? mn.nodes < nodes : mn.score < score;
+        }*/
 /*            bool operator<(const RootMove& mn) const {
                 return mn.score != score ? mn.score < score : mn.previous_score < previous_score;
             }*/

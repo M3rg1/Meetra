@@ -183,7 +183,19 @@ namespace Meetra::Search {
                 best_move = best_moves[i];
                 best_thread_id = i;
             }
+            //Uci::SendToGui("bm " + GetMoveName(best_moves[i].move) + "  By thread: " + std::to_string(i) + " Score: " + std::to_string(best_moves[i].score) + "  Depth " + std::to_string(best_moves[i].depth));
         }
+        /*        auto best_thread_id = best_moves.size() - 1;
+                RootMove best_move = best_moves[best_moves.size() - 1];
+                for (int i = best_moves.size() - 1; i >= 0; i--) {
+                    if (best_moves[i].score > best_move.score && best_moves[i].depth >= best_move.depth) {
+                        best_move = best_moves[i];
+                        best_thread_id = i;
+                    }
+                    Uci::SendToGui("bestmove " + GetMoveName(best_moves[i].move) + "  By thread: " + std::to_string(i) + " Score: " + std::to_string(best_moves[i].score) + "  Depth " + std::to_string(best_moves[i].depth));
+                }*/
+
+        Uci::SendToGui("Best thread " + std::to_string(best_thread_id));
 
         Uci::SendToGui(search_threads[best_thread_id]->GetSearchInfo());
         Uci::SendToGui("bestmove " + GetMoveName(best_move.move));

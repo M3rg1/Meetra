@@ -34,7 +34,6 @@ namespace Meetra {
             curr_rm = &root_moves[0];
             curr_rm_num = 0;
             curr_depth = 0;
-            best_rm_num = 0;
         }
 
         void Shutdown() {
@@ -55,7 +54,7 @@ namespace Meetra {
         [[nodiscard]] std::string GetSearchInfo();
         [[nodiscard]] std::vector<Search::RootMove> GetRootMoves() { return root_moves; }
         [[nodiscard]] bool IsFinished() const { return !searching; };
-        [[nodiscard]] Search::RootMove GetBestRootMove() const { return root_moves[best_rm_num]; };
+        [[nodiscard]] Search::RootMove GetBestRootMove() const { return root_moves[0]; };
         void Search();
 
     private:
@@ -74,7 +73,6 @@ namespace Meetra {
         std::vector<Search::RootMove> root_moves;
         Search::RootMove *curr_rm;
         int curr_rm_num;
-        int best_rm_num;
         Depth curr_depth;
 
         bool searching;

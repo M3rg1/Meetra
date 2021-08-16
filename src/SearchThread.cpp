@@ -49,32 +49,28 @@ namespace Meetra {
                 board.UnmakeMove(curr_rm->move);
 
                 if (Globals::run) {
-                    curr_rm->depth = curr_depth;
                     if (score > alpha) {
                         alpha = score;
+                        curr_rm->depth = curr_depth;
+                        curr_rm->previous_score = curr_rm->score;
                         curr_rm->score = score;
-                        if (score > root_moves[best_rm_num].score) {
-                            best_rm_num = curr_rm_num;
-                        }
                     } else {
+                        curr_rm->previous_score = curr_rm->score;
                         curr_rm->score = NEGATIVE_INF;
                     }
                 }
             }
 
-            // push the best move to front of root moves list and sort them
-            std::swap(root_moves[0], root_moves[best_rm_num]);
-            best_rm_num = 0;
-            std::sort(root_moves.begin() + 1, root_moves.end());
+            // sort based on score -> previous score -> node count
+            std::stable_sort(root_moves.begin(), root_moves.end());
 
             // checking time and updating GUI when main thread finishes searching depth
             if (IsMainThread()) {
 
-                // update max depth reached by the main thread
                 Globals::curr_max_depth = curr_depth;
 
-                // if we dont have enough time left for a deeper search or mate has been found within horizon and we
-                // are not performing fixed time/depth/infinite or multipv search, stop
+                // stop if we dont have enough time left for a deeper search or mate has been found within horizon and
+                // we are not performing fixed time/depth/infinite or multipv search
                 if (!EnoughTimeLeft() || (MateInHorizon() && Globals::multi_pv == 1 && !Globals::settings.infinite &&
                                           !Globals::settings.fixed_timer)) {
                     StopSearch();
@@ -86,8 +82,9 @@ namespace Meetra {
                 }
             }
         }
-        // return the best root move that was found
+
         searching = false;
+        StopSearch();
     }
 
     Score SearchThread::NegaMax(Score alpha, Score beta, Depth depth, Depth ply) {
@@ -196,6 +193,9 @@ namespace Meetra {
     }
 
     bool SearchThread::MateInHorizon() const {
+        if(root_moves[0].score == NEGATIVE_INF){
+            return false;
+        }
         if (std::abs(root_moves[0].score) > MIN_MATE_EVAL) {
             int distance_to_mate = MATE_SCORE - std::abs(root_moves[0].score);
             if (curr_depth > distance_to_mate) {
