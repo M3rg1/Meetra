@@ -87,16 +87,12 @@ namespace Meetra::Search {
     inline void ShowShowCurrLine(bool show) { Globals::show_currline = show; }
     inline void SetPliesMuted(int ply_muted) { Globals::plies_muted = ply_muted; }
     inline void ShowCurrMoveInfo(bool show) { Globals::show_currmove = show; }
-    inline void StopSearch() { Globals::run = false; }
+    inline void StopSearch() { Globals::run = false; /*Globals::info_timer.Stop(); Globals::search_timer.Stop();*/ }
     inline void SetMultiPv(int pv_num) { Globals::multi_pv = pv_num; }
     inline void SetPliesDraw(int plies) { Globals::plies_draw = plies; }
     void SetNumThreads(int num);
-    inline void ClearTT() {
-        Globals::tt.Clear();
-    }
-    inline void SetTTSize(int size_mb) {
-        Globals::tt.Resize(size_mb);
-    }
+    inline void ClearTT() { Globals::tt.Clear(); }
+    inline void SetTTSize(int size_mb) { Globals::tt.Resize(size_mb); }
 
 }
 

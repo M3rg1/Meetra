@@ -41,6 +41,7 @@ namespace Meetra {
             });
         }
 
+        // TODO rework this and the timer overall, its utter shit
         void Stop() {
             {
                 std::scoped_lock lock(mtx);

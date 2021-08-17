@@ -130,13 +130,12 @@ namespace Meetra::Search {
         InitSearch(s, board);
         auto root_moves = GenRootMoves(board);
 
-        // if there's only one root move and we are not in infinite or fixed depth/time search, return the only possible
-        // move immediately
+        // if there's only one root move, and we are not in infinite or fixed depth/time search, return the only
+        // possible move immediately
         if ((root_moves.size() == 1 && (!Globals::settings.infinite || !Globals::settings.fixed_timer)) ||
             root_moves.empty()) {
             StopSearch();
-            Move only_move = root_moves.empty() ? INVALID_MOVE : root_moves[0].move;
-            Uci::SendToGui("bestmove " + GetMoveName(only_move));
+            Uci::SendToGui("bestmove " + GetMoveName(root_moves.empty() ? INVALID_MOVE : root_moves[0].move));
             return;
         }
 
@@ -161,7 +160,7 @@ namespace Meetra::Search {
         search_threads[0]->InitNewSearch(board, root_moves);
         search_threads[0]->Search();
 
-        // await until all threads finish searching
+        // wait until all threads finish searching
         for (auto &st : search_threads) {
             while (!st->IsFinished());
         }
@@ -181,26 +180,12 @@ namespace Meetra::Search {
                 best_move = best_moves[i];
                 best_thread_id = i;
             }
-            //Uci::SendToGui("bm " + GetMoveName(best_moves[i].move) + "  By thread: " + std::to_string(i) + " Score: " + std::to_string(best_moves[i].score) + "  Depth " + std::to_string(best_moves[i].depth));
         }
-        /*        auto best_thread_id = best_moves.size() - 1;
-                RootMove best_move = best_moves[best_moves.size() - 1];
-                for (int i = best_moves.size() - 1; i >= 0; i--) {
-                    if (best_moves[i].score > best_move.score && best_moves[i].depth >= best_move.depth) {
-                        best_move = best_moves[i];
-                        best_thread_id = i;
-                    }
-                    Uci::SendToGui("bestmove " + GetMoveName(best_moves[i].move) + "  By thread: " + std::to_string(i) + " Score: " + std::to_string(best_moves[i].score) + "  Depth " + std::to_string(best_moves[i].depth));
-                }*/
 
-        Uci::SendToGui("Best thread " + std::to_string(best_thread_id));
-
+        //Uci::SendToGui("Best thread " + std::to_string(best_thread_id));
         Uci::SendToGui(search_threads[best_thread_id]->GetSearchInfo());
         Uci::SendToGui("bestmove " + GetMoveName(best_move.move));
-
-        Globals::info_timer.Stop();
-        Globals::search_timer.Stop();
-
-        Globals::run = false;
+        Globals::info_timer.Stop(); Globals::search_timer.Stop();
+        //StopSearch();
     }
 }

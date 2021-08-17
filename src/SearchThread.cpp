@@ -45,7 +45,6 @@ namespace Meetra {
                 Globals::nodes_explored++;
                 curr_rm->nodes++;
                 board.MakeMove(curr_rm->move);
-                //curr_rm->pv.clear();
                 Score score = -NegaMax(-beta, -alpha, curr_depth - 1, 2, curr_rm->pv);
                 board.UnmakeMove(curr_rm->move);
 
@@ -118,6 +117,7 @@ namespace Meetra {
                 board.UnmakeMove(move);
                 continue;
             }
+
             moves_available = true;
             std::vector<Move> line;
             Globals::nodes_explored++;
@@ -197,10 +197,7 @@ namespace Meetra {
     }
 
     bool SearchThread::MateInHorizon() const {
-        if (root_moves[0].score == NEGATIVE_INF) {
-            return false;
-        }
-        if (std::abs(root_moves[0].score) > MIN_MATE_EVAL) {
+        if (root_moves[0].score != NEGATIVE_INF && std::abs(root_moves[0].score) > MIN_MATE_EVAL) {
             int distance_to_mate = MATE_SCORE - std::abs(root_moves[0].score);
             if (curr_depth > distance_to_mate) {
                 return true;
@@ -211,12 +208,12 @@ namespace Meetra {
 
     std::string SearchThread::GetSearchInfo() {
 
+        std::stringstream ss;
         long elapsed_ms = ElapsedTimeMs();
         long nps = static_cast<long>(static_cast<double>(Globals::nodes_explored) * 1000.0 /
                                      static_cast<double>(elapsed_ms));
-
-        std::stringstream ss;
         auto pvs_to_send = std::min(static_cast<size_t>(Globals::multi_pv), root_moves.size());
+
         for (auto i = 0; i < pvs_to_send; i++) {
             ss << "info";
             if (pvs_to_send > 1) ss << " multipv " << i + 1;
@@ -240,10 +237,12 @@ namespace Meetra {
             } else {
                 ss << "cp " << score;
             }
+
             ss << " pv " << GetMoveName(move);
-            for(Move m : root_moves[i].pv){
-                ss << ' ' << GetMoveName(m);
+            for(Move pv_move : root_moves[i].pv){
+                ss << ' ' << GetMoveName(pv_move);
             }
+
             ss << '\n';
         }
 
@@ -255,8 +254,8 @@ namespace Meetra {
         ss << "info currmove " << GetMoveName(curr_rm->move) << " currmovenumber " << (curr_rm_num + 1);
         if (Globals::show_currline) {
             ss << " currline " << GetMoveName(curr_rm->move);
-            for(Move m : curr_rm->pv){
-                ss << ' ' << GetMoveName(m);
+            for(Move pv_move : curr_rm->pv){
+                ss << ' ' << GetMoveName(pv_move);
             }
         }
         return ss.str();
