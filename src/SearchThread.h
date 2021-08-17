@@ -59,12 +59,10 @@ namespace Meetra {
 
     private:
 
-        Score NegaMax(Score alpha, Score beta, Depth depth, Depth ply);
+        Score NegaMax(Score alpha, Score beta, Depth depth, Depth ply, std::vector<Move>& pv_line);
         Score QSearch(Score alpha, Score beta, Depth ply);
 
         [[nodiscard]] std::string GetCurrMoveInfo();
-
-        void RetrievePv(Move *pv_line, Depth depth);
         [[nodiscard]] bool MateInHorizon() const;
         [[nodiscard]] inline bool IsMainThread() const { return thread_num == 0; }
 

@@ -17,7 +17,7 @@ namespace Meetra {
 #define TT_ENTRIES_PER_BUCKET 4
 
     enum EntryFlag : uint8_t {
-        EXACT_SCORE, ALPHA, BETA
+        EXACT_SCORE, ALPHA, BETA, NOT_FOUND
     };
 
     class TranspositionTable {
@@ -30,7 +30,8 @@ namespace Meetra {
         void NewSearch();
         void Clear();
 
-        [[nodiscard]] Score ProbeEval(ZobristHash key, Score alpha, Score beta, Depth depth, Depth ply) const;
+        void ProbeEval(ZobristHash key, Score alpha, Score beta, Depth depth, Depth ply, Score &score,
+                       EntryFlag &flag) const;
         [[nodiscard]] Move GetPVMove(ZobristHash key) const;
         [[nodiscard]] Move GetAnyMove(ZobristHash key) const;
         // 0.01 == 1% usage, 0.1 == 10% usage, 1 == 100% usage
@@ -40,6 +41,7 @@ namespace Meetra {
 
     private:
 #pragma pack(push, 1)
+
         // 10 bytes
         class TTEntry {
             uint32_t key;
@@ -79,8 +81,7 @@ namespace Meetra {
 
             inline void Lock() {
                 while (lock.test_and_set(std::memory_order_acquire)) {
-                    while (lock.test(std::memory_order_relaxed))
-                        ;
+                    while (lock.test(std::memory_order_relaxed));
                 }
             }
 
@@ -90,6 +91,7 @@ namespace Meetra {
             std::atomic_flag lock;
 
         };
+
 #pragma pack(pop)
 
         Epoch current_epoch;

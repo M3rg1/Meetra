@@ -70,11 +70,11 @@ namespace Meetra {
         bucket->Unlock();
     }
 
-    Score
-    TranspositionTable::ProbeEval(ZobristHash key, Score alpha, Score beta, Depth depth, Depth ply) const {
+    void TranspositionTable::ProbeEval(ZobristHash key, Score alpha, Score beta,
+                                       Depth depth, Depth ply, Score &score, EntryFlag &flag) const {
 
         Key32 key_32 = Zobrist::Make32Key(key);
-        Score ret = TT_NOT_FOUND;
+        flag = NOT_FOUND;
 
         TTBucket *bucket = &table[key % buckets_count];
 
@@ -83,20 +83,21 @@ namespace Meetra {
         for (auto &entry : bucket->bucket_entries) {
             if (entry.Get32Key() == key_32) {
                 if (entry.GetDepth() >= depth) {
-                    if (entry.GetFlag() == EXACT_SCORE ||
-                        (entry.GetFlag() == ALPHA && entry.GetScore() <= alpha) ||
-                        (entry.GetFlag() == BETA && entry.GetScore() >= beta)
-                            ) {
-                        entry.SetEpoch(current_epoch);
-                        ret = AddMatePly(entry.GetScore(), ply);
+                    if (entry.GetFlag() == EXACT_SCORE) {
+                        flag = EXACT_SCORE;
+                    } else if (entry.GetFlag() == ALPHA && entry.GetScore() <= alpha) {
+                        flag = ALPHA;
+                    } else if (entry.GetFlag() == BETA && entry.GetScore() >= beta) {
+                        flag = BETA;
                     }
+                    entry.SetEpoch(current_epoch);
+                    score = AddMatePly(entry.GetScore(), ply);
                 }
-                break;
             }
+            break;
         }
 
         bucket->Unlock();
-        return ret;
     }
 
     void TranspositionTable::NewSearch() {

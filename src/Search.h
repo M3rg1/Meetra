@@ -4,7 +4,6 @@
 #include "Board.h"
 #include "Evaluation.h"
 #include "TranspositionTable.h"
-#include "PVTable.h"
 #include <vector>
 #include "Timer.h"
 #include "Types.h"
@@ -22,6 +21,7 @@ namespace Meetra::Search {
 
     struct RootMove {
         Move move;
+        std::vector<Move> pv;
         Score score = NEGATIVE_INF;
         Score previous_score = NEGATIVE_INF;
         Depth depth = 0;
@@ -61,7 +61,6 @@ namespace Meetra::Search {
     namespace Globals {
         inline bool run;
         inline TranspositionTable tt;
-        inline PVTable pvt;
         inline SearchSettings settings;
         inline bool show_currline;
         inline bool show_currmove;
@@ -94,11 +93,9 @@ namespace Meetra::Search {
     void SetNumThreads(int num);
     inline void ClearTT() {
         Globals::tt.Clear();
-        Globals::pvt.Clear();
     }
     inline void SetTTSize(int size_mb) {
         Globals::tt.Resize(size_mb);
-        Globals::pvt.Clear();
     }
 
 }

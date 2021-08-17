@@ -45,7 +45,8 @@ namespace Meetra {
                 Globals::nodes_explored++;
                 curr_rm->nodes++;
                 board.MakeMove(curr_rm->move);
-                Score score = -NegaMax(-beta, -alpha, curr_depth - 1, 2);
+                //curr_rm->pv.clear();
+                Score score = -NegaMax(-beta, -alpha, curr_depth - 1, 2, curr_rm->pv);
                 board.UnmakeMove(curr_rm->move);
 
                 if (Globals::run) {
@@ -87,7 +88,7 @@ namespace Meetra {
         StopSearch();
     }
 
-    Score SearchThread::NegaMax(Score alpha, Score beta, Depth depth, Depth ply) {
+    Score SearchThread::NegaMax(Score alpha, Score beta, Depth depth, Depth ply, std::vector<Move>& pv_line) {
 
         // terminating conditions, either we reached a draw - then stop, or max depth - in that case switch to qsearch
         if (board.IsRepetition() || board.Ply() >= Globals::plies_draw) {
@@ -96,16 +97,20 @@ namespace Meetra {
             return QSearch(alpha, beta, ply);
         }
 
-        // this position has already been probed for this or deeper depth and we have the results in TT
-        Score score = Globals::tt.ProbeEval(board.GetZobristHash(), alpha, beta, depth, ply);
-        if (score != TT_NOT_FOUND) {
+        // this position has already been probed for this or deeper depth, and we have the results in TT
+        EntryFlag tt_flag;
+        Score score;
+        Globals::tt.ProbeEval(board.GetZobristHash(), alpha, beta, depth, ply, score, tt_flag);
+        // we continue searching if exact TT hit to collect the pv line (little overhead, could just return score)
+        if (tt_flag == BETA || tt_flag == ALPHA) {
             return score;
         }
 
         MoveGen move_gen(board, &Globals::tt);
         Move best_move_this_iter = INVALID_MOVE;
-        EntryFlag tt_flag = ALPHA;
+        tt_flag = ALPHA;
         Move move;
+        bool moves_available = false;
 
         // iterate over available moves
         while ((move = move_gen.GetNextMove<false>())) {
@@ -113,9 +118,11 @@ namespace Meetra {
                 board.UnmakeMove(move);
                 continue;
             }
+            moves_available = true;
+            std::vector<Move> line;
             Globals::nodes_explored++;
             curr_rm->nodes++;
-            score = -NegaMax(-beta, -alpha, depth - 1, ply + 1);
+            score = -NegaMax(-beta, -alpha, depth - 1, ply + 1, line);
             board.UnmakeMove(move);
 
             if (!Globals::run) {
@@ -125,15 +132,16 @@ namespace Meetra {
                     Globals::tt.SaveEval(board.GetZobristHash(), beta, depth, move, BETA, ply);
                     return beta;
                 }
+                pv_line.clear();
+                pv_line.emplace_back(move);
+                pv_line.insert(pv_line.begin() + 1, line.begin(), line.end());
                 tt_flag = EXACT_SCORE;
                 alpha = score;
                 best_move_this_iter = move;
             }
         }
 
-        // if score == TT_NOT_FOUND, that means we didnt search a single move, that means there are no legal moves
-        // in this position, that means we are either in check-mate or a stalemate
-        if (score == TT_NOT_FOUND) {
+        if (!moves_available) {
             // king in check = checkmate
             if (move_gen.IsKingInCheck()) {
                 return -MATE_SCORE + ply;
@@ -142,10 +150,6 @@ namespace Meetra {
             return -DRAW_SCORE;
         }
 
-        // we have improved alpha, meaning this position is our PV, store it in PVTable
-        if (tt_flag == EXACT_SCORE) {
-            Globals::pvt.SavePv(board.GetZobristHash(), best_move_this_iter);
-        }
 
         // whatever we learnt about this position, store it in TT for later use
         Globals::tt.SaveEval(board.GetZobristHash(), alpha, depth, best_move_this_iter, tt_flag, ply);
@@ -193,7 +197,7 @@ namespace Meetra {
     }
 
     bool SearchThread::MateInHorizon() const {
-        if(root_moves[0].score == NEGATIVE_INF){
+        if (root_moves[0].score == NEGATIVE_INF) {
             return false;
         }
         if (std::abs(root_moves[0].score) > MIN_MATE_EVAL) {
@@ -205,19 +209,6 @@ namespace Meetra {
         return false;
     }
 
-    void SearchThread::RetrievePv(Move *pv_line, Depth depth) {
-        Move move = Globals::pvt.ProbePv(board.GetZobristHash());
-        // TODO if pv not found in pvt, try searching TT, if not in TT go back to pvt, if neither, too bad
-        if (!move || depth == 0 || board.IsRepetition() || board.Ply() >= Globals::plies_draw) {
-            *pv_line = INVALID_MOVE;
-            return;
-        }
-        *pv_line++ = move;
-        board.MakeMove(move);
-        RetrievePv(pv_line, depth - 1);
-        board.UnmakeMove(move);
-    }
-
     std::string SearchThread::GetSearchInfo() {
 
         long elapsed_ms = ElapsedTimeMs();
@@ -225,7 +216,6 @@ namespace Meetra {
                                      static_cast<double>(elapsed_ms));
 
         std::stringstream ss;
-        Move pv_stack[MAX_SEARCH_DEPTH];
         auto pvs_to_send = std::min(static_cast<size_t>(Globals::multi_pv), root_moves.size());
         for (auto i = 0; i < pvs_to_send; i++) {
             ss << "info";
@@ -241,24 +231,18 @@ namespace Meetra {
 
             Score score = root_moves[i].score;
             Move move = root_moves[i].move;
-            int distance_to_mate = 0;
             if (score > MIN_MATE_EVAL) {
-                distance_to_mate = static_cast<int>(MATE_SCORE - score);
+                int distance_to_mate = static_cast<int>(MATE_SCORE - score);
                 ss << "mate " << (distance_to_mate) / 2;
             } else if (score < -MIN_MATE_EVAL) {
-                distance_to_mate = static_cast<int>(MATE_SCORE + score);
+                int distance_to_mate = static_cast<int>(MATE_SCORE + score);
                 ss << "mate " << -(distance_to_mate) / 2;
             } else {
                 ss << "cp " << score;
             }
             ss << " pv " << GetMoveName(move);
-            board.MakeMove(move);
-            RetrievePv(pv_stack, std::max(32, distance_to_mate));
-            board.UnmakeMove(move);
-            Move *pv_stack_ptr = pv_stack;
-            Move pv_move;
-            while ((pv_move = *pv_stack_ptr++)) {
-                ss << ' ' << GetMoveName(pv_move);
+            for(Move m : root_moves[i].pv){
+                ss << ' ' << GetMoveName(m);
             }
             ss << '\n';
         }
@@ -267,18 +251,12 @@ namespace Meetra {
     }
 
     std::string SearchThread::GetCurrMoveInfo() {
-        Move pv_stack[MAX_SEARCH_DEPTH];
         std::stringstream ss;
         ss << "info currmove " << GetMoveName(curr_rm->move) << " currmovenumber " << (curr_rm_num + 1);
         if (Globals::show_currline) {
             ss << " currline " << GetMoveName(curr_rm->move);
-            board.MakeMove(curr_rm->move);
-            RetrievePv(pv_stack, curr_depth);
-            board.UnmakeMove(curr_rm->move);
-            Move *pv_stack_ptr = pv_stack;
-            Move pv_move;
-            while ((pv_move = *pv_stack_ptr++)) {
-                ss << " " << GetMoveName(pv_move);
+            for(Move m : curr_rm->pv){
+                ss << ' ' << GetMoveName(m);
             }
         }
         return ss.str();

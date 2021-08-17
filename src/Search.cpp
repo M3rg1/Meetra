@@ -28,7 +28,6 @@ namespace Meetra::Search {
 
     void Init() {
         Globals::tt.Init();
-        Globals::pvt.Init();
         Globals::run = false;
         Globals::show_currline = false;
         Globals::multi_pv = 1;
@@ -80,7 +79,6 @@ namespace Meetra::Search {
         Globals::settings = s;
 
         Globals::tt.NewSearch();
-        Globals::pvt.NewSearch();
         Globals::nodes_explored = 0;
         Globals::curr_max_depth = 0;
         Globals::seldepth = 0;
