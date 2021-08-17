@@ -53,7 +53,7 @@ namespace Meetra {
         };
 
         [[nodiscard]] std::string GetSearchInfo();
-        [[nodiscard]] std::vector<Search::RootMove> GetRootMoves() { return root_moves; }
+        [[nodiscard]] std::string GetCurrLineInfo();
         [[nodiscard]] bool IsSearching() const { return searching; };
         [[nodiscard]] Search::RootMove GetBestRootMove() const { return root_moves[0]; };
         void Search();
@@ -64,6 +64,7 @@ namespace Meetra {
         Score QSearch(Score alpha, Score beta, Depth ply);
 
         [[nodiscard]] std::string GetCurrMoveInfo();
+        [[nodiscard]] bool MateFound() const;
         [[nodiscard]] bool MateInHorizon() const;
         [[nodiscard]] inline bool IsMainThread() const { return thread_num == 0; }
 

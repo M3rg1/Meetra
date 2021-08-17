@@ -118,8 +118,6 @@ namespace Meetra::Search {
            << " nps " << nps
            << " hashfull " << static_cast<int>(Globals::tt.Usage() * 1000.0);
 
-        std::string x;
-
         return ss.str();
     }
 
@@ -145,8 +143,11 @@ namespace Meetra::Search {
         }
 
         // activate timer that updates GUI with search info on interval
-        Globals::info_timer.SetInterval([]() {
+        Globals::info_timer.SetInterval([&]() {
             Uci::SendToGui(GetUpdateSearchInfo());
+            if (Globals::show_currline) {
+                Uci::SendToGui(search_threads[0]->GetCurrLineInfo());
+            }
         }, Globals::settings.info_to_ui_ms_timer);
 
         // prepare and activate helper search threads
@@ -172,7 +173,10 @@ namespace Meetra::Search {
         // select the best move overall
         auto best_thread_id = 0;
         RootMove best_move = best_moves[0];
-        if(Globals::multi_pv == 1){
+        // for multipv, because helper threads might skip some depths and not have the full pv, we can't safely use
+        // their results without risking their pv for other than the top move will be very old from low depth or even
+        // missing entirely
+        if (Globals::multi_pv == 1) {
             for (auto i = 1; i < best_moves.size(); i++) {
                 if (best_moves[i].score > best_move.score && best_moves[i].depth >= best_move.depth) {
                     best_move = best_moves[i];
@@ -181,12 +185,12 @@ namespace Meetra::Search {
             }
         }
 
-        Globals::info_timer.Stop();
-        Globals::search_timer.Stop();
-
         //Uci::SendToGui("Best thread " + std::to_string(best_thread_id));
         Uci::SendToGui(search_threads[best_thread_id]->GetSearchInfo());
         Uci::SendToGui("bestmove " + GetMoveName(best_move.move));
         //StopSearch();
+
+        Globals::info_timer.Stop();
+        Globals::search_timer.Stop();
     }
 }

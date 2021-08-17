@@ -18,12 +18,14 @@ namespace Meetra::Uci {
     std::string GetAuthor() { return "M3rg1"; }
     std::string GetOptions() {
         std::stringstream ss;
-        ss << "option name Hash type spin default " << DEFAULT_HASH_SIZE << " min " << MIN_HASH_SIZE << " max " << MAX_HASH_SIZE << "\n"
+        ss << "option name Hash type spin default " << DEFAULT_HASH_SIZE << " min " << MIN_HASH_SIZE << " max "
+           << MAX_HASH_SIZE << "\n"
            << "option name Clear Hash type button\n"
            << "option name MultiPV type spin default 1 min 1 max 32\n"
            << "option name UCI_ShowCurrLine type check default false\n"
            << "option name Mute plies type spin default 1 min 1 max 64\n"
-           << "option name Cores type spin default " << DEFAULT_SEARCH_THREADS << " min 1 max " << MAX_SEARCH_THREADS << "\n"
+           << "option name Cores type spin default " << DEFAULT_SEARCH_THREADS << " min 1 max " << MAX_SEARCH_THREADS
+           << "\n"
            << "option name Show current move type check default true\n"
            << "option name Plies draw type spin default " << DEFAULT_PLY_FOR_DRAW << " min 10 max 100";
         return ss.str();
@@ -110,12 +112,12 @@ namespace Meetra::Uci {
     }
 
     void UciCommand() {
-        std::stringstream ss;
-        ss << "id name " << GetName() << " v. " << GetVersion() << '\n'
-           << "id author " << GetAuthor() << '\n'
-           << GetOptions() << '\n'
-           << "uciok";
-        SendToGui(ss.str());
+        SendToGui(
+                "id name " + GetName() + " v. " + GetVersion() + '\n'
+                + "id author " + GetAuthor() + "\n"
+                + GetOptions() + "\n"
+                + "uciok"
+        );
     }
 
     void GoCommand(StringTokenStream &sts, Board &board) {
@@ -138,7 +140,7 @@ namespace Meetra::Uci {
     }
 
     void IsReadyCommand() {
-        SendToGui("readyok");
+        SendToGui("readyok\n");
     }
 
     void PositionCommand(StringTokenStream &sts, Board &board) {

@@ -49,20 +49,15 @@ namespace Meetra {
                 board.UnmakeMove(curr_rm->move);
 
                 if (Globals::run) {
-                    if(Globals::multi_pv == 1){
-                        if (score > alpha) {
-                            alpha = score;
-                            curr_rm->depth = curr_depth;
-                            curr_rm->previous_score = curr_rm->score;
-                            curr_rm->score = score;
-                        } else {
-                            curr_rm->previous_score = curr_rm->score;
-                            curr_rm->score = NEGATIVE_INF;
-                        }
-                    } else {
-                        curr_rm->depth = curr_depth;
-                        curr_rm->previous_score = curr_rm->score;
+                    curr_rm->previous_score = curr_rm->score;
+                    curr_rm->depth = curr_depth;
+                    if (Globals::multi_pv > 1) {
                         curr_rm->score = score;
+                    } else if (score > alpha) {
+                        curr_rm->score = score;
+                        alpha = score;
+                    } else {
+                        curr_rm->score = NEGATIVE_INF;
                     }
                 }
             } // end alpha beta loop
@@ -75,21 +70,11 @@ namespace Meetra {
 
                 Globals::curr_max_depth = curr_depth;
 
-                // stop if we dont have enough time left for a deeper search or mate has been found within horizon and
-                // we are not performing fixed time/depth/infinite or multipv search
-                // TODO what if mate found by non-main thread -> stop search whenever any thread founds mate (?)
-                //  but we need shortest mate, what if best thread is too far in front - maybe dont stop at all when
-                //  mate found
-                //  if we have best thread, that best thread will always be the one that finished the full search first
-                //  by definition, so it will find the shortest mate first
-                //  NAH i think its fine if all this is done only by the main thread tbh, if main thread finds mate
-                //  and is the best thread -> good, if its not the best thread -> whatever, its probably not too
-                //  far behind anyway and even if we run out of time, if other thread found mate we will choose it
-                //  when we poll all the best root moves
-                //  if we doing multipv, only the main thread will run the full search, others will just help and
-                //  skip depths
-                if (!EnoughTimeLeft() || (MateInHorizon() && Globals::multi_pv == 1 && !Globals::settings.infinite &&
-                                          !Globals::settings.fixed_timer)) {
+                // stop if we don't have enough time left for a deeper search or mate has been found, and we are not
+                // performing fixed time/depth/infinite or multipv search
+                if (!EnoughTimeLeft() ||
+                    (MateFound() && Globals::multi_pv == 1 && !Globals::settings.infinite &&
+                     !Globals::settings.fixed_timer)) {
                     break;
                 }
 
@@ -104,7 +89,7 @@ namespace Meetra {
         searching = false;
     }
 
-    Score SearchThread::NegaMax(Score alpha, Score beta, Depth depth, Depth ply, std::vector<Move>& pv_line) {
+    Score SearchThread::NegaMax(Score alpha, Score beta, Depth depth, Depth ply, std::vector<Move> &pv_line) {
 
         // terminating conditions, either we reached a draw - then stop, or max depth - in that case switch to qsearch
         if (board.IsRepetition() || board.Ply() >= Globals::plies_draw) {
@@ -167,7 +152,6 @@ namespace Meetra {
             return -DRAW_SCORE;
         }
 
-
         // whatever we learnt about this position, store it in TT for later use
         Globals::tt.SaveEval(board.GetZobristHash(), alpha, depth, best_move_this_iter, tt_flag, ply);
 
@@ -223,6 +207,10 @@ namespace Meetra {
         return false;
     }
 
+    bool SearchThread::MateFound() const {
+        return root_moves[0].score != NEGATIVE_INF && std::abs(root_moves[0].score) > MIN_MATE_EVAL;
+    }
+
     std::string SearchThread::GetSearchInfo() {
 
         std::stringstream ss;
@@ -256,27 +244,27 @@ namespace Meetra {
             }
 
             ss << " pv " << GetMoveName(move);
-            for(Move pv_move : root_moves[i].pv){
+            for (Move pv_move : root_moves[i].pv) {
                 ss << ' ' << GetMoveName(pv_move);
             }
-
-            ss << '\n';
+            if (i + 1 < pvs_to_send) {
+                ss << '\n';
+            }
         }
 
         return ss.str();
     }
 
     std::string SearchThread::GetCurrMoveInfo() {
-        std::stringstream ss;
-        ss << "info currmove " << GetMoveName(curr_rm->move) << " currmovenumber " << (curr_rm_num + 1);
-        if (Globals::show_currline) {
-            ss << " currline " << GetMoveName(curr_rm->move);
-            for(Move pv_move : curr_rm->pv){
-                ss << ' ' << GetMoveName(pv_move);
-            }
-        }
-        return ss.str();
+        return "info currmove " + GetMoveName(curr_rm->move) + " currmovenumber " + std::to_string(curr_rm_num + 1);
     }
 
-
+    std::string SearchThread::GetCurrLineInfo() {
+        std::string ret = "info currline ";
+        ret += GetMoveName(curr_rm->move);
+        for (Move pv_move : curr_rm->pv) {
+            ret += ' ' + GetMoveName(pv_move);
+        }
+        return ret;
+    }
 }
