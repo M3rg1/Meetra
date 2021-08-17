@@ -44,8 +44,6 @@ namespace Meetra::Uci {
     void MakeUciMove(const std::string &move_string, Board &board);
     Search::SearchSettings ParseSearchOptions(StringTokenStream &sts);
 
-    std::atomic_flag lock;
-
     void Init() {
         std::ios_base::sync_with_stdio(false);
         std::cin.tie(nullptr);
@@ -99,6 +97,8 @@ namespace Meetra::Uci {
     }
 
     void SendToGui(const std::string &data) {
+
+        static std::atomic_flag lock;
 
         while (lock.test_and_set(std::memory_order_acquire)) {
             while (lock.test(std::memory_order_relaxed));

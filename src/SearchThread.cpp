@@ -49,17 +49,23 @@ namespace Meetra {
                 board.UnmakeMove(curr_rm->move);
 
                 if (Globals::run) {
-                    if (score > alpha) {
-                        alpha = score;
+                    if(Globals::multi_pv == 1){
+                        if (score > alpha) {
+                            alpha = score;
+                            curr_rm->depth = curr_depth;
+                            curr_rm->previous_score = curr_rm->score;
+                            curr_rm->score = score;
+                        } else {
+                            curr_rm->previous_score = curr_rm->score;
+                            curr_rm->score = NEGATIVE_INF;
+                        }
+                    } else {
                         curr_rm->depth = curr_depth;
                         curr_rm->previous_score = curr_rm->score;
                         curr_rm->score = score;
-                    } else {
-                        curr_rm->previous_score = curr_rm->score;
-                        curr_rm->score = NEGATIVE_INF;
                     }
                 }
-            }
+            } // end alpha beta loop
 
             // sort based on score -> previous score -> node count
             std::stable_sort(root_moves.begin(), root_moves.end());
@@ -71,9 +77,20 @@ namespace Meetra {
 
                 // stop if we dont have enough time left for a deeper search or mate has been found within horizon and
                 // we are not performing fixed time/depth/infinite or multipv search
+                // TODO what if mate found by non-main thread -> stop search whenever any thread founds mate (?)
+                //  but we need shortest mate, what if best thread is too far in front - maybe dont stop at all when
+                //  mate found
+                //  if we have best thread, that best thread will always be the one that finished the full search first
+                //  by definition, so it will find the shortest mate first
+                //  NAH i think its fine if all this is done only by the main thread tbh, if main thread finds mate
+                //  and is the best thread -> good, if its not the best thread -> whatever, its probably not too
+                //  far behind anyway and even if we run out of time, if other thread found mate we will choose it
+                //  when we poll all the best root moves
+                //  if we doing multipv, only the main thread will run the full search, others will just help and
+                //  skip depths
                 if (!EnoughTimeLeft() || (MateInHorizon() && Globals::multi_pv == 1 && !Globals::settings.infinite &&
                                           !Globals::settings.fixed_timer)) {
-                    StopSearch();
+                    break;
                 }
 
                 // update GUI with info about currently finished depth we searched
@@ -81,10 +98,10 @@ namespace Meetra {
                     Uci::SendToGui(GetSearchInfo());
                 }
             }
-        }
+        } // end iterative deepening loop
 
-        searching = false;
         StopSearch();
+        searching = false;
     }
 
     Score SearchThread::NegaMax(Score alpha, Score beta, Depth depth, Depth ply, std::vector<Move>& pv_line) {

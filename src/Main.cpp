@@ -15,11 +15,11 @@ using namespace Meetra;
 
 int main(int argc, char *arv[]) {
 
+    Uci::Init();
+    ThreadPool::Init();
     Bitboards::Init();
     Zobrist::Init();
-    ThreadPool::Init();
     Search::Init();
-    Uci::Init();
 
 
 /*    Board board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");

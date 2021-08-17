@@ -2,6 +2,7 @@
 #define MEETRA_SEARCHTHREAD_H
 
 #include <vector>
+#include <iostream>
 #include "Search.h"
 #include "Uci.h"
 
@@ -53,7 +54,7 @@ namespace Meetra {
 
         [[nodiscard]] std::string GetSearchInfo();
         [[nodiscard]] std::vector<Search::RootMove> GetRootMoves() { return root_moves; }
-        [[nodiscard]] bool IsFinished() const { return !searching; };
+        [[nodiscard]] bool IsSearching() const { return searching; };
         [[nodiscard]] Search::RootMove GetBestRootMove() const { return root_moves[0]; };
         void Search();
 
@@ -73,7 +74,7 @@ namespace Meetra {
         int curr_rm_num;
         Depth curr_depth;
 
-        bool searching;
+        volatile bool searching;
         std::jthread thread;
         std::condition_variable_any cond_var;
         std::mutex mtx;

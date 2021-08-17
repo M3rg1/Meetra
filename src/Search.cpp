@@ -161,31 +161,32 @@ namespace Meetra::Search {
         search_threads[0]->Search();
 
         // wait until all threads finish searching
-        for (auto &st : search_threads) {
-            while (!st->IsFinished());
-        }
-
-        // collect best moves found by each search thread
+        // and collect best moves found by each search thread
         std::vector<RootMove> best_moves;
         best_moves.reserve(search_threads.size());
         for (auto &st : search_threads) {
+            while (st->IsSearching());
             best_moves.emplace_back(st->GetBestRootMove());
         }
 
         // select the best move overall
         auto best_thread_id = 0;
         RootMove best_move = best_moves[0];
-        for(auto i = 1; i < best_moves.size(); i++){
-            if (best_moves[i].score > best_move.score && best_moves[i].depth >= best_move.depth) {
-                best_move = best_moves[i];
-                best_thread_id = i;
+        if(Globals::multi_pv == 1){
+            for (auto i = 1; i < best_moves.size(); i++) {
+                if (best_moves[i].score > best_move.score && best_moves[i].depth >= best_move.depth) {
+                    best_move = best_moves[i];
+                    best_thread_id = i;
+                }
             }
         }
+
+        Globals::info_timer.Stop();
+        Globals::search_timer.Stop();
 
         //Uci::SendToGui("Best thread " + std::to_string(best_thread_id));
         Uci::SendToGui(search_threads[best_thread_id]->GetSearchInfo());
         Uci::SendToGui("bestmove " + GetMoveName(best_move.move));
-        Globals::info_timer.Stop(); Globals::search_timer.Stop();
         //StopSearch();
     }
 }

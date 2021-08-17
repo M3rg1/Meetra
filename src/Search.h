@@ -59,7 +59,7 @@ namespace Meetra::Search {
     };
 
     namespace Globals {
-        inline bool run;
+        inline volatile bool run;
         inline TranspositionTable tt;
         inline SearchSettings settings;
         inline bool show_currline;
