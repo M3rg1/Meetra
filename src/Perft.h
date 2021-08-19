@@ -44,10 +44,9 @@ namespace Meetra {
         }
 
         auto end = std::chrono::high_resolution_clock::now();
-        auto time_elapsed_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
-        time_elapsed_ns = std::max(1l, time_elapsed_ns);
+        auto time_elapsed_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count() + 1;
         auto nps = static_cast<ulong> (static_cast<double>(total_nodes) /
-                                       (static_cast<double>(time_elapsed_ns) / 1000000000));
+                                       (static_cast<double>(time_elapsed_ns) / 1000000000.0));
 
         std::stringstream ss;
         ss << "Time elapsed: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms"

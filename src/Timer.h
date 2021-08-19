@@ -48,7 +48,8 @@ namespace Meetra {
                 active = false;
             }
             cond_var.notify_all();
-            future.wait();
+            if(future.valid())
+                future.wait();
         }
 
     };

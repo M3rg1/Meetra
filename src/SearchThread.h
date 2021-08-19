@@ -12,12 +12,13 @@ namespace Meetra {
 
     public:
 
-        explicit SearchThread(int t_num) : thread_num(t_num), searching(false) {
+        explicit SearchThread(int t_num) : thread_num(t_num) {
+            active = false;
             thread = std::jthread([&](const std::stop_token &stop_token) {
                 while (true) {
                     {
                         std::unique_lock lock(mtx);
-                        cond_var.wait(lock, stop_token, [&] { return searching; });
+                        cond_var.wait(lock, stop_token, [&] { return IsThreadSearching(); });
                     }
                     if (stop_token.stop_requested()) { return; }
                     Search();
@@ -39,30 +40,29 @@ namespace Meetra {
 
         void Shutdown() {
             if (thread.joinable()) {
+                active = false;
                 thread.request_stop();
                 thread.join();
             }
         }
 
-        void StartHelperThread() {
-            {
-                std::scoped_lock lock(mtx);
-                searching = true;
-            }
+        void StartThread() {
+            active = true;
             cond_var.notify_one();
         };
 
         [[nodiscard]] std::string GetSearchInfo();
         [[nodiscard]] std::string GetCurrLineInfo();
-        [[nodiscard]] bool IsSearching() const { return searching; };
+        [[nodiscard]] bool IsThreadSearching() const { return active.load(std::memory_order_relaxed); };
         [[nodiscard]] Search::RootMove GetBestRootMove() const { return root_moves[0]; };
         void Search();
 
     private:
 
-        Score NegaMax(Score alpha, Score beta, Depth depth, Depth ply, std::vector<Move>& pv_line);
+        Score NegaMax(Score alpha, Score beta, Depth depth, Depth ply, std::vector<Move> &pv_line);
         Score QSearch(Score alpha, Score beta, Depth ply);
 
+        void BackupPv(std::vector<Move> &pv_line, Board &b, Depth depth);
         [[nodiscard]] std::string GetCurrMoveInfo();
         [[nodiscard]] bool MateFound() const;
         [[nodiscard]] bool MateInHorizon() const;
@@ -75,7 +75,7 @@ namespace Meetra {
         int curr_rm_num;
         Depth curr_depth;
 
-        volatile bool searching;
+        std::atomic<bool> active;
         std::jthread thread;
         std::condition_variable_any cond_var;
         std::mutex mtx;

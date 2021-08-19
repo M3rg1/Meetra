@@ -7,10 +7,10 @@
 #include "ZobristHash.h"
 #include <memory>
 #include <atomic>
+#include "Spinlock.h"
 
 namespace Meetra {
 
-#define TT_NOT_FOUND (-32013)
 #define MIN_HASH_SIZE 16
 #define DEFAULT_HASH_SIZE 128
 #define MAX_HASH_SIZE 4096
@@ -40,15 +40,15 @@ namespace Meetra {
         }
 
     private:
-#pragma pack(push, 1)
+//#pragma pack(push, 1)
 
-        // 10 bytes
+        // 10 bytes + 2 alignment
         class TTEntry {
             uint32_t key;
             int16_t score;
-            uint8_t depth;
             uint16_t move;
-            uint8_t epoch_and_flag; // 2 low bits for flag, rest for epoch
+            uint8_t depth;
+            uint8_t epoch_and_flag; // 2 low bits for flag, rest for epoch.
             // epoch would be fine with 3 bits, leaving another 3 for whatever else is needed
         public:
             [[nodiscard]] inline Key32 Get32Key() const { return static_cast<Key32>(key); }
@@ -77,22 +77,13 @@ namespace Meetra {
         class TTBucket {
 
         public:
+            Spinlock spinlock;
             TTEntry bucket_entries[TT_ENTRIES_PER_BUCKET];
-
-            inline void Lock() {
-                while (lock.test_and_set(std::memory_order_acquire)) {
-                    while (lock.test(std::memory_order_relaxed));
-                }
-            }
-
-            inline void Unlock() { lock.clear(std::memory_order_release); }
-
         private:
-            std::atomic_flag lock;
 
         };
 
-#pragma pack(pop)
+//#pragma pack(pop)
 
         Epoch current_epoch;
         std::atomic<size_t> used_entries;

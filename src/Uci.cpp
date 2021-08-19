@@ -100,15 +100,10 @@ namespace Meetra::Uci {
 
     void SendToGui(const std::string &data) {
 
-        static std::atomic_flag lock;
-
-        while (lock.test_and_set(std::memory_order_acquire)) {
-            while (lock.test(std::memory_order_relaxed));
-        }
+        static Spinlock spinlock;
+        ScopedSpinlock lock(spinlock);
 
         std::cout << data << std::endl;
-
-        lock.clear(std::memory_order_release);
     }
 
     void UciCommand() {
@@ -121,15 +116,12 @@ namespace Meetra::Uci {
     }
 
     void GoCommand(StringTokenStream &sts, Board &board) {
-        if (Search::IsSearching()) {
+        if (Search::Run()) {
             return;
         }
 
         Search::SearchSettings settings = ParseSearchOptions(sts);
-
-        ThreadPool::PushTask([=]() {
-            Search::StartSearch(settings, board);
-        });
+        Search::StartSearch(settings, board);
     }
 
     void PerftCommand(StringTokenStream &sts, Board &board) {
@@ -168,6 +160,7 @@ namespace Meetra::Uci {
 
     void StopCommand() {
         Search::StopSearch();
+        while(!Search::Finished());
     }
 
     void UciNewGameCommand() {
@@ -175,9 +168,14 @@ namespace Meetra::Uci {
     }
 
     void SetOptionCommand(StringTokenStream &sts) {
-        if (sts.NextToken() != "name") return;
+
+        if (!Search::Finished() || sts.NextToken() != "name") {
+            return;
+        }
+
         sts.MakeLower();
         std::string option = sts.NextToken();
+
         if (option == "hash") {
             if (sts.HasNext() && sts.NextToken() == "value") {
                 int hash_size = std::stoi(sts.NextToken());

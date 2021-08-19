@@ -20,7 +20,7 @@ namespace Meetra {
     std::string StringTokenStream::NextToken() {
         std::string ret = token_holder.front();
         token_holder.pop_front();
-        return ret;
+        return std::move(ret);
     }
 
     bool StringTokenStream::HasNext() const {

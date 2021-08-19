@@ -7,6 +7,7 @@
 #include <vector>
 #include "Timer.h"
 #include "Types.h"
+#include "PVTable.h"
 
 namespace Meetra::Search {
 
@@ -26,7 +27,7 @@ namespace Meetra::Search {
         Score previous_score = NEGATIVE_INF;
         Depth depth = 0;
         Depth seldepth = 0;
-        long nodes = 0;
+        uint64_t nodes = 0;
 
         explicit RootMove(Move m) : move(m) {}
 
@@ -59,40 +60,44 @@ namespace Meetra::Search {
     };
 
     namespace Globals {
-        inline volatile bool run;
+        inline std::atomic<bool> run;
+        inline PVTable pvt;
         inline TranspositionTable tt;
         inline SearchSettings settings;
         inline bool show_currline;
         inline bool show_currmove;
         inline int plies_muted;
         inline int multi_pv;
-        inline int num_threads;
-        inline long nodes_explored;
-        inline Depth curr_max_depth;
-        inline Depth seldepth;
-        inline long timer_start;
         inline int plies_draw;
+        inline std::atomic<bool> finished;
+        inline std::atomic<uint64_t > nodes_explored;
+        inline std::atomic<Depth> curr_max_depth;
+        inline std::atomic<Depth> seldepth;
+        inline int num_threads;
+        inline long timer_start;
         inline Timer search_timer;
         inline Timer info_timer;
     }
 
     void Init();
     void StartSearch(SearchSettings settings, Board board);
+    void FinishSearch();
     void Shutdown();
     std::string GetUpdateSearchInfo();
 
     [[nodiscard]] long ElapsedTimeMs();
     [[nodiscard]] bool EnoughTimeLeft();
-    [[nodiscard]] inline bool IsSearching() { return Globals::run; }
+    [[nodiscard]] inline bool Run() { return Globals::run.load(std::memory_order_relaxed); }
+    [[nodiscard]] inline bool Finished() { return Globals::finished.load(std::memory_order_relaxed); }
     inline void ShowShowCurrLine(bool show) { Globals::show_currline = show; }
     inline void SetPliesMuted(int ply_muted) { Globals::plies_muted = ply_muted; }
     inline void ShowCurrMoveInfo(bool show) { Globals::show_currmove = show; }
-    inline void StopSearch() { Globals::run = false; /*Globals::info_timer.Stop(); Globals::search_timer.Stop();*/ }
+    inline void StopSearch() { Globals::run = false; }
     inline void SetMultiPv(int pv_num) { Globals::multi_pv = pv_num; }
     inline void SetPliesDraw(int plies) { Globals::plies_draw = plies; }
-    void SetNumThreads(int num);
-    inline void ClearTT() { Globals::tt.Clear(); }
+    inline void ClearTT() { Globals::tt.Clear(); Globals::pvt.Clear(); }
     inline void SetTTSize(int size_mb) { Globals::tt.Resize(size_mb); }
+    void SetNumThreads(int num);
 
 }
 
