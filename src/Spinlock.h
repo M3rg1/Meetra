@@ -3,7 +3,7 @@
 
 #include <atomic>
 
-namespace Meetra{
+namespace Meetra {
 
     class Spinlock {
 
@@ -25,10 +25,10 @@ namespace Meetra{
 
     class ScopedSpinlock {
     public:
-        explicit ScopedSpinlock(Spinlock &sl) : spinlock(sl){
+        explicit ScopedSpinlock(Spinlock &sl) : spinlock(sl) {
             spinlock.Lock();
         }
-        ~ScopedSpinlock(){
+        ~ScopedSpinlock() {
             spinlock.Unlock();
         }
     private:

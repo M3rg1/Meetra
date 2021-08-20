@@ -62,7 +62,7 @@ namespace Meetra::Zobrist {
         AddPiece(h, p, c, to);
     }
 
-    ZobristHash GenHash(Board &board) {
+    ZobristHash GenHash(const Board &board) {
 
         ZobristHash hash = NEW_HASH;
 

@@ -1,5 +1,6 @@
 #include "Bitboards.h"
 #include "MagicNumbers.h"
+#include <sstream>
 
 namespace Meetra::Bitboards {
 
@@ -424,19 +425,19 @@ namespace Meetra::Bitboards {
     template Bitboard GetAttacksForPiece<KING>(Square, Bitboard, Color);
 
     std::string PPBitboard(Bitboard b) {
-        std::string ret;
+        std::ostringstream oss;
         for (Rank r = RANK_8; r >= RANK_1; --r) {
-            ret += (std::to_string(r + 1)) + " |";
+            oss << (std::to_string(r + 1)) + " |";
             for (File f = FILE_A; f <= FILE_H; ++f) {
                 if ((b >> ((r * 8) + f)) & 1) {
-                    ret += " x ";
+                    oss << " x ";
                 } else {
-                    ret += " o ";
+                    oss << " o ";
                 }
             }
-            ret += "\n";
+            oss << "\n";
         }
-        ret += "    A  B  C  D  E  F  G  H";
-        return ret;
+        oss << "    A  B  C  D  E  F  G  H";
+        return oss.str();
     }
 }

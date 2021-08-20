@@ -62,7 +62,7 @@ namespace Meetra {
         Score NegaMax(Score alpha, Score beta, Depth depth, Depth ply, std::vector<Move> &pv_line);
         Score QSearch(Score alpha, Score beta, Depth ply);
 
-        void BackupPv(std::vector<Move> &pv_line, Board &b, Depth depth);
+        void BackupPv(std::vector<Move> &pv_line, Board &b, size_t max_len_pv);
         [[nodiscard]] std::string GetCurrMoveInfo();
         [[nodiscard]] bool MateFound() const;
         [[nodiscard]] bool MateInHorizon() const;

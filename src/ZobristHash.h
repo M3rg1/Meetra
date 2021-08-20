@@ -13,7 +13,7 @@ namespace Meetra {
 
         void Init();
 
-        ZobristHash GenHash(Board &board);
+        [[nodiscard]] ZobristHash GenHash(const Board &board);
         [[nodiscard]] inline Key32 Make32Key(ZobristHash zobrist_hash) { return zobrist_hash >> 32; }
         [[nodiscard]] inline uint64_t Make44Key(ZobristHash zobrist_hash) { return zobrist_hash >> 20; }
 

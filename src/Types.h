@@ -20,7 +20,7 @@ namespace Meetra {
 #define EMPTY_BB 0
 
     enum GenPhase : uint_fast8_t {
-        BEST_MOVE, CAPTURE, QUIET, END
+        CAPTURE, QUIET, END, DOUBLE_CHECK
     };
 
     enum Color : uint_fast8_t {
@@ -47,12 +47,12 @@ namespace Meetra {
     inline PieceType TypeOfPiece(Piece p) { return static_cast<PieceType>(p & 7); }
     inline Piece NewPiece(PieceType pt, Color c) { return static_cast<Piece>((c << 3) | pt); }
 
-    enum Rank : uint_fast8_t {
+    enum Rank : int_fast8_t {
         RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8,
         RANK_NR
     };
 
-    enum File : uint_fast8_t {
+    enum File : int_fast8_t {
         FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H,
         FILE_NR
     };
@@ -63,6 +63,9 @@ namespace Meetra {
     inline char CharFromFile(File f) { return static_cast<char>(f + 'a'); }
 
 
+    enum PawnMoveDir : int_fast8_t {
+        LEFT, RIGHT, ONE_FWD, TWO_FWD
+    };
 
     enum Direction : int_fast8_t {
         NORTH = 8, NORTH_EAST = 9, EAST = 1, SOUTH_EAST = -7, SOUTH = -8, SOUTH_WEST = -9, WEST = -1, NORTH_WEST = 7
@@ -129,12 +132,12 @@ namespace Meetra {
      * 0-5 from square
      * 6-11 to square
      * 12-15 MoveType flag
-     * if the last (15th) bit is 1, it's a promotion move
+     * if the last (15th) bit is 1, it's a promotion move -> prom bits  N = 100, B = 101, R = 110, Q = 111
      */
     typedef uint16_t Move;
 
     enum MoveType : uint_fast16_t {
-        INVALID_MOVE = 0, NO_FLAG = 0, EN_PASSANT = 1 << 12, CASTLING = 2 << 12, TWO_FORWARD = 3 << 12,
+        ZERO_MOVE = 0, NO_FLAG = 0, EN_PASSANT = 1 << 12, CASTLING = 2 << 12, TWO_FORWARD = 3 << 12,
         PROMOTE_KNIGHT = 4 << 13, PROMOTE_BISHOP = 5 << 13, PROMOTE_ROOK = 6 << 13, PROMOTE_QUEEN = 7 << 13
     };
 
@@ -165,10 +168,10 @@ namespace Meetra {
     inline Square ToSquare(Move m) { return static_cast<Square>((m & 0xFC0) >> 6); }
     inline bool IsPromotion(Move m) { return m >> 15; }
     inline MoveType GetMoveType(Move m) { return static_cast<MoveType>(m & 0xF000); }
-    inline bool IsValidMove(Move m) { return m != INVALID_MOVE; }
+    inline bool IsValidMove(Move m) { return m != ZERO_MOVE; }
     inline std::string GetMoveName(Move m) {
 
-        if (m == INVALID_MOVE) {
+        if (m == ZERO_MOVE) {
             return "0000";
         }
 
@@ -224,7 +227,7 @@ inline T& operator/=(T& d, int i) { return d = T(int(d) / i); }
     ENABLE_INCR_OPERATORS_ON(Rank)
     ENABLE_INCR_OPERATORS_ON(DirectionIndex)
     ENABLE_INCR_OPERATORS_ON(Direction)
-    ENABLE_INCR_OPERATORS_ON(GenPhase)
+    //ENABLE_INCR_OPERATORS_ON(GenPhase)
 
     ENABLE_FULL_OPERATORS_ON(File)
     ENABLE_FULL_OPERATORS_ON(Rank)

@@ -15,9 +15,9 @@ namespace Meetra {
         }
 
         ulong nodes = 0;
-        MoveGen moveGen(board);
+        MoveGen move_gen(board);
         Move m;
-        while ((m = moveGen.GetNextMove<false>())) {
+        while ((m = move_gen.GetNextMove<false>())) {
             if (board.MakeMove(m)) {
                 nodes += Perft(depth - 1, board);
             }
@@ -31,10 +31,10 @@ namespace Meetra {
 
         auto start = std::chrono::high_resolution_clock::now();
 
-        MoveGen moveGen(board);
+        MoveGen move_gen(board);
         Move m;
         ulong total_nodes = 0;
-        while ((m = moveGen.GetNextMove<false>())) {
+        while ((m = move_gen.GetNextMove<false>())) {
             if (board.MakeMove(m)) {
                 ulong nodes = Perft(depth - 1, board);
                 total_nodes += nodes;
@@ -48,12 +48,12 @@ namespace Meetra {
         auto nps = static_cast<ulong> (static_cast<double>(total_nodes) /
                                        (static_cast<double>(time_elapsed_ns) / 1000000000.0));
 
-        std::stringstream ss;
-        ss << "Time elapsed: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms"
-           << " | Nodes explored: " << total_nodes
-           << " | NPS: " << nps;
+        std::ostringstream oss;
+        oss << "Time elapsed: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms"
+            << " | Nodes explored: " << total_nodes
+            << " | NPS: " << nps;
 
-        Uci::SendToGui(ss.str());
+        Uci::SendToGui(oss.str());
     }
 
 }

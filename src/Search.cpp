@@ -82,16 +82,16 @@ namespace Meetra::Search {
                 ((static_cast<double>(Globals::nodes_explored.load(std::memory_order_relaxed)) /
                   static_cast<double>(elapsed_ms))) * 1000.0);
 
-        std::stringstream ss;
+        std::ostringstream oss;
 
-        ss << "info depth " << static_cast<int>(Globals::curr_max_depth.load(std::memory_order_relaxed))
+        oss << "info depth " << static_cast<int>(Globals::curr_max_depth.load(std::memory_order_relaxed))
            << " seldepth " << static_cast<int>(Globals::seldepth.load(std::memory_order_relaxed))
            << " nodes " << (Globals::nodes_explored.load(std::memory_order_relaxed))
            << " time " << elapsed_ms
            << " nps " << nps
            << " hashfull " << static_cast<int>(Globals::tt.Usage() * 1000.0);
 
-        return ss.str();
+        return oss.str();
     }
 
     void FinishSearch(){
@@ -131,7 +131,7 @@ namespace Meetra::Search {
         if ((root_moves.size() == 1 && (!Globals::settings.infinite || !Globals::settings.fixed_timer)) ||
             root_moves.empty()) {
             StopSearch();
-            Uci::SendToGui("bestmove " + GetMoveName(root_moves.empty() ? INVALID_MOVE : root_moves[0].move));
+            Uci::SendToGui("bestmove " + GetMoveName(root_moves.empty() ? ZERO_MOVE : root_moves[0].move));
             return;
         }
 

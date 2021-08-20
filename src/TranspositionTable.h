@@ -31,12 +31,14 @@ namespace Meetra {
         void Clear();
 
         void ProbeEval(ZobristHash key, Score alpha, Score beta, Depth depth, Depth ply, Score &score,
-                       EntryFlag &flag) const;
+                       EntryFlag &flag, Move &move) const;
         [[nodiscard]] Move GetPVMove(ZobristHash key) const;
         [[nodiscard]] Move GetAnyMove(ZobristHash key) const;
         // 0.01 == 1% usage, 0.1 == 10% usage, 1 == 100% usage
         [[nodiscard]] inline double Usage() const {
-            return static_cast<double>(used_entries) / static_cast<double>(buckets_count * TT_ENTRIES_PER_BUCKET);
+            double usage = static_cast<double>(used_entries.load(std::memory_order_relaxed))
+                    / static_cast<double>(buckets_count * TT_ENTRIES_PER_BUCKET);
+            return usage > 1.0 ? 1.0 : usage;
         }
 
     private:
@@ -77,7 +79,6 @@ namespace Meetra {
         class TTBucket {
 
         public:
-            Spinlock spinlock;
             TTEntry bucket_entries[TT_ENTRIES_PER_BUCKET];
         private:
 

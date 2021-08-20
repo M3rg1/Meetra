@@ -165,17 +165,17 @@ namespace Meetra {
             } else if (move_type == CASTLING) {
                 MovePiece(RookFromCastling(to), RookToCastling(to), curr_data.hash);
                 return !IsSquareAttacked(Bitboards::Lsb(GetPieces(KING, this_move_col)), next_move_col,
-                                         GetPieces(ALL_TYPES));
+                                               GetPieces(ALL_TYPES));
             } else if (IsPromotion(m)) {
                 RemovePiece(to, curr_data.hash);
                 PutPiece(to, NewPiece(PieceTypeFromFlag(move_type), this_move_col), curr_data.hash);
             } else if (move_type == EN_PASSANT) {
                 return !IsSquareAttacked(Bitboards::Lsb(GetPieces(KING, this_move_col)), next_move_col,
-                                         GetPieces(ALL_TYPES));
+                                               GetPieces(ALL_TYPES));
             }
         } else if (moved_piece_type == KING) {
             return !IsSquareAttacked(Bitboards::Lsb(GetPieces(KING, this_move_col)), next_move_col,
-                                     GetPieces(ALL_TYPES));
+                                           GetPieces(ALL_TYPES));
         }
 
         return true;
@@ -297,31 +297,31 @@ namespace Meetra {
 
     std::string Board::PPBoard() const {
 
-        std::stringstream ss;
+        std::ostringstream oss;
 
         for (Rank r = RANK_8; r >= RANK_1; --r) {
-            ss << std::to_string(r + 1) << " |";
+            oss << std::to_string(r + 1) << " |";
             for (File f = FILE_A; f <= FILE_H; ++f) {
-                ss << ' ' << PieceToChar(board[SquareFromFiRa(f, r)]) << ' ';
+                oss << ' ' << PieceToChar(board[SquareFromFiRa(f, r)]) << ' ';
             }
-            ss << '\n';
+            oss << '\n';
         }
-        ss << "---------------------------\n"
-           << "  | A  B  C  D  E  F  G  H\n\n"
-           << "Player to move: " << (ColorToMove() == WHITE ? "white\n" : "black\n")
-           << "Castling rights: ";
+        oss << "---------------------------\n"
+            << "  | A  B  C  D  E  F  G  H\n\n"
+            << "Player to move: " << (ColorToMove() == WHITE ? "white\n" : "black\n")
+            << "Castling rights: ";
         if (!CanCastleAny()) {
-            ss << '-';
+            oss << '-';
         } else {
-            if (CanWhiteShortCR()) ss << 'K';
-            if (CanWhiteLongCR()) ss << 'Q';
-            if (CanBlackShortCR()) ss << 'k';
-            if (CanBlackLongCR()) ss << 'q';
+            if (CanWhiteShortCR()) oss << 'K';
+            if (CanWhiteLongCR()) oss << 'Q';
+            if (CanBlackShortCR()) oss << 'k';
+            if (CanBlackLongCR()) oss << 'q';
         }
-        ss << " | EP square: " << (EpSquare() == SQUARE_ZERO ? "-" : std::to_string(EpSquare())) << '\n'
-           << "Fullmove clock: " << TotalMoves() << " | Halfmove clock: " << Ply();
+        oss << " | EP square: " << (EpSquare() == SQUARE_ZERO ? "-" : std::to_string(EpSquare())) << '\n'
+            << "Fullmove clock: " << TotalMoves() << " | Halfmove clock: " << Ply();
 
-        return ss.str();
+        return oss.str();
     }
 
 

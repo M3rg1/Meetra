@@ -78,7 +78,7 @@ namespace Meetra {
                     return e.GetMove();
                 }
             }
-            return INVALID_MOVE;
+            return ZERO_MOVE;
         }
 
 

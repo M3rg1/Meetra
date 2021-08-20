@@ -2,6 +2,7 @@
 #include "TranspositionTable.h"
 #include "Evaluation.h"
 #include "Search.h"
+#include "Uci.h"
 
 namespace Meetra {
 
@@ -45,8 +46,6 @@ namespace Meetra {
         score = RemoveMatePly(score, ply);
         TTBucket &bucket = table[key % buckets_count];
 
-        ScopedSpinlock lock(bucket.spinlock);
-
         for (auto &entry : bucket.bucket_entries) {
 
             if (entry.Get32Key() == key_32) {
@@ -84,16 +83,17 @@ namespace Meetra {
     }
 
     void TranspositionTable::ProbeEval(ZobristHash key, Score alpha, Score beta,
-                                       Depth depth, Depth ply, Score &score, EntryFlag &flag) const {
+                                       Depth depth, Depth ply, Score &score, EntryFlag &flag, Move &move) const {
 
         Key32 key_32 = Zobrist::Make32Key(key);
         flag = NOT_FOUND;
+        move = ZERO_MOVE;
 
         TTBucket &bucket = table[key % buckets_count];
-        ScopedSpinlock lock(bucket.spinlock);
 
         for (auto &entry : bucket.bucket_entries) {
             if (entry.Get32Key() == key_32) {
+                move = entry.GetMove();
                 if (entry.GetDepth() >= depth) {
                     if (entry.GetFlag() == EXACT_SCORE) {
                         score = AddMatePly(entry.GetScore(), ply);
@@ -118,30 +118,28 @@ namespace Meetra {
 
         Key32 key_32 = Zobrist::Make32Key(key);
         TTBucket &bucket = table[key % buckets_count];
-        ScopedSpinlock lock(bucket.spinlock);
 
         for (auto &entry : bucket.bucket_entries) {
             if (entry.Get32Key() == key_32) {
                 if (entry.GetFlag() == EXACT_SCORE) {
                     return entry.GetMove();
                 }
-                return INVALID_MOVE;
+                return ZERO_MOVE;
             }
         }
-        return INVALID_MOVE;
+        return ZERO_MOVE;
     }
 
     Move TranspositionTable::GetAnyMove(ZobristHash key) const {
 
         Key32 key_32 = Zobrist::Make32Key(key);
         TTBucket &bucket = table[key % buckets_count];
-        ScopedSpinlock lock(bucket.spinlock);
 
         for (auto &entry : bucket.bucket_entries) {
             if (entry.Get32Key() == key_32) {
                 return entry.GetMove();
             }
         }
-        return INVALID_MOVE;
+        return ZERO_MOVE;
     }
 }

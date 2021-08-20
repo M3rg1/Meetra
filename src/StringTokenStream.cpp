@@ -4,9 +4,9 @@
 namespace Meetra {
 
     StringTokenStream::StringTokenStream(const std::string& str, char delimiter) {
-        std::stringstream ss(str);
+        std::istringstream iss(str);
         std::string section;
-        while (getline(ss, section, delimiter)) {
+        while (getline(iss, section, delimiter)) {
             token_holder.push_back(section);
         }
     }
@@ -20,7 +20,7 @@ namespace Meetra {
     std::string StringTokenStream::NextToken() {
         std::string ret = token_holder.front();
         token_holder.pop_front();
-        return std::move(ret);
+        return ret;
     }
 
     bool StringTokenStream::HasNext() const {

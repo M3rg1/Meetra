@@ -10,15 +10,33 @@ namespace Meetra {
     class MoveGen {
 
     public:
-        MoveGen(const Board &board, const TranspositionTable *tt);
         explicit MoveGen(const Board &board);
 
+        inline void PutTTMove(Move tt_move) {
+            move_eval[moves_cnt].move = tt_move;
+            move_eval[moves_cnt++].score = 10000;
+        }
+
+        bool PutKillerMove(Move killer_move);
+
         template<bool QSearch>
-        Move GetNextMove();
-
+        [[nodiscard]] Move GetNextMove();
         [[nodiscard]] inline bool IsKingInCheck() const { return checkers; }
-
+        [[nodiscard]] bool IsPseudoLegal(Move m) const;
     private:
+
+        template<Color C>
+        [[nodiscard]] bool ValidateCastling(Move m) const;
+        template<PieceType PT>
+        [[nodiscard]] bool ValidateMoveForPiece(Move m) const;
+        template<Color C>
+        [[nodiscard]] bool ValidatePawnMove(Move m) const;
+        template<Color C, PawnMoveDir D>
+        [[nodiscard]] bool ValidatePawnNormal(Move m) const;
+        template<Color C, PawnMoveDir D>
+        [[nodiscard]] bool ValidatePromotion(Move m) const;
+        template<Color C>
+        [[nodiscard]] bool ValidateTwoFwd(Move m) const;
 
         struct p_MoveScore {
             Move move;
@@ -29,9 +47,8 @@ namespace Meetra {
         }
 
         const Board &board;
-        const TranspositionTable *tt;
 
-        GenPhase genPhase;
+        GenPhase gen_phase;
 
         p_MoveScore move_eval[MAX_LEGAL_MOVES];
         size_t moves_cnt;
@@ -47,6 +64,7 @@ namespace Meetra {
 
         Color my_color;
         Color enemy_color;
+        bool double_check;
 
         [[nodiscard]] inline bool Empty() const { return moves_cnt == 0; }
         inline Move PopMove() { return move_eval[--moves_cnt].move; }
@@ -83,7 +101,7 @@ namespace Meetra {
         template<Color C>
         void GenEnPassantMoves();
 
-        template<Color C>
+        template<Color C, PawnMoveDir D>
         void GenPawnCaptures();
 
         template<Color C>

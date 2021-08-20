@@ -1,7 +1,7 @@
 #include "MoveGen.h"
 #include "Bitboards.h"
 #include "Evaluation.h"
-
+#include "Uci.h"
 
 namespace Meetra {
 
@@ -44,7 +44,7 @@ namespace Meetra {
         else return 0;
     }
 
-    MoveGen::MoveGen(const Board &board, const TranspositionTable *tt) : board(board), tt(tt) {
+    MoveGen::MoveGen(const Board &board) : board(board) {
 
         moves_cnt = 0;
         my_color = board.ColorToMove();
@@ -53,32 +53,23 @@ namespace Meetra {
         all_pieces = board.GetPieces(ALL_TYPES);
         empty_squares = board.GetEmptySquares();
         checkers = board.SquareAttackers(Bitboards::Lsb(board.GetPieces(KING, my_color)), enemy_color, all_pieces);
-        legal_moves = 0xFFFFFFFFFFFFFFFFUL;
         king_square = Bitboards::Lsb(board.GetPieces(KING, my_color));
         blockers = board.PinnedPiecesForSquare(king_square, enemy_color);
-        genPhase = BEST_MOVE;
+        legal_moves = 0xFFFFFFFFFFFFFFFFUL;
+        gen_phase = CAPTURE;
+        double_check = false;
 
         if (IsKingInCheck()) {
             if (Bitboards::MoreThanOne(checkers)) {
-                if (my_color == WHITE) {
-                    GenMovesForPieceType<KING, WHITE>(enemy_pieces | empty_squares);
-                } else {
-                    GenMovesForPieceType<KING, BLACK>(enemy_pieces | empty_squares);
-                }
-                EvalMoves();
-                genPhase = END;
+                gen_phase = DOUBLE_CHECK;
+                double_check = true;
+                legal_moves = 0;
                 return;
             }
             Bitboard capture_mask = checkers;
             Square attacker_square = Bitboards::Lsb(capture_mask);
             Bitboard block_mask = Bitboards::GetRayBetweenSquares(king_square, attacker_square);
             legal_moves = capture_mask | block_mask;
-        }
-    }
-
-    MoveGen::MoveGen(const Board &board) : MoveGen(board, nullptr) {
-        if (genPhase != END) {
-            genPhase = CAPTURE;
         }
     }
 
@@ -103,52 +94,31 @@ namespace Meetra {
                 NextPhase<BLACK, QSearch>();
             }
             EvalMoves();
-            //std::sort(move_eval, move_eval + moves_cnt, CompScoreGreatersMAN);
         }
-        //return PopMove();
         return PickBestMove();
     }
 
+    template Move MoveGen::GetNextMove<true>();
+    template Move MoveGen::GetNextMove<false>();
+
     template<Color C, bool QSearch>
     void MoveGen::NextPhase() {
-        if constexpr (QSearch) {
-            switch (genPhase) {
-                case CAPTURE:
-                    GenMovesForPhase<CAPTURE, C>();
-                    genPhase = END;
-                    break;
-                case END:
-                    PutMove(INVALID_MOVE);
-                    break;
-                default:
-                    genPhase = CAPTURE;
-                    break;
-            }
-        } else {
-            switch (genPhase) {
-                case BEST_MOVE:
-                    Move m;
-                    m = tt->GetAnyMove(board.GetZobristHash());
-                    if (IsValidMove(m)) {
-                        PutMove(m);
-                    }
-                    ++genPhase;
-                    break;
-                case CAPTURE:
-                    GenMovesForPhase<CAPTURE, C>();
-                    ++genPhase;
-                    break;
-                case QUIET:
-                    GenMovesForPhase<QUIET, C>();
-                    ++genPhase;
-                    break;
-                case END:
-                    PutMove(INVALID_MOVE);
-                    break;
-                default:
-                    genPhase = END;
-                    break;
-            }
+        switch (gen_phase) {
+            case CAPTURE:
+                GenMovesForPhase<CAPTURE, C>();
+                gen_phase = QSearch ? END : QUIET;
+                break;
+            case QUIET:
+                GenMovesForPhase<QUIET, C>();
+                gen_phase = END;
+                break;
+            case END:
+                PutMove(ZERO_MOVE);
+                break;
+            case DOUBLE_CHECK:
+                GenMovesForPhase<DOUBLE_CHECK, C>();
+                gen_phase = END;
+                break;
         }
     }
 
@@ -162,9 +132,13 @@ namespace Meetra {
             GenMovesForPieceType<KING, C>(empty_squares);
         } else if constexpr (phase == CAPTURE) {
             phase_mask = legal_moves & enemy_pieces;
-            GenPawnCaptures<C>();
+            GenPawnCaptures<C, LEFT>();
+            GenPawnCaptures<C, RIGHT>();
             GenEnPassantMoves<C>();
             GenMovesForPieceType<KING, C>(enemy_pieces);
+        } else if constexpr (phase == DOUBLE_CHECK) {
+            GenMovesForPieceType<KING, C>(enemy_pieces | empty_squares);
+            return;
         }
 
         GenMovesForPieceType<KNIGHT, C>(phase_mask);
@@ -223,47 +197,24 @@ namespace Meetra {
         }
     }
 
-    template<Color C>
+    template<Color C, PawnMoveDir D>
     void MoveGen::GenPawnCaptures() {
 
         Bitboard pawns = board.GetPieces(PAWN, C);
+        constexpr Direction capture_dir = D == LEFT ? PawnCaptureLeftDir<C>() : PawnCaptureRightDir<C>();
+        Bitboard captures = BitShift<capture_dir>(pawns) & phase_mask & ~PromotionRank<C>();
+        Bitboard promotions = BitShift<capture_dir>(pawns) & phase_mask & PromotionRank<C>();
 
-        constexpr Direction left_dir = PawnCaptureLeftDir<C>();
-        constexpr Direction right_dir = PawnCaptureRightDir<C>();
-
-        Bitboard left_captures = BitShift<left_dir>(pawns) & phase_mask;
-        Bitboard right_captures = BitShift<right_dir>(pawns) & phase_mask;
-
-        Bitboard left_prom = left_captures & PromotionRank<C>();
-        Bitboard right_prom = right_captures & PromotionRank<C>();
-
-        left_captures &= ~PromotionRank<C>();
-        right_captures &= ~PromotionRank<C>();
-
-        while (left_prom) {
-            Square dest_s = Bitboards::PopLsb(left_prom);
-            Square origin_s = dest_s - left_dir;
+        while (promotions) {
+            Square dest_s = Bitboards::PopLsb(promotions);
+            Square origin_s = dest_s - capture_dir;
             if (!DiscoveryCheck(origin_s, dest_s)) {
                 PutPromMoves(origin_s, dest_s);
             }
         }
-        while (right_prom) {
-            Square dest_s = Bitboards::PopLsb(right_prom);
-            Square origin_s = dest_s - right_dir;
-            if (!DiscoveryCheck(origin_s, dest_s)) {
-                PutPromMoves(origin_s, dest_s);
-            }
-        }
-        while (left_captures) {
-            Square dest_s = Bitboards::PopLsb(left_captures);
-            Square origin_s = dest_s - left_dir;
-            if (!DiscoveryCheck(origin_s, dest_s)) {
-                PutMove(NewMove(origin_s, dest_s));
-            }
-        }
-        while (right_captures) {
-            Square dest_s = Bitboards::PopLsb(right_captures);
-            Square origin_s = dest_s - right_dir;
+        while (captures) {
+            Square dest_s = Bitboards::PopLsb(captures);
+            Square origin_s = dest_s - capture_dir;
             if (!DiscoveryCheck(origin_s, dest_s)) {
                 PutMove(NewMove(origin_s, dest_s));
             }
@@ -315,6 +266,190 @@ namespace Meetra {
                !board.IsSquareAttacked(C == WHITE ? D1 : D8, OtherColor(C), all_pieces);
     }
 
-    template Move MoveGen::GetNextMove<true>();
-    template Move MoveGen::GetNextMove<false>();
+    bool MoveGen::IsPseudoLegal(Move m) const {
+
+        if (m == ZERO_MOVE) {
+            return false;
+        }
+
+        // there exists a piece on the origin square
+        Square from = FromSquare(m);
+        Piece moved_piece = board.GetPieceOnSquare(from);
+        if (moved_piece == NO_PIECE) {
+            return false;
+        }
+
+        // in double check - only king moves are allowed
+        PieceType moved_pt = TypeOfPiece(moved_piece);
+        if (double_check && moved_pt != KING) {
+            return false;
+        }
+
+        // the moved piece is of our color
+        Color col_to_move = board.ColorToMove();
+        if (ColorOfPiece(moved_piece) != col_to_move) {
+            return false;
+        }
+
+        // destination is not occupied by a friendly piece
+        Piece dest_piece = board.GetPieceOnSquare(ToSquare(m));
+        if (dest_piece != NO_PIECE && ColorOfPiece(dest_piece) == col_to_move) {
+            return false;
+        }
+
+        // castling validation
+        MoveType move_type = GetMoveType(m);
+        if (move_type == CASTLING) {
+            return col_to_move == WHITE ? ValidateCastling<WHITE>(m) : ValidateCastling<BLACK>(m);
+        }
+
+        // ep validation
+        if (move_type == EN_PASSANT) {
+            if (moved_pt == PAWN && board.EpSquare()) {
+                Square ep_s = board.EpSquare();
+                Bitboard attacker = Bitboards::GetAttacksForPiece<PAWN>(ep_s, all_pieces, OtherColor(col_to_move)) &
+                                    SquareToBB(from);
+                if (attacker && m == NewMove(Bitboards::Lsb(attacker), ep_s, EN_PASSANT)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // check if it's possible to generate a move that would match our tested move
+        if (moved_pt == KING) return move_type == NO_FLAG && ValidateMoveForPiece<KING>(m);
+        else if (moved_pt == QUEEN) return move_type == NO_FLAG && ValidateMoveForPiece<QUEEN>(m);
+        else if (moved_pt == ROOK) return move_type == NO_FLAG && ValidateMoveForPiece<ROOK>(m);
+        else if (moved_pt == BISHOP) return move_type == NO_FLAG && ValidateMoveForPiece<BISHOP>(m);
+        else if (moved_pt == KNIGHT) return move_type == NO_FLAG && ValidateMoveForPiece<KNIGHT>(m);
+        else if (moved_pt == PAWN) {
+            return col_to_move == WHITE ? ValidatePawnMove<WHITE>(m) : ValidatePawnMove<BLACK>(m);
+        }
+
+        return false;
+    }
+
+    template<Color C, PawnMoveDir D>
+    bool MoveGen::ValidatePawnNormal(Move m) const {
+
+        Bitboard origin_bb = SquareToBB(FromSquare(m));
+
+        constexpr Direction move_dir =
+                D == LEFT ? PawnCaptureLeftDir<C>() : D == RIGHT ? PawnCaptureRightDir<C>() : PawnFwdDir<C>();
+        Bitboard moves = BitShift<move_dir>(origin_bb) & ~PromotionRank<C>() & legal_moves;
+        moves &= D == LEFT || D == RIGHT ? enemy_pieces : empty_squares;
+
+        if (moves) {
+            Square dest_s = Bitboards::Lsb(moves);
+            Square origin_s = dest_s - move_dir;
+            if (!DiscoveryCheck(origin_s, dest_s) && m == NewMove(origin_s, dest_s)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    template<Color C>
+    bool MoveGen::ValidateTwoFwd(Move m) const {
+
+        Bitboard origin_bb = SquareToBB(FromSquare(m));
+
+        constexpr Direction push_dir = PawnFwdDir<C>();
+        Bitboard one_fwd = BitShift<push_dir>(origin_bb) & empty_squares;
+        Bitboard two_fwd = BitShift<push_dir>(one_fwd) & empty_squares & TwoFwdRank<C>() & legal_moves;
+
+        if (two_fwd) {
+            Square dest_s = Bitboards::Lsb(two_fwd);
+            Square origin_s = dest_s - push_dir - push_dir;
+            if (!DiscoveryCheck(origin_s, dest_s) && m == NewMove(origin_s, dest_s, TWO_FORWARD)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    template<Color C, PawnMoveDir D>
+    bool MoveGen::ValidatePromotion(Move m) const {
+
+        Bitboard origin_bb = SquareToBB(FromSquare(m));
+
+        constexpr Direction move_dir =
+                D == LEFT ? PawnCaptureLeftDir<C>() : D == RIGHT ? PawnCaptureRightDir<C>() : PawnFwdDir<C>();
+        Bitboard promotions = BitShift<move_dir>(origin_bb) & PromotionRank<C>();
+        promotions &= D == LEFT || D == RIGHT ? enemy_pieces : empty_squares;
+
+        if (promotions) {
+            Square dest_s = Bitboards::Lsb(promotions);
+            Square origin_s = dest_s - move_dir;
+            if (!DiscoveryCheck(origin_s, dest_s) &&
+                (m == NewMove(origin_s, dest_s, PROMOTE_QUEEN) ||
+                 m == NewMove(origin_s, dest_s, PROMOTE_ROOK) ||
+                 m == NewMove(origin_s, dest_s, PROMOTE_BISHOP) ||
+                 m == NewMove(origin_s, dest_s, PROMOTE_KNIGHT))
+                    )
+                return true;
+        }
+
+        return false;
+    }
+
+    template<Color C>
+    bool MoveGen::ValidatePawnMove(Move m) const {
+
+        MoveType move_type = GetMoveType(m);
+
+        if (move_type == NO_FLAG) {
+            return ValidatePawnNormal<C, LEFT>(m) || ValidatePawnNormal<C, RIGHT>(m) ||
+                   ValidatePawnNormal<C, ONE_FWD>(m);
+        }
+        if (move_type == TWO_FORWARD) {
+            return ValidateTwoFwd<C>(m);
+        }
+        if (IsPromotion(m)) {
+            return ValidatePromotion<C, LEFT>(m) || ValidatePromotion<C, RIGHT>(m) || ValidatePromotion<C, ONE_FWD>(m);
+        }
+
+        return false;
+    }
+
+    template<PieceType PT>
+    bool MoveGen::ValidateMoveForPiece(Move m) const {
+        Bitboard legality_mask = enemy_pieces | empty_squares;
+        if constexpr (PT != KING) {
+            legality_mask &= legal_moves;
+        }
+        Square origin_s = FromSquare(m);
+        Bitboard possible_moves = Bitboards::GetAttacksForPiece<PT>(origin_s, all_pieces) & legality_mask;
+        if (blockers & SquareToBB(origin_s)) {
+            possible_moves &= Bitboards::GetRayBetweenEdges(king_square, origin_s);
+        }
+        while (possible_moves) {
+            Square destination_s = Bitboards::PopLsb(possible_moves);
+            Move move = NewMove(origin_s, destination_s);
+            if (m == move) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    template<Color C>
+    bool MoveGen::ValidateCastling(Move m) const {
+        if (IsKingInCheck()) {
+            return false;
+        }
+        if (CanCastleShort<C>(board.GetCR())) {
+            if (m == NewMove(king_square, king_square + 2, CASTLING)) {
+                return true;
+            }
+        }
+        if (CanCastleLong<C>(board.GetCR())) {
+            if (m == NewMove(king_square, king_square - 2, CASTLING)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }
