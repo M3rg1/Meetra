@@ -18,4 +18,4 @@ message("CMAKE_CXX_FLAGS_MINSIZEREL is ${CMAKE_CXX_FLAGS_MINSIZEREL}")
 
 message("GCC_COVERAGE_COMPILE_FLAGS is ${GCC_COVERAGE_COMPILE_FLAGS}")
 
-add_executable(Meetra src/Main.cpp src/Uci.cpp src/Uci.h src/StringTokenStream.cpp src/StringTokenStream.h src/Bitboards.cpp src/Bitboards.h src/Types.h src/Perft.h src/Board.cpp src/Board.h src/MoveGen.cpp src/MoveGen.h src/MagicNumbers.h src/Search.cpp src/Search.h src/Evaluation.cpp src/Evaluation.h src/EvalValues.h src/Timer.h src/ThreadPool.cpp src/ThreadPool.h src/TranspositionTable.cpp src/TranspositionTable.h src/ZobristHash.cpp src/ZobristHash.h src/SearchThread.cpp src/SearchThread.h src/PVTable.h src/Spinlock.h)
+add_executable(Meetra src/Main.cpp src/Uci.cpp src/Uci.h src/Bitboards.cpp src/Bitboards.h src/Types.h src/Perft.h src/Board.cpp src/Board.h src/MoveGen.cpp src/MoveGen.h src/MagicNumbers.h src/Search.cpp src/Search.h src/Evaluation.cpp src/Evaluation.h src/EvalValues.h src/Timer.h src/ThreadPool.cpp src/ThreadPool.h src/TranspositionTable.cpp src/TranspositionTable.h src/ZobristHash.cpp src/ZobristHash.h src/SearchThread.cpp src/SearchThread.h src/PVTable.h src/Spinlock.h)

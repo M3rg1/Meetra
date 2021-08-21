@@ -64,7 +64,7 @@ namespace Meetra::Search {
         MoveGen move_gen(board);
         std::vector<RootMove> moves;
         Move move;
-        while ((move = move_gen.GetNextMove<false>())) {
+        while ((move = move_gen.GetBestMove<false>())) {
             if (!board.MakeMove(move)) {
                 board.UnmakeMove(move);
                 continue;
@@ -85,16 +85,16 @@ namespace Meetra::Search {
         std::ostringstream oss;
 
         oss << "info depth " << static_cast<int>(Globals::curr_max_depth.load(std::memory_order_relaxed))
-           << " seldepth " << static_cast<int>(Globals::seldepth.load(std::memory_order_relaxed))
-           << " nodes " << (Globals::nodes_explored.load(std::memory_order_relaxed))
-           << " time " << elapsed_ms
-           << " nps " << nps
-           << " hashfull " << static_cast<int>(Globals::tt.Usage() * 1000.0);
+            << " seldepth " << static_cast<int>(Globals::seldepth.load(std::memory_order_relaxed))
+            << " nodes " << (Globals::nodes_explored.load(std::memory_order_relaxed))
+            << " time " << elapsed_ms
+            << " nps " << nps
+            << " hashfull " << static_cast<int>(Globals::tt.Usage() * 1000.0);
 
         return oss.str();
     }
 
-    void FinishSearch(){
+    void FinishSearch() {
         // select the thread with the best move overall
         // for multipv, because helper threads might skip some depths and not have the full pv, we can't safely use
         // their results without risking their pv for other than the top move will be very old from low depth or even
@@ -104,13 +104,12 @@ namespace Meetra::Search {
             for (auto i = 1; i < search_threads.size(); i++) {
                 while (search_threads[i]->IsThreadSearching()); // wait thread finishes search
                 if (search_threads[i]->GetBestRootMove().score > best_thread->GetBestRootMove().score &&
-                search_threads[i]->GetBestRootMove().depth >= best_thread->GetBestRootMove().depth) {
+                    search_threads[i]->GetBestRootMove().depth >= best_thread->GetBestRootMove().depth) {
                     best_thread = search_threads[i].get();
                 }
             }
         }
 
-        //Uci::SendToGui("Best thread " + std::to_string(best_thread_id));
         Uci::SendToGui(best_thread->GetSearchInfo());
         Uci::SendToGui("bestmove " + GetMoveName(best_thread->GetBestRootMove().move));
 

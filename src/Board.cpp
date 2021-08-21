@@ -1,7 +1,6 @@
 #include "Board.h"
 #include "Bitboards.h"
 #include <cstring>
-#include "StringTokenStream.h"
 #include <sstream>
 
 namespace Meetra {
@@ -241,12 +240,14 @@ namespace Meetra {
 
     void Board::ParseFen(const std::string &fen) {
 
-        StringTokenStream sts(fen);
+        std::istringstream iss(fen);
+        std::string token;
 
-        std::string board_pos_fen = sts.NextToken();
+        // board position
+        iss >> token;
         File f = FILE_A;
         Rank r = RANK_8;
-        for (char c : board_pos_fen) {
+        for (char c : token) {
             if (c == '/') {
                 f = FILE_A;
                 --r;
@@ -259,38 +260,39 @@ namespace Meetra {
             }
         }
 
-        if (sts.HasNext()) {
-            SetColorToMove(sts.NextToken() == "w" ? WHITE : BLACK);
+        // color to move
+        if (iss >> token) {
+            SetColorToMove(token == "w" ? WHITE : BLACK);
         }
 
-        if (sts.HasNext()) {
-            std::string castling_rights = sts.NextToken();
-            if (castling_rights.find('K') != std::string::npos) SetCastlingRights(WHITE_SHORT);
-            if (castling_rights.find('Q') != std::string::npos) SetCastlingRights(WHITE_LONG);
-            if (castling_rights.find('k') != std::string::npos) SetCastlingRights(BLACK_SHORT);
-            if (castling_rights.find('q') != std::string::npos) SetCastlingRights(BLACK_LONG);
+        // castling rights
+        if (iss >> token) {
+            if (token.find('K') != std::string::npos) SetCastlingRights(WHITE_SHORT);
+            if (token.find('Q') != std::string::npos) SetCastlingRights(WHITE_LONG);
+            if (token.find('k') != std::string::npos) SetCastlingRights(BLACK_SHORT);
+            if (token.find('q') != std::string::npos) SetCastlingRights(BLACK_LONG);
         }
 
-        if (sts.HasNext()) {
-            std::string ep_info = sts.NextToken();
-            if (ep_info != "-") {
-                File file = FileFromChar(ep_info[0]);
-                Rank rank = RankFromChar(ep_info[1]);
+        // en passant square
+        if (iss >> token) {
+            if (token != "-") {
+                File file = FileFromChar(token[0]);
+                Rank rank = RankFromChar(token[1]);
                 SetEpSquare(SquareFromFiRa(file, rank));
             }
         }
 
-        if (sts.HasNext()) {
-            std::string ply = sts.NextToken();
-            if (ply != "-") {
-                SetPly(std::stoi(ply));
+        // ply
+        if (iss >> token) {
+            if (token != "-") {
+                SetPly(std::stoi(token));
             }
         }
 
-        if (sts.HasNext()) {
-            std::string move_count = sts.NextToken();
-            if (move_count != "-") {
-                SetMoveNumber(std::stoi(move_count));
+        // move count
+        if (iss >> token) {
+            if (token != "-") {
+                SetMoveNumber(std::stoi(token));
             }
         }
     }

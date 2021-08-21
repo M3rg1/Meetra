@@ -123,6 +123,13 @@ namespace Meetra {
         }
         // we got "some" move from TT, but it might be corrupted from data races or there might have been a hash
         // collision, so we need to validate it first
+
+        std::random_device rd;
+        std::mt19937_64 mt(rd());
+        std::uniform_int_distribution<uint16_t> distribution;
+
+        move = distribution(mt);
+
         MoveGen move_gen(board);
         if (move_gen.IsPseudoLegal(move)) {
             move_gen.PutTTMove(move);
@@ -132,7 +139,7 @@ namespace Meetra {
         tt_flag = ALPHA;
         bool moves_available = false;
 
-        while ((move = move_gen.GetNextMove<false>())) {
+        while ((move = move_gen.GetBestMove<false>())) {
             if (!board.MakeMove(move)) {
                 board.UnmakeMove(move);
                 continue;
@@ -198,7 +205,7 @@ namespace Meetra {
         MoveGen move_gen(board);
         Move move;
         // iterate over all available captures
-        while ((move = move_gen.GetNextMove<true>())) {
+        while ((move = move_gen.GetBestMove<true>())) {
             if (!board.MakeMove(move)) {
                 board.UnmakeMove(move);
                 continue;

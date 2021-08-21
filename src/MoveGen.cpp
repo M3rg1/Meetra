@@ -86,7 +86,7 @@ namespace Meetra {
     }
 
     template<bool QSearch>
-    Move MoveGen::GetNextMove() {
+    Move MoveGen::GetBestMove() {
         while (Empty()) {
             if (my_color == WHITE) {
                 NextPhase<WHITE, QSearch>();
@@ -98,8 +98,19 @@ namespace Meetra {
         return PickBestMove();
     }
 
-    template Move MoveGen::GetNextMove<true>();
-    template Move MoveGen::GetNextMove<false>();
+    Move MoveGen::GetAnyMove() {
+        while (Empty()) {
+            if (my_color == WHITE) {
+                NextPhase<WHITE, false>();
+            } else {
+                NextPhase<BLACK, false>();
+            }
+        }
+        return PopMove();
+    }
+
+    template Move MoveGen::GetBestMove<true>();
+    template Move MoveGen::GetBestMove<false>();
 
     template<Color C, bool QSearch>
     void MoveGen::NextPhase() {
@@ -329,69 +340,23 @@ namespace Meetra {
         return false;
     }
 
-    template<Color C, PawnMoveDir D>
-    bool MoveGen::ValidatePawnNormal(Move m) const {
-
-        Bitboard origin_bb = SquareToBB(FromSquare(m));
-
-        constexpr Direction move_dir =
-                D == LEFT ? PawnCaptureLeftDir<C>() : D == RIGHT ? PawnCaptureRightDir<C>() : PawnFwdDir<C>();
-        Bitboard moves = BitShift<move_dir>(origin_bb) & ~PromotionRank<C>() & legal_moves;
-        moves &= D == LEFT || D == RIGHT ? enemy_pieces : empty_squares;
-
-        if (moves) {
-            Square dest_s = Bitboards::Lsb(moves);
-            Square origin_s = dest_s - move_dir;
-            if (!DiscoveryCheck(origin_s, dest_s) && m == NewMove(origin_s, dest_s)) {
+    template<PieceType PT>
+    bool MoveGen::ValidateMoveForPiece(Move m) const {
+        Bitboard legality_mask = enemy_pieces | empty_squares;
+        if constexpr (PT != KING) {
+            legality_mask &= legal_moves;
+        }
+        Square from = FromSquare(m);
+        Square to = ToSquare(m);
+        Bitboard possible_moves = Bitboards::GetAttacksForPiece<PT>(from, all_pieces) & legality_mask;
+        if (blockers & SquareToBB(from)) {
+            possible_moves &= Bitboards::GetRayBetweenEdges(king_square, from);
+        }
+        while (possible_moves) {
+            if (to == Bitboards::PopLsb(possible_moves)) {
                 return true;
             }
         }
-
-        return false;
-    }
-
-    template<Color C>
-    bool MoveGen::ValidateTwoFwd(Move m) const {
-
-        Bitboard origin_bb = SquareToBB(FromSquare(m));
-
-        constexpr Direction push_dir = PawnFwdDir<C>();
-        Bitboard one_fwd = BitShift<push_dir>(origin_bb) & empty_squares;
-        Bitboard two_fwd = BitShift<push_dir>(one_fwd) & empty_squares & TwoFwdRank<C>() & legal_moves;
-
-        if (two_fwd) {
-            Square dest_s = Bitboards::Lsb(two_fwd);
-            Square origin_s = dest_s - push_dir - push_dir;
-            if (!DiscoveryCheck(origin_s, dest_s) && m == NewMove(origin_s, dest_s, TWO_FORWARD)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    template<Color C, PawnMoveDir D>
-    bool MoveGen::ValidatePromotion(Move m) const {
-
-        Bitboard origin_bb = SquareToBB(FromSquare(m));
-
-        constexpr Direction move_dir =
-                D == LEFT ? PawnCaptureLeftDir<C>() : D == RIGHT ? PawnCaptureRightDir<C>() : PawnFwdDir<C>();
-        Bitboard promotions = BitShift<move_dir>(origin_bb) & PromotionRank<C>();
-        promotions &= D == LEFT || D == RIGHT ? enemy_pieces : empty_squares;
-
-        if (promotions) {
-            Square dest_s = Bitboards::Lsb(promotions);
-            Square origin_s = dest_s - move_dir;
-            if (!DiscoveryCheck(origin_s, dest_s) &&
-                (m == NewMove(origin_s, dest_s, PROMOTE_QUEEN) ||
-                 m == NewMove(origin_s, dest_s, PROMOTE_ROOK) ||
-                 m == NewMove(origin_s, dest_s, PROMOTE_BISHOP) ||
-                 m == NewMove(origin_s, dest_s, PROMOTE_KNIGHT))
-                    )
-                return true;
-        }
-
         return false;
     }
 
@@ -401,34 +366,36 @@ namespace Meetra {
         MoveType move_type = GetMoveType(m);
 
         if (move_type == NO_FLAG) {
-            return ValidatePawnNormal<C, LEFT>(m) || ValidatePawnNormal<C, RIGHT>(m) ||
-                   ValidatePawnNormal<C, ONE_FWD>(m);
+            return HelperValidatePawnMove<C, LEFT, false>(m) || HelperValidatePawnMove<C, RIGHT, false>(m) ||
+                   HelperValidatePawnMove<C, ONE_FWD, false>(m);
         }
         if (move_type == TWO_FORWARD) {
-            return ValidateTwoFwd<C>(m);
+            return HelperValidatePawnMove<C, TWO_FWD, false>(m);
         }
-        if (IsPromotion(m)) {
-            return ValidatePromotion<C, LEFT>(m) || ValidatePromotion<C, RIGHT>(m) || ValidatePromotion<C, ONE_FWD>(m);
+        if (move_type == PROMOTE_QUEEN || move_type == PROMOTE_ROOK ||
+            move_type == PROMOTE_BISHOP || move_type == PROMOTE_KNIGHT) {
+            return HelperValidatePawnMove<C, LEFT, true>(m) || HelperValidatePawnMove<C, RIGHT, true>(m) ||
+                   HelperValidatePawnMove<C, ONE_FWD, true>(m);
         }
 
         return false;
     }
 
-    template<PieceType PT>
-    bool MoveGen::ValidateMoveForPiece(Move m) const {
-        Bitboard legality_mask = enemy_pieces | empty_squares;
-        if constexpr (PT != KING) {
-            legality_mask &= legal_moves;
-        }
-        Square origin_s = FromSquare(m);
-        Bitboard possible_moves = Bitboards::GetAttacksForPiece<PT>(origin_s, all_pieces) & legality_mask;
-        if (blockers & SquareToBB(origin_s)) {
-            possible_moves &= Bitboards::GetRayBetweenEdges(king_square, origin_s);
-        }
-        while (possible_moves) {
-            Square destination_s = Bitboards::PopLsb(possible_moves);
-            Move move = NewMove(origin_s, destination_s);
-            if (m == move) {
+    template<Color C, PawnMoveDir D, bool P>
+    bool MoveGen::HelperValidatePawnMove(Move m) const {
+
+        constexpr Direction move_dir = D == LEFT ? PawnCaptureLeftDir<C>() :
+                D == RIGHT ? PawnCaptureRightDir<C>() :
+                PawnFwdDir<C>();
+        Bitboard moves = BitShift<move_dir>(SquareToBB(FromSquare(m)));
+        moves &= D == LEFT || D == RIGHT ? enemy_pieces : empty_squares;
+        moves &= P ? PromotionRank<C>() : ~PromotionRank<C>();
+        moves = D == TWO_FWD ? BitShift<move_dir>(moves) & empty_squares & TwoFwdRank<C>() & legal_moves :
+                moves & legal_moves;
+
+        if (moves) {
+            Square dest_s = Bitboards::Lsb(moves);
+            if (ToSquare(m) == dest_s && !DiscoveryCheck(FromSquare(m), dest_s)) {
                 return true;
             }
         }

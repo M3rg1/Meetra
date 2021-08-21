@@ -3,7 +3,6 @@
 #include "Perft.h"
 #include "ThreadPool.h"
 #include "Search.h"
-#include "StringTokenStream.h"
 
 
 namespace Meetra::Uci {
@@ -33,18 +32,18 @@ namespace Meetra::Uci {
 
     void UciCommand();
     void IsReadyCommand();
-    void GoCommand(StringTokenStream &sts, Board &board);
+    void GoCommand(std::istringstream &iss, Board &board);
     void UciNewGameCommand();
-    void PositionCommand(StringTokenStream &sts, Board &board);
-    void PerftCommand(StringTokenStream &sts, Board &board);
-    void SetOptionCommand(StringTokenStream &sts);
+    void PositionCommand(std::istringstream &iss, Board &board);
+    void PerftCommand(std::istringstream &iss, Board &board);
+    void SetOptionCommand(std::istringstream &iss);
     void StopCommand();
     void ShowCommand(Board &board);
     void HelpCommand();
     void QuitCommand();
     void UnknownCommand();
     void MakeUciMove(const std::string &move_string, Board &board);
-    Search::SearchSettings ParseSearchOptions(StringTokenStream &sts);
+    Search::SearchSettings ParseSearchOptions(std::istringstream &iss);
 
     void Init() {
         std::ios_base::sync_with_stdio(false);
@@ -60,17 +59,17 @@ namespace Meetra::Uci {
 
         do {
             std::getline(std::cin, input);
-            StringTokenStream sts(input);
-            token = sts.NextToken();
+            std::istringstream iss(input);
 
+            iss >> token;
             if (token == "uci") UciCommand();
             else if (token == "isready") IsReadyCommand();
-            else if (token == "go") GoCommand(sts, board);
-            else if (token == "position") PositionCommand(sts, board);
-            else if (token == "setoption") SetOptionCommand(sts);
+            else if (token == "go") GoCommand(iss, board);
+            else if (token == "position") PositionCommand(iss, board);
+            else if (token == "setoption") SetOptionCommand(iss);
             else if (token == "stop") StopCommand();
             else if (token == "ucinewgame") UciNewGameCommand();
-            else if (token == "perft") PerftCommand(sts, board);
+            else if (token == "perft") PerftCommand(iss, board);
             else if (token == "show") ShowCommand(board);
             else if (token == "help") HelpCommand();
             else if (token == "quit") QuitCommand();
@@ -115,18 +114,19 @@ namespace Meetra::Uci {
         );
     }
 
-    void GoCommand(StringTokenStream &sts, Board &board) {
+    void GoCommand(std::istringstream &iss, Board &board) {
         if (Search::Run()) {
             return;
         }
 
-        Search::SearchSettings settings = ParseSearchOptions(sts);
+        Search::SearchSettings settings = ParseSearchOptions(iss);
         Search::StartSearch(settings, board);
     }
 
-    void PerftCommand(StringTokenStream &sts, Board &board) {
-        if (sts.HasNext()) {
-            Depth depth = std::stoi(sts.NextToken());
+    void PerftCommand(std::istringstream &iss, Board &board) {
+        std::string token;
+        if (iss >> token) {
+            Depth depth = std::stoi(token);
             RunPerft(depth, board);
         }
     }
@@ -135,16 +135,17 @@ namespace Meetra::Uci {
         SendToGui("readyok\n");
     }
 
-    void PositionCommand(StringTokenStream &sts, Board &board) {
+    void PositionCommand(std::istringstream &iss, Board &board) {
 
-        std::string token = sts.NextToken();
+        std::string token;
         std::string fen;
 
+        iss >> token;
         if (token == "startpos") {
             fen = STARTPOS_FEN;
-            if (sts.HasNext()) token = sts.NextToken();
+            iss >> token;
         } else if (token == "fen") {
-            while (sts.HasNext() && ((token = sts.NextToken()) != "moves")) {
+            while ((iss >> token) && token != "moves") {
                 fen += token + ' ';
             }
         }
@@ -152,8 +153,8 @@ namespace Meetra::Uci {
         board.NewPosition(fen);
 
         if (token == "moves") {
-            while (sts.HasNext()) {
-                MakeUciMove(sts.NextToken(), board);
+            while (iss >> token) {
+                MakeUciMove(token, board);
             }
         }
     }
@@ -167,55 +168,43 @@ namespace Meetra::Uci {
         Search::ClearTT();
     }
 
-    void SetOptionCommand(StringTokenStream &sts) {
+    void SetOptionCommand(std::istringstream &iss) {
 
-        if (!Search::Finished() || sts.NextToken() != "name") {
+        std::string token;
+        iss >> token;
+        if (!Search::Finished() || token != "name") {
             return;
         }
 
-        sts.MakeLower();
-        std::string option = sts.NextToken();
+        std::string option;
+        while (iss >> token && token != "value") {
+            option += token + " ";
+        }
+        std::string value;
+        if (token != "value" || !(iss >> value)) {
+            return;
+        }
+
+        option.erase(option.find_last_not_of(' ') + 1);
+        std::transform(option.begin(), option.end(), option.begin(), ::tolower);
 
         if (option == "hash") {
-            if (sts.HasNext() && sts.NextToken() == "value") {
-                int hash_size = std::stoi(sts.NextToken());
-                Search::SetTTSize(hash_size);
-            }
-        } else if (option == "clear") {
-            if (sts.HasNext() && sts.NextToken() == "hash") {
-                Search::ClearTT();
-            }
+            int hash_size = std::stoi(value);
+            Search::SetTTSize(hash_size);
+        } else if (option == "clear hash") {
+            Search::ClearTT();
         } else if (option == "multipv") {
-            if (sts.HasNext() && sts.NextToken() == "value") {
-                int pv_num = std::stoi(sts.NextToken());
-                Search::SetMultiPv(pv_num);
-            }
+            Search::SetMultiPv(std::stoi(value));
         } else if (option == "uci_showcurrline") {
-            if (sts.HasNext() && sts.NextToken() == "value") {
-                bool show = sts.NextToken() == "true";
-                Search::ShowShowCurrLine(show);
-            }
-        } else if (option == "mute") {
-            if (sts.HasNext() && sts.NextToken() == "plies" && sts.HasNext() && sts.NextToken() == "value") {
-                int plies_muted = std::stoi(sts.NextToken());
-                Search::SetPliesMuted(plies_muted);
-            }
+            Search::ShowShowCurrLine(value == "true");
+        } else if (option == "mute plies") {
+            Search::SetPliesMuted(std::stoi(value));
         } else if (option == "cores") {
-            if (sts.HasNext() && sts.NextToken() == "value") {
-                int num_threads = std::stoi(sts.NextToken());
-                Search::SetNumThreads(num_threads);
-            }
-        } else if (option == "show") {
-            if (sts.HasNext() && sts.NextToken() == "current" && sts.HasNext() && sts.NextToken() == "move" &&
-                sts.HasNext() && sts.NextToken() == "value") {
-                bool show = sts.NextToken() == "true";
-                Search::ShowCurrMoveInfo(show);
-            }
-        } else if (option == "plies") {
-            if (sts.HasNext() && sts.NextToken() == "draw" && sts.HasNext() && sts.NextToken() == "value") {
-                int plies_draw = std::stoi(sts.NextToken());
-                Search::SetPliesDraw(plies_draw);
-            }
+            Search::SetNumThreads(std::stoi(value));
+        } else if (option == "show current move") {
+            Search::ShowCurrMoveInfo(value == "true");
+        } else if (option == "plies draw") {
+            Search::SetPliesDraw(std::stoi(value));
         }
     }
 
@@ -223,7 +212,7 @@ namespace Meetra::Uci {
         Move move_made = NewMoveFromName(move_string);
         MoveGen move_gen(board);
         Move move;
-        while ((move = move_gen.GetNextMove<false>())) {
+        while ((move = move_gen.GetBestMove<false>())) {
             if (FromSquare(move) == FromSquare(move_made) && ToSquare(move) == ToSquare(move_made)) {
                 if (IsPromotion(move) && GetMoveType(move) != GetMoveType(move_made)) {
                     continue;
@@ -234,25 +223,27 @@ namespace Meetra::Uci {
         }
     }
 
-    Search::SearchSettings ParseSearchOptions(StringTokenStream &sts) {
+    Search::SearchSettings ParseSearchOptions(std::istringstream &iss) {
 
         Search::SearchSettings settings;
+        std::string option;
+        std::string value;
 
-        while (sts.HasNext()) {
-            std::string token = sts.NextToken();
-            if (token == "wtime") settings.white_time = std::stoi(sts.NextToken());
-            else if (token == "btime") settings.black_time = std::stoi(sts.NextToken());
-            else if (token == "winc") settings.white_increment = std::stoi(sts.NextToken());
-            else if (token == "binc") settings.black_increment = std::stoi(sts.NextToken());
-            else if (token == "movetime") {
+        while (iss >> option) {
+            iss >> value;
+            if (option == "wtime") settings.white_time = std::stoi(value);
+            else if (option == "btime") settings.black_time = std::stoi(value);
+            else if (option == "winc") settings.white_increment = std::stoi(value);
+            else if (option == "binc") settings.black_increment = std::stoi(value);
+            else if (option == "movetime") {
                 settings.max_allowed_depth = MAX_SEARCH_DEPTH;
                 settings.fixed_timer = true;
-                settings.allowed_time = std::stoi(sts.NextToken());
-            } else if (token == "infinite") {
+                settings.allowed_time = std::stoi(value);
+            } else if (option == "infinite") {
                 settings.max_allowed_depth = MAX_SEARCH_DEPTH;
                 settings.infinite = true;
-            } else if (token == "depth") {
-                settings.max_allowed_depth = std::stoi(sts.NextToken());
+            } else if (option == "depth") {
+                settings.max_allowed_depth = std::stoi(value);
                 settings.infinite = true;
             }
             //else if (token == "ponder") infinite = true; - need to implement ponderhit command for this (there we set search_timer)

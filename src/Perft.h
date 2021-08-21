@@ -17,7 +17,7 @@ namespace Meetra {
         ulong nodes = 0;
         MoveGen move_gen(board);
         Move m;
-        while ((m = move_gen.GetNextMove<false>())) {
+        while ((m = move_gen.GetAnyMove())) {
             if (board.MakeMove(m)) {
                 nodes += Perft(depth - 1, board);
             }
@@ -34,7 +34,7 @@ namespace Meetra {
         MoveGen move_gen(board);
         Move m;
         ulong total_nodes = 0;
-        while ((m = move_gen.GetNextMove<false>())) {
+        while ((m = move_gen.GetAnyMove())) {
             if (board.MakeMove(m)) {
                 ulong nodes = Perft(depth - 1, board);
                 total_nodes += nodes;

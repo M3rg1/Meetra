@@ -20,7 +20,8 @@ namespace Meetra {
         bool PutKillerMove(Move killer_move);
 
         template<bool QSearch>
-        [[nodiscard]] Move GetNextMove();
+        [[nodiscard]] Move GetBestMove();
+        [[nodiscard]] Move GetAnyMove();
         [[nodiscard]] inline bool IsKingInCheck() const { return checkers; }
         [[nodiscard]] bool IsPseudoLegal(Move m) const;
     private:
@@ -31,12 +32,8 @@ namespace Meetra {
         [[nodiscard]] bool ValidateMoveForPiece(Move m) const;
         template<Color C>
         [[nodiscard]] bool ValidatePawnMove(Move m) const;
-        template<Color C, PawnMoveDir D>
-        [[nodiscard]] bool ValidatePawnNormal(Move m) const;
-        template<Color C, PawnMoveDir D>
-        [[nodiscard]] bool ValidatePromotion(Move m) const;
-        template<Color C>
-        [[nodiscard]] bool ValidateTwoFwd(Move m) const;
+        template<Color C, PawnMoveDir D, bool P>
+        [[nodiscard]] bool HelperValidatePawnMove(Move m) const;
 
         struct p_MoveScore {
             Move move;
