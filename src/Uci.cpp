@@ -180,10 +180,9 @@ namespace Meetra::Uci {
         while (iss >> token && token != "value") {
             option += token + " ";
         }
+
         std::string value;
-        if (token != "value" || !(iss >> value)) {
-            return;
-        }
+        iss >> value;
 
         option.erase(option.find_last_not_of(' ') + 1);
         std::transform(option.begin(), option.end(), option.begin(), ::tolower);
