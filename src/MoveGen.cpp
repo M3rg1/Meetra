@@ -277,10 +277,11 @@ namespace Meetra {
                !board.IsSquareAttacked(C == WHITE ? D1 : D8, OtherColor(C), all_pieces);
     }
 
+    // ZERO_MOVE is considered to be pseudo legal !!
     bool MoveGen::IsPseudoLegal(Move m) const {
 
         if (m == ZERO_MOVE) {
-            return false;
+            return true;
         }
 
         // there exists a piece on the origin square
@@ -385,8 +386,8 @@ namespace Meetra {
     bool MoveGen::HelperValidatePawnMove(Move m) const {
 
         constexpr Direction move_dir = D == LEFT ? PawnCaptureLeftDir<C>() :
-                D == RIGHT ? PawnCaptureRightDir<C>() :
-                PawnFwdDir<C>();
+                                       D == RIGHT ? PawnCaptureRightDir<C>() :
+                                       PawnFwdDir<C>();
         Bitboard moves = BitShift<move_dir>(SquareToBB(FromSquare(m)));
         moves &= D == LEFT || D == RIGHT ? enemy_pieces : empty_squares;
         moves &= P ? PromotionRank<C>() : ~PromotionRank<C>();

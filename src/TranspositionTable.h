@@ -37,7 +37,7 @@ namespace Meetra {
         // 0.01 == 1% usage, 0.1 == 10% usage, 1 == 100% usage
         [[nodiscard]] inline double Usage() const {
             double usage = static_cast<double>(used_entries.load(std::memory_order_relaxed))
-                    / static_cast<double>(buckets_count * TT_ENTRIES_PER_BUCKET);
+                           / static_cast<double>(buckets_count * TT_ENTRIES_PER_BUCKET);
             return std::min(usage, 1.0);
         }
 

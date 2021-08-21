@@ -110,30 +110,27 @@ namespace Meetra {
         EntryFlag tt_flag;
         Score score;
         Move move;
+        MoveGen move_gen(board);
         Globals::tt.ProbeEval(board.GetZobristHash(), alpha, beta, depth, ply, score, tt_flag, move);
 
-        // we have a good match and will be making a cutoff
-        if (tt_flag != NOT_FOUND) {
-            // it's a PV node, we need to recover the PV line from the PVTable before we make the cutoff
-            if (tt_flag == EXACT_SCORE) {
-                pv_line.clear();
-                BackupPv(pv_line, board, 50);
+        // do a check of the retrieved move, if it's legal to play in the current position and not corrupted,
+        // chances are, the score is correct as well
+        if(move_gen.IsPseudoLegal(move)) {
+            // we have a good match and will be making a cutoff
+            if (tt_flag != NOT_FOUND) {
+                // it's a PV node, we need to recover the PV line from the PVTable before we make the cutoff
+                if (tt_flag == EXACT_SCORE) {
+                    pv_line.clear();
+                    BackupPv(pv_line, board, 50);
+                }
+                return score;
             }
-            return score;
+            // no cutoff, but we got some move from TT, we will play it as the first move in the main negamax loop
+            if(move != ZERO_MOVE) {
+                move_gen.PutTTMove(move);
+            }
         }
-        // we got "some" move from TT, but it might be corrupted from data races or there might have been a hash
-        // collision, so we need to validate it first
 
-        std::random_device rd;
-        std::mt19937_64 mt(rd());
-        std::uniform_int_distribution<uint16_t> distribution;
-
-        move = distribution(mt);
-
-        MoveGen move_gen(board);
-        if (move_gen.IsPseudoLegal(move)) {
-            move_gen.PutTTMove(move);
-        }
 
         Move best_move_this_iter = ZERO_MOVE;
         tt_flag = ALPHA;
