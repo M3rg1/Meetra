@@ -427,7 +427,7 @@ namespace Meetra::Bitboards {
     std::string PPBitboard(Bitboard b) {
         std::ostringstream oss;
         for (Rank r = RANK_8; r >= RANK_1; --r) {
-            oss << (std::to_string(r + 1)) + " |";
+            oss << (r + 1) << " |";
             for (File f = FILE_A; f <= FILE_H; ++f) {
                 if ((b >> ((r * 8) + f)) & 1) {
                     oss << " x ";

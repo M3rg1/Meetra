@@ -17,7 +17,10 @@ namespace Meetra {
             move_eval[moves_cnt++].score = 10000;
         }
 
-        bool PutKillerMove(Move killer_move);
+        inline void PutKillerMove(Move killer_move) {
+            move_eval[moves_cnt].move = killer_move;
+            move_eval[moves_cnt++].score = 9000;
+        }
 
         template<bool QSearch>
         [[nodiscard]] Move GetBestMove();

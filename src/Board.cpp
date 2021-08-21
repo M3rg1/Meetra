@@ -302,7 +302,7 @@ namespace Meetra {
         std::ostringstream oss;
 
         for (Rank r = RANK_8; r >= RANK_1; --r) {
-            oss << std::to_string(r + 1) << " |";
+            oss << (r + 1) << " |";
             for (File f = FILE_A; f <= FILE_H; ++f) {
                 oss << ' ' << PieceToChar(board[SquareFromFiRa(f, r)]) << ' ';
             }
