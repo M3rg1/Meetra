@@ -17,15 +17,15 @@ namespace Meetra::Uci {
     std::string GetAuthor() { return "M3rg1"; }
     std::string GetOptions() {
         std::ostringstream oss;
-        oss << "option name Hash type spin default " << DEFAULT_HASH_SIZE << " min " << MIN_HASH_SIZE << " max "
-            << MAX_HASH_SIZE << "\n"
-            << "option name Clear Hash type button\n"
-            << "option name MultiPV type spin default 1 min 1 max 32\n"
+        oss << "option name Clear Hash type button\n"
             << "option name UCI_ShowCurrLine type check default false\n"
+            << "option name Show current move type check default true\n"
+            << "option name Hash type spin default " << DEFAULT_HASH_SIZE << " min " << MIN_HASH_SIZE << " max "
+            << MAX_HASH_SIZE << "\n"
+            << "option name MultiPV type spin default 1 min 1 max 32\n"
             << "option name Mute plies type spin default 1 min 1 max 64\n"
             << "option name Cores type spin default " << DEFAULT_SEARCH_THREADS << " min 1 max " << MAX_SEARCH_THREADS
             << "\n"
-            << "option name Show current move type check default true\n"
             << "option name Plies draw type spin default " << DEFAULT_PLY_FOR_DRAW << " min 10 max 100";
         return oss.str();
     }
@@ -211,7 +211,7 @@ namespace Meetra::Uci {
         Move move_made = NewMoveFromName(move_string);
         MoveGen move_gen(board);
         Move move;
-        while ((move = move_gen.GetBestMove<false>())) {
+        while ((move = move_gen.GetAnyMove())) {
             if (FromSquare(move) == FromSquare(move_made) && ToSquare(move) == ToSquare(move_made)) {
                 if (IsPromotion(move) && GetMoveType(move) != GetMoveType(move_made)) {
                     continue;

@@ -147,17 +147,17 @@ namespace Meetra {
     inline Move NewMoveFromName(const std::string &move_name) {
 
         Square s_from = SquareFromFiRa(FileFromChar(move_name[0]), RankFromChar(move_name[1]));
-        Square s_to = SquareFromFiRa(FileFromChar(move_name[2]),  RankFromChar(move_name[3]));
+        Square s_to = SquareFromFiRa(FileFromChar(move_name[2]), RankFromChar(move_name[3]));
 
-        MoveType flag = NO_FLAG;
         if (move_name.length() > 4) {
-            flag = move_name[4] == 'q' ? PROMOTE_QUEEN :
-                   move_name[4] == 'r' ? PROMOTE_ROOK :
-                   move_name[4] == 'b' ? PROMOTE_BISHOP :
-                   PROMOTE_KNIGHT;
+            MoveType flag = move_name[4] == 'q' ? PROMOTE_QUEEN :
+                            move_name[4] == 'r' ? PROMOTE_ROOK :
+                            move_name[4] == 'b' ? PROMOTE_BISHOP :
+                            PROMOTE_KNIGHT;
+            return NewMove(s_from, s_to, flag);
         }
 
-        return NewMove(s_from, s_to, flag);
+        return NewMove(s_from, s_to);
     }
 #pragma endregion
 

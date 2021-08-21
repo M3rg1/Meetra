@@ -109,30 +109,35 @@ namespace Meetra {
 
         EntryFlag tt_flag;
         Score score;
-        Move move;
+        Move best_move;
         MoveGen move_gen(board);
-        Globals::tt.ProbeEval(board.GetZobristHash(), alpha, beta, depth, ply, score, tt_flag, move);
+        Globals::tt.ProbeEval(board.GetZobristHash(), alpha, beta, depth, ply, score, tt_flag, best_move);
 
+        // TODO if in analysis mode, dont skip over PV nodes and dont use PVTable to correctly show full PV
+        //  if not in analysis mode, dont even use pv table at all?
+        //  honestly fuck the PVTable, i really dont think its necessary, just dont cutoff PVnodes -> and we even save
+        //  time on not having to slowly probe the pvtable and backup the line
         // do a check of the retrieved move, if it's legal to play in the current position and not corrupted,
         // chances are, the score is correct as well
-        if(move_gen.IsPseudoLegal(move)) {
+        if (move_gen.IsPseudoLegal(best_move)) {
             // we have a good match and will be making a cutoff
-            if (tt_flag != NOT_FOUND) {
+            if (tt_flag == ALPHA || tt_flag == BETA) {
                 // it's a PV node, we need to recover the PV line from the PVTable before we make the cutoff
-                if (tt_flag == EXACT_SCORE) {
+                /*if (tt_flag == EXACT_SCORE) {
                     pv_line.clear();
                     BackupPv(pv_line, board, 50);
-                }
+                }*/
                 return score;
-            }
+            } // TODO else try to probe PV from PVtable ? cause in TT it mighve been overwritten, but we already have a move
+            //     in the bestmove var, so if we prove PVTable we can only do it if best_move == ZERO MOVE
             // no cutoff, but we got some move from TT, we will play it as the first move in the main negamax loop
-            if(move != ZERO_MOVE) {
-                move_gen.PutTTMove(move);
+            if (best_move != ZERO_MOVE) {
+                move_gen.PutTTMove(best_move);
             }
         }
 
 
-        Move best_move_this_iter = ZERO_MOVE;
+        Move move;
         tt_flag = ALPHA;
         bool moves_available = false;
 
@@ -161,7 +166,7 @@ namespace Meetra {
                 pv_line.insert(pv_line.begin() + 1, line.begin(), line.end());
                 tt_flag = EXACT_SCORE;
                 alpha = score;
-                best_move_this_iter = move;
+                best_move = move;
             }
         }
 
@@ -172,11 +177,11 @@ namespace Meetra {
             return -DRAW_SCORE;
         }
 
-        if (tt_flag == EXACT_SCORE) {
-            Globals::pvt.SavePv(board.GetZobristHash(), best_move_this_iter);
-        }
+/*        if (tt_flag == EXACT_SCORE) {
+            Globals::pvt.SavePv(board.GetZobristHash(), best_move);
+        }*/
         // whatever we learnt about this position, store it in TT for later use
-        Globals::tt.SaveEval(board.GetZobristHash(), alpha, depth, best_move_this_iter, tt_flag, ply);
+        Globals::tt.SaveEval(board.GetZobristHash(), alpha, depth, best_move, tt_flag, ply);
 
         return alpha;
     }
@@ -224,8 +229,9 @@ namespace Meetra {
     void SearchThread::BackupPv(std::vector<Move> &pv_line, Board &b, size_t max_len_pv) {
         Move m = Globals::pvt.ProbePv(b.GetZobristHash());
         MoveGen mg(board);
-        if (max_len_pv > 0 && mg.IsPseudoLegal(m)) {
-            if(b.MakeMove(m)) {
+        // TODO if repetinion or ply > 50 -> stop (?) the repetition would need to be detected properly though, not just 2 fold
+        if (max_len_pv > 0 && m != ZERO_MOVE && mg.IsPseudoLegal(m)) {
+            if (b.MakeMove(m)) {
                 pv_line.emplace_back(m);
                 BackupPv(pv_line, b, max_len_pv - 1);
             }
@@ -260,12 +266,12 @@ namespace Meetra {
             oss << "info";
             if (pvs_to_send > 1) oss << " multipv " << i + 1;
             oss << " depth " << static_cast<int>(root_moves[i].depth)
-               << " seldepth " << static_cast<int>(root_moves[i].seldepth)
-               << " nodes " << Globals::nodes_explored.load(std::memory_order_relaxed)
-               << " time " << elapsed_ms
-               << " nps " << nps
-               << " hashfull " << static_cast<int>(Globals::tt.Usage() * 1000)
-               << " score ";
+                << " seldepth " << static_cast<int>(root_moves[i].seldepth)
+                << " nodes " << Globals::nodes_explored.load(std::memory_order_relaxed)
+                << " time " << elapsed_ms
+                << " nps " << nps
+                << " hashfull " << static_cast<int>(Globals::tt.Usage() * 1000)
+                << " score ";
 
             Score score = root_moves[i].score;
             Move move = root_moves[i].move;
