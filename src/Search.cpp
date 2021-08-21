@@ -3,16 +3,13 @@
 #include <chrono>
 #include "Uci.h"
 #include <random>
-#include "SearchThread.h"
 #include <sstream>
 
 namespace Meetra::Search {
 
-    std::vector<std::unique_ptr<SearchThread>> search_threads;
-
     long ElapsedTimeMs() {
         long now = time_point_cast<std::chrono::milliseconds>(
-                std::chrono::system_clock::now()).time_since_epoch().count();
+                std::chrono::steady_clock::now()).time_since_epoch().count();
         long elapsed_ms = now - Globals::timer_start;
         return elapsed_ms + 1;
     }
@@ -23,6 +20,17 @@ namespace Meetra::Search {
             return true;
         }
         return false;
+    }
+
+    bool TimeRunOut() {
+        if (!Globals::settings.infinite && Globals::settings.allowed_time < ElapsedTimeMs()) {
+            return true;
+        }
+        return false;
+    }
+
+    void RequestTime(long time_ms) {
+        Globals::settings.allowed_time = ElapsedTimeMs() + time_ms;
     }
 
     void InitSearchTimer(Board &board) {
@@ -45,12 +53,11 @@ namespace Meetra::Search {
         Globals::finished = false;
 
         Globals::timer_start = time_point_cast<std::chrono::milliseconds>(
-                std::chrono::system_clock::now()).time_since_epoch().count();
+                std::chrono::steady_clock::now()).time_since_epoch().count();
 
         Globals::settings = s;
 
         Globals::tt.NewSearch();
-        Globals::pvt.NewSearch();
         Globals::nodes_explored.store(0, std::memory_order_relaxed);
         Globals::curr_max_depth.store(0, std::memory_order_relaxed);
         Globals::seldepth.store(0, std::memory_order_relaxed);
@@ -99,13 +106,13 @@ namespace Meetra::Search {
         // for multipv, because helper threads might skip some depths and not have the full pv, we can't safely use
         // their results without risking their pv for other than the top move will be very old from low depth or even
         // missing entirely
-        SearchThread *best_thread = search_threads[0].get();
+        SearchThread *best_thread = Globals::search_threads[0].get();
         if (Globals::multi_pv == 1) {
-            for (auto i = 1; i < search_threads.size(); i++) {
-                while (search_threads[i]->IsThreadSearching()); // wait thread finishes search
-                if (search_threads[i]->GetBestRootMove().score > best_thread->GetBestRootMove().score &&
-                    search_threads[i]->GetBestRootMove().depth >= best_thread->GetBestRootMove().depth) {
-                    best_thread = search_threads[i].get();
+            for (auto i = 1; i < Globals::search_threads.size(); i++) {
+                while (Globals::search_threads[i]->IsThreadSearching()); // wait thread finishes search
+                if (Globals::search_threads[i]->GetBestRootMove().score > best_thread->GetBestRootMove().score &&
+                    Globals::search_threads[i]->GetBestRootMove().depth >= best_thread->GetBestRootMove().depth) {
+                    best_thread = Globals::search_threads[i].get();
                 }
             }
         }
@@ -113,8 +120,7 @@ namespace Meetra::Search {
         Uci::SendToGui(best_thread->GetSearchInfo());
         Uci::SendToGui("bestmove " + GetMoveName(best_thread->GetBestRootMove().move));
 
-        Globals::info_timer.Stop();
-        Globals::search_timer.Stop();
+        Globals::info_timer.SetState(Timer::INACTIVE);
         StopSearch();
         Globals::finished = true;
     }
@@ -134,22 +140,17 @@ namespace Meetra::Search {
             return;
         }
 
-        // activate timeout timer for search
+/*        // activate timeout timer for search
         if (!Globals::settings.infinite) {
             Globals::search_timer.SetTimeout([&]() { StopSearch(); }, Globals::settings.allowed_time);
-        }
+        }*/
 
         // activate timer that updates GUI with search info on interval
-        Globals::info_timer.SetInterval([&]() {
-            Uci::SendToGui(GetUpdateSearchInfo());
-            if (Globals::show_currline) {
-                Uci::SendToGui(search_threads.begin()->get()->GetCurrLineInfo());
-            }
-        }, Globals::settings.info_to_ui_ms_timer);
+        Globals::info_timer.SetState(Timer::ACTIVE);
 
         // initialize and start each thread
         std::sort(root_moves.begin(), root_moves.end());
-        for (auto &search_thread : search_threads) {
+        for (auto &search_thread : Globals::search_threads) {
             search_thread->InitNewSearch(board, root_moves);
             search_thread->StartThread();
         }
@@ -157,7 +158,6 @@ namespace Meetra::Search {
 
     void Init() {
         Globals::tt.Init();
-        Globals::pvt.Init();
         Globals::run = false;
         Globals::finished = true;
         Globals::show_currline = false;
@@ -167,23 +167,71 @@ namespace Meetra::Search {
         Globals::plies_draw = DEFAULT_PLY_FOR_DRAW;
         Globals::num_threads = DEFAULT_SEARCH_THREADS;
         for (int thread_id = 0; thread_id < Globals::num_threads; thread_id++) {
-            search_threads.emplace_back(new SearchThread(thread_id));
+            Globals::search_threads.emplace_back(new SearchThread(thread_id));
         }
     }
 
-    void SetNumThreads(int num) {
-        Shutdown();
-        Globals::num_threads = std::clamp(num, 1, MAX_SEARCH_THREADS);
-        for (int thread_id = 0; thread_id < Globals::num_threads; thread_id++) {
-            search_threads.emplace_back(new SearchThread(thread_id));
+    void ShutdownThreads() {
+        StopSearch();
+        for (auto &t : Globals::search_threads) {
+            t->Shutdown();
         }
+        Globals::search_threads.clear();
     }
 
     void Shutdown() {
         StopSearch();
-        for (auto &thread : search_threads) {
-            thread->Shutdown();
+        ShutdownThreads();
+        Globals::info_timer.ShutdownTimer();
+    }
+
+    void SetNumThreads(int num) {
+        ShutdownThreads();
+        Globals::num_threads = std::clamp(num, 1, MAX_SEARCH_THREADS);
+        for (int thread_id = 0; thread_id < Globals::num_threads; thread_id++) {
+            Globals::search_threads.emplace_back(new SearchThread(thread_id));
         }
-        search_threads.clear();
+    }
+
+    Timer::Timer() {
+        active = false;
+        thread = std::jthread([&](const std::stop_token &stop_token) {
+            while (true) {
+                {
+                    std::unique_lock lock(mtx);
+                    if (active == INACTIVE) {
+                        cond_var.wait(lock, stop_token, [&] { return active; });
+                    } else {
+                        cond_var.wait_for(lock, stop_token, std::chrono::milliseconds(DEFAULT_INFO_INTERVAL),
+                                          [&] { return !active; });
+                    }
+                    if (stop_token.stop_requested()) { return; }
+                    if (!active) continue;
+                }
+                Uci::SendToGui(GetUpdateSearchInfo());
+                if (Search::Globals::show_currline) {
+                    Uci::SendToGui(Globals::search_threads[0]->GetCurrLineInfo());
+                }
+            }
+        });
+    }
+
+    Timer::~Timer() {
+        ShutdownTimer();
+    }
+
+    void Timer::SetState(STATE status) {
+        {
+            std::scoped_lock lock(mtx);
+            active = status;
+        }
+        cond_var.notify_one();
+    }
+
+    void Timer::ShutdownTimer() {
+        if (thread.joinable()) {
+            thread.request_stop();
+            thread.join();
+        }
     }
 }

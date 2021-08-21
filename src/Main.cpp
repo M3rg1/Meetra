@@ -1,6 +1,5 @@
 #include "Uci.h"
 #include "Bitboards.h"
-#include "ThreadPool.h"
 #include "ZobristHash.h"
 #include "Search.h"
 
@@ -16,7 +15,6 @@ using namespace Meetra;
 int main(int argc, char *arv[]) {
 
     Uci::Init();
-    ThreadPool::Init();
     Bitboards::Init();
     Zobrist::Init();
     Search::Init();

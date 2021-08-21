@@ -3,10 +3,18 @@
 
 #include <vector>
 #include <iostream>
-#include "Search.h"
 #include "Uci.h"
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+#include "Board.h"
+#include "Types.h"
 
 namespace Meetra {
+
+    namespace Search {
+        struct RootMove;
+    }
 
     class SearchThread {
 
@@ -40,21 +48,27 @@ namespace Meetra {
 
         void Shutdown() {
             if (thread.joinable()) {
-                active = false;
+                {
+                    std::scoped_lock lock(mtx);
+                    active = false;
+                }
                 thread.request_stop();
                 thread.join();
             }
         }
 
         void StartThread() {
-            active = true;
+            {
+                std::scoped_lock lock(mtx);
+                active = true;
+            }
             cond_var.notify_one();
         };
 
         [[nodiscard]] std::string GetSearchInfo();
         [[nodiscard]] std::string GetCurrLineInfo();
-        [[nodiscard]] bool IsThreadSearching() const { return active.load(std::memory_order_relaxed); };
-        [[nodiscard]] Search::RootMove GetBestRootMove() const { return root_moves[0]; };
+        [[nodiscard]] Search::RootMove GetBestRootMove() const;
+        [[nodiscard]] inline bool IsThreadSearching() const { return active.load(std::memory_order_relaxed); };
         void Search();
 
     private:
@@ -80,7 +94,6 @@ namespace Meetra {
         std::condition_variable_any cond_var;
         std::mutex mtx;
     };
-
 }
 
 

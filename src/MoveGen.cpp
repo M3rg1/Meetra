@@ -88,11 +88,7 @@ namespace Meetra {
     template<bool QSearch>
     Move MoveGen::GetBestMove() {
         while (Empty()) {
-            if (my_color == WHITE) {
-                NextPhase<WHITE, QSearch>();
-            } else {
-                NextPhase<BLACK, QSearch>();
-            }
+            my_color == WHITE ? NextPhase<WHITE, QSearch>() : NextPhase<BLACK, QSearch>();
             EvalMoves();
         }
         return PickBestMove();

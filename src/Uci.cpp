@@ -1,7 +1,6 @@
 #include "Uci.h"
 #include <iostream>
 #include "Perft.h"
-#include "ThreadPool.h"
 #include "Search.h"
 
 
@@ -26,7 +25,7 @@ namespace Meetra::Uci {
             << "option name Mute plies type spin default 1 min 1 max 64\n"
             << "option name Cores type spin default " << DEFAULT_SEARCH_THREADS << " min 1 max " << MAX_SEARCH_THREADS
             << "\n"
-            << "option name Plies draw type spin default " << DEFAULT_PLY_FOR_DRAW << " min 10 max 100";
+            << "option name Plies draw type spin default " << DEFAULT_PLY_FOR_DRAW << " min 10 max 150";
         return oss.str();
     }
 
@@ -80,9 +79,7 @@ namespace Meetra::Uci {
     }
 
     void QuitCommand() {
-        StopCommand();
         Search::Shutdown();
-        ThreadPool::Shutdown();
     }
 
     void HelpCommand() {
@@ -132,7 +129,7 @@ namespace Meetra::Uci {
     }
 
     void IsReadyCommand() {
-        SendToGui("readyok\n");
+        SendToGui("readyok");
     }
 
     void PositionCommand(std::istringstream &iss, Board &board) {

@@ -5,10 +5,12 @@
 #include <random>
 #include <ctime>
 #include <cstdlib>
+#include "Search.h"
 
 namespace Meetra {
 
-    using namespace Search;
+
+    Search::RootMove SearchThread::GetBestRootMove() const { return root_moves[0]; };
 
     // the main search function, iterative deepening framework
     void SearchThread::Search() {
@@ -16,19 +18,19 @@ namespace Meetra {
         active = true;
 
         // iterative deepening
-        for (curr_depth = 2; curr_depth <= Globals::settings.max_allowed_depth && Run(); curr_depth++) {
+        for (curr_depth = 2; curr_depth <= Search::Globals::settings.max_allowed_depth && Search::Run(); curr_depth++) {
 
             Score alpha = NEGATIVE_INF;
             Score beta = POSITIVE_INF;
 
             // seldepth is always at least the current depth being searched
             if (IsMainThread()) {
-                Globals::seldepth.store(curr_depth, std::memory_order_relaxed);
+                Search::Globals::seldepth.store(curr_depth, std::memory_order_relaxed);
             }
 
             // if helper thread falls behind main thread, skip depth and go deeper
-            if (!IsMainThread() && curr_depth <= Globals::curr_max_depth.load(std::memory_order_relaxed)) {
-                curr_depth = Globals::curr_max_depth.load(std::memory_order_relaxed) + thread_num;
+            if (!IsMainThread() && curr_depth <= Search::Globals::curr_max_depth.load(std::memory_order_relaxed)) {
+                curr_depth = Search::Globals::curr_max_depth.load(std::memory_order_relaxed) + thread_num;
             }
 
             // alpha beta search over root moves
@@ -37,25 +39,25 @@ namespace Meetra {
                 curr_rm = &root_moves[curr_rm_num];
                 curr_rm->seldepth = curr_depth;
 
-                if (IsMainThread() && Globals::show_currmove && ElapsedTimeMs() > 1000) {
+                if (IsMainThread() && Search::Globals::show_currmove && Search::ElapsedTimeMs() > 1000) {
                     Uci::SendToGui(GetCurrMoveInfo());
                 }
 
                 // if main thread already finished active this depth, there's no reason for helper thread to remain
-                if (!IsMainThread() && curr_depth < Globals::curr_max_depth.load(std::memory_order_relaxed)) {
+                if (!IsMainThread() && curr_depth < Search::Globals::curr_max_depth.load(std::memory_order_relaxed)) {
                     break;
                 }
 
-                Globals::nodes_explored.fetch_add(1, std::memory_order_relaxed);
+                Search::Globals::nodes_explored.fetch_add(1, std::memory_order_relaxed);
                 curr_rm->nodes++;
                 board.MakeMove(curr_rm->move);
                 Score score = -NegaMax(-beta, -alpha, curr_depth - 1, 2, curr_rm->pv);
                 board.UnmakeMove(curr_rm->move);
 
-                if (Run()) {
+                if (Search::Run()) {
                     curr_rm->previous_score = curr_rm->score;
                     curr_rm->depth = curr_depth;
-                    if (Globals::multi_pv > 1) {
+                    if (Search::Globals::multi_pv > 1) {
                         curr_rm->score = score;
                     } else if (score > alpha) {
                         curr_rm->score = score;
@@ -74,34 +76,39 @@ namespace Meetra {
             // checking time and updating GUI when main thread finishes active depth
             if (IsMainThread()) {
 
-                Globals::curr_max_depth.store(curr_depth, std::memory_order_relaxed);
+                Search::Globals::curr_max_depth.store(curr_depth, std::memory_order_relaxed);
 
                 // active if we don't have enough time left for a deeper search or mate has been found, and we are not
                 // performing fixed time/depth/infinite or multipv search
-                if (!EnoughTimeLeft() ||
-                    (MateInHorizon() && Globals::multi_pv == 1 && !Globals::settings.infinite &&
-                     !Globals::settings.fixed_timer)) {
+                if (!Search::EnoughTimeLeft() || Search::TimeRunOut() ||
+                (MateInHorizon() && Search::Globals::multi_pv == 1 && !Search::Globals::settings.infinite &&
+                    !Search::Globals::settings.fixed_timer)) {
                     break;
                 }
 
                 // update GUI with info about currently finished depth we searched
-                if (Run() && curr_depth > Globals::plies_muted) {
+                if (Search::Run() && curr_depth > Search::Globals::plies_muted) {
                     Uci::SendToGui(GetSearchInfo());
                 }
             }
         } // end iterative deepening loop
 
-        StopSearch();
+        Search::StopSearch();
         active = false;
         if (IsMainThread()) {
-            FinishSearch();
+            Search::FinishSearch();
         }
     }
 
     Score SearchThread::NegaMax(Score alpha, Score beta, Depth depth, Depth ply, std::vector<Move> &pv_line) {
 
-        // terminating conditions, either we reached a draw - then active, or max depth - in that case switch to qsearch
-        if (board.IsRepetition() || board.Ply() >= Globals::plies_draw) {
+        if(IsMainThread() && (curr_rm->nodes & 8191) == 0 && Search::TimeRunOut()) {
+            Search::StopSearch();
+            return 0;
+        }
+
+        // terminating conditions, either we reached a draw, or max depth - in that case switch to qsearch
+        if (board.IsRepetition() || board.Ply() >= Search::Globals::plies_draw) {
             return -DRAW_SCORE;
         } else if (depth == 0) {
             return QSearch(alpha, beta, ply);
@@ -111,25 +118,15 @@ namespace Meetra {
         Score score;
         Move best_move;
         MoveGen move_gen(board);
-        Globals::tt.ProbeEval(board.GetZobristHash(), alpha, beta, depth, ply, score, tt_flag, best_move);
+        Search::Globals::tt.ProbeEval(board.GetZobristHash(), alpha, beta, depth, ply, score, tt_flag, best_move);
 
-        // TODO if in analysis mode, dont skip over PV nodes and dont use PVTable to correctly show full PV
-        //  if not in analysis mode, dont even use pv table at all?
-        //  honestly fuck the PVTable, i really dont think its necessary, just dont cutoff PVnodes -> and we even save
-        //  time on not having to slowly probe the pvtable and backup the line
         // do a check of the retrieved move, if it's legal to play in the current position and not corrupted,
         // chances are, the score is correct as well
         if (move_gen.IsPseudoLegal(best_move)) {
             // we have a good match and will be making a cutoff
             if (tt_flag == ALPHA || tt_flag == BETA) {
-                // it's a PV node, we need to recover the PV line from the PVTable before we make the cutoff
-                /*if (tt_flag == EXACT_SCORE) {
-                    pv_line.clear();
-                    BackupPv(pv_line, board, 50);
-                }*/
                 return score;
-            } // TODO else try to probe PV from PVtable ? cause in TT it mighve been overwritten, but we already have a move
-            //     in the bestmove var, so if we prove PVTable we can only do it if best_move == ZERO MOVE
+            }
             // no cutoff, but we got some move from TT, we will play it as the first move in the main negamax loop
             if (best_move != ZERO_MOVE) {
                 move_gen.PutTTMove(best_move);
@@ -149,16 +146,16 @@ namespace Meetra {
 
             moves_available = true;
             std::vector<Move> line;
-            Globals::nodes_explored.fetch_add(1, std::memory_order_relaxed);
+            Search::Globals::nodes_explored.fetch_add(1, std::memory_order_relaxed);
             curr_rm->nodes++;
             score = -NegaMax(-beta, -alpha, depth - 1, ply + 1, line);
             board.UnmakeMove(move);
 
-            if (!Run()) {
+            if (!Search::Run()) {
                 return 0;
             } else if (score > alpha) {
                 if (score >= beta) {
-                    Globals::tt.SaveEval(board.GetZobristHash(), beta, depth, move, BETA, ply);
+                    Search::Globals::tt.SaveEval(board.GetZobristHash(), beta, depth, move, BETA, ply);
                     return beta;
                 }
                 pv_line.clear();
@@ -177,11 +174,8 @@ namespace Meetra {
             return -DRAW_SCORE;
         }
 
-/*        if (tt_flag == EXACT_SCORE) {
-            Globals::pvt.SavePv(board.GetZobristHash(), best_move);
-        }*/
         // whatever we learnt about this position, store it in TT for later use
-        Globals::tt.SaveEval(board.GetZobristHash(), alpha, depth, best_move, tt_flag, ply);
+        Search::Globals::tt.SaveEval(board.GetZobristHash(), alpha, depth, best_move, tt_flag, ply);
 
         return alpha;
     }
@@ -191,7 +185,7 @@ namespace Meetra {
         // update seldepth for this root move
         curr_rm->seldepth = std::max(ply, curr_rm->seldepth);
         if (IsMainThread()) {
-            Globals::seldepth.store(std::max(ply, Globals::seldepth.load(std::memory_order_relaxed)),
+            Search::Globals::seldepth.store(std::max(ply, Search::Globals::seldepth.load(std::memory_order_relaxed)),
                                     std::memory_order_relaxed);
         }
 
@@ -212,7 +206,7 @@ namespace Meetra {
                 board.UnmakeMove(move);
                 continue;
             }
-            Globals::nodes_explored.fetch_add(1, std::memory_order_relaxed);
+            Search::Globals::nodes_explored.fetch_add(1, std::memory_order_relaxed);
             score = -QSearch(-beta, -alpha, ply + 1);
             board.UnmakeMove(move);
             if (score > alpha) {
@@ -224,19 +218,6 @@ namespace Meetra {
         }
 
         return alpha;
-    }
-
-    void SearchThread::BackupPv(std::vector<Move> &pv_line, Board &b, size_t max_len_pv) {
-        Move m = Globals::pvt.ProbePv(b.GetZobristHash());
-        MoveGen mg(board);
-        // TODO if repetinion or ply > 50 -> stop (?) the repetition would need to be detected properly though, not just 2 fold
-        if (max_len_pv > 0 && m != ZERO_MOVE && mg.IsPseudoLegal(m)) {
-            if (b.MakeMove(m)) {
-                pv_line.emplace_back(m);
-                BackupPv(pv_line, b, max_len_pv - 1);
-            }
-            b.UnmakeMove(m);
-        }
     }
 
     bool SearchThread::MateInHorizon() const {
@@ -256,21 +237,21 @@ namespace Meetra {
     std::string SearchThread::GetSearchInfo() {
 
         std::ostringstream oss;
-        auto elapsed_ms = ElapsedTimeMs();
+        auto elapsed_ms = Search::ElapsedTimeMs();
         auto nps = static_cast<uint64_t>(
-                ((static_cast<double>(Globals::nodes_explored.load(std::memory_order_relaxed)) /
+                ((static_cast<double>(Search::Globals::nodes_explored.load(std::memory_order_relaxed)) /
                   static_cast<double>(elapsed_ms))) * 1000.0);
-        auto pvs_to_send = std::min(static_cast<size_t>(Globals::multi_pv), root_moves.size());
+        auto pvs_to_send = std::min(static_cast<size_t>(Search::Globals::multi_pv), root_moves.size());
 
         for (auto i = 0; i < pvs_to_send; i++) {
             oss << "info";
             if (pvs_to_send > 1) oss << " multipv " << i + 1;
             oss << " depth " << static_cast<int>(root_moves[i].depth)
                 << " seldepth " << static_cast<int>(root_moves[i].seldepth)
-                << " nodes " << Globals::nodes_explored.load(std::memory_order_relaxed)
+                << " nodes " << Search::Globals::nodes_explored.load(std::memory_order_relaxed)
                 << " time " << elapsed_ms
                 << " nps " << nps
-                << " hashfull " << static_cast<int>(Globals::tt.Usage() * 1000)
+                << " hashfull " << static_cast<int>(Search::Globals::tt.Usage() * 1000)
                 << " score ";
 
             Score score = root_moves[i].score;

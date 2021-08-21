@@ -29,7 +29,7 @@ namespace Meetra {
 
     inline void RunPerft(Depth depth, Board &board) {
 
-        auto start = std::chrono::high_resolution_clock::now();
+        auto start = std::chrono::steady_clock::now();
 
         MoveGen move_gen(board);
         Move m;
@@ -43,7 +43,7 @@ namespace Meetra {
             board.UnmakeMove(m);
         }
 
-        auto end = std::chrono::high_resolution_clock::now();
+        auto end = std::chrono::steady_clock::now();
         auto time_elapsed_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count() + 1;
         auto nps = static_cast<ulong> (static_cast<double>(total_nodes) /
                                        (static_cast<double>(time_elapsed_ns) / 1000000000.0));

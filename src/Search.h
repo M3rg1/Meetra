@@ -5,9 +5,7 @@
 #include "Evaluation.h"
 #include "TranspositionTable.h"
 #include <vector>
-#include "Timer.h"
-#include "Types.h"
-#include "PVTable.h"
+#include "SearchThread.h"
 
 namespace Meetra::Search {
 
@@ -18,31 +16,22 @@ namespace Meetra::Search {
 #define DEFAULT_SEARCH_THREADS 1
 #define MAX_SEARCH_THREADS 8
 #define MIN_MATE_EVAL (MATE_SCORE - MAX_SEARCH_DEPTH)
-#define DEFAULT_PLY_FOR_DRAW 50
+#define DEFAULT_PLY_FOR_DRAW 75
 
-    struct RootMove {
-        Move move;
-        std::vector<Move> pv;
-        Score score = NEGATIVE_INF;
-        Score previous_score = NEGATIVE_INF;
-        Depth depth = 0;
-        Depth seldepth = 0;
-        uint64_t nodes = 0;
-
-        explicit RootMove(Move m) : move(m) {}
-
-        bool operator==(const Move &m) const { return move == m; }
-        bool operator<(const RootMove &mn) const {
-            return mn.score != score ? mn.score < score :
-                   mn.previous_score != previous_score ? mn.previous_score < previous_score :
-                   mn.nodes < nodes;
-        }
-/*        bool operator<(const RootMove &mn) const {
-            return mn.nodes != nodes ? mn.nodes < nodes : mn.score < score;
-        }*/
-/*            bool operator<(const RootMove& mn) const {
-                return mn.score != score ? mn.score < score : mn.previous_score < previous_score;
-            }*/
+    class Timer {
+    public:
+        enum STATE : bool {
+            ACTIVE = true, INACTIVE = false
+        };
+        Timer();
+        ~Timer();
+        void SetState(STATE status);
+        void ShutdownTimer();
+    private:
+        std::condition_variable_any cond_var;
+        std::mutex mtx;
+        std::jthread thread;
+        bool active;
     };
 
     struct SearchSettings {
@@ -61,7 +50,6 @@ namespace Meetra::Search {
 
     namespace Globals {
         inline std::atomic<bool> run;
-        inline PVTable pvt;
         inline TranspositionTable tt;
         inline SearchSettings settings;
         inline bool show_currline;
@@ -70,14 +58,39 @@ namespace Meetra::Search {
         inline int multi_pv;
         inline int plies_draw;
         inline std::atomic<bool> finished;
-        inline std::atomic<uint64_t > nodes_explored;
+        inline std::atomic<uint64_t> nodes_explored;
         inline std::atomic<Depth> curr_max_depth;
         inline std::atomic<Depth> seldepth;
         inline int num_threads;
         inline long timer_start;
-        inline Timer search_timer;
         inline Timer info_timer;
+        inline std::vector<std::unique_ptr<SearchThread>> search_threads;
     }
+
+    struct RootMove {
+        Move move;
+        std::vector<Move> pv;
+        Score score = NEGATIVE_INF;
+        Score previous_score = NEGATIVE_INF;
+        Depth depth = 0;
+        Depth seldepth = 0;
+        uint64_t nodes = 0;
+
+        explicit RootMove(Move m) : move(m) {}
+
+        bool operator==(const Move &m) const { return move == m; }
+        bool operator<(const RootMove &mn) const {
+            return mn.score != score ? mn.score < score :
+                   mn.previous_score != previous_score ? mn.previous_score < previous_score :
+                   mn.nodes < nodes;
+        }
+        /*        bool operator<(const RootMove &mn) const {
+                    return mn.nodes != nodes ? mn.nodes < nodes : mn.score < score;
+                }*/
+        /*            bool operator<(const RootMove& mn) const {
+                        return mn.score != score ? mn.score < score : mn.previous_score < previous_score;
+                    }*/
+    };
 
     void Init();
     void StartSearch(SearchSettings settings, Board board);
@@ -85,8 +98,10 @@ namespace Meetra::Search {
     void Shutdown();
     std::string GetUpdateSearchInfo();
 
+    void RequestTime(long time_ms);
     [[nodiscard]] long ElapsedTimeMs();
     [[nodiscard]] bool EnoughTimeLeft();
+    [[nodiscard]] bool TimeRunOut();
     [[nodiscard]] inline bool Run() { return Globals::run.load(std::memory_order_relaxed); }
     [[nodiscard]] inline bool Finished() { return Globals::finished.load(std::memory_order_relaxed); }
     inline void ShowShowCurrLine(bool show) { Globals::show_currline = show; }
@@ -95,7 +110,7 @@ namespace Meetra::Search {
     inline void StopSearch() { Globals::run = false; }
     inline void SetMultiPv(int pv_num) { Globals::multi_pv = pv_num; }
     inline void SetPliesDraw(int plies) { Globals::plies_draw = plies; }
-    inline void ClearTT() { Globals::tt.Clear(); Globals::pvt.Clear(); }
+    inline void ClearTT() { Globals::tt.Clear(); }
     inline void SetTTSize(int size_mb) { Globals::tt.Resize(size_mb); }
     void SetNumThreads(int num);
 
