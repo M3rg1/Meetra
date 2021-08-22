@@ -4,7 +4,6 @@
 #include "Board.h"
 #include "Evaluation.h"
 #include "TranspositionTable.h"
-#include <vector>
 #include "SearchThread.h"
 
 namespace Meetra::Search {
@@ -78,13 +77,14 @@ namespace Meetra::Search {
 
         explicit RootMove(Move m) : move(m) {}
 
+        bool operator==(const RootMove &rm) const { return move == rm.move; }
         bool operator==(const Move &m) const { return move == m; }
         bool operator<(const RootMove &mn) const {
             return mn.score != score ? mn.score < score :
                    mn.previous_score != previous_score ? mn.previous_score < previous_score :
                    mn.nodes < nodes;
         }
-        /*        bool operator<(const RootMove &mn) const {
+/*                bool operator<(const RootMove &mn) const {
                     return mn.nodes != nodes ? mn.nodes < nodes : mn.score < score;
                 }*/
         /*            bool operator<(const RootMove& mn) const {

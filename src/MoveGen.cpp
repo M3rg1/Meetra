@@ -1,10 +1,8 @@
 #include "MoveGen.h"
 #include "Bitboards.h"
 #include "Evaluation.h"
-#include "Uci.h"
 
 namespace Meetra {
-
 
     template<Color C>
     constexpr Direction PawnFwdDir() {
@@ -85,10 +83,10 @@ namespace Meetra {
         return PopRef(*it);
     }
 
-    template<bool QSearch>
+    template<MoveGen::GEN_TYPE Type>
     Move MoveGen::GetBestMove() {
         while (Empty()) {
-            my_color == WHITE ? NextPhase<WHITE, QSearch>() : NextPhase<BLACK, QSearch>();
+            my_color == WHITE ? NextPhase<WHITE, Type>() : NextPhase<BLACK, Type>();
             EvalMoves();
         }
         return PickBestMove();
@@ -96,24 +94,20 @@ namespace Meetra {
 
     Move MoveGen::GetAnyMove() {
         while (Empty()) {
-            if (my_color == WHITE) {
-                NextPhase<WHITE, false>();
-            } else {
-                NextPhase<BLACK, false>();
-            }
+            my_color == WHITE ? NextPhase<WHITE, NORMAL>() : NextPhase<BLACK, NORMAL>();
         }
         return PopMove();
     }
 
-    template Move MoveGen::GetBestMove<true>();
-    template Move MoveGen::GetBestMove<false>();
+    template Move MoveGen::GetBestMove<MoveGen::QSEARCH>();
+    template Move MoveGen::GetBestMove<MoveGen::NORMAL>();
 
-    template<Color C, bool QSearch>
+    template<Color C, MoveGen::GEN_TYPE Type>
     void MoveGen::NextPhase() {
         switch (gen_phase) {
             case CAPTURE:
                 GenMovesForPhase<CAPTURE, C>();
-                gen_phase = QSearch ? END : QUIET;
+                gen_phase = Type == QSEARCH ? END : QUIET;
                 break;
             case QUIET:
                 GenMovesForPhase<QUIET, C>();

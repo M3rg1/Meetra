@@ -1,9 +1,7 @@
 #ifndef MEETRA_ZOBRISTHASH_H
 #define MEETRA_ZOBRISTHASH_H
 
-
 #include "Types.h"
-
 
 namespace Meetra {
 

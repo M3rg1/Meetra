@@ -3,13 +3,16 @@
 
 #include "Types.h"
 #include "Board.h"
-#include "TranspositionTable.h"
 
 namespace Meetra {
 
     class MoveGen {
 
     public:
+        enum GEN_TYPE : bool {
+            QSEARCH = true, NORMAL = false
+        };
+
         explicit MoveGen(const Board &board);
 
         inline void PutTTMove(Move tt_move) {
@@ -22,7 +25,7 @@ namespace Meetra {
             move_eval[moves_cnt++].score = 9000;
         }
 
-        template<bool QSearch>
+        template<GEN_TYPE Type>
         [[nodiscard]] Move GetBestMove();
         [[nodiscard]] Move GetAnyMove();
         [[nodiscard]] bool IsPseudoLegal(Move m) const;
@@ -91,7 +94,7 @@ namespace Meetra {
         Move PickBestMove();
         void EvalMoves();
 
-        template<Color C, bool QSearch>
+        template<Color C, GEN_TYPE Type>
         void NextPhase();
 
         template<GenPhase phase, Color C>

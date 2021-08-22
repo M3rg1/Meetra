@@ -1,5 +1,5 @@
-#include "ZobristHash.h"
 #include <random>
+#include "ZobristHash.h"
 #include "Bitboards.h"
 #include "Board.h"
 
@@ -9,7 +9,6 @@ namespace Meetra::Zobrist {
     uint64_t castling_keys[16];
     uint64_t ep_keys[8];
     uint64_t to_move_keys[2];
-
 
     void Init() {
 

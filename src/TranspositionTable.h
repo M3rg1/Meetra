@@ -1,13 +1,10 @@
 #ifndef MEETRA_TRANSPOSITIONTABLE_H
 #define MEETRA_TRANSPOSITIONTABLE_H
 
-#include "Types.h"
-#include "Bitboards.h"
-#include "Board.h"
-#include "ZobristHash.h"
 #include <memory>
 #include <atomic>
-#include "Spinlock.h"
+#include "Board.h"
+#include "ZobristHash.h"
 
 namespace Meetra {
 
@@ -46,11 +43,11 @@ namespace Meetra {
 
         // 10 bytes + 2 alignment
         class TTEntry {
-            uint32_t key;
-            int16_t score;
-            uint16_t move;
-            uint8_t depth;
-            uint8_t epoch_and_flag; // 2 low bits for flag, rest for epoch.
+            uint32_t key = 0;
+            int16_t score = 0;
+            uint16_t move = 0;
+            uint8_t depth = 0;
+            uint8_t epoch_and_flag = 0; // 2 low bits for flag, rest for epoch.
             // epoch would be fine with 3 bits, leaving another 3 for whatever else is needed
         public:
             [[nodiscard]] inline Key32 Get32Key() const { return static_cast<Key32>(key); }

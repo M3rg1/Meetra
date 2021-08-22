@@ -1,6 +1,5 @@
 #include "Board.h"
 #include "Bitboards.h"
-#include <cstring>
 #include <sstream>
 
 namespace Meetra {
@@ -13,9 +12,9 @@ namespace Meetra {
         history_cnt = 0;
         curr_data.state = NEW_GAME_STATE;
 
-        std::memset(board, 0, sizeof(Piece) * SQUARE_NR);
-        std::memset(color_bbs, 0, sizeof(Bitboard) * COLOR_NR);
-        std::memset(type_bbs, 0, sizeof(Bitboard) * PIECE_TYPE_NR);
+        std::fill(std::begin(board), std::end(board), NO_PIECE);
+        std::fill(std::begin(color_bbs), std::end(color_bbs), EMPTY_BB);
+        std::fill(std::begin(type_bbs), std::end(type_bbs), EMPTY_BB);
 
         ParseFen(fen);
 
@@ -302,7 +301,7 @@ namespace Meetra {
         std::ostringstream oss;
 
         for (Rank r = RANK_8; r >= RANK_1; --r) {
-            oss << (r + 1) << " |";
+            oss << std::to_string(r + 1) << " |";
             for (File f = FILE_A; f <= FILE_H; ++f) {
                 oss << ' ' << PieceToChar(board[SquareFromFiRa(f, r)]) << ' ';
             }

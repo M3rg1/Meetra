@@ -1,10 +1,10 @@
 #ifndef MEETRA_PERFT_H
 #define MEETRA_PERFT_H
 
-#include "MoveGen.h"
-#include "Uci.h"
 #include <sstream>
 #include <chrono>
+#include "MoveGen.h"
+#include "Uci.h"
 
 namespace Meetra {
 

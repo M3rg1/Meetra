@@ -1,16 +1,17 @@
-#include "Uci.h"
 #include <iostream>
+#include "Uci.h"
 #include "Perft.h"
 #include "Search.h"
-
+#include "Spinlock.h"
 
 namespace Meetra::Uci {
 
-#define LOGO   " __  __         _\n"               \
-                "|  \\/  |___ ___| |_ _ _ __ _\n"   \
-                "| |\\/| / -_) -_)  _| '_/ _` |\n"  \
-                "|_|  |_\\___\\___|\\__|_| \\__,_|"
-
+    std::string GetLogo() {
+        return " __  __         _\n"               \
+               "|  \\/  |___ ___| |_ _ _ __ _\n"   \
+               "| |\\/| / -_) -_)  _| '_/ _` |\n"  \
+               "|_|  |_\\___\\___|\\__|_| \\__,_|";
+    }
     std::string GetName() { return "Meetra"; }
     std::string GetVersion() { return "0.0.1"; }
     std::string GetAuthor() { return "M3rg1"; }
@@ -39,6 +40,7 @@ namespace Meetra::Uci {
     void StopCommand();
     void ShowCommand(Board &board);
     void HelpCommand();
+    void PBoardCommand(Board &b);
     void QuitCommand();
     void UnknownCommand();
     void MakeUciMove(const std::string &move_string, Board &board);
@@ -52,6 +54,13 @@ namespace Meetra::Uci {
     void Listen() {
 
         Board board;
+
+        if (isatty(STDOUT_FILENO)) {
+            SendToGui(GetLogo() + "\n"
+                      + " v. " + GetVersion() + "\n"
+                      + " Made by " + GetAuthor() + "\n\n"
+                      + board.PPBoard());
+        }
 
         std::string token;
         std::string input;
@@ -71,11 +80,16 @@ namespace Meetra::Uci {
             else if (token == "perft") PerftCommand(iss, board);
             else if (token == "show") ShowCommand(board);
             else if (token == "help") HelpCommand();
+            else if (token == "pboard") PBoardCommand(board);
             else if (token == "quit") QuitCommand();
             else { UnknownCommand(); }
 
         } while (token != "quit" && !std::cin.eof());
 
+    }
+
+    void PBoardCommand(Board &b) {
+        Uci::SendToGui(b.PPBoard());
     }
 
     void QuitCommand() {

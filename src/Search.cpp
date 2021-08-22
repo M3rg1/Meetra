@@ -1,9 +1,8 @@
+#include <sstream>
 #include "Search.h"
 #include "MoveGen.h"
 #include <chrono>
 #include "Uci.h"
-#include <random>
-#include <sstream>
 
 namespace Meetra::Search {
 
@@ -71,7 +70,7 @@ namespace Meetra::Search {
         MoveGen move_gen(board);
         std::vector<RootMove> moves;
         Move move;
-        while ((move = move_gen.GetBestMove<false>())) {
+        while ((move = move_gen.GetBestMove<MoveGen::NORMAL>())) {
             if (!board.MakeMove(move)) {
                 board.UnmakeMove(move);
                 continue;

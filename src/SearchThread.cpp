@@ -1,16 +1,10 @@
+#include <sstream>
 #include "SearchThread.h"
 #include "Uci.h"
-#include <sstream>
 #include "MoveGen.h"
-#include <random>
-#include <ctime>
-#include <cstdlib>
 #include "Search.h"
 
 namespace Meetra {
-
-
-    Search::RootMove SearchThread::GetBestRootMove() const { return root_moves[0]; };
 
     // the main search function, iterative deepening framework
     void SearchThread::Search() {
@@ -54,19 +48,20 @@ namespace Meetra {
                 Score score = -NegaMax(-beta, -alpha, curr_depth - 1, 2, curr_rm->pv);
                 board.UnmakeMove(curr_rm->move);
 
-                if (Search::Run()) {
-                    curr_rm->previous_score = curr_rm->score;
-                    curr_rm->depth = curr_depth;
-                    if (Search::Globals::multi_pv > 1) {
-                        curr_rm->score = score;
-                    } else if (score > alpha) {
-                        curr_rm->score = score;
-                        alpha = score;
-                    } else {
-                        curr_rm->score = NEGATIVE_INF;
-                    }
-                } else {
+                if (!Search::Run()) {
                     break;
+                }
+
+                curr_rm->previous_score = curr_rm->score;
+                curr_rm->depth = curr_depth;
+
+                if (Search::Globals::multi_pv > 1) {
+                    curr_rm->score = score;
+                } else if (score > alpha) {
+                    curr_rm->score = score;
+                    alpha = score;
+                } else {
+                    curr_rm->score = NEGATIVE_INF;
                 }
             } // end alpha beta loop
 
@@ -80,14 +75,14 @@ namespace Meetra {
 
                 // active if we don't have enough time left for a deeper search or mate has been found, and we are not
                 // performing fixed time/depth/infinite or multipv search
-                if (!Search::EnoughTimeLeft() || Search::TimeRunOut() ||
-                (MateInHorizon() && Search::Globals::multi_pv == 1 && !Search::Globals::settings.infinite &&
-                    !Search::Globals::settings.fixed_timer)) {
+                if (!Search::Run() || !Search::EnoughTimeLeft() || Search::TimeRunOut() ||
+                    (MateInHorizon() && Search::Globals::multi_pv == 1 && !Search::Globals::settings.infinite &&
+                     !Search::Globals::settings.fixed_timer)) {
                     break;
                 }
 
                 // update GUI with info about currently finished depth we searched
-                if (Search::Run() && curr_depth > Search::Globals::plies_muted) {
+                if (curr_depth > Search::Globals::plies_muted) {
                     Uci::SendToGui(GetSearchInfo());
                 }
             }
@@ -102,7 +97,7 @@ namespace Meetra {
 
     Score SearchThread::NegaMax(Score alpha, Score beta, Depth depth, Depth ply, std::vector<Move> &pv_line) {
 
-        if(IsMainThread() && (curr_rm->nodes & 8191) == 0 && Search::TimeRunOut()) {
+        if (IsMainThread() && (curr_rm->nodes & 8191) == 0 && Search::TimeRunOut()) {
             Search::StopSearch();
             return 0;
         }
@@ -138,7 +133,7 @@ namespace Meetra {
         tt_flag = ALPHA;
         bool moves_available = false;
 
-        while ((move = move_gen.GetBestMove<false>())) {
+        while ((move = move_gen.GetBestMove<MoveGen::NORMAL>())) {
             if (!board.MakeMove(move)) {
                 board.UnmakeMove(move);
                 continue;
@@ -185,8 +180,8 @@ namespace Meetra {
         // update seldepth for this root move
         curr_rm->seldepth = std::max(ply, curr_rm->seldepth);
         if (IsMainThread()) {
-            Search::Globals::seldepth.store(std::max(ply, Search::Globals::seldepth.load(std::memory_order_relaxed)),
-                                    std::memory_order_relaxed);
+            auto seldepth = std::max(ply, Search::Globals::seldepth.load(std::memory_order_relaxed));
+            Search::Globals::seldepth.store(seldepth, std::memory_order_relaxed);
         }
 
         // stand pat
@@ -201,7 +196,7 @@ namespace Meetra {
         MoveGen move_gen(board);
         Move move;
         // iterate over all available captures
-        while ((move = move_gen.GetBestMove<true>())) {
+        while ((move = move_gen.GetBestMove<MoveGen::QSEARCH>())) {
             if (!board.MakeMove(move)) {
                 board.UnmakeMove(move);
                 continue;
@@ -232,6 +227,10 @@ namespace Meetra {
 
     bool SearchThread::MateFound() const {
         return root_moves[0].score != NEGATIVE_INF && std::abs(root_moves[0].score) > MIN_MATE_EVAL;
+    }
+
+    Search::RootMove SearchThread::GetBestRootMove() const {
+        return root_moves[0];
     }
 
     std::string SearchThread::GetSearchInfo() {
@@ -283,8 +282,7 @@ namespace Meetra {
     }
 
     std::string SearchThread::GetCurrLineInfo() {
-        std::string ret = "info currline ";
-        ret += GetMoveName(curr_rm->move);
+        std::string ret = "info currline " + GetMoveName(curr_rm->move);
         for (Move pv_move : curr_rm->pv) {
             ret += ' ' + GetMoveName(pv_move);
         }

@@ -1,6 +1,4 @@
-#include <cstring>
 #include "TranspositionTable.h"
-#include "Evaluation.h"
 #include "Search.h"
 #include "Uci.h"
 
@@ -22,9 +20,11 @@ namespace Meetra {
     }
 
     void TranspositionTable::NewSearch() {
-        current_epoch %= 63;
         current_epoch++;
         used_entries = 0;
+        if(current_epoch >= 64) {
+            Clear();
+        }
     }
 
     void TranspositionTable::Resize(size_t size_mb) {
@@ -35,7 +35,7 @@ namespace Meetra {
     void TranspositionTable::Clear() {
         used_entries = 0;
         current_epoch = 0;
-        memset(table.get(), 0, sizeof(TTBucket) * buckets_count);
+        std::fill_n(table.get(), buckets_count, TTBucket());
     }
 
     void TranspositionTable::SaveEval(ZobristHash key, Score score, Depth depth, Move move, EntryFlag flag, Depth ply) {
@@ -61,12 +61,8 @@ namespace Meetra {
             }
 
             int entry_score = static_cast<int>(entry.GetDepth());
-            if (entry.GetEpoch() <= current_epoch) {
-                entry_score -= (current_epoch - entry.GetEpoch()) << 2;
-            } else {
-                entry_score -= (current_epoch + (63 - entry.GetEpoch())) << 2;
-            }
-            if (entry.GetFlag() == EXACT_SCORE) {
+            entry_score -= (static_cast<int>(current_epoch) - static_cast<int>(entry.GetEpoch())) << 2;
+            if(entry.GetFlag() == EXACT_SCORE) {
                 entry_score += 2;
             }
 
