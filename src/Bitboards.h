@@ -20,7 +20,7 @@ namespace Meetra::Bitboards {
     [[nodiscard]] inline int PopCount(Bitboard b) { return std::__popcount(b); }
     [[nodiscard]] inline Square Lsb(Bitboard b) { return static_cast<Square>(__builtin_ctzll(b)); }
     inline Square PopLsb(Bitboard &b) {
-        const Square s = Lsb(b);
+        Square s = Lsb(b);
         b &= b - 1;
         return s;
     }

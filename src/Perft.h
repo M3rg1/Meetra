@@ -10,13 +10,19 @@ namespace Meetra {
 
     inline ulong Perft(Depth depth, Board &board) {
 
-        if (depth == 0) {
-            return 1;
+        MoveGen move_gen(board);
+        ulong nodes = 0;
+        Move m;
+
+        if (depth == 1) {
+            while ((m = move_gen.GetAnyMove())) {
+                if(board.IsLegal(m)) {
+                    nodes++;
+                }
+            }
+            return nodes;
         }
 
-        ulong nodes = 0;
-        MoveGen move_gen(board);
-        Move m;
         while ((m = move_gen.GetAnyMove())) {
             if(!board.MakeMove(m)) {
                 board.UnmakeMove(m);

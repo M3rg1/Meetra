@@ -113,7 +113,6 @@ namespace Meetra {
             ClearEpSquare();
         }
 
-
         Square from = FromSquare(m);
         Square to = ToSquare(m);
 
@@ -131,38 +130,40 @@ namespace Meetra {
         if (captured_piece) {
             Square capture_square = move_type == EN_PASSANT ? (next_move_col ? to + SOUTH : to + NORTH) : to;
             RemovePiece(capture_square);
-            Zobrist::RemovePiece(curr_data.hash, TypeOfPiece(captured_piece), next_move_col, capture_square);
+            Zobrist::RemovePiece(curr_data.hash, captured_piece, capture_square);
             SetCapturedPiece(captured_piece);
             ResetPly();
         }
 
-        PieceType moved_piece_type = TypeOfPiece(board[from]);
+        Piece moved_piece = board[from];
         MovePiece(from, to);
-        Zobrist::MovePiece(curr_data.hash, moved_piece_type, this_move_col, from, to);
+        Zobrist::MovePiece(curr_data.hash, moved_piece, from, to);
 
-        if (moved_piece_type == PAWN) {
+        if (TypeOfPiece(moved_piece) == PAWN) {
             ResetPly();
             if (move_type == TWO_FORWARD) {
                 SetEpSquare(next_move_col ? to + SOUTH : to + NORTH);
                 Zobrist::AddEp(curr_data.hash, EpSquare());
                 return true;
             } else if (IsPromotion(m)) {
-                PieceType promoted_to = PieceTypeFromFlag(move_type);
+                Piece promoted_to = NewPiece(PieceTypeFromFlag(move_type), this_move_col);
                 RemovePiece(to);
-                Zobrist::RemovePiece(curr_data.hash, PAWN, this_move_col, to);
-                PutPiece(to, NewPiece(promoted_to, this_move_col));
-                Zobrist::PutPiece(curr_data.hash, promoted_to, this_move_col, to);
+                Zobrist::RemovePiece(curr_data.hash, moved_piece, to);
+                PutPiece(to, promoted_to);
+                Zobrist::PutPiece(curr_data.hash, promoted_to, to);
                 return true;
             } else if (move_type == EN_PASSANT) {
                 return !IsSquareAttacked(Bitboards::Lsb(GetPieces(KING, this_move_col)), next_move_col,
                                          GetPieces(ALL_TYPES));
             }
-        } else if (moved_piece_type == KING) {
+        }
+
+        if (TypeOfPiece(moved_piece) == KING) {
             if (move_type == CASTLING) {
                 Square rook_to = RookFromCastling(to);
                 Square rook_from = RookToCastling(to);
                 MovePiece(rook_to, rook_from);
-                Zobrist::MovePiece(curr_data.hash, ROOK, this_move_col, rook_from, rook_to);
+                Zobrist::MovePiece(curr_data.hash, NewPiece(ROOK, this_move_col), rook_from, rook_to);
             }
             return !IsSquareAttacked(to, next_move_col, GetPieces(ALL_TYPES));
         }

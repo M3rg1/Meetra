@@ -44,24 +44,24 @@ namespace Meetra {
 
     MoveGen::MoveGen(const Board &board) : board(board) {
 
-        moves_cnt = 0;
         my_color = board.ColorToMove();
         enemy_color = OtherColor(my_color);
-        enemy_pieces = board.GetPieces(enemy_color);
         all_pieces = board.GetPieces(ALL_TYPES);
-        empty_squares = board.GetEmptySquares();
         checkers = board.SquareAttackers(Bitboards::Lsb(board.GetPieces(KING, my_color)), enemy_color, all_pieces);
         king_square = Bitboards::Lsb(board.GetPieces(KING, my_color));
         blockers = board.PinnedPiecesForSquare(king_square, enemy_color);
+        enemy_pieces = board.GetPieces(enemy_color);
+        empty_squares = board.GetEmptySquares();
+        cr = board.GetCR();
+        ep_square = board.EpSquare();
+        moves_cnt = 0;
         legal_moves = 0xFFFFFFFFFFFFFFFFUL;
-        gen_phase = CAPTURE;
-        double_check = false;
 
         if (IsKingInCheck()) {
             if (Bitboards::MoreThanOne(checkers)) {
+                legal_moves = 0UL;
                 gen_phase = DOUBLE_CHECK;
                 double_check = true;
-                legal_moves = EMPTY_BB;
                 return;
             }
             Bitboard capture_mask = checkers;
@@ -69,6 +69,9 @@ namespace Meetra {
             Bitboard block_mask = Bitboards::GetRayBetweenSquares(king_square, attacker_square);
             legal_moves = capture_mask | block_mask;
         }
+
+        gen_phase = CAPTURE;
+        double_check = false;
     }
 
     void MoveGen::EvalMoves() {
@@ -230,12 +233,11 @@ namespace Meetra {
 
     template<Color C>
     void MoveGen::GenEnPassantMoves() {
-        if (board.EpSquare()) {
-            Square ep_s = board.EpSquare();
+        if (ep_square) {
             Bitboard attackers =
-                    Bitboards::GetAttacksForPiece<PAWN>(ep_s, EMPTY_BB, OtherColor(C)) & board.GetPieces(PAWN, C);
+                    Bitboards::GetAttacksForPiece<PAWN>(ep_square, EMPTY_BB, OtherColor(C)) & board.GetPieces(PAWN, C);
             while (attackers) {
-                PutMove(NewMove(Bitboards::PopLsb(attackers), ep_s, EN_PASSANT));
+                PutMove(NewMove(Bitboards::PopLsb(attackers), ep_square, EN_PASSANT));
             }
         }
     }
@@ -245,23 +247,23 @@ namespace Meetra {
         if (IsKingInCheck()) {
             return;
         }
-        if (CanCastleShort<C>(board.GetCR())) {
+        if (CanCastleShort<C>()) {
             PutMove(NewMove(king_square, king_square + 2, CASTLING));
         }
-        if (CanCastleLong<C>(board.GetCR())) {
+        if (CanCastleLong<C>()) {
             PutMove(NewMove(king_square, king_square - 2, CASTLING));
         }
     }
 
     template<Color C>
-    bool MoveGen::CanCastleShort(CastlingRights cr) const {
+    bool MoveGen::CanCastleShort() const {
         return cr & (C == WHITE ? WHITE_SHORT : BLACK_SHORT) &&
                (Bitboards::GetRayBetweenSquares(C == WHITE ? E1 : E8, C == WHITE ? H1 : H8) & all_pieces) == EMPTY_BB &&
                !board.IsSquareAttacked(C == WHITE ? F1 : F8, OtherColor(C), all_pieces);
     }
 
     template<Color C>
-    bool MoveGen::CanCastleLong(CastlingRights cr) const {
+    bool MoveGen::CanCastleLong() const {
         return cr & (C == WHITE ? WHITE_LONG : BLACK_LONG) &&
                (Bitboards::GetRayBetweenSquares(C == WHITE ? E1 : E8, C == WHITE ? A1 : A8) & all_pieces) == EMPTY_BB &&
                !board.IsSquareAttacked(C == WHITE ? D1 : D8, OtherColor(C), all_pieces);
@@ -288,30 +290,28 @@ namespace Meetra {
         }
 
         // the moved piece is of our color
-        Color col_to_move = board.ColorToMove();
-        if (ColorOfPiece(moved_piece) != col_to_move) {
+        if (ColorOfPiece(moved_piece) != my_color) {
             return false;
         }
 
         // destination is not occupied by a friendly piece
         Piece dest_piece = board.GetPieceOnSquare(ToSquare(m));
-        if (dest_piece != NO_PIECE && ColorOfPiece(dest_piece) == col_to_move) {
+        if (dest_piece != NO_PIECE && ColorOfPiece(dest_piece) == my_color) {
             return false;
         }
 
         // castling validation
         MoveType move_type = GetMoveType(m);
         if (move_type == CASTLING) {
-            return col_to_move == WHITE ? ValidateCastling<WHITE>(m) : ValidateCastling<BLACK>(m);
+            return my_color == WHITE ? ValidateCastling<WHITE>(m) : ValidateCastling<BLACK>(m);
         }
 
         // ep validation
         if (move_type == EN_PASSANT) {
-            if (moved_pt == PAWN && board.EpSquare()) {
-                Square ep_s = board.EpSquare();
-                Bitboard attacker = Bitboards::GetAttacksForPiece<PAWN>(ep_s, EMPTY_BB, OtherColor(col_to_move)) &
+            if (ep_square && moved_pt == PAWN) {
+                Bitboard attacker = Bitboards::GetAttacksForPiece<PAWN>(ep_square, EMPTY_BB, enemy_color) &
                                     SquareToBB(from);
-                if (attacker && m == NewMove(Bitboards::Lsb(attacker), ep_s, EN_PASSANT)) {
+                if (attacker && m == NewMove(Bitboards::Lsb(attacker), ep_square, EN_PASSANT)) {
                     return true;
                 }
             }
@@ -325,7 +325,7 @@ namespace Meetra {
         else if (moved_pt == BISHOP) return move_type == NO_FLAG && ValidateMoveForPiece<BISHOP>(m);
         else if (moved_pt == KNIGHT) return move_type == NO_FLAG && ValidateMoveForPiece<KNIGHT>(m);
         else if (moved_pt == PAWN) {
-            return col_to_move == WHITE ? ValidatePawnMove<WHITE>(m) : ValidatePawnMove<BLACK>(m);
+            return my_color == WHITE ? ValidatePawnMove<WHITE>(m) : ValidatePawnMove<BLACK>(m);
         }
 
         return false;
@@ -398,12 +398,12 @@ namespace Meetra {
         if (IsKingInCheck()) {
             return false;
         }
-        if (CanCastleShort<C>(board.GetCR())) {
+        if (CanCastleShort<C>()) {
             if (m == NewMove(king_square, king_square + 2, CASTLING)) {
                 return true;
             }
         }
-        if (CanCastleLong<C>(board.GetCR())) {
+        if (CanCastleLong<C>()) {
             if (m == NewMove(king_square, king_square - 2, CASTLING)) {
                 return true;
             }

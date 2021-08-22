@@ -32,12 +32,12 @@ namespace Meetra::Zobrist {
         }
     }
 
-    void PutPiece(ZobristHash &h, PieceType pt, Color c, Square s){
-        h ^= piece_keys[s][c == WHITE ? PieceFromPieceType<WHITE>(pt) : PieceFromPieceType<BLACK>(pt)];
+    void PutPiece(ZobristHash &h, Piece p, Square s){
+        h ^= piece_keys[s][p];
     }
 
-    void RemovePiece(ZobristHash &h, PieceType pt, Color c, Square s){
-        PutPiece(h, pt, c, s);
+    void RemovePiece(ZobristHash &h, Piece p, Square s){
+        PutPiece(h, p, s);
     }
 
     void AddEp(ZobristHash &h, Square s) {
@@ -56,9 +56,9 @@ namespace Meetra::Zobrist {
         h ^= to_move_keys[OtherColor(to_move)] ^ to_move_keys[to_move];
     }
 
-    void MovePiece(ZobristHash &h, PieceType p, Color c, Square from, Square to){
-        RemovePiece(h, p, c, from);
-        PutPiece(h, p, c, to);
+    void MovePiece(ZobristHash &h, Piece p, Square from, Square to){
+        RemovePiece(h, p, from);
+        PutPiece(h, p, to);
     }
 
     ZobristHash GenHash(const Board &board) {
