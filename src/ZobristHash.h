@@ -15,7 +15,7 @@ namespace Meetra {
         [[nodiscard]] inline Key32 Make32Key(ZobristHash zobrist_hash) { return zobrist_hash >> 32; }
         [[nodiscard]] inline uint64_t Make44Key(ZobristHash zobrist_hash) { return zobrist_hash >> 20; }
 
-        void AddPiece(ZobristHash &h, PieceType p, Color c, Square s);
+        void PutPiece(ZobristHash &h, PieceType p, Color c, Square s);
         void RemovePiece(ZobristHash &h, PieceType p, Color c, Square s);
         void MovePiece(ZobristHash &h, PieceType p, Color c, Square from, Square to);
         void RemoveEp(ZobristHash &h, Square s);

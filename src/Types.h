@@ -163,6 +163,8 @@ namespace Meetra {
 
 #pragma region ===== Utils =====
 
+    template<Color C>
+    inline Piece PieceFromPieceType(PieceType pt) { return static_cast<Piece>(C == WHITE ? pt - 1 : pt + 5); }
     inline PieceType PieceTypeFromFlag(MoveType mt) { return static_cast<PieceType >((mt >> 13) - 2); }
     inline Square FromSquare(Move m) { return static_cast<Square>(m & 0x3F); }
     inline Square ToSquare(Move m) { return static_cast<Square>((m & 0xFC0) >> 6); }

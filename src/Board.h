@@ -13,16 +13,19 @@ namespace Meetra {
     class Board {
 
     public:
+
         Board();
+
         void NewPosition(const std::string &fen);
         bool MakeMove(Move m);
         void UnmakeMove(Move m);
+        bool IsLegal(Move m);
         [[nodiscard]] bool IsSquareAttacked(Square s, Color attacked_by, Bitboard occ) const;
         [[nodiscard]] Bitboard SquareAttackers(Square s, Color attacked_by, Bitboard occ) const;
         [[nodiscard]] Bitboard PinnedPiecesForSquare(Square s, Color blockers_color) const;
-        [[nodiscard]] int MovesMadeCount() const { return history_cnt; }
 
-#pragma region ===== Piece getters =====
+#pragma region ===== Getters =====
+        [[nodiscard]] inline int MovesMadeCount() const { return history_cnt; }
         [[nodiscard]] inline Bitboard GetPieces(PieceType pt, Color c) const { return type_bbs[pt] & color_bbs[c]; }
         [[nodiscard]] inline Bitboard GetPieces(PieceType pt) const { return type_bbs[pt]; }
         [[nodiscard]] inline Bitboard GetPieces(Color c) const { return color_bbs[c]; }
@@ -106,9 +109,6 @@ namespace Meetra {
 
 #pragma region ===== Update inner structures =====
         void ParseFen(const std::string &fen);
-        void RemovePiece(Square s, ZobristHash &h);
-        void PutPiece(Square s, Piece p, ZobristHash &h);
-        void MovePiece(Square from, Square to, ZobristHash &h);
         void RemovePiece(Square s);
         void PutPiece(Square s, Piece p);
         void MovePiece(Square from, Square to);

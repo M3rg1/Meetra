@@ -32,12 +32,12 @@ namespace Meetra::Zobrist {
         }
     }
 
-    void AddPiece(ZobristHash &h, PieceType p, Color c, Square s){
-        h ^= piece_keys[s][c == WHITE ? p - 1 : p + 5];
+    void PutPiece(ZobristHash &h, PieceType pt, Color c, Square s){
+        h ^= piece_keys[s][c == WHITE ? PieceFromPieceType<WHITE>(pt) : PieceFromPieceType<BLACK>(pt)];
     }
 
-    void RemovePiece(ZobristHash &h, PieceType p, Color c, Square s){
-        AddPiece(h, p, c, s);
+    void RemovePiece(ZobristHash &h, PieceType pt, Color c, Square s){
+        PutPiece(h, pt, c, s);
     }
 
     void AddEp(ZobristHash &h, Square s) {
@@ -58,7 +58,7 @@ namespace Meetra::Zobrist {
 
     void MovePiece(ZobristHash &h, PieceType p, Color c, Square from, Square to){
         RemovePiece(h, p, c, from);
-        AddPiece(h, p, c, to);
+        PutPiece(h, p, c, to);
     }
 
     ZobristHash GenHash(const Board &board) {
@@ -69,12 +69,12 @@ namespace Meetra::Zobrist {
             Bitboard pieces = board.GetPieces(pt, WHITE);
             while (pieces) {
                 Square s = Bitboards::PopLsb(pieces);
-                hash ^= piece_keys[s][pt - 1];
+                hash ^= piece_keys[s][PieceFromPieceType<WHITE>(pt)];
             }
             pieces = board.GetPieces(pt, BLACK);
             while (pieces) {
                 Square s = Bitboards::PopLsb(pieces);
-                hash ^= piece_keys[s][pt + 5];
+                hash ^= piece_keys[s][PieceFromPieceType<BLACK>(pt)];
             }
         }
 

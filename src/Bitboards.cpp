@@ -401,20 +401,12 @@ namespace Meetra::Bitboards {
 
     template<PieceType PT>
     Bitboard GetAttacksForPiece(Square s, Bitboard occ, Color c) {
-        switch (PT) {
-            case PAWN:
-                return pawn_attacks[c][s];
-            case BISHOP :
-                return GetBishopAttacks(s, occ);
-            case ROOK :
-                return GetRookAttacks(s, occ);
-            case QUEEN :
-                return GetBishopAttacks(s, occ) | GetRookAttacks(s, occ);
-            case KNIGHT :
-                return knight_moves[s];
-            case KING :
-                return king_moves[s];
-        }
+        if constexpr (PT == PAWN) return pawn_attacks[c][s];
+        else if constexpr (PT == BISHOP) return GetBishopAttacks(s, occ);
+        else if constexpr (PT == ROOK) return GetRookAttacks(s, occ);
+        else if constexpr (PT == QUEEN) return GetBishopAttacks(s, occ) | GetRookAttacks(s, occ);
+        else if constexpr (PT == KNIGHT) return knight_moves[s];
+        else if constexpr (PT == KING) return king_moves[s];
     }
 
     template Bitboard GetAttacksForPiece<PAWN>(Square, Bitboard, Color);

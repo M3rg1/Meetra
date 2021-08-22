@@ -18,9 +18,11 @@ namespace Meetra {
         MoveGen move_gen(board);
         Move m;
         while ((m = move_gen.GetAnyMove())) {
-            if (board.MakeMove(m)) {
-                nodes += Perft(depth - 1, board);
+            if(!board.MakeMove(m)) {
+                board.UnmakeMove(m);
+                continue;
             }
+            nodes += Perft(depth - 1, board);
             board.UnmakeMove(m);
         }
 
@@ -35,12 +37,14 @@ namespace Meetra {
         Move m;
         ulong total_nodes = 0;
         while ((m = move_gen.GetAnyMove())) {
-            if (board.MakeMove(m)) {
-                ulong nodes = Perft(depth - 1, board);
-                total_nodes += nodes;
-                Uci::SendToGui(GetMoveName(m) + ": " + std::to_string(nodes));
+            if(!board.MakeMove(m)) {
+                board.UnmakeMove(m);
+                continue;
             }
+            ulong nodes = Perft(depth - 1, board);
             board.UnmakeMove(m);
+            total_nodes += nodes;
+            Uci::SendToGui(GetMoveName(m) + ": " + std::to_string(nodes));
         }
 
         auto end = std::chrono::steady_clock::now();

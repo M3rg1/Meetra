@@ -61,7 +61,7 @@ namespace Meetra {
             if (Bitboards::MoreThanOne(checkers)) {
                 gen_phase = DOUBLE_CHECK;
                 double_check = true;
-                legal_moves = 0;
+                legal_moves = EMPTY_BB;
                 return;
             }
             Bitboard capture_mask = checkers;
@@ -233,7 +233,7 @@ namespace Meetra {
         if (board.EpSquare()) {
             Square ep_s = board.EpSquare();
             Bitboard attackers =
-                    Bitboards::GetAttacksForPiece<PAWN>(ep_s, all_pieces, OtherColor(C)) & board.GetPieces(PAWN, C);
+                    Bitboards::GetAttacksForPiece<PAWN>(ep_s, EMPTY_BB, OtherColor(C)) & board.GetPieces(PAWN, C);
             while (attackers) {
                 PutMove(NewMove(Bitboards::PopLsb(attackers), ep_s, EN_PASSANT));
             }
@@ -309,7 +309,7 @@ namespace Meetra {
         if (move_type == EN_PASSANT) {
             if (moved_pt == PAWN && board.EpSquare()) {
                 Square ep_s = board.EpSquare();
-                Bitboard attacker = Bitboards::GetAttacksForPiece<PAWN>(ep_s, all_pieces, OtherColor(col_to_move)) &
+                Bitboard attacker = Bitboards::GetAttacksForPiece<PAWN>(ep_s, EMPTY_BB, OtherColor(col_to_move)) &
                                     SquareToBB(from);
                 if (attacker && m == NewMove(Bitboards::Lsb(attacker), ep_s, EN_PASSANT)) {
                     return true;
