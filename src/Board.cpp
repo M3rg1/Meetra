@@ -125,24 +125,24 @@ namespace Meetra {
         }
 
         MoveType move_type = GetMoveType(m);
-        Piece captured_piece = move_type == EN_PASSANT ? NewPiece(PAWN, next_move_col) : board[to];
+        Piece captured_piece = move_type == EN_PASSANT ? NewPiece(PAWN, next_move_col) : GetPieceOnSquare(to);
 
         if (captured_piece) {
-            Square capture_square = move_type == EN_PASSANT ? (next_move_col ? to + SOUTH : to + NORTH) : to;
+            Square capture_square = move_type == EN_PASSANT ? (this_move_col == WHITE ? to + SOUTH : to + NORTH) : to;
             RemovePiece(capture_square);
             Zobrist::RemovePiece(curr_data.hash, captured_piece, capture_square);
             SetCapturedPiece(captured_piece);
             ResetPly();
         }
 
-        Piece moved_piece = board[from];
+        Piece moved_piece = GetPieceOnSquare(from);
         MovePiece(from, to);
         Zobrist::MovePiece(curr_data.hash, moved_piece, from, to);
 
         if (TypeOfPiece(moved_piece) == PAWN) {
             ResetPly();
             if (move_type == TWO_FORWARD) {
-                SetEpSquare(next_move_col ? to + SOUTH : to + NORTH);
+                SetEpSquare(this_move_col == WHITE ? to + SOUTH : to + NORTH);
                 Zobrist::AddEp(curr_data.hash, EpSquare());
                 return true;
             } else if (IsPromotion(m)) {
@@ -204,7 +204,7 @@ namespace Meetra {
             return !IsSquareAttacked(ToSquare(m), next_col, GetPieces(ALL_TYPES));
         }
 
-        if (TypeOfPiece(board[FromSquare(m)]) == KING) {
+        if (TypeOfPiece(GetPieceOnSquare(FromSquare(m))) == KING) {
             Color next_col = OtherColor(ColorToMove());
             Bitboard occ = GetPieces(ALL_TYPES) ^ SquareToBB(FromSquare(m));
             return !IsSquareAttacked(ToSquare(m), next_col, occ);
@@ -321,7 +321,7 @@ namespace Meetra {
         for (Rank r = RANK_8; r >= RANK_1; --r) {
             oss << std::to_string(r + 1) << " |";
             for (File f = FILE_A; f <= FILE_H; ++f) {
-                oss << ' ' << PieceToChar(board[SquareFromFiRa(f, r)]) << ' ';
+                oss << ' ' << PieceToChar(GetPieceOnSquare(SquareFromFiRa(f, r))) << ' ';
             }
             oss << '\n';
         }

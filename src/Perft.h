@@ -16,7 +16,7 @@ namespace Meetra {
 
         if (depth == 1) {
             while ((m = move_gen.GetAnyMove())) {
-                if(board.IsLegal(m)) {
+                if(move_gen.IsLegal(m)) {
                     nodes++;
                 }
             }

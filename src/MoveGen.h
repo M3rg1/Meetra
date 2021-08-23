@@ -28,6 +28,7 @@ namespace Meetra {
         template<GEN_TYPE Type>
         [[nodiscard]] Move GetBestMove();
         [[nodiscard]] Move GetAnyMove();
+        [[nodiscard]] bool IsLegal(Move m) const;
         [[nodiscard]] bool IsPseudoLegal(Move m) const;
         [[nodiscard]] inline bool IsKingInCheck() const { return checkers; }
         [[nodiscard]] inline GenPhase IsPhase() const { return gen_phase; }

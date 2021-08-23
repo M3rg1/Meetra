@@ -269,6 +269,28 @@ namespace Meetra {
                !board.IsSquareAttacked(C == WHITE ? D1 : D8, OtherColor(C), all_pieces);
     }
 
+    bool MoveGen::IsLegal(Move m) const {
+
+        if (GetMoveType(m) == CASTLING) {
+            return !board.IsSquareAttacked(ToSquare(m), enemy_color, all_pieces);
+        }
+
+        if (TypeOfPiece(board.GetPieceOnSquare(FromSquare(m))) == KING) {
+            Bitboard occ = all_pieces ^ SquareToBB(FromSquare(m));
+            return !board.IsSquareAttacked(ToSquare(m), enemy_color, occ);
+        }
+
+        if (GetMoveType(m) == EN_PASSANT) {
+            Square from = FromSquare(m);
+            Square to = ToSquare(m);
+            Square take_square = my_color == WHITE ? to + SOUTH : to + NORTH;
+            Bitboard occ = all_pieces ^ SquareToBB(take_square) ^ (SquareToBB(from) | SquareToBB(to));
+            return !board.IsSquareAttacked(king_square, enemy_color, occ);
+        }
+
+        return true;
+    }
+
     // ZERO_MOVE is considered to be pseudo legal !!
     bool MoveGen::IsPseudoLegal(Move m) const {
 
