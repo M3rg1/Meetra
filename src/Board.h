@@ -54,11 +54,9 @@ namespace Meetra {
             // because moves played before could be sub-optimal, however moves during the search have already been
             // examined, so repeating even once is pointless
             //int rep = 0;
-            for (int i = history_cnt - 2; i >= 0; i -= 2) {
-                // capture occurred in the history
-                if (history[i].state & 0x7800) {
-                    return false;
-                } else if (history[i].hash == curr_data.hash) {
+            int stop = std::max(static_cast<int>(history_cnt - Ply()), 0);
+            for (int i = static_cast<int>(history_cnt) - 2; i >= stop; i -= 2) {
+                 if (history[i].hash == curr_data.hash) {
                     //rep++;
                     //if(rep > 1) return true;
                     return true;

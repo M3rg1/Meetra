@@ -12,6 +12,7 @@ namespace Meetra {
 
     namespace Search {
         struct RootMove;
+        struct PVMoveLine;
     }
 
     class SearchThread {
@@ -23,19 +24,19 @@ namespace Meetra {
         void InitNewSearch(Board b, std::vector<Search::RootMove> moves);
         void Shutdown();
         void StartThread();
+        void Search();
 
         [[nodiscard]] Search::RootMove GetBestRootMove() const;
         [[nodiscard]] inline bool IsThreadSearching() const { return active.load(std::memory_order_relaxed); };
         [[nodiscard]] inline ulong NodesExplored() const { return nodes_explored.load(std::memory_order_relaxed); }
-        void CheckTimers();
-        void Search();
         [[nodiscard]] std::string GetSearchInfo() const;
 
     private:
 
-        Score NegaMax(Score alpha, Score beta, Depth depth, Depth ply, std::vector<Move> &pv_line);
+        Score NegaMax(Score alpha, Score beta, Depth depth, Depth ply, Search::PVMoveLine &pv_line);
         Score QSearch(Score alpha, Score beta, Depth ply);
 
+        void CheckTimers();
         [[nodiscard]] std::string GetCurrLineInfo() const;
         [[nodiscard]] std::string GetCurrMoveInfo() const;
         [[nodiscard]] std::string GetUpdateSearchInfo() const;
@@ -44,7 +45,7 @@ namespace Meetra {
         [[nodiscard]] inline bool IsMainThread() const { return id == 0; }
 
 
-        inline static int threads_n = 0;
+        inline static int next_id = 0;
         int id;
 
         Board board;
@@ -54,6 +55,7 @@ namespace Meetra {
         Depth depth_reached;
         Depth seldepth_reached;
         std::atomic<uint64_t> nodes_explored;
+        Depth max_qsearch_ply;
 
         std::atomic<bool> active;
         std::jthread thread;

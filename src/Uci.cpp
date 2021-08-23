@@ -225,7 +225,7 @@ namespace Meetra::Uci {
         Move move;
         while ((move = move_gen.GetAnyMove())) {
             if (FromSquare(move) == FromSquare(move_made) && ToSquare(move) == ToSquare(move_made)) {
-                if (IsPromotion(move) && GetMoveType(move) != GetMoveType(move_made)) {
+                if (IsPromotion(move) && move != move_made) {
                     continue;
                 }
                 board.MakeMove(move);
@@ -247,15 +247,13 @@ namespace Meetra::Uci {
             else if (option == "winc") settings.white_increment = std::stoi(value);
             else if (option == "binc") settings.black_increment = std::stoi(value);
             else if (option == "movetime") {
-                settings.max_allowed_depth = MAX_SEARCH_DEPTH;
-                settings.fixed_timer = true;
+                settings.fixed_time = true;
                 settings.allowed_time = std::stoi(value);
             } else if (option == "infinite") {
-                settings.max_allowed_depth = MAX_SEARCH_DEPTH;
                 settings.infinite = true;
             } else if (option == "depth") {
                 settings.max_allowed_depth = std::stoi(value);
-                settings.infinite = true;
+                settings.fixed_depth = true;
             }
             //else if (token == "ponder") infinite = true; - need to implement ponderhit command for this (there we set search_timer)
             //else if movestogo - thats when we get time increment

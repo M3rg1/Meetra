@@ -8,9 +8,9 @@
 
 namespace Meetra {
 
-#define MIN_HASH_SIZE 16
+#define MIN_HASH_SIZE 0
 #define DEFAULT_HASH_SIZE 128
-#define MAX_HASH_SIZE 4096
+#define MAX_HASH_SIZE 8192
 #define TT_ENTRIES_PER_BUCKET 4
 
     enum EntryFlag : uint8_t {
@@ -30,7 +30,6 @@ namespace Meetra {
         void Probe(ZobristHash key, Score alpha, Score beta, Depth depth, Depth ply, Score &score,
                    EntryFlag &flag, Move &move) const;
         [[nodiscard]] Move GetPVMove(ZobristHash key) const;
-        [[nodiscard]] Move GetAnyMove(ZobristHash key) const;
         // 0.01 == 1% usage, 0.1 == 10% usage, 1 == 100% usage
         [[nodiscard]] inline double Usage() const {
             double usage = static_cast<double>(used_entries.load(std::memory_order_relaxed))
@@ -39,7 +38,6 @@ namespace Meetra {
         }
 
     private:
-//#pragma pack(push, 1)
 
         // 10 bytes + 2 alignment
         class TTEntry {
@@ -73,15 +71,9 @@ namespace Meetra {
             }
         };
 
-        class TTBucket {
-
-        public:
+        struct TTBucket {
             TTEntry bucket_entries[TT_ENTRIES_PER_BUCKET];
-        private:
-
         };
-
-//#pragma pack(pop)
 
         Epoch current_epoch;
         std::atomic<size_t> used_entries;

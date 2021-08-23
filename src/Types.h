@@ -144,6 +144,8 @@ namespace Meetra {
 #pragma region ===== Initialization =====
     inline Move NewMove(Square from, Square to) { return static_cast<Move>(from | to << 6); }
     inline Move NewMove(Square from, Square to, MoveType flag) { return static_cast<Move>(NewMove(from, to) | flag); }
+    // Make a move from UCI move string, if the move is a promotion, it will set the appropriate flag,
+    // however for non-promotion special moves (castling, two forward ...) it wont.
     inline Move NewMoveFromName(const std::string &move_name) {
 
         Square s_from = SquareFromFiRa(FileFromChar(move_name[0]), RankFromChar(move_name[1]));

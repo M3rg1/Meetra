@@ -290,7 +290,6 @@ namespace Meetra {
         return true;
     }
 
-    // ZERO_MOVE is considered to be pseudo legal !!
     bool MoveGen::IsPseudoLegal(Move m) const {
 
         if (m == ZERO_MOVE) {

@@ -9,7 +9,6 @@
 namespace Meetra::Search {
 
 #define MAX_SEARCH_DEPTH 128
-#define DEFAULT_SEARCH_DEPTH 32
 #define DEFAULT_SEARCH_TIME 1000
 #define DEFAULT_SEARCH_THREADS 1
 #define UPDATE_INFO_INTERVAL 1000
@@ -18,10 +17,12 @@ namespace Meetra::Search {
 #define DEFAULT_PLY_FOR_DRAW 75
 
     struct SearchSettings {
-        Depth max_allowed_depth = DEFAULT_SEARCH_DEPTH;
-        bool fixed_timer = false;
         bool infinite = false;
+        bool fixed_time = false;
+        bool fixed_depth = false;
+
         long allowed_time = DEFAULT_SEARCH_TIME;
+        Depth max_allowed_depth = MAX_SEARCH_DEPTH;
 
         long white_time = 0;
         long black_time = 0;
@@ -46,9 +47,24 @@ namespace Meetra::Search {
         inline std::vector<std::unique_ptr<SearchThread>> search_threads;
     }
 
+    struct PVMoveLine {
+    private:
+        Move moves[MAX_SEARCH_DEPTH];
+        size_t len = 0;
+    public:
+        [[nodiscard]] size_t Size() const { return len; }
+        [[nodiscard]] Move At(size_t idx) const { return moves[idx]; }
+        void PutMove(Move m) { moves[len++] = m; }
+        void Clear() { len = 0; }
+        void PutLine(const PVMoveLine &line) {
+            std::copy_n(std::begin(line.moves), line.len, std::begin(moves) + len);
+            len += line.len;
+        }
+    };
+
     struct RootMove {
         Move move;
-        std::vector<Move> pv;
+        PVMoveLine pv;
         Score score = NEGATIVE_INF;
         Score previous_score = NEGATIVE_INF;
         Depth depth = 0;
@@ -57,19 +73,11 @@ namespace Meetra::Search {
 
         explicit RootMove(Move m) : move(m) {}
 
-        bool operator==(const RootMove &rm) const { return move == rm.move; }
-        bool operator==(const Move &m) const { return move == m; }
         bool operator<(const RootMove &mn) const {
             return mn.score != score ? mn.score < score :
                    mn.previous_score != previous_score ? mn.previous_score < previous_score :
                    mn.nodes < nodes;
         }
-/*                bool operator<(const RootMove &mn) const {
-                    return mn.nodes_explored != nodes_explored ? mn.nodes_explored < nodes_explored : mn.score < score;
-                }*/
-        /*            bool operator<(const RootMove& mn) const {
-                        return mn.score != score ? mn.score < score : mn.previous_score < previous_score;
-                    }*/
     };
 
     void Init();

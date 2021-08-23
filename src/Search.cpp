@@ -14,7 +14,7 @@ namespace Meetra::Search {
     }
 
     bool EnoughTimeLeft() {
-        if (Globals::settings.infinite || Globals::settings.fixed_timer ||
+        if (Globals::settings.infinite || Globals::settings.fixed_time || Globals::settings.fixed_depth ||
             Globals::settings.allowed_time > ElapsedTimeMs() * 2) {
             return true;
         }
@@ -27,7 +27,7 @@ namespace Meetra::Search {
 
     void InitSearchTimer(Board &board) {
 
-        if (Globals::settings.infinite || Globals::settings.fixed_timer) {
+        if (Globals::settings.infinite || Globals::settings.fixed_time || Globals::settings.fixed_depth) {
             return;
         }
 
@@ -74,6 +74,8 @@ namespace Meetra::Search {
     }
 
     void FinishSearch() {
+
+        StopSearch();
         // select the thread with the best move overall
         // for multipv, because helper threads might skip some depths and not have the full pv, we can't safely use
         // their results without risking their pv for other than the top move will be very old from low depth or even
@@ -91,8 +93,6 @@ namespace Meetra::Search {
 
         Uci::SendToGui(best_thread->GetSearchInfo());
         Uci::SendToGui("bestmove " + GetMoveName(best_thread->GetBestRootMove().move));
-
-        StopSearch();
         Globals::finished = true;
     }
 
@@ -104,17 +104,13 @@ namespace Meetra::Search {
 
         // if there's only one root move, and we are not in infinite or fixed depth/time search, return the only
         // possible move immediately
-        if ((root_moves.size() == 1 && (!Globals::settings.infinite || !Globals::settings.fixed_timer)) ||
-            root_moves.empty()) {
+        if (root_moves.empty() ||
+            (root_moves.size() == 1 &&
+             (!Globals::settings.infinite || !Globals::settings.fixed_depth || !Globals::settings.fixed_time))) {
             StopSearch();
             Uci::SendToGui("bestmove " + GetMoveName(root_moves.empty() ? ZERO_MOVE : root_moves[0].move));
             return;
         }
-
-/*        // activate timeout timer for search
-        if (!Globals::settings.infinite) {
-            Globals::search_timer.SetTimeout([&]() { StopSearch(); }, Globals::settings.allowed_time);
-        }*/
 
         // initialize and start each thread
         std::sort(root_moves.begin(), root_moves.end());
