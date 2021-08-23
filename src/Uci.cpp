@@ -192,15 +192,14 @@ namespace Meetra::Uci {
             option += token + " ";
         }
 
-        std::string value;
-        iss >> value;
-
         option.erase(option.find_last_not_of(' ') + 1);
         std::transform(option.begin(), option.end(), option.begin(), ::tolower);
 
+        std::string value;
+        iss >> value;
+
         if (option == "hash") {
-            int hash_size = std::stoi(value);
-            Search::SetTTSize(hash_size);
+            Search::SetTTSize(std::stoi(value));
         } else if (option == "clear hash") {
             Search::ClearTT();
         } else if (option == "multipv") {
@@ -215,6 +214,8 @@ namespace Meetra::Uci {
             Search::ShowCurrMoveInfo(value == "true");
         } else if (option == "plies draw") {
             Search::SetPliesDraw(std::stoi(value));
+        } else {
+            Uci::UnknownCommand();
         }
     }
 

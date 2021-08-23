@@ -22,13 +22,13 @@ namespace Meetra {
     public:
 
         void Init(size_t size_mb = DEFAULT_HASH_SIZE);
-        void SaveEval(ZobristHash key, Score score, Depth depth, Move move, EntryFlag flag, Depth ply);
+        void Save(ZobristHash key, Score score, Depth depth, Move move, EntryFlag flag, Depth ply);
         void Resize(size_t size_mb);
         void NewSearch();
         void Clear();
 
-        void ProbeEval(ZobristHash key, Score alpha, Score beta, Depth depth, Depth ply, Score &score,
-                       EntryFlag &flag, Move &move) const;
+        void Probe(ZobristHash key, Score alpha, Score beta, Depth depth, Depth ply, Score &score,
+                   EntryFlag &flag, Move &move) const;
         [[nodiscard]] Move GetPVMove(ZobristHash key) const;
         [[nodiscard]] Move GetAnyMove(ZobristHash key) const;
         // 0.01 == 1% usage, 0.1 == 10% usage, 1 == 100% usage

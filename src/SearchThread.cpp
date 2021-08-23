@@ -108,25 +108,26 @@ namespace Meetra {
         }
 
         EntryFlag tt_flag;
+        Move tt_move;
         Score score;
-        Move best_move;
         MoveGen move_gen(board);
-        Search::Globals::tt.ProbeEval(board.GetZobristHash(), alpha, beta, depth, ply, score, tt_flag, best_move);
+        Search::Globals::tt.Probe(board.GetZobristHash(), alpha, beta, depth, ply, score, tt_flag, tt_move);
 
         // do a check of the retrieved move, if it's legal to play in the current position and not corrupted,
         // chances are, the score is correct as well
-        if (move_gen.IsPseudoLegal(best_move)) {
+        if (move_gen.IsPseudoLegal(tt_move)) {
             // we have a good match and will be making a cutoff
             if (tt_flag == ALPHA || tt_flag == BETA) {
                 return score;
             }
             // no cutoff, but we got some move from TT, we will play it as the first move in the main negamax loop
-            if (best_move != ZERO_MOVE) {
-                move_gen.PutTTMove(best_move);
+            if (tt_move != ZERO_MOVE) {
+                move_gen.PutTTMove(tt_move);
             }
         }
 
-
+        Score best_score = NEGATIVE_INF;
+        Move best_move;
         Move move;
         tt_flag = ALPHA;
         bool moves_available = false;
@@ -146,17 +147,21 @@ namespace Meetra {
 
             if (!Search::Run()) {
                 return 0;
-            } else if (score > alpha) {
-                if (score >= beta) {
-                    Search::Globals::tt.SaveEval(board.GetZobristHash(), beta, depth, move, BETA, ply);
-                    return beta;
-                }
-                pv_line.clear();
-                pv_line.emplace_back(move);
-                pv_line.insert(pv_line.begin() + 1, line.begin(), line.end());
-                tt_flag = EXACT_SCORE;
-                alpha = score;
+            }
+            if (score > best_score) {
+                best_score = score;
                 best_move = move;
+                if (score > alpha) {
+                    if (score >= beta) {
+                        Search::Globals::tt.Save(board.GetZobristHash(), beta, depth, move, BETA, ply);
+                        return beta;
+                    }
+                    pv_line.clear();
+                    pv_line.emplace_back(move);
+                    pv_line.insert(pv_line.begin() + 1, line.begin(), line.end());
+                    tt_flag = EXACT_SCORE;
+                    alpha = score;
+                }
             }
         }
 
@@ -168,7 +173,7 @@ namespace Meetra {
         }
 
         // whatever we learnt about this position, store it in TT for later use
-        Search::Globals::tt.SaveEval(board.GetZobristHash(), alpha, depth, best_move, tt_flag, ply);
+        Search::Globals::tt.Save(board.GetZobristHash(), alpha, depth, best_move, tt_flag, ply);
 
         return alpha;
     }
