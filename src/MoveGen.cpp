@@ -271,11 +271,10 @@ namespace Meetra {
 
     bool MoveGen::IsLegal(Move m) const {
 
-        if (GetMoveType(m) == CASTLING) {
-            return !board.IsSquareAttacked(ToSquare(m), enemy_color, all_pieces);
-        }
-
-        if (TypeOfPiece(board.GetPieceOnSquare(FromSquare(m))) == KING) {
+        if (FromSquare(m) == king_square) {
+            if (GetMoveType(m) == CASTLING) {
+                return !board.IsSquareAttacked(ToSquare(m), enemy_color, all_pieces);
+            }
             Bitboard occ = all_pieces ^ SquareToBB(FromSquare(m));
             return !board.IsSquareAttacked(ToSquare(m), enemy_color, occ);
         }
@@ -341,6 +340,7 @@ namespace Meetra {
         }
 
         // check if it's possible to generate a move that would match our tested move
+        // this is quite slow, but it's fairly simple and 100% thorough
         if (moved_pt == KING) return move_type == NO_FLAG && ValidateMoveForPiece<KING>(m);
         else if (moved_pt == QUEEN) return move_type == NO_FLAG && ValidateMoveForPiece<QUEEN>(m);
         else if (moved_pt == ROOK) return move_type == NO_FLAG && ValidateMoveForPiece<ROOK>(m);

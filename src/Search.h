@@ -11,27 +11,11 @@ namespace Meetra::Search {
 #define MAX_SEARCH_DEPTH 128
 #define DEFAULT_SEARCH_DEPTH 32
 #define DEFAULT_SEARCH_TIME 1000
-#define DEFAULT_INFO_INTERVAL 1000
 #define DEFAULT_SEARCH_THREADS 1
+#define UPDATE_INFO_INTERVAL 1000
 #define MAX_SEARCH_THREADS 8
 #define MIN_MATE_EVAL (MATE_SCORE - MAX_SEARCH_DEPTH)
 #define DEFAULT_PLY_FOR_DRAW 75
-
-    class Timer {
-    public:
-        enum STATE : bool {
-            ACTIVE = true, INACTIVE = false
-        };
-        Timer();
-        ~Timer();
-        void SetState(STATE status);
-        void ShutdownTimer();
-    private:
-        std::condition_variable_any cond_var;
-        std::mutex mtx;
-        std::jthread thread;
-        bool active;
-    };
 
     struct SearchSettings {
         Depth max_allowed_depth = DEFAULT_SEARCH_DEPTH;
@@ -43,12 +27,12 @@ namespace Meetra::Search {
         long black_time = 0;
         long white_increment = 0;
         long black_increment = 0;
-
-        long info_to_ui_ms_timer = DEFAULT_INFO_INTERVAL;
     };
 
     namespace Globals {
         inline std::atomic<bool> run;
+        inline std::atomic<bool> finished;
+        inline std::atomic<Depth> mt_depth;
         inline TranspositionTable tt;
         inline SearchSettings settings;
         inline bool show_currline;
@@ -56,13 +40,9 @@ namespace Meetra::Search {
         inline int plies_muted;
         inline int multi_pv;
         inline int plies_draw;
-        inline std::atomic<bool> finished;
-        inline std::atomic<uint64_t> nodes_explored;
-        inline std::atomic<Depth> curr_max_depth;
-        inline std::atomic<Depth> seldepth;
         inline int num_threads;
-        inline long timer_start;
-        inline Timer info_timer;
+        inline long start_time;
+        inline long last_update_time;
         inline std::vector<std::unique_ptr<SearchThread>> search_threads;
     }
 
@@ -85,7 +65,7 @@ namespace Meetra::Search {
                    mn.nodes < nodes;
         }
 /*                bool operator<(const RootMove &mn) const {
-                    return mn.nodes != nodes ? mn.nodes < nodes : mn.score < score;
+                    return mn.nodes_explored != nodes_explored ? mn.nodes_explored < nodes_explored : mn.score < score;
                 }*/
         /*            bool operator<(const RootMove& mn) const {
                         return mn.score != score ? mn.score < score : mn.previous_score < previous_score;
@@ -101,7 +81,6 @@ namespace Meetra::Search {
     void RequestTime(long time_ms);
     [[nodiscard]] long ElapsedTimeMs();
     [[nodiscard]] bool EnoughTimeLeft();
-    [[nodiscard]] bool TimeRunOut();
     [[nodiscard]] inline bool Run() { return Globals::run.load(std::memory_order_relaxed); }
     [[nodiscard]] inline bool Finished() { return Globals::finished.load(std::memory_order_relaxed); }
     inline void ShowShowCurrLine(bool show) { Globals::show_currline = show; }

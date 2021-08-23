@@ -9,20 +9,13 @@ namespace Meetra::Search {
     long ElapsedTimeMs() {
         long now = time_point_cast<std::chrono::milliseconds>(
                 std::chrono::steady_clock::now()).time_since_epoch().count();
-        long elapsed_ms = now - Globals::timer_start;
+        long elapsed_ms = now - Globals::start_time;
         return elapsed_ms + 1;
     }
 
     bool EnoughTimeLeft() {
         if (Globals::settings.infinite || Globals::settings.fixed_timer ||
             Globals::settings.allowed_time > ElapsedTimeMs() * 2) {
-            return true;
-        }
-        return false;
-    }
-
-    bool TimeRunOut() {
-        if (!Globals::settings.infinite && Globals::settings.allowed_time < ElapsedTimeMs()) {
             return true;
         }
         return false;
@@ -51,15 +44,14 @@ namespace Meetra::Search {
 
         Globals::finished = false;
 
-        Globals::timer_start = time_point_cast<std::chrono::milliseconds>(
+        Globals::last_update_time = 0;
+        Globals::start_time = time_point_cast<std::chrono::milliseconds>(
                 std::chrono::steady_clock::now()).time_since_epoch().count();
 
         Globals::settings = s;
 
         Globals::tt.NewSearch();
-        Globals::nodes_explored.store(0, std::memory_order_relaxed);
-        Globals::curr_max_depth.store(0, std::memory_order_relaxed);
-        Globals::seldepth.store(0, std::memory_order_relaxed);
+        Globals::mt_depth.store(0, std::memory_order_relaxed);
 
         Globals::settings.max_allowed_depth = std::min(s.max_allowed_depth, static_cast<Depth>(MAX_SEARCH_DEPTH));
 
@@ -81,25 +73,6 @@ namespace Meetra::Search {
         return moves;
     }
 
-    std::string GetUpdateSearchInfo() {
-
-        auto elapsed_ms = Search::ElapsedTimeMs();
-        auto nps = static_cast<uint64_t>(
-                ((static_cast<double>(Globals::nodes_explored.load(std::memory_order_relaxed)) /
-                  static_cast<double>(elapsed_ms))) * 1000.0);
-
-        std::ostringstream oss;
-
-        oss << "info depth " << static_cast<int>(Globals::curr_max_depth.load(std::memory_order_relaxed))
-            << " seldepth " << static_cast<int>(Globals::seldepth.load(std::memory_order_relaxed))
-            << " nodes " << (Globals::nodes_explored.load(std::memory_order_relaxed))
-            << " time " << elapsed_ms
-            << " nps " << nps
-            << " hashfull " << static_cast<int>(Globals::tt.Usage() * 1000.0);
-
-        return oss.str();
-    }
-
     void FinishSearch() {
         // select the thread with the best move overall
         // for multipv, because helper threads might skip some depths and not have the full pv, we can't safely use
@@ -119,7 +92,6 @@ namespace Meetra::Search {
         Uci::SendToGui(best_thread->GetSearchInfo());
         Uci::SendToGui("bestmove " + GetMoveName(best_thread->GetBestRootMove().move));
 
-        Globals::info_timer.SetState(Timer::INACTIVE);
         StopSearch();
         Globals::finished = true;
     }
@@ -144,9 +116,6 @@ namespace Meetra::Search {
             Globals::search_timer.SetTimeout([&]() { StopSearch(); }, Globals::settings.allowed_time);
         }*/
 
-        // activate timer that updates GUI with search info on interval
-        Globals::info_timer.SetState(Timer::ACTIVE);
-
         // initialize and start each thread
         std::sort(root_moves.begin(), root_moves.end());
         for (auto &search_thread : Globals::search_threads) {
@@ -165,9 +134,8 @@ namespace Meetra::Search {
         Globals::plies_muted = 1;
         Globals::plies_draw = DEFAULT_PLY_FOR_DRAW;
         Globals::num_threads = DEFAULT_SEARCH_THREADS;
-        for (int thread_id = 0; thread_id < Globals::num_threads; thread_id++) {
-            Globals::search_threads.emplace_back(new SearchThread(thread_id));
-        }
+        Globals::last_update_time = 0;
+        SetNumThreads(DEFAULT_SEARCH_THREADS);
     }
 
     void ShutdownThreads() {
@@ -181,56 +149,13 @@ namespace Meetra::Search {
     void Shutdown() {
         StopSearch();
         ShutdownThreads();
-        Globals::info_timer.ShutdownTimer();
     }
 
     void SetNumThreads(int num) {
         ShutdownThreads();
         Globals::num_threads = std::clamp(num, 1, MAX_SEARCH_THREADS);
-        for (int thread_id = 0; thread_id < Globals::num_threads; thread_id++) {
-            Globals::search_threads.emplace_back(new SearchThread(thread_id));
-        }
-    }
-
-    Timer::Timer() {
-        active = false;
-        thread = std::jthread([&](const std::stop_token &stop_token) {
-            while (true) {
-                {
-                    std::unique_lock lock(mtx);
-                    if (active == INACTIVE) {
-                        cond_var.wait(lock, stop_token, [&] { return active; });
-                    } else {
-                        cond_var.wait_for(lock, stop_token, std::chrono::milliseconds(DEFAULT_INFO_INTERVAL),
-                                          [&] { return !active; });
-                    }
-                    if (stop_token.stop_requested()) { return; }
-                    if (!active) continue;
-                }
-                Uci::SendToGui(GetUpdateSearchInfo());
-                if (Search::Globals::show_currline) {
-                    Uci::SendToGui(Globals::search_threads[0]->GetCurrLineInfo());
-                }
-            }
-        });
-    }
-
-    Timer::~Timer() {
-        ShutdownTimer();
-    }
-
-    void Timer::SetState(STATE status) {
-        {
-            std::scoped_lock lock(mtx);
-            active = status;
-        }
-        cond_var.notify_one();
-    }
-
-    void Timer::ShutdownTimer() {
-        if (thread.joinable()) {
-            thread.request_stop();
-            thread.join();
+        for (auto i = 0; i < Globals::num_threads; i++) {
+            Globals::search_threads.emplace_back(new SearchThread());
         }
     }
 }

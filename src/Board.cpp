@@ -96,6 +96,8 @@ namespace Meetra {
         type_bbs[ALL_TYPES] ^= from_to;
     }
 
+    // make a pseudo legal move
+    // if the move turns out to be illegal, it has to be undone via the UnmakeMove function
     bool Board::MakeMove(Move m) {
 
         history[history_cnt++] = curr_data;
@@ -195,32 +197,6 @@ namespace Meetra {
             RemovePiece(from);
             PutPiece(from, NewPiece(PAWN, ColorToMove()));
         }
-    }
-
-    bool Board::IsLegal(Move m) {
-
-        if (GetMoveType(m) == CASTLING) {
-            Color next_col = OtherColor(ColorToMove());
-            return !IsSquareAttacked(ToSquare(m), next_col, GetPieces(ALL_TYPES));
-        }
-
-        if (TypeOfPiece(GetPieceOnSquare(FromSquare(m))) == KING) {
-            Color next_col = OtherColor(ColorToMove());
-            Bitboard occ = GetPieces(ALL_TYPES) ^ SquareToBB(FromSquare(m));
-            return !IsSquareAttacked(ToSquare(m), next_col, occ);
-        }
-
-        if (GetMoveType(m) == EN_PASSANT) {
-            Color now_col = ColorToMove();
-            Color next_col = OtherColor(now_col);
-            Square from = FromSquare(m);
-            Square to = ToSquare(m);
-            Square take_square = next_col ? to + SOUTH : to + NORTH;
-            Bitboard occ = GetPieces(ALL_TYPES) ^ SquareToBB(take_square) ^ (SquareToBB(from) | SquareToBB(to));
-            return !IsSquareAttacked(Bitboards::Lsb(GetPieces(KING, now_col)), next_col, occ);
-        }
-
-        return true;
     }
 
     Piece CharToPiece(char c) {

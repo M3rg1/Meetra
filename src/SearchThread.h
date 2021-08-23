@@ -18,73 +18,42 @@ namespace Meetra {
 
     public:
 
-        explicit SearchThread(int t_num) : thread_num(t_num) {
-            active = false;
-            thread = std::jthread([&](const std::stop_token &stop_token) {
-                while (true) {
-                    {
-                        std::unique_lock lock(mtx);
-                        cond_var.wait(lock, stop_token, [&] { return IsThreadSearching(); });
-                    }
-                    if (stop_token.stop_requested()) { return; }
-                    Search();
-                }
-            });
-        }
+        SearchThread();
+        ~SearchThread();
+        void InitNewSearch(Board b, std::vector<Search::RootMove> moves);
+        void Shutdown();
+        void StartThread();
 
-        ~SearchThread() {
-            Shutdown();
-        }
-
-        void InitNewSearch(Board b, std::vector<Search::RootMove> moves) {
-            board = b;
-            root_moves = std::move(moves);
-            curr_rm = &root_moves[0];
-            curr_rm_num = 0;
-            curr_depth = 0;
-        }
-
-        void Shutdown() {
-            if (thread.joinable()) {
-                {
-                    std::scoped_lock lock(mtx);
-                    active = false;
-                }
-                thread.request_stop();
-                thread.join();
-            }
-        }
-
-        void StartThread() {
-            {
-                std::scoped_lock lock(mtx);
-                active = true;
-            }
-            cond_var.notify_one();
-        };
-
-        [[nodiscard]] std::string GetSearchInfo();
-        [[nodiscard]] std::string GetCurrLineInfo();
         [[nodiscard]] Search::RootMove GetBestRootMove() const;
         [[nodiscard]] inline bool IsThreadSearching() const { return active.load(std::memory_order_relaxed); };
+        [[nodiscard]] inline ulong NodesExplored() const { return nodes_explored.load(std::memory_order_relaxed); }
+        void CheckTimers();
         void Search();
+        [[nodiscard]] std::string GetSearchInfo() const;
 
     private:
 
         Score NegaMax(Score alpha, Score beta, Depth depth, Depth ply, std::vector<Move> &pv_line);
         Score QSearch(Score alpha, Score beta, Depth ply);
 
-        [[nodiscard]] std::string GetCurrMoveInfo();
+        [[nodiscard]] std::string GetCurrLineInfo() const;
+        [[nodiscard]] std::string GetCurrMoveInfo() const;
+        [[nodiscard]] std::string GetUpdateSearchInfo() const;
         [[nodiscard]] bool MateFound() const;
         [[nodiscard]] bool MateInHorizon() const;
-        [[nodiscard]] inline bool IsMainThread() const { return thread_num == 0; }
+        [[nodiscard]] inline bool IsMainThread() const { return id == 0; }
 
-        int thread_num;
+
+        inline static int threads_n = 0;
+        int id;
+
         Board board;
         std::vector<Search::RootMove> root_moves;
         Search::RootMove *curr_rm;
-        int curr_rm_num;
-        Depth curr_depth;
+        size_t curr_rm_num;
+        Depth depth_reached;
+        Depth seldepth_reached;
+        std::atomic<uint64_t> nodes_explored;
 
         std::atomic<bool> active;
         std::jthread thread;

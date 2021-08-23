@@ -15,11 +15,9 @@ namespace Meetra {
     public:
 
         Board();
-
         void NewPosition(const std::string &fen);
         bool MakeMove(Move m);
         void UnmakeMove(Move m);
-        bool IsLegal(Move m);
         [[nodiscard]] bool IsSquareAttacked(Square s, Color attacked_by, Bitboard occ) const;
         [[nodiscard]] Bitboard SquareAttackers(Square s, Color attacked_by, Bitboard occ) const;
         [[nodiscard]] Bitboard PinnedPiecesForSquare(Square s, Color blockers_color) const;
@@ -121,7 +119,7 @@ namespace Meetra {
         };
 
         BoardData history[MAX_GAME_LENGTH];
-        int history_cnt;
+        size_t history_cnt;
 
         BoardData curr_data;
         Piece board[SQUARE_NR];
