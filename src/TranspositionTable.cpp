@@ -12,8 +12,8 @@ namespace Meetra {
         return score > MIN_MATE_EVAL ? score - ply : score < -MIN_MATE_EVAL ? score + ply : score;
     }
 
-    void TranspositionTable::Init(size_t size_mb) {
-        size_mb = std::clamp(size_mb, static_cast<size_t>(MIN_HASH_SIZE), static_cast<size_t>(MAX_HASH_SIZE));
+    void TranspositionTable::Init(int size_mb) {
+        size_mb = std::clamp(size_mb, MIN_HASH_SIZE, MAX_HASH_SIZE);
         buckets_count = (size_mb * 1048576) / sizeof(TTBucket);
         table = std::make_unique<TTBucket[]>(buckets_count);
         Clear();
@@ -27,7 +27,7 @@ namespace Meetra {
         }
     }
 
-    void TranspositionTable::Resize(size_t size_mb) {
+    void TranspositionTable::Resize(int size_mb) {
         table.reset();
         Init(size_mb);
     }

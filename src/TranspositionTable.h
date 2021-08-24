@@ -21,9 +21,9 @@ namespace Meetra {
 
     public:
 
-        void Init(size_t size_mb = DEFAULT_HASH_SIZE);
+        void Init(int size_mb = DEFAULT_HASH_SIZE);
         void Save(ZobristHash key, Score score, Depth depth, Move move, EntryFlag flag, Depth ply);
-        void Resize(size_t size_mb);
+        void Resize(int size_mb);
         void NewSearch();
         void Clear();
 

@@ -90,10 +90,10 @@ namespace Meetra::Search {
     [[nodiscard]] inline bool Run() { return Globals::run.load(std::memory_order_relaxed); }
     [[nodiscard]] inline bool Finished() { return Globals::finished.load(std::memory_order_relaxed); }
     inline void ShowShowCurrLine(bool show) { Globals::show_currline = show; }
-    inline void SetPliesMuted(int ply_muted) { Globals::plies_muted = ply_muted; }
+    inline void SetPliesMuted(int ply_muted) { Globals::plies_muted = std::max(1, ply_muted); }
     inline void ShowCurrMoveInfo(bool show) { Globals::show_currmove = show; }
     inline void StopSearch() { Globals::run = false; }
-    inline void SetMultiPv(int pv_num) { Globals::multi_pv = pv_num; }
+    inline void SetMultiPv(int pv_num) { Globals::multi_pv = std::max(1, pv_num); }
     inline void ClearTT() { Globals::tt.Clear(); }
     inline void SetTTSize(int size_mb) { Globals::tt.Resize(size_mb); }
     void SetNumThreads(int num);

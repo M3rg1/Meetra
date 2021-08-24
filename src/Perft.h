@@ -14,6 +14,7 @@ namespace Meetra {
         ulong nodes = 0;
         Move m;
 
+        // bulk counting at the leaves
         if (depth == 1) {
             while ((m = move_gen.GetAnyMove())) {
                 if(move_gen.IsLegal(m)) {
@@ -42,12 +43,13 @@ namespace Meetra {
         MoveGen move_gen(board);
         Move m;
         ulong total_nodes = 0;
+
         while ((m = move_gen.GetAnyMove())) {
             if(!board.MakeMove(m)) {
                 board.UnmakeMove(m);
                 continue;
             }
-            ulong nodes = Perft(depth - 1, board);
+            ulong nodes = depth > 1 ? Perft(depth - 1, board) : 1;
             board.UnmakeMove(m);
             total_nodes += nodes;
             Uci::SendToGui(GetMoveName(m) + ": " + std::to_string(nodes));

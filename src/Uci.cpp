@@ -36,9 +36,7 @@ namespace Meetra::Uci {
     void PerftCommand(std::istringstream &iss, Board &board);
     void SetOptionCommand(std::istringstream &iss);
     void StopCommand();
-    void ShowCommand(Board &board);
-    void HelpCommand();
-    void PBoardCommand(Board &b);
+    void BoardCommand(Board &board);
     void QuitCommand();
     void UnknownCommand();
     void MakeUciMove(const std::string &move_string, Board &board);
@@ -64,10 +62,12 @@ namespace Meetra::Uci {
         std::string input;
 
         do {
+
             std::getline(std::cin, input);
             std::istringstream iss(input);
 
             iss >> token;
+
             if (token == "uci") UciCommand();
             else if (token == "isready") IsReadyCommand();
             else if (token == "go") GoCommand(iss, board);
@@ -76,34 +76,24 @@ namespace Meetra::Uci {
             else if (token == "stop") StopCommand();
             else if (token == "ucinewgame") UciNewGameCommand();
             else if (token == "perft") PerftCommand(iss, board);
-            else if (token == "show") ShowCommand(board);
-            else if (token == "help") HelpCommand();
-            else if (token == "pboard") PBoardCommand(board);
+            else if (token == "board") BoardCommand(board);
             else if (token == "quit") QuitCommand();
-            else { UnknownCommand(); }
+            else UnknownCommand();
 
         } while (token != "quit" && !std::cin.eof());
 
     }
 
-    void PBoardCommand(Board &b) {
-        Uci::SendToGui(b.PPBoard());
+    void BoardCommand(Board &board) {
+        Uci::SendToGui(board.PPBoard());
     }
 
     void QuitCommand() {
         Search::Shutdown();
     }
 
-    void HelpCommand() {
-        SendToGui("This is help.");
-    }
-
     void UnknownCommand() {
-        SendToGui("Unknown command, type 'help' to display available commands.");
-    }
-
-    void ShowCommand(Board &board) {
-        SendToGui(board.PPBoard());
+        SendToGui("Unknown command, please see the engine documentation for available commands.");
     }
 
     void SendToGui(const std::string &data) {
@@ -170,7 +160,7 @@ namespace Meetra::Uci {
 
     void StopCommand() {
         Search::StopSearch();
-        while (!Search::Finished());
+        while (!Search::Finished()); // wait until search is finished before accepting more commands
     }
 
     void UciNewGameCommand() {
@@ -182,6 +172,7 @@ namespace Meetra::Uci {
         std::string token;
         iss >> token;
         if (!Search::Finished() || token != "name") {
+            Uci::SendToGui("Option name?");
             return;
         }
 
@@ -211,21 +202,23 @@ namespace Meetra::Uci {
         } else if (option == "show current move") {
             Search::ShowCurrMoveInfo(value == "true");
         } else {
-            Uci::UnknownCommand();
+            Uci::SendToGui("Unknown option: " + option);
         }
     }
 
     void MakeUciMove(const std::string &move_string, Board &board) {
+
         Move move_made = NewMoveFromName(move_string);
         MoveGen move_gen(board);
         Move move;
+
         while ((move = move_gen.GetAnyMove())) {
             if (FromSquare(move) == FromSquare(move_made) && ToSquare(move) == ToSquare(move_made)) {
                 if (IsPromotion(move) && move != move_made) {
                     continue;
                 }
                 board.MakeMove(move);
-                break;
+                return;
             }
         }
     }

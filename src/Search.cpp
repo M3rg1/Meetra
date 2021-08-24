@@ -162,8 +162,8 @@ namespace Meetra::Search {
     }
 
     void SetNumThreads(int num) {
-        ShutdownThreads();
         Globals::num_threads = std::clamp(num, 1, MAX_SEARCH_THREADS);
+        ShutdownThreads();
         for (auto i = 0; i < Globals::num_threads; i++) {
             Globals::search_threads.emplace_back(new SearchThread());
         }

@@ -29,6 +29,27 @@ namespace Meetra {
         return C == WHITE ? 0x00000000FF000000UL : 0x000000FF00000000UL;
     }
 
+    enum CastlingSide : bool {
+        SHORT = true, LONG = false
+    };
+
+    template<Color C, CastlingSide SIDE>
+    constexpr Bitboard CastlingWalkSq() {
+        return C == WHITE ? (SIDE == SHORT ? 0x60 : 0xE) : (SIDE == SHORT ? 0x6000000000000000 : 0xE00000000000000);
+    }
+
+/*    template<Color C>
+    bool MoveGen::CanCastleShort() const {
+        return cr & (C == WHITE ? WHITE_SHORT : BLACK_SHORT) &&
+        (all_pieces & (C == WHITE ? 0x60 : 0x6000000000000000)) == EMPTY_BB;
+    }
+
+    template<Color C>
+    bool MoveGen::CanCastleLong() const {
+        return cr & (C == WHITE ? WHITE_LONG : BLACK_LONG) &&
+        (all_pieces & (C == WHITE ? 0xE : 0xE00000000000000)) == EMPTY_BB;
+    }*/
+
     template<Direction D>
     constexpr Bitboard BitShift(Bitboard b) {
         if constexpr (D == NORTH) return b << 8;
@@ -125,14 +146,14 @@ namespace Meetra {
                 break;
         }
     }
-
+// 1767, 1798, 1775, 1766, 1766
     template<GenPhase phase, Color C>
     void MoveGen::GenMovesForPhase() {
 
         if constexpr (phase == QUIET) {
             phase_mask = legal_moves & empty_squares;
-            GenPawnForwardMoves<C>();
             GenCastlingMoves<C>();
+            GenPawnForwardMoves<C>();
             GenMovesForPieceType<KING, C>(empty_squares);
         } else if constexpr (phase == CAPTURE) {
             phase_mask = legal_moves & enemy_pieces;
@@ -258,22 +279,22 @@ namespace Meetra {
     template<Color C>
     bool MoveGen::CanCastleShort() const {
         return cr & (C == WHITE ? WHITE_SHORT : BLACK_SHORT) &&
-               (Bitboards::GetRayBetweenSquares(C == WHITE ? E1 : E8, C == WHITE ? H1 : H8) & all_pieces) == EMPTY_BB &&
-               !board.IsSquareAttacked(C == WHITE ? F1 : F8, OtherColor(C), all_pieces);
+               (all_pieces & CastlingWalkSq<C, SHORT>()) == EMPTY_BB;
     }
 
     template<Color C>
     bool MoveGen::CanCastleLong() const {
         return cr & (C == WHITE ? WHITE_LONG : BLACK_LONG) &&
-               (Bitboards::GetRayBetweenSquares(C == WHITE ? E1 : E8, C == WHITE ? A1 : A8) & all_pieces) == EMPTY_BB &&
-               !board.IsSquareAttacked(C == WHITE ? D1 : D8, OtherColor(C), all_pieces);
+               (all_pieces & CastlingWalkSq<C, LONG>()) == EMPTY_BB;
     }
 
     bool MoveGen::IsLegal(Move m) const {
 
         if (FromSquare(m) == king_square) {
             if (GetMoveType(m) == CASTLING) {
-                return !board.IsSquareAttacked(ToSquare(m), enemy_color, all_pieces);
+                Square to = ToSquare(m);
+                return !board.IsSquareAttacked(to, enemy_color, all_pieces) &&
+                       !board.IsSquareAttacked(RookMoveTo(FromSquare(m), to), enemy_color, all_pieces);
             }
             Bitboard occ = all_pieces ^ SquareToBB(FromSquare(m));
             return !board.IsSquareAttacked(ToSquare(m), enemy_color, occ);

@@ -117,12 +117,12 @@ namespace Meetra {
             BLACK_LONG, NO_CASTLING, NO_CASTLING, NO_CASTLING, BLACK_ALL_CR, NO_CASTLING, NO_CASTLING, BLACK_SHORT
     };
 
-    inline Square RookFromCastling(Square king_to) {
-        return king_to == G1 ? H1 : king_to == G8 ? H8 : king_to == C1 ? A1 : king_to == C8 ? A8 : SQUARE_ZERO;
+    inline Square RookMoveTo(Square king_from, Square king_to) {
+        return king_to > king_from ? static_cast<Square>(king_to - 1) : static_cast<Square>(king_to + 1);
     }
 
-    inline Square RookToCastling(Square king_to) {
-        return king_to == G1 ? F1 : king_to == G8 ? F8 : king_to == C1 ? D1 : king_to == C8 ? D8 : SQUARE_ZERO;
+    inline Square RookMoveFrom(Square king_from, Square king_to) {
+        return king_to > king_from ? static_cast<Square>(king_to + 1) : static_cast<Square>(king_to - 2);
     }
 #pragma endregion
 
