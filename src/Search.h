@@ -14,7 +14,6 @@ namespace Meetra::Search {
 #define UPDATE_INFO_INTERVAL 1000
 #define MAX_SEARCH_THREADS 8
 #define MIN_MATE_EVAL (MATE_SCORE - MAX_SEARCH_DEPTH)
-#define DEFAULT_PLY_FOR_DRAW 75
 
     struct SearchSettings {
         bool infinite = false;
@@ -40,7 +39,6 @@ namespace Meetra::Search {
         inline bool show_currmove;
         inline int plies_muted;
         inline int multi_pv;
-        inline int plies_draw;
         inline int num_threads;
         inline long start_time;
         inline long last_update_time;
@@ -96,7 +94,6 @@ namespace Meetra::Search {
     inline void ShowCurrMoveInfo(bool show) { Globals::show_currmove = show; }
     inline void StopSearch() { Globals::run = false; }
     inline void SetMultiPv(int pv_num) { Globals::multi_pv = pv_num; }
-    inline void SetPliesDraw(int plies) { Globals::plies_draw = plies; }
     inline void ClearTT() { Globals::tt.Clear(); }
     inline void SetTTSize(int size_mb) { Globals::tt.Resize(size_mb); }
     void SetNumThreads(int num);

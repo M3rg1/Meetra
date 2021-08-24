@@ -33,9 +33,9 @@ namespace Meetra::Search {
 
         auto time_left = board.ColorToMove() == WHITE ? Globals::settings.white_time : Globals::settings.black_time;
         if (time_left) {
-            int moves_made = std::min((board.MovesMadeCount() + 1), 10);
+            int moves_made = std::min((board.HistorySize() + 1), 10);
             double factor = 2.0 - static_cast<double>(moves_made) / 10.0;
-            double target = static_cast<double>(time_left) / 50.0 - static_cast<double>(moves_made);
+            double target = static_cast<double>(time_left) / 40.0 - static_cast<double>(moves_made);
             Globals::settings.allowed_time = static_cast<long>(factor * target);
         }
     }
@@ -80,16 +80,31 @@ namespace Meetra::Search {
         // for multipv, because helper threads might skip some depths and not have the full pv, we can't safely use
         // their results without risking their pv for other than the top move will be very old from low depth or even
         // missing entirely
+        /*for(const auto& t : Globals::search_threads) {
+            Uci::SendToGui("Thread score: " +  std::to_string(t->GetBestRootMove().score) + " Depth: " + std::to_string(t->GetBestRootMove().depth));
+        }*/
+
         SearchThread *best_thread = Globals::search_threads[0].get();
         if (Globals::multi_pv == 1) {
             for (auto i = 1; i < Globals::search_threads.size(); i++) {
                 while (Globals::search_threads[i]->IsThreadSearching()); // wait thread finishes search
-                if (Globals::search_threads[i]->GetBestRootMove().score > best_thread->GetBestRootMove().score &&
-                    Globals::search_threads[i]->GetBestRootMove().depth >= best_thread->GetBestRootMove().depth) {
+                if (Globals::search_threads[i]->DidBeatMove(best_thread->GetBestRootMove())) {
                     best_thread = Globals::search_threads[i].get();
                 }
             }
         }
+
+/*        SearchThread *best_thread = Globals::search_threads[0].get();
+        if (Globals::multi_pv == 1) {
+            for (auto i = 1; i < Globals::search_threads.size(); i++) {
+                while (Globals::search_threads[i]->IsThreadSearching()); // wait thread finishes search
+                if (Globals::search_threads[i]->GetBestRootMove().score > best_thread->GetBestRootMove().score &&
+                Globals::search_threads[i]->GetBestRootMove().depth >= best_thread->GetBestRootMove().depth)
+                {
+                    best_thread = Globals::search_threads[i].get();
+                }
+            }
+        }*/
 
         Uci::SendToGui(best_thread->GetSearchInfo());
         Uci::SendToGui("bestmove " + GetMoveName(best_thread->GetBestRootMove().move));
@@ -128,7 +143,6 @@ namespace Meetra::Search {
         Globals::multi_pv = 1;
         Globals::show_currmove = true;
         Globals::plies_muted = 1;
-        Globals::plies_draw = DEFAULT_PLY_FOR_DRAW;
         Globals::num_threads = DEFAULT_SEARCH_THREADS;
         Globals::last_update_time = 0;
         SetNumThreads(DEFAULT_SEARCH_THREADS);

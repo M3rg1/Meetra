@@ -23,7 +23,7 @@ namespace Meetra {
         [[nodiscard]] Bitboard PinnedPiecesForSquare(Square s, Color blockers_color) const;
 
 #pragma region ===== Getters =====
-        [[nodiscard]] inline int MovesMadeCount() const { return history_cnt; }
+        [[nodiscard]] inline int HistorySize() const { return static_cast<int>(history_cnt); }
         [[nodiscard]] inline Bitboard GetPieces(PieceType pt, Color c) const { return type_bbs[pt] & color_bbs[c]; }
         [[nodiscard]] inline Bitboard GetPieces(PieceType pt) const { return type_bbs[pt]; }
         [[nodiscard]] inline Bitboard GetPieces(Color c) const { return color_bbs[c]; }
@@ -48,18 +48,19 @@ namespace Meetra {
         [[nodiscard]] inline Piece CapturedPiece() const { return static_cast<Piece>(curr_data.state >> 11 & 0xF); }
         [[nodiscard]] inline int Ply() const { return static_cast<int>(curr_data.state >> 15 & 0x3F); }
         [[nodiscard]] inline int TotalMoves() const { return static_cast<int>(curr_data.state >> 22); }
+        [[nodiscard]] inline bool Move50Rule() const { return Ply() >= 100; };
         [[nodiscard]] inline bool IsRepetition() const {
             // http://www.talkchess.com/forum3/viewtopic.php?f=7&t=51000&start=20
             // should implement draw at 1st repetition in the search tree, 2nd in actual game history
             // because moves played before could be sub-optimal, however moves during the search have already been
             // examined, so repeating even once is pointless
-            //int rep = 0;
-            int stop = std::max(static_cast<int>(history_cnt - Ply()), 0);
-            for (int i = static_cast<int>(history_cnt) - 2; i >= stop; i -= 2) {
+            int rep = 0;
+            int stop = std::max(HistorySize() - Ply(), 0);
+            for (int i = HistorySize() - 2; i >= stop; i -= 2) {
                  if (history[i].hash == curr_data.hash) {
-                    //rep++;
-                    //if(rep > 1) return true;
-                    return true;
+                    if(++rep > 1) {
+                        return true;
+                    }
                 }
             }
             return false;

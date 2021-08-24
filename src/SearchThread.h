@@ -26,6 +26,7 @@ namespace Meetra {
         void StartThread();
         void Search();
 
+        [[nodiscard]] bool DidBeatMove(const Search::RootMove &other) const;
         [[nodiscard]] Search::RootMove GetBestRootMove() const;
         [[nodiscard]] inline bool IsThreadSearching() const { return active.load(std::memory_order_relaxed); };
         [[nodiscard]] inline ulong NodesExplored() const { return nodes_explored.load(std::memory_order_relaxed); }

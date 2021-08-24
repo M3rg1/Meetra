@@ -24,9 +24,7 @@ namespace Meetra::Uci {
             << MAX_HASH_SIZE << "\n"
             << "option name MultiPV type spin default 1 min 1 max 32\n"
             << "option name Mute plies type spin default 1 min 1 max 64\n"
-            << "option name Cores type spin default " << DEFAULT_SEARCH_THREADS << " min 1 max " << MAX_SEARCH_THREADS
-            << "\n"
-            << "option name Plies draw type spin default " << DEFAULT_PLY_FOR_DRAW << " min 10 max 150";
+            << "option name Cores type spin default " << DEFAULT_SEARCH_THREADS << " min 1 max " << MAX_SEARCH_THREADS;
         return oss.str();
     }
 
@@ -212,8 +210,6 @@ namespace Meetra::Uci {
             Search::SetNumThreads(std::stoi(value));
         } else if (option == "show current move") {
             Search::ShowCurrMoveInfo(value == "true");
-        } else if (option == "plies draw") {
-            Search::SetPliesDraw(std::stoi(value));
         } else {
             Uci::UnknownCommand();
         }

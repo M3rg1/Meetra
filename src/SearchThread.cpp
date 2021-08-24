@@ -77,7 +77,7 @@ namespace Meetra {
                 // active if we don't have enough time left for a deeper search or mate has been found, and we are not
                 // performing fixed time/depth/infinite or multipv search
                 if (!Search::Run() || !Search::EnoughTimeLeft() ||
-                    (MateInHorizon() && Search::Globals::multi_pv == 1 && !Search::Globals::settings.infinite &&
+                    (MateFound() && Search::Globals::multi_pv == 1 && !Search::Globals::settings.infinite &&
                      !Search::Globals::settings.fixed_time && !Search::Globals::settings.fixed_depth)) {
                     break;
                 }
@@ -103,7 +103,7 @@ namespace Meetra {
         }
 
         // terminating conditions, either we reached a draw, or max depth - in that case switch to qsearch
-        if (board.IsRepetition() || board.Ply() >= Search::Globals::plies_draw) {
+        if (board.IsRepetition() || board.Move50Rule()) {
             return -DRAW_SCORE;
         } else if (depth == 0) {
             return QSearch(alpha, beta, ply);
@@ -149,23 +149,30 @@ namespace Meetra {
             moves_available = true;
             nodes_explored.fetch_add(1, std::memory_order_relaxed);
             curr_rm->nodes++;
+            line.Clear();
             score = -NegaMax(-beta, -alpha, depth - 1, ply + 1, line);
             board.UnmakeMove(move);
 
             if (!Search::Run()) {
                 return 0;
             }
+
             if (score > best_score) {
+
                 best_score = score;
                 best_move = move;
+
                 if (score > alpha) {
+
+                    pv_line.Clear();
+                    pv_line.PutMove(move);
+                    pv_line.PutLine(line);
+
                     if (score >= beta) {
                         Search::Globals::tt.Save(board.GetZobristHash(), beta, depth, move, BETA, ply);
                         return beta;
                     }
-                    pv_line.Clear();
-                    pv_line.PutMove(move);
-                    pv_line.PutLine(line);
+
                     tt_flag = EXACT_SCORE;
                     alpha = score;
                 }
@@ -202,9 +209,9 @@ namespace Meetra {
 
         MoveGen move_gen(board);
 
-        if (ply > max_qsearch_ply && !move_gen.IsKingInCheck()) {
+        /*if (ply > max_qsearch_ply && !move_gen.IsKingInCheck()) {
             return score;
-        }
+        }*/
 
         Move move;
         // iterate over all available captures
@@ -401,5 +408,30 @@ namespace Meetra {
             active = true;
         }
         cond_var.notify_one();
+    }
+
+    bool SearchThread::DidBeatMove(const Search::RootMove &other) const {
+        if (GetBestRootMove().depth > other.depth) {
+            return true;
+        }
+        //std::find(root_moves.begin(), root_moves.end(), []() {})
+        for (const auto &rm : root_moves) {
+            if (rm.move == other.move) {
+                if (rm.depth < other.depth) {
+                    return false;
+                }
+                // this is already taken care of by the first if in this function
+                /*if (rm.depth > other.depth) {
+                    return true;
+                }*/
+                if(rm.depth == other.depth) {
+                    if (GetBestRootMove().move != other.move) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        }
+        return false;
     }
 }
