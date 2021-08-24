@@ -22,19 +22,6 @@ namespace Meetra::Evaluation {
         Square to = ToSquare(move);
         PieceType pt = board.GetPieceTypeOnSq(from);
         Score eval = eval_maps[board.ColorToMove()][pt][to] - eval_maps[board.ColorToMove()][pt][from];
-        //eval += MoveCastlingEval(board, move);
-        return eval;
-    }
-
-    Score MoveCastlingEval(const Board &board, Move move) {
-        Score eval = 0;
-        Square from = FromSquare(move);
-        if (board.GetPieceTypeOnSq(from) == KING && GetMoveType(move) != CASTLING &&
-            board.CanColorCastleAny(board.ColorToMove())) {
-            eval -= 50;
-        } else if (board.GetPieceTypeOnSq(from) == ROOK && board.CanColorCastleAny(board.ColorToMove())) {
-            eval -= 30;
-        }
         return eval;
     }
 

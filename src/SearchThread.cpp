@@ -23,7 +23,7 @@ namespace Meetra {
 
             // if helper thread falls behind main thread, skip depth and go deeper
             if (!IsMainThread() && depth_reached <= Search::Globals::mt_depth.load(std::memory_order_relaxed)) {
-                depth_reached = Search::Globals::mt_depth.load(std::memory_order_relaxed);
+                depth_reached = Search::Globals::mt_depth.load(std::memory_order_relaxed) + id;
             }
 
             max_qsearch_ply = depth_reached * 2;
@@ -411,6 +411,8 @@ namespace Meetra {
     }
 
     bool SearchThread::DidBeatMove(const Search::RootMove &other) const {
+        // this is wrong, because even if i have a move with some super high depth, theres no guarantee
+        // that for example it isnt my only move from that depth and i skipped some depths below
         /*if (GetBestRootMove().depth > other.depth) {
             return true;
         }*/

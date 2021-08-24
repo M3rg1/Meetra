@@ -33,20 +33,17 @@ namespace Meetra {
 #pragma endregion
 
 #pragma region ===== Game State info getters =====
-        [[nodiscard]] inline ZobristHash GetZobristHash() const { return curr_data.hash; }
         [[nodiscard]] inline CastlingRights GetCR() const { return static_cast<CastlingRights>(curr_data.state & ALL_CR); }
+        [[nodiscard]] inline ZobristHash GetZobristHash() const { return curr_data.hash; }
         [[nodiscard]] inline bool CanWhiteShortCR() const { return (curr_data.state & WHITE_SHORT) != 0; }
         [[nodiscard]] inline bool CanWhiteLongCR() const { return (curr_data.state & WHITE_LONG) != 0; }
         [[nodiscard]] inline bool CanBlackShortCR() const { return (curr_data.state & BLACK_SHORT) != 0; }
         [[nodiscard]] inline bool CanBlackLongCR() const { return (curr_data.state & BLACK_LONG) != 0; }
-        [[nodiscard]] inline bool CanColorCastleAny(Color c) const {
-            return c == WHITE ? curr_data.state & WHITE_ALL_CR : curr_data.state & BLACK_ALL_CR;
-        }
         [[nodiscard]] inline bool CanCastleAny() const { return curr_data.state & ALL_CR; }
         [[nodiscard]] inline Square EpSquare() const { return static_cast<Square >(curr_data.state & 0x3F); }
-        [[nodiscard]] inline Color ColorToMove() const { return static_cast<Color>(curr_data.state >> 10 & 0x1); }
-        [[nodiscard]] inline Piece CapturedPiece() const { return static_cast<Piece>(curr_data.state >> 11 & 0xF); }
-        [[nodiscard]] inline int Ply() const { return static_cast<int>(curr_data.state >> 15 & 0x3F); }
+        [[nodiscard]] inline Color ColorToMove() const { return static_cast<Color>((curr_data.state >> 10) & 0x1); }
+        [[nodiscard]] inline Piece CapturedPiece() const { return static_cast<Piece>((curr_data.state >> 11) & 0xF); }
+        [[nodiscard]] inline int Ply() const { return static_cast<int>((curr_data.state >> 15) & 0x7F); }
         [[nodiscard]] inline int TotalMoves() const { return static_cast<int>(curr_data.state >> 22); }
         [[nodiscard]] inline bool Move50Rule() const { return Ply() >= 100; };
         [[nodiscard]] inline bool IsRepetition() const {
@@ -57,8 +54,8 @@ namespace Meetra {
             int rep = 0;
             int stop = std::max(HistorySize() - Ply(), 0);
             for (int i = HistorySize() - 2; i >= stop; i -= 2) {
-                 if (history[i].hash == curr_data.hash) {
-                    if(++rep > 1) {
+                if (history[i].hash == curr_data.hash) {
+                    if (++rep > 1) {
                         return true;
                     }
                 }
