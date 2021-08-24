@@ -35,8 +35,10 @@ namespace Meetra::Search {
         if (time_left) {
             int moves_made = std::min((board.HistorySize() + 1), 10);
             double factor = 2.0 - static_cast<double>(moves_made) / 10.0;
-            double target = static_cast<double>(time_left) / 40.0 - static_cast<double>(moves_made);
+            double target = static_cast<double>(time_left) / 50.0 - static_cast<double>(moves_made);
             Globals::settings.allowed_time = static_cast<long>(factor * target);
+            Globals::settings.allowed_time += board.ColorToMove() == WHITE ? Globals::settings.white_increment
+                                                                           : Globals::settings.black_increment;
         }
     }
 

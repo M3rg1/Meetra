@@ -8,16 +8,16 @@
 
 namespace Meetra {
 
-    inline ulong Perft(Depth depth, Board &board) {
+    inline uint64_t Perft(Depth depth, Board &board) {
 
         MoveGen move_gen(board);
-        ulong nodes = 0;
+        uint64_t nodes = 0;
         Move m;
 
         // bulk counting at the leaves
         if (depth == 1) {
             while ((m = move_gen.GetAnyMove())) {
-                if(move_gen.IsLegal(m)) {
+                if (move_gen.IsLegal(m)) {
                     nodes++;
                 }
             }
@@ -25,7 +25,7 @@ namespace Meetra {
         }
 
         while ((m = move_gen.GetAnyMove())) {
-            if(!board.MakeMove(m)) {
+            if (!board.MakeMove(m)) {
                 board.UnmakeMove(m);
                 continue;
             }
@@ -42,14 +42,14 @@ namespace Meetra {
 
         MoveGen move_gen(board);
         Move m;
-        ulong total_nodes = 0;
+        uint64_t total_nodes = 0;
 
         while ((m = move_gen.GetAnyMove())) {
-            if(!board.MakeMove(m)) {
+            if (!board.MakeMove(m)) {
                 board.UnmakeMove(m);
                 continue;
             }
-            ulong nodes = depth > 1 ? Perft(depth - 1, board) : 1;
+            uint64_t nodes = depth > 1 ? Perft(depth - 1, board) : 1;
             board.UnmakeMove(m);
             total_nodes += nodes;
             Uci::SendToGui(GetMoveName(m) + ": " + std::to_string(nodes));
@@ -57,8 +57,8 @@ namespace Meetra {
 
         auto end = std::chrono::steady_clock::now();
         auto time_elapsed_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count() + 1;
-        auto nps = static_cast<ulong> (static_cast<double>(total_nodes) /
-                                       (static_cast<double>(time_elapsed_ns) / 1000000000.0));
+        auto nps = static_cast<uint64_t> (static_cast<double>(total_nodes) /
+                                          (static_cast<double>(time_elapsed_ns) / 1000000000.0));
 
         std::ostringstream oss;
         oss << "Time elapsed: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms"

@@ -189,7 +189,7 @@ namespace Meetra {
         MovePiece(to, from);
 
         if (captured_piece) {
-            PutPiece(GetMoveType(m) != EN_PASSANT ? to : ColorToMove() == WHITE ? to + SOUTH : to + NORTH,
+            PutPiece(GetMoveType(m) == EN_PASSANT ? ColorToMove() == WHITE ? to + SOUTH : to + NORTH : to,
                      captured_piece);
         }
 

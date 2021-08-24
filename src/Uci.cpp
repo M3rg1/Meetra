@@ -65,7 +65,6 @@ namespace Meetra::Uci {
 
             std::getline(std::cin, input);
             std::istringstream iss(input);
-
             iss >> token;
 
             if (token == "uci") UciCommand();
