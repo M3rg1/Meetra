@@ -76,6 +76,10 @@ namespace Meetra::Search {
                    mn.previous_score != previous_score ? mn.previous_score < previous_score :
                    mn.nodes < nodes;
         }
+
+        bool operator==(const RootMove &other) const {
+            return move == other.move;
+        }
     };
 
     void Init();

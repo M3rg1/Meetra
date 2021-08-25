@@ -18,6 +18,7 @@ namespace Meetra {
             auto init_to = std::clamp(size_mb, MIN_HASH_SIZE, MAX_HASH_SIZE);
             Uci::SendToGui("Invalid TT size! Initializing to: " + std::to_string(init_to) + "MB");
             Init(init_to);
+            return;
         }
 
         buckets_count = (size_mb * 1048576) / sizeof(TTBucket);
@@ -31,6 +32,7 @@ namespace Meetra {
             size_mb = std::max(size_mb / 2, MIN_HASH_SIZE);
             Uci::SendToGui("TT memory alloc failure, attempting to initialize with " + std::to_string(size_mb) + " MB");
             Init(size_mb);
+            return;
         }
 
         Clear();

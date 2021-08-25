@@ -38,18 +38,6 @@ namespace Meetra {
         return C == WHITE ? (SIDE == SHORT ? 0x60 : 0xE) : (SIDE == SHORT ? 0x6000000000000000 : 0xE00000000000000);
     }
 
-/*    template<Color C>
-    bool MoveGen::CanCastleShort() const {
-        return cr & (C == WHITE ? WHITE_SHORT : BLACK_SHORT) &&
-        (all_pieces & (C == WHITE ? 0x60 : 0x6000000000000000)) == EMPTY_BB;
-    }
-
-    template<Color C>
-    bool MoveGen::CanCastleLong() const {
-        return cr & (C == WHITE ? WHITE_LONG : BLACK_LONG) &&
-        (all_pieces & (C == WHITE ? 0xE : 0xE00000000000000)) == EMPTY_BB;
-    }*/
-
     template<Direction D>
     constexpr Bitboard BitShift(Bitboard b) {
         if constexpr (D == NORTH) return b << 8;
@@ -288,6 +276,7 @@ namespace Meetra {
                (all_pieces & CastlingWalkSq<C, LONG>()) == EMPTY_BB;
     }
 
+    // takes a pseudo legal move and checks whether it is legal
     bool MoveGen::IsLegal(Move m) const {
 
         if (FromSquare(m) == king_square) {
@@ -382,7 +371,7 @@ namespace Meetra {
         Square from = FromSquare(m);
         Square to = ToSquare(m);
         Bitboard possible_moves = Bitboards::GetAttacksForPiece<PT>(from, all_pieces) & legality_mask;
-        if (blockers & SquareToBB(from)) {
+        if (PT != KING && blockers & SquareToBB(from)) {
             possible_moves &= Bitboards::GetRayBetweenEdges(king_square, from);
         }
         while (possible_moves) {

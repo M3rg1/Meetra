@@ -411,12 +411,7 @@ namespace Meetra {
     }
 
     bool SearchThread::DidBeatMove(const Search::RootMove &other) const {
-        auto rm = std::find_if(root_moves.begin(), root_moves.end(), [&](const auto &rm) {
-            return rm.move == other.move;
-        });
-        if (rm == end(root_moves)) {
-            return false;
-        }
+        auto rm = std::find(root_moves.begin(), root_moves.end(), other);
         if (rm->depth < other.depth) {
             return false;
         }
@@ -424,7 +419,7 @@ namespace Meetra {
             return true;
         }
         if (rm->depth == other.depth) {
-            if (GetBestRootMove().move != other.move) {
+            if (GetBestRootMove() != other) {
                 return true;
             }
         }

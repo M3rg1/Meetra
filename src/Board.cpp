@@ -315,12 +315,12 @@ namespace Meetra {
         bool prev_is_digit = false;
         for (char c: token) {
 
-            if ((c != '/' && f > FILE_H) || (c == '/' && f <= FILE_H) || (prev_is_digit && std::isdigit(c)) ||
+            if ((c != '/' && f == FILE_H + 1) || (c == '/' && f <= FILE_H) || (prev_is_digit && std::isdigit(c)) ||
                 r < RANK_1 || f > FILE_H + 1) {
                 return false;
             }
 
-            if (c == '/') {
+            if (c == '/' && f == FILE_H + 1) {
                 prev_is_digit = false;
                 f = FILE_A;
                 --r;

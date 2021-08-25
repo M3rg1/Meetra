@@ -77,14 +77,12 @@ namespace Meetra {
         [[nodiscard]] inline bool Empty() const { return moves_cnt == 0; }
         inline Move PopMove() { return move_eval[--moves_cnt].move; }
         inline Move PopAtIdx(size_t idx) {
-            Move ret = move_eval[idx].move;
-            move_eval[idx] = move_eval[--moves_cnt];
-            return ret;
+            std::swap(move_eval[idx], move_eval[--moves_cnt]);
+            return move_eval[moves_cnt].move;
         }
         inline Move PopRef(p_MoveScore &it) {
-            Move ret = it.move;
-            it = move_eval[--moves_cnt];
-            return ret;
+            std::swap(it, move_eval[--moves_cnt]);
+            return move_eval[moves_cnt].move;
         }
         inline void PutMove(Move m) { move_eval[moves_cnt++].move = m; }
         inline void PutPromMoves(Square from, Square to) {
