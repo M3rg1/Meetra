@@ -28,7 +28,7 @@ namespace Meetra {
             if (size_mb <= MIN_HASH_SIZE) {
                 Uci::SendToGui("TT memory allocation failure, exiting!");
             }
-            size_mb /= 2;
+            size_mb = std::max(size_mb / 2, MIN_HASH_SIZE);
             Uci::SendToGui("TT memory alloc failure, attempting to initialize with " + std::to_string(size_mb) + " MB");
             Init(size_mb);
         }
