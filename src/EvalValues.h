@@ -5,12 +5,12 @@
 
 namespace Meetra {
 
-    static const Score piece_values[7]{
+    inline const Score piece_values[7]{
             0, 100, 320, 330, 500, 900, 20000
     };
 
 
-    static const Score bp_map[]
+    inline const Score bp_map[SQUARE_NR]
             {
                     0, 0, 0, 0, 0, 0, 0, 0,
                     50, 50, 50, 50, 50, 50, 50, 50,
@@ -22,7 +22,7 @@ namespace Meetra {
                     0, 0, 0, 0, 0, 0, 0, 0
             };
 
-    static const Score bn_map[]
+    inline const Score bn_map[SQUARE_NR]
             {
                     -50, -40, -30, -30, -30, -30, -40, -50,
                     -40, -20, 0, 0, 0, 0, -20, -40,
@@ -35,7 +35,7 @@ namespace Meetra {
             };
 
 
-    static const Score bb_map[]
+    inline const Score bb_map[SQUARE_NR]
             {
                     -20, -10, -10, -10, -10, -10, -10, -20,
                     -10, 0, 0, 0, 0, 0, 0, -10,
@@ -47,7 +47,7 @@ namespace Meetra {
                     -20, -10, -10, -10, -10, -10, -10, -20,
             };
 
-    static const Score br_map[]
+    inline const Score br_map[SQUARE_NR]
             {
                     0, 0, 0, 0, 0, 0, 0, 0,
                     5, 10, 10, 10, 10, 10, 10, 5,
@@ -59,7 +59,7 @@ namespace Meetra {
                     0, 0, 0, 5, 5, 0, 0, 0
             };
 
-    static const Score bq_map[]
+    inline const Score bq_map[SQUARE_NR]
             {
                     -20, -10, -10, -5, -5, -10, -10, -20,
                     -10, 0, 0, 0, 0, 0, 0, -10,
@@ -71,7 +71,7 @@ namespace Meetra {
                     -20, -10, -10, -5, -5, -10, -10, -20
             };
 
-    static const Score bk_mid_map[]
+    inline const Score bk_mid_map[SQUARE_NR]
             {
                     -30, -40, -40, -50, -50, -40, -40, -30,
                     -30, -40, -40, -50, -50, -40, -40, -30,
@@ -83,7 +83,7 @@ namespace Meetra {
                     20, 30, 10, 0, 0, 10, 30, 20
             };
 
-    static const Score bk_end_map[]
+    inline const Score bk_end_map[SQUARE_NR]
             {
                     -50, -40, -30, -20, -20, -30, -40, -50,
                     -30, -20, -10, 0, 0, -10, -20, -30,
@@ -100,7 +100,7 @@ namespace Meetra {
  * Black
  */
 
-    static const Score wp_map[]
+    inline const Score wp_map[SQUARE_NR]
             {
                     0, 0, 0, 0, 0, 0, 0, 0,
                     5, 10, 10, -20, -20, 10, 10, 5,
@@ -112,7 +112,7 @@ namespace Meetra {
                     0, 0, 0, 0, 0, 0, 0, 0
             };
 
-    static const Score wn_map[]
+    inline const Score wn_map[SQUARE_NR]
             {
                     -50, -40, -30, -30, -30, -30, -40, -50,
                     -40, -20, 0, 0, 0, 0, -20, -40,
@@ -125,7 +125,7 @@ namespace Meetra {
             };
 
 
-    static const Score wb_map[]
+    inline const Score wb_map[SQUARE_NR]
             {
                     -20, -10, -10, -10, -10, -10, -10, -20,
                     -10, 5, 0, 0, 0, 0, 5, -10,
@@ -137,7 +137,7 @@ namespace Meetra {
                     -20, -10, -10, -10, -10, -10, -10, -20,
             };
 
-    static const Score wr_map[]
+    inline const Score wr_map[SQUARE_NR]
             {
                     0, 0, 0, 5, 5, 0, 0, 0,
                     -5, 0, 0, 0, 0, 0, 0, -5,
@@ -149,7 +149,7 @@ namespace Meetra {
                     0, 0, 0, 0, 0, 0, 0, 0
             };
 
-    static const Score wq_map[] =
+    inline const Score wq_map[SQUARE_NR] =
             {
                     -20, -10, -10, -5, -5, -10, -10, -20,
                     -10, 0, 5, 0, 0, 0, 0, -10,
@@ -161,7 +161,7 @@ namespace Meetra {
                     -20, -10, -10, -5, -5, -10, -10, -20
             };
 
-    static const Score wk_mid_map[]
+    inline const Score wk_mid_map[]
             {
                     20, 30, 10, 0, 0, 10, 30, 20,
                     20, 20, 0, 0, 0, 0, 20, 20,
@@ -173,7 +173,7 @@ namespace Meetra {
                     -30, -40, -40, -50, -50, -40, -40, -30,
             };
 
-    static const Score wk_end_map[]
+    inline const Score wk_end_map[SQUARE_NR]
             {
                     -50, -30, -30, -30, -30, -30, -30, -50,
                     -30, -30, 0, 0, 0, 0, -30, -30,
@@ -185,15 +185,15 @@ namespace Meetra {
                     -50, -40, -30, -20, -20, -30, -40, -50,
             };
 
-    static const Score *black_maps[7]{
+    inline const Score *black_maps[7]{
             nullptr, bp_map, bn_map, bb_map, br_map, bq_map, bk_mid_map
     };
 
-    static const Score *white_maps[7]{
+    inline const Score *white_maps[7]{
             nullptr, wp_map, wn_map, wb_map, wr_map, wq_map, wk_mid_map
     };
 
-    static const Score **eval_maps[2]{
+    inline const Score **eval_maps[2]{
             white_maps, black_maps
     };
 

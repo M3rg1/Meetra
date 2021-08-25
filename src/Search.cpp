@@ -78,14 +78,11 @@ namespace Meetra::Search {
     void FinishSearch() {
 
         StopSearch();
+
         // select the thread with the best move overall
         // for multipv, because helper threads might skip some depths and not have the full pv, we can't safely use
         // their results without risking their pv for other than the top move will be very old from low depth or even
         // missing entirely
-        /*for(const auto& t : Globals::search_threads) {
-            Uci::SendToGui("Thread score: " +  std::to_string(t->GetBestRootMove().score) + " Depth: " + std::to_string(t->GetBestRootMove().depth));
-        }*/
-
         SearchThread *best_thread = Globals::search_threads[0].get();
         if (Globals::multi_pv == 1) {
             for (auto i = 1; i < Globals::search_threads.size(); i++) {
@@ -95,18 +92,6 @@ namespace Meetra::Search {
                 }
             }
         }
-
-/*        SearchThread *best_thread = Globals::search_threads[0].get();
-        if (Globals::multi_pv == 1) {
-            for (auto i = 1; i < Globals::search_threads.size(); i++) {
-                while (Globals::search_threads[i]->IsThreadSearching()); // wait thread finishes search
-                if (Globals::search_threads[i]->GetBestRootMove().score > best_thread->GetBestRootMove().score &&
-                Globals::search_threads[i]->GetBestRootMove().depth >= best_thread->GetBestRootMove().depth)
-                {
-                    best_thread = Globals::search_threads[i].get();
-                }
-            }
-        }*/
 
         Uci::SendToGui(best_thread->GetSearchInfo());
         Uci::SendToGui("bestmove " + GetMoveName(best_thread->GetBestRootMove().move));
@@ -131,7 +116,7 @@ namespace Meetra::Search {
 
         // initialize and start each thread
         std::sort(root_moves.begin(), root_moves.end());
-        for (auto &search_thread : Globals::search_threads) {
+        for (auto &search_thread: Globals::search_threads) {
             search_thread->InitNewSearch(board, root_moves);
             search_thread->StartThread();
         }
@@ -152,7 +137,7 @@ namespace Meetra::Search {
 
     void ShutdownThreads() {
         StopSearch();
-        for (auto &t : Globals::search_threads) {
+        for (auto &t: Globals::search_threads) {
             t->Shutdown();
         }
         Globals::search_threads.clear();
@@ -164,7 +149,14 @@ namespace Meetra::Search {
     }
 
     void SetNumThreads(int num) {
-        Globals::num_threads = std::clamp(num, 1, MAX_SEARCH_THREADS);
+
+        if (num > MAX_SEARCH_THREADS || num < 1) {
+            auto init_to = std::clamp(num, 1, MAX_SEARCH_THREADS);
+            Uci::SendToGui("Invalid threads count! Initializing to: " + std::to_string(init_to) + " threads");
+            SetNumThreads(init_to);
+        }
+
+        Globals::num_threads = num;
         ShutdownThreads();
         for (auto i = 0; i < Globals::num_threads; i++) {
             Globals::search_threads.emplace_back(new SearchThread());

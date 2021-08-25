@@ -2,6 +2,8 @@
 #include "Bitboards.h"
 #include <sstream>
 #include "Uci.h"
+#include "Utils.h"
+#include "MoveGen.h"
 
 namespace Meetra {
 
@@ -9,7 +11,10 @@ namespace Meetra {
         NewPosition(STARTPOS_FEN);
     }
 
-    void Board::NewPosition(const std::string &fen) {
+    bool Board::NewPosition(const std::string &fen) {
+
+        Board previous = *this;
+
         history_cnt = 0;
         curr_data.state = NEW_GAME_STATE;
 
@@ -17,9 +22,35 @@ namespace Meetra {
         std::fill(std::begin(color_bbs), std::end(color_bbs), EMPTY_BB);
         std::fill(std::begin(type_bbs), std::end(type_bbs), EMPTY_BB);
 
-        ParseFen(fen);
+        if (!ParseFenValidate(fen) || !IsBoardValid()) {
+            *this = previous;
+            return false;
+        }
 
         curr_data.hash = Zobrist::GenHash(*this);
+
+        return true;
+    }
+
+    bool Board::IsBoardValid() const {
+
+        Bitboard white_king = GetPieces(KING, WHITE);
+        if (Bitboards::ExactlyOne(white_king) != 1) {
+            return false;
+        }
+
+        Bitboard black_king = GetPieces(KING, BLACK);
+        if (Bitboards::ExactlyOne(black_king) != 1) {
+            return false;
+        }
+
+        Color to_move = ColorToMove();
+        Square enemy_king_square = to_move == WHITE ? Bitboards::Lsb(black_king) : Bitboards::Lsb(white_king);
+        if (IsSquareAttacked(enemy_king_square, ColorToMove(), GetPieces(ALL_TYPES))) {
+            return false;
+        }
+
+        return true;
     }
 
     Bitboard Board::PinnedPiecesForSquare(Square s, Color attackers_color) const {
@@ -32,7 +63,7 @@ namespace Meetra {
             Square attacker_s = Bitboards::PopLsb(bishop_queen_attackers);
             Bitboard blockers = Bitboards::GetRayBetweenSquares(attacker_s, s) & potential_blockers &
                                 Bitboards::GetUnboundBishopMoves(attacker_s);
-            if (blockers && !Bitboards::MoreThanOne(blockers)) {
+            if (Bitboards::ExactlyOne(blockers)) {
                 pinned_pieces |= blockers;
             }
         }
@@ -42,7 +73,7 @@ namespace Meetra {
             Square attacker_s = Bitboards::PopLsb(rook_queen_attackers);
             Bitboard blockers = Bitboards::GetRayBetweenSquares(attacker_s, s) & potential_blockers &
                                 Bitboards::GetUnboundRookMoves(attacker_s);
-            if (blockers && !Bitboards::MoreThanOne(blockers)) {
+            if (Bitboards::ExactlyOne(blockers)) {
                 pinned_pieces |= blockers;
             }
         }
@@ -202,39 +233,77 @@ namespace Meetra {
         }
     }
 
+    bool Board::MakeUciMove(const std::string &move_string) {
+
+        Move move_made = NewMoveFromName(move_string);
+        MoveGen move_gen(*this);
+        Move move;
+
+        while ((move = move_gen.GetAnyMove())) {
+            if (FromSquare(move) == FromSquare(move_made) && ToSquare(move) == ToSquare(move_made)) {
+                if (IsPromotion(move) && move != move_made) {
+                    continue;
+                }
+                MakeMove(move);
+                return true;
+            }
+        }
+        return false;
+    }
+
     Piece CharToPiece(char c) {
-        if (c == 'P') return W_PAWN;
-        else if (c == 'N') return W_KNIGHT;
-        else if (c == 'B') return W_BISHOP;
-        else if (c == 'R') return W_ROOK;
-        else if (c == 'Q') return W_QUEEN;
-        else if (c == 'K') return W_KING;
-        else if (c == 'p') return B_PAWN;
-        else if (c == 'n') return B_KNIGHT;
-        else if (c == 'b') return B_BISHOP;
-        else if (c == 'r') return B_ROOK;
-        else if (c == 'q') return B_QUEEN;
-        else if (c == 'k') return B_KING;
-        else return NO_PIECE;
+        // if not found -> std::string:npos + 1 == 0 == NO_PIECE, else -> index + 1 == desired piece
+        static const std::string pieces = "PNBRQK  pnbrqk";
+        return static_cast<Piece>(pieces.find(c) + 1);
     }
 
     char PieceToChar(Piece p) {
-        if (p == W_PAWN) return 'P';
-        else if (p == W_KNIGHT) return 'N';
-        else if (p == W_BISHOP) return 'B';
-        else if (p == W_ROOK) return 'R';
-        else if (p == W_QUEEN) return 'Q';
-        else if (p == W_KING) return 'K';
-        else if (p == B_PAWN) return 'p';
-        else if (p == B_KNIGHT) return 'n';
-        else if (p == B_BISHOP) return 'b';
-        else if (p == B_ROOK) return 'r';
-        else if (p == B_QUEEN) return 'q';
-        else if (p == B_KING) return 'k';
-        else return 'o';
+        static constexpr char pieces[] = "oPNBRQK  pnbrqk";
+        return pieces[p];
     }
 
     void Board::ParseFen(const std::string &fen) {
+
+        std::istringstream iss(fen);
+        std::string token;
+
+        iss >> token;
+        Square s = A8;
+        for (char c: token) {
+            if (std::isdigit(c)) {
+                s += c - '0';
+            } else if (c == '/') {
+                s -= 16;
+            } else {
+                PutPiece(s, CharToPiece(c));
+                ++s;
+            }
+        }
+
+        iss >> token;
+        SetColorToMove(token == "w" ? WHITE : BLACK);
+
+        iss >> token;
+        if (token.find('K') != std::string::npos) SetCastlingRights(WHITE_SHORT);
+        if (token.find('Q') != std::string::npos) SetCastlingRights(WHITE_LONG);
+        if (token.find('k') != std::string::npos) SetCastlingRights(BLACK_SHORT);
+        if (token.find('q') != std::string::npos) SetCastlingRights(BLACK_LONG);
+
+        iss >> token;
+        if (token != "-") {
+            File file = FileFromChar(token[0]);
+            Rank rank = RankFromChar(token[1]);
+            SetEpSquare(SquareFromFiRa(file, rank));
+        }
+
+        iss >> token;
+        SetPly(std::stoi(token));
+
+        iss >> token;
+        SetMoveNumber(std::stoi(token));
+    }
+
+    bool Board::ParseFenValidate(const std::string &fen) {
 
         std::istringstream iss(fen);
         std::string token;
@@ -243,54 +312,81 @@ namespace Meetra {
         iss >> token;
         File f = FILE_A;
         Rank r = RANK_8;
-        for (char c : token) {
+        bool prev_is_digit = false;
+        for (char c: token) {
+
+            if ((c != '/' && f > FILE_H) || (c == '/' && f <= FILE_H) || (prev_is_digit && std::isdigit(c)) ||
+                r < RANK_1 || f > FILE_H + 1) {
+                return false;
+            }
+
             if (c == '/') {
+                prev_is_digit = false;
                 f = FILE_A;
                 --r;
-            } else if (std::isdigit(c)) {
-                int empty_squares = c - '0';
-                f += empty_squares;
-            } else {
+            } else if (c <= '8' && c >= '1') {
+                prev_is_digit = true;
+                f += c - '0';
+            } else if (CharToPiece(c) != NO_PIECE) {
+                prev_is_digit = false;
                 PutPiece(SquareFromFiRa(f, r), CharToPiece(c));
                 ++f;
+            } else {
+                return false;
             }
         }
 
         // color to move
-        if (iss >> token) {
+        if (iss >> token && (token == "w" || token == "b")) {
             SetColorToMove(token == "w" ? WHITE : BLACK);
+        } else {
+            return false;
         }
 
         // castling rights
         if (iss >> token) {
-            if (token.find('K') != std::string::npos) SetCastlingRights(WHITE_SHORT);
-            if (token.find('Q') != std::string::npos) SetCastlingRights(WHITE_LONG);
-            if (token.find('k') != std::string::npos) SetCastlingRights(BLACK_SHORT);
-            if (token.find('q') != std::string::npos) SetCastlingRights(BLACK_LONG);
+            if (Utils::ContainsOnlyChars(token, "KQkq") && Utils::AllUniqueChars(token)) {
+                if (token.find('K') != std::string::npos) SetCastlingRights(WHITE_SHORT);
+                if (token.find('Q') != std::string::npos) SetCastlingRights(WHITE_LONG);
+                if (token.find('k') != std::string::npos) SetCastlingRights(BLACK_SHORT);
+                if (token.find('q') != std::string::npos) SetCastlingRights(BLACK_LONG);
+            } else if (token != "-") {
+                return false;
+            }
         }
 
         // en passant square
         if (iss >> token) {
-            if (token != "-") {
+            if (token.length() == 2 && token[0] >= 'a' && token[0] <= 'h' && token[1] >= '1' && token[1] <= '8') {
                 File file = FileFromChar(token[0]);
                 Rank rank = RankFromChar(token[1]);
                 SetEpSquare(SquareFromFiRa(file, rank));
+            } else if (token != "-") {
+                return false;
             }
         }
 
         // ply
         if (iss >> token) {
-            if (token != "-") {
+            if (Utils::IsPositiveNumber(token) && std::stoi(token) < 256) {
                 SetPly(std::stoi(token));
+            } else {
+                return false;
             }
         }
 
         // move count
         if (iss >> token) {
-            if (token != "-") {
+            if (Utils::IsPositiveNumber(token) && std::stoi(token) < MAX_GAME_LENGTH) {
                 SetMoveNumber(std::stoi(token));
+            } else {
+                return false;
             }
+        } else {
+            SetMoveNumber(1);
         }
+
+        return true;
     }
 
     std::string Board::PPBoard() const {
@@ -316,7 +412,7 @@ namespace Meetra {
             if (CanBlackShortCR()) oss << 'k';
             if (CanBlackLongCR()) oss << 'q';
         }
-        oss << " | EP square: " << (EpSquare() == SQUARE_ZERO ? "-" : std::to_string(EpSquare())) << '\n'
+        oss << " | EP square: " << (EpSquare() == SQUARE_ZERO ? "-" : SquareToName(EpSquare())) << '\n'
             << "Fullmove clock: " << TotalMoves() << " | Halfmove clock: " << Ply();
 
         return oss.str();

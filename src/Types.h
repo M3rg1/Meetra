@@ -38,8 +38,8 @@ namespace Meetra {
     };
 
     enum Piece : uint_fast8_t {
-        NO_PIECE,
-        W_PAWN, W_KNIGHT, W_BISHOP, W_ROOK, W_QUEEN, W_KING,
+        NO_PIECE = 0,
+        W_PAWN = 1, W_KNIGHT = 2, W_BISHOP = 3, W_ROOK = 4, W_QUEEN = 5, W_KING = 6,
         B_PAWN = 9, B_KNIGHT = 10, B_BISHOP = 11, B_ROOK = 12, B_QUEEN = 13, B_KING = 14,
     };
 
@@ -93,10 +93,17 @@ namespace Meetra {
         SQUARE_ZERO = 0,
     };
 
+
     inline Square SquareFromFiRa(File f, Rank r) { return static_cast<Square>((r << 3) | f); }
     inline File FileFromSquare(Square s) { return static_cast<File>(s & 7); }
     inline Rank RankFromSquare(Square s) { return static_cast<Rank>(s >> 3); }
     inline Bitboard SquareToBB(Square s) { return static_cast<Bitboard>(0x1) << s; }
+    inline Square NameToSquare(const std::string& name) {
+        return SquareFromFiRa(FileFromChar(name[0]), RankFromChar(name[1]));
+    }
+    inline std::string SquareToName(Square s) {
+        return {CharFromFile(FileFromSquare(s)), CharFromRank(RankFromSquare(s))};
+    }
 
 #pragma region ===== Castling related stuff =====
     enum CastlingRights : uint_fast16_t {
@@ -148,8 +155,8 @@ namespace Meetra {
     // however for non-promotion special moves (castling, two forward ...) it wont.
     inline Move NewMoveFromName(const std::string &move_name) {
 
-        Square s_from = SquareFromFiRa(FileFromChar(move_name[0]), RankFromChar(move_name[1]));
-        Square s_to = SquareFromFiRa(FileFromChar(move_name[2]), RankFromChar(move_name[3]));
+        Square s_from = NameToSquare(&move_name[0]);
+        Square s_to = NameToSquare(&move_name[2]);
 
         if (move_name.length() > 4) {
             MoveType flag = move_name[4] == 'q' ? PROMOTE_QUEEN :
@@ -179,12 +186,7 @@ namespace Meetra {
             return "0000";
         }
 
-        std::string ret = {
-                CharFromFile(FileFromSquare(FromSquare(m))),
-                CharFromRank(RankFromSquare(FromSquare(m))),
-                CharFromFile(FileFromSquare(ToSquare(m))),
-                CharFromRank(RankFromSquare(ToSquare(m)))
-        };
+        std::string ret = SquareToName(FromSquare(m)) + SquareToName(ToSquare(m));
 
         if (IsPromotion(m)) {
             MoveType prom_flag = GetMoveType(m);

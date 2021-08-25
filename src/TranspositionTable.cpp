@@ -13,9 +13,26 @@ namespace Meetra {
     }
 
     void TranspositionTable::Init(int size_mb) {
-        size_mb = std::clamp(size_mb, MIN_HASH_SIZE, MAX_HASH_SIZE);
+
+        if (size_mb > MAX_HASH_SIZE || size_mb < MIN_HASH_SIZE) {
+            auto init_to = std::clamp(size_mb, MIN_HASH_SIZE, MAX_HASH_SIZE);
+            Uci::SendToGui("Invalid TT size! Initializing to: " + std::to_string(init_to) + "MB");
+            Init(init_to);
+        }
+
         buckets_count = (size_mb * 1048576) / sizeof(TTBucket);
-        table = std::make_unique<TTBucket[]>(buckets_count);
+
+        try {
+            table = std::make_unique<TTBucket[]>(buckets_count);
+        } catch (const std::bad_alloc &e) {
+            if (size_mb <= MIN_HASH_SIZE) {
+                Uci::SendToGui("TT memory allocation failure, exiting!");
+            }
+            size_mb /= 2;
+            Uci::SendToGui("TT memory alloc failure, attempting to initialize with " + std::to_string(size_mb) + " MB");
+            Init(size_mb);
+        }
+
         Clear();
     }
 
@@ -46,7 +63,7 @@ namespace Meetra {
         score = RemoveMatePly(score, ply);
         int worst_entry_score = INT_MAX;
 
-        for (auto &entry : bucket.bucket_entries) {
+        for (auto &entry: bucket.bucket_entries) {
 
             if (entry.Get32Key() == key_32) {
                 if (entry.GetEpoch() != current_epoch || entry.GetDepth() <= depth) {
@@ -84,7 +101,7 @@ namespace Meetra {
 
         TTBucket &bucket = table[key % buckets_count];
 
-        for (auto &entry : bucket.bucket_entries) {
+        for (auto &entry: bucket.bucket_entries) {
             if (entry.Get32Key() == key_32) {
                 move = entry.GetMove();
                 score = AddMatePly(entry.GetScore(), ply);
@@ -112,7 +129,7 @@ namespace Meetra {
         Key32 key_32 = Zobrist::Make32Key(key);
         TTBucket &bucket = table[key % buckets_count];
 
-        for (auto &entry : bucket.bucket_entries) {
+        for (auto &entry: bucket.bucket_entries) {
             if (entry.Get32Key() == key_32) {
                 if (entry.GetFlag() == EXACT_SCORE) {
                     return entry.GetMove();

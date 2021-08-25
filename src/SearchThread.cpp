@@ -256,7 +256,7 @@ namespace Meetra {
     std::string SearchThread::GetUpdateSearchInfo() const {
 
         uint64_t total_nodes = 0;
-        for (const auto &t : Search::Globals::search_threads) {
+        for (const auto &t: Search::Globals::search_threads) {
             total_nodes += t->NodesExplored();
         }
 
@@ -279,7 +279,7 @@ namespace Meetra {
     std::string SearchThread::GetSearchInfo() const {
 
         uint64_t total_nodes = 0;
-        for (const auto &t : Search::Globals::search_threads) {
+        for (const auto &t: Search::Globals::search_threads) {
             total_nodes += t->NodesExplored();
         }
 
@@ -411,26 +411,21 @@ namespace Meetra {
     }
 
     bool SearchThread::DidBeatMove(const Search::RootMove &other) const {
-        // this is wrong, because even if i have a move with some super high depth, theres no guarantee
-        // that for example it isnt my only move from that depth and i skipped some depths below
-        /*if (GetBestRootMove().depth > other.depth) {
+        auto rm = std::find_if(root_moves.begin(), root_moves.end(), [&](const auto &rm) {
+            return rm.move == other.move;
+        });
+        if (rm == end(root_moves)) {
+            return false;
+        }
+        if (rm->depth < other.depth) {
+            return false;
+        }
+        if (rm->depth > other.depth) {
             return true;
-        }*/
-        //std::find(root_moves.begin(), root_moves.end(), []() {})
-        for (const auto &rm : root_moves) {
-            if (rm.move == other.move) {
-                if (rm.depth < other.depth) {
-                    return false;
-                }
-                if (rm.depth > other.depth) {
-                    return true;
-                }
-                if(rm.depth == other.depth) {
-                    if (GetBestRootMove().move != other.move) {
-                        return true;
-                    }
-                }
-                return false;
+        }
+        if (rm->depth == other.depth) {
+            if (GetBestRootMove().move != other.move) {
+                return true;
             }
         }
         return false;

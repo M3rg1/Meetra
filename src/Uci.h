@@ -5,9 +5,9 @@
 
 namespace Meetra::Uci {
 
-        void Init();
-        void Listen();
-        void SendToGui(const std::string &data);
+    void Init();
+    void Listen();
+    void SendToGui(const std::string &data);
 }
 
 #endif //MEETRA_UCI_H

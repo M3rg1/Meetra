@@ -8,16 +8,18 @@ namespace Meetra {
 
 #define STARTPOS_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 #define MAX_LEGAL_MOVES 256
-#define MAX_GAME_LENGTH 512
+#define MAX_GAME_LENGTH 512 // More than 511 moves won't fit in game state
 
     class Board {
 
     public:
 
         Board();
-        void NewPosition(const std::string &fen);
+        bool NewPosition(const std::string &fen);
         bool MakeMove(Move m);
         void UnmakeMove(Move m);
+        bool MakeUciMove(const std::string &move_string);
+        [[nodiscard]] bool IsBoardValid() const;
         [[nodiscard]] bool IsSquareAttacked(Square s, Color attacked_by, Bitboard occ) const;
         [[nodiscard]] Bitboard SquareAttackers(Square s, Color attacked_by, Bitboard occ) const;
         [[nodiscard]] Bitboard PinnedPiecesForSquare(Square s, Color blockers_color) const;
@@ -43,8 +45,8 @@ namespace Meetra {
         [[nodiscard]] inline Square EpSquare() const { return static_cast<Square >(curr_data.state & 0x3F); }
         [[nodiscard]] inline Color ColorToMove() const { return static_cast<Color>((curr_data.state >> 10) & 0x1); }
         [[nodiscard]] inline Piece CapturedPiece() const { return static_cast<Piece>((curr_data.state >> 11) & 0xF); }
-        [[nodiscard]] inline int Ply() const { return static_cast<int>((curr_data.state >> 15) & 0x7F); }
-        [[nodiscard]] inline int TotalMoves() const { return static_cast<int>(curr_data.state >> 22); }
+        [[nodiscard]] inline int Ply() const { return static_cast<int>((curr_data.state >> 15) & 0xFF); }
+        [[nodiscard]] inline int TotalMoves() const { return static_cast<int>(curr_data.state >> 23); }
         [[nodiscard]] inline bool Move50Rule() const { return Ply() >= 100; };
         [[nodiscard]] inline bool IsRepetition() const {
             // http://www.talkchess.com/forum3/viewtopic.php?f=7&t=51000&start=20
@@ -76,8 +78,9 @@ namespace Meetra {
         // bits 7-9 = castling rights black
         // bit  10 = player to move
         // bits 11-14 = captured piece (from last game state to this game state)
-        // bits 15-21 = ply since last capture/pawn moves - 50 move rule
-        // bits 22+ - total moves made
+        // bits 15-22 = ply since last capture/pawn moves - 50 move rule
+        // bits 23+ - total moves made
+        // TODO can have one bit flag for endgame - is that even worth doing now? check some eval techniques first
         typedef uint32_t GameState;
 #define NEW_GAME_STATE 0
 #pragma endregion
@@ -89,12 +92,12 @@ namespace Meetra {
         inline void SetColorToMove(Color c) { curr_data.state |= static_cast<GameState>(c << 10); }
         inline void SetCapturedPiece(Piece p) { curr_data.state |= static_cast<GameState>(p << 11); }
         inline void SetPly(int ply) { curr_data.state |= static_cast<GameState>(ply << 15); }
-        inline void SetMoveNumber(int move_num) { curr_data.state |= static_cast<GameState>(move_num << 22); }
+        inline void SetMoveNumber(int move_num) { curr_data.state |= static_cast<GameState>(move_num << 23); }
 
         // modify current game state
-        inline void ResetPly() { curr_data.state &= static_cast<GameState>(~0x3F8000); }
+        inline void ResetPly() { curr_data.state &= static_cast<GameState>(~(0xFF << 15)); }
         inline void RemoveCastlingRights(CastlingRights cr) { curr_data.state &= static_cast<GameState>(~cr); }
-        inline void IncrementMoveNumber(Color col_to_move) { curr_data.state += col_to_move << 22; }
+        inline void IncrementMoveNumber(Color col_to_move) { curr_data.state += col_to_move << 23; }
         inline void IncrementPly() { curr_data.state += 1 << 15; }
         inline void ClearCapturedPiece() { curr_data.state &= static_cast<GameState>(~0x7800); }
         inline void ChangeColorToMove() { curr_data.state ^= 1 << 10; }
@@ -103,6 +106,7 @@ namespace Meetra {
 
 #pragma region ===== Update inner structures =====
         void ParseFen(const std::string &fen);
+        bool ParseFenValidate(const std::string &fen);
         void RemovePiece(Square s);
         void PutPiece(Square s, Piece p);
         void MovePiece(Square from, Square to);
