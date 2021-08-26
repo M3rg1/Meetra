@@ -4,6 +4,7 @@
 #include "Search.h"
 #include "Spinlock.h"
 #include "Utils.h"
+#include "TestSuite.h"
 
 namespace Meetra::Uci {
 
@@ -38,6 +39,7 @@ namespace Meetra::Uci {
     void SetOptionCommand(std::istringstream &iss);
     void StopCommand();
     void BoardCommand(Board &board);
+    void TestCommand();
     void QuitCommand();
     void UnknownCommand();
     Search::SearchSettings ParseSearchOptions(std::istringstream &iss);
@@ -78,6 +80,7 @@ namespace Meetra::Uci {
                 else if (token == "ucinewgame") UciNewGameCommand();
                 else if (token == "perft") PerftCommand(iss, board);
                 else if (token == "board") BoardCommand(board);
+                else if (token == "test") TestCommand();
                 else if (token == "quit") QuitCommand();
                 else UnknownCommand();
 
@@ -91,6 +94,10 @@ namespace Meetra::Uci {
 
     void BoardCommand(Board &board) {
         Uci::SendToGui(board.PPBoard());
+    }
+
+    void TestCommand() {
+        TestSuite::RunPerftTests();
     }
 
     void QuitCommand() {
@@ -190,7 +197,7 @@ namespace Meetra::Uci {
             option += token + " ";
         }
 
-        option.erase(option.find_last_not_of(' ') + 1);
+        option.pop_back();
         std::transform(option.begin(), option.end(), option.begin(), ::tolower);
 
         std::string value;

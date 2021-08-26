@@ -44,9 +44,9 @@ namespace Meetra {
             return false;
         }
 
-        Color to_move = ColorToMove();
-        Square enemy_king_square = to_move == WHITE ? Bitboards::Lsb(black_king) : Bitboards::Lsb(white_king);
-        if (IsSquareAttacked(enemy_king_square, ColorToMove(), GetPieces(ALL_TYPES))) {
+        Color now_move = ColorToMove();
+        Square enemy_king_square = now_move == WHITE ? Bitboards::Lsb(black_king) : Bitboards::Lsb(white_king);
+        if (IsSquareAttacked(enemy_king_square, now_move, GetPieces(ALL_TYPES))) {
             return false;
         }
 
@@ -79,6 +79,42 @@ namespace Meetra {
         }
 
         return pinned_pieces;
+    }
+
+    // takes a pseudo legal move and checks whether it is legal
+    bool Board::IsMoveLegal(Move m) {
+
+        if (TypeOfPiece(board[FromSquare(m)]) == KING) {
+            Color enemy_color = OtherColor(ColorToMove());
+            Bitboard occ = GetPieces(ALL_TYPES);
+            if (GetMoveType(m) == CASTLING) {
+                Square to = ToSquare(m);
+                return !IsSquareAttacked(to, enemy_color, occ) &&
+                       !IsSquareAttacked(RookMoveTo(FromSquare(m), to), enemy_color, occ);
+            }
+            occ ^= SquareToBB(FromSquare(m));
+            return !IsSquareAttacked(ToSquare(m), enemy_color, occ);
+        }
+
+        if (GetMoveType(m) == EN_PASSANT) {
+            Color my_color = ColorToMove();
+            Color enemy_color = OtherColor(my_color);
+            Square from = FromSquare(m);
+            Square to = ToSquare(m);
+            Square take_square = my_color == WHITE ? to + SOUTH : to + NORTH;
+
+            MovePiece(from, to);
+            RemovePiece(take_square);
+
+            bool ok = !IsSquareAttacked(Bitboards::Lsb(GetPieces(KING, my_color)), enemy_color, GetPieces(ALL_TYPES));
+
+            MovePiece(to, from);
+            PutPiece(take_square, NewPiece(PAWN, enemy_color));
+
+            return ok;
+        }
+
+        return true;
     }
 
     bool Board::IsSquareAttacked(Square s, Color attacked_by, Bitboard occ) const {

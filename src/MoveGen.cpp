@@ -276,30 +276,6 @@ namespace Meetra {
                (all_pieces & CastlingWalkSq<C, LONG>()) == EMPTY_BB;
     }
 
-    // takes a pseudo legal move and checks whether it is legal
-    bool MoveGen::IsLegal(Move m) const {
-
-        if (FromSquare(m) == king_square) {
-            if (GetMoveType(m) == CASTLING) {
-                Square to = ToSquare(m);
-                return !board.IsSquareAttacked(to, enemy_color, all_pieces) &&
-                       !board.IsSquareAttacked(RookMoveTo(FromSquare(m), to), enemy_color, all_pieces);
-            }
-            Bitboard occ = all_pieces ^ SquareToBB(FromSquare(m));
-            return !board.IsSquareAttacked(ToSquare(m), enemy_color, occ);
-        }
-
-        if (GetMoveType(m) == EN_PASSANT) {
-            Square from = FromSquare(m);
-            Square to = ToSquare(m);
-            Square take_square = my_color == WHITE ? to + SOUTH : to + NORTH;
-            Bitboard occ = all_pieces ^ SquareToBB(take_square) ^ (SquareToBB(from) | SquareToBB(to));
-            return !board.IsSquareAttacked(king_square, enemy_color, occ);
-        }
-
-        return true;
-    }
-
     bool MoveGen::IsPseudoLegal(Move m) const {
 
         if (m == ZERO_MOVE) {

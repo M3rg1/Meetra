@@ -17,7 +17,7 @@ namespace Meetra {
         // bulk counting at the leaves
         if (depth == 1) {
             while ((m = move_gen.GetAnyMove())) {
-                if (move_gen.IsLegal(m)) {
+                if (board.IsMoveLegal(m)) {
                     nodes++;
                 }
             }
