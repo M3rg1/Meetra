@@ -407,6 +407,7 @@ namespace Meetra::Bitboards {
         else if constexpr (PT == QUEEN) return GetBishopAttacks(s, occ) | GetRookAttacks(s, occ);
         else if constexpr (PT == KNIGHT) return knight_moves[s];
         else if constexpr (PT == KING) return king_moves[s];
+        else return EMPTY_BB;
     }
 
     template Bitboard GetAttacksForPiece<PAWN>(Square, Bitboard, Color);

@@ -56,7 +56,7 @@ namespace Meetra {
         my_color = board.ColorToMove();
         enemy_color = OtherColor(my_color);
         all_pieces = board.GetPieces(ALL_TYPES);
-        checkers = board.SquareAttackers(Bitboards::Lsb(board.GetPieces(KING, my_color)), enemy_color, all_pieces);
+        checkers = board.AttackedBy(Bitboards::Lsb(board.GetPieces(KING, my_color)), enemy_color, all_pieces);
         king_square = Bitboards::Lsb(board.GetPieces(KING, my_color));
         blockers = board.PinnedPiecesForSquare(king_square, enemy_color);
         enemy_pieces = board.GetPieces(enemy_color);
@@ -166,7 +166,7 @@ namespace Meetra {
         while (pieces) {
             Square origin_s = Bitboards::PopLsb(pieces);
             Bitboard possible_moves = Bitboards::GetAttacksForPiece<PT>(origin_s, all_pieces) & legality_mask;
-            if (blockers & SquareToBB(origin_s)) {
+            if (PT != KING && blockers & SquareToBB(origin_s)) {
                 possible_moves &= Bitboards::GetRayBetweenEdges(king_square, origin_s);
             }
             while (possible_moves) {
@@ -246,7 +246,8 @@ namespace Meetra {
             Bitboard attackers =
                     Bitboards::GetAttacksForPiece<PAWN>(ep_square, EMPTY_BB, OtherColor(C)) & board.GetPieces(PAWN, C);
             while (attackers) {
-                PutMove(NewMove(Bitboards::PopLsb(attackers), ep_square, EN_PASSANT));
+                Square from = Bitboards::PopLsb(attackers);
+                PutMove(NewMove(from, ep_square, EN_PASSANT));
             }
         }
     }
@@ -312,6 +313,7 @@ namespace Meetra {
             return my_color == WHITE ? ValidateCastling<WHITE>(m) : ValidateCastling<BLACK>(m);
         }
 
+        // ep validation
         // ep validation
         if (move_type == EN_PASSANT) {
             if (ep_square && moved_pt == PAWN) {

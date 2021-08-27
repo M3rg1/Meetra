@@ -19,10 +19,11 @@ namespace Meetra {
         bool MakeMove(Move m);
         void UnmakeMove(Move m);
         bool MakeUciMove(const std::string &move_string);
-        bool IsMoveLegal(Move m);
+        [[nodiscard]] bool IsMoveLegal(Move m) const;
         [[nodiscard]] bool IsBoardValid() const;
-        [[nodiscard]] bool IsSquareAttacked(Square s, Color attacked_by, Bitboard occ) const;
-        [[nodiscard]] Bitboard SquareAttackers(Square s, Color attacked_by, Bitboard occ) const;
+        [[nodiscard]] bool IsAttackedByAny(Square s, Color attacked_by, Bitboard occ) const;
+        [[nodiscard]] bool IsAttackedBySliders(Square s, Color attacked_by, Bitboard occ) const;
+        [[nodiscard]] Bitboard AttackedBy(Square s, Color attacked_by, Bitboard occ) const;
         [[nodiscard]] Bitboard PinnedPiecesForSquare(Square s, Color blockers_color) const;
 
 #pragma region ===== Getters =====

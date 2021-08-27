@@ -46,7 +46,7 @@ namespace Meetra {
 
         Color now_move = ColorToMove();
         Square enemy_king_square = now_move == WHITE ? Bitboards::Lsb(black_king) : Bitboards::Lsb(white_king);
-        if (IsSquareAttacked(enemy_king_square, now_move, GetPieces(ALL_TYPES))) {
+        if (IsAttackedByAny(enemy_king_square, now_move, GetPieces(ALL_TYPES))) {
             return false;
         }
 
@@ -81,42 +81,34 @@ namespace Meetra {
     }
 
     // takes a pseudo legal move and checks whether it is legal
-    bool Board::IsMoveLegal(Move m) {
+    bool Board::IsMoveLegal(Move m) const {
 
         if (TypeOfPiece(GetPieceOnSquare(FromSquare(m))) == KING) {
             Color enemy_color = OtherColor(ColorToMove());
             Bitboard occ = GetPieces(ALL_TYPES);
             if (GetMoveType(m) == CASTLING) {
                 Square to = ToSquare(m);
-                return !IsSquareAttacked(to, enemy_color, occ) &&
-                       !IsSquareAttacked(RookMoveTo(FromSquare(m), to), enemy_color, occ);
+                return !IsAttackedByAny(to, enemy_color, occ) &&
+                       !IsAttackedByAny(RookMoveTo(FromSquare(m), to), enemy_color, occ);
             }
             occ ^= SquareToBB(FromSquare(m));
-            return !IsSquareAttacked(ToSquare(m), enemy_color, occ);
+            return !IsAttackedByAny(ToSquare(m), enemy_color, occ);
         }
 
         if (GetMoveType(m) == EN_PASSANT) {
             Color my_color = ColorToMove();
-            Color enemy_color = OtherColor(my_color);
             Square from = FromSquare(m);
             Square to = ToSquare(m);
-            Square take_square = my_color == WHITE ? to + SOUTH : to + NORTH;
-
-            MovePiece(from, to);
-            RemovePiece(take_square);
-
-            bool ok = !IsSquareAttacked(Bitboards::Lsb(GetPieces(KING, my_color)), enemy_color, GetPieces(ALL_TYPES));
-
-            MovePiece(to, from);
-            PutPiece(take_square, NewPiece(PAWN, enemy_color));
-
-            return ok;
+            Square capture_square = my_color == WHITE ? to + SOUTH : to + NORTH;
+            Square king_s = Bitboards::Lsb(GetPieces(KING, my_color));
+            Bitboard occ = GetPieces(ALL_TYPES) ^ SquareToBB(capture_square) ^ (SquareToBB(from) | SquareToBB(to));
+            return !IsAttackedBySliders(king_s, OtherColor(my_color), occ);
         }
 
         return true;
     }
 
-    bool Board::IsSquareAttacked(Square s, Color attacked_by, Bitboard occ) const {
+    bool Board::IsAttackedByAny(Square s, Color attacked_by, Bitboard occ) const {
         return Bitboards::GetAttacksForPiece<ROOK>(s, occ) &
                (GetPieces(ROOK, attacked_by) | GetPieces(QUEEN, attacked_by)) ||
                Bitboards::GetAttacksForPiece<BISHOP>(s, occ) &
@@ -126,7 +118,7 @@ namespace Meetra {
                Bitboards::GetAttacksForPiece<KING>(s) & GetPieces(KING, attacked_by);
     }
 
-    Bitboard Board::SquareAttackers(Square s, Color attacked_by, Bitboard occ) const {
+    Bitboard Board::AttackedBy(Square s, Color attacked_by, Bitboard occ) const {
         return (Bitboards::GetAttacksForPiece<PAWN>(s, occ, OtherColor(attacked_by)) & GetPieces(PAWN, attacked_by)) |
                (Bitboards::GetAttacksForPiece<KNIGHT>(s) & GetPieces(KNIGHT, attacked_by)) |
                (Bitboards::GetAttacksForPiece<BISHOP>(s, occ) &
@@ -134,6 +126,13 @@ namespace Meetra {
                (Bitboards::GetAttacksForPiece<ROOK>(s, occ) &
                 (GetPieces(ROOK, attacked_by) | GetPieces(QUEEN, attacked_by))) |
                (Bitboards::GetAttacksForPiece<KING>(s) & GetPieces(KING, attacked_by));
+    }
+
+    bool Board::IsAttackedBySliders(Square s, Color attacked_by, Bitboard occ) const {
+        return Bitboards::GetAttacksForPiece<ROOK>(s, occ) &
+               (GetPieces(ROOK, attacked_by) | GetPieces(QUEEN, attacked_by)) ||
+               Bitboards::GetAttacksForPiece<BISHOP>(s, occ) &
+               (GetPieces(BISHOP, attacked_by) | GetPieces(QUEEN, attacked_by));
     }
 
     void Board::RemovePiece(Square s) {
@@ -187,7 +186,7 @@ namespace Meetra {
         Square from = FromSquare(m);
         Square to = ToSquare(m);
 
-        if (GetCR()) {
+        if (GetCR() && (SquareToBB(from) | SquareToBB(to)) & 0x9100000000000091UL) {
             CastlingRights previous_cr = GetCR();
             RemoveCastlingRights(static_cast<CastlingRights>(castling_mask[from] | castling_mask[to]));
             if (previous_cr != GetCR()) {
@@ -224,8 +223,8 @@ namespace Meetra {
                 Zobrist::PutPiece(curr_data.hash, promoted_to, to);
                 return true;
             } else if (move_type == EN_PASSANT) {
-                return !IsSquareAttacked(Bitboards::Lsb(GetPieces(KING, this_move_col)), next_move_col,
-                                         GetPieces(ALL_TYPES));
+                return !IsAttackedBySliders(Bitboards::Lsb(GetPieces(KING, this_move_col)), next_move_col,
+                                           GetPieces(ALL_TYPES));
             }
             return true;
         } else if (TypeOfPiece(moved_piece) == KING) {
@@ -234,10 +233,10 @@ namespace Meetra {
                 Square rook_from = RookMoveFrom(from, to);
                 MovePiece(rook_from, rook_to);
                 Zobrist::MovePiece(curr_data.hash, NewPiece(ROOK, this_move_col), rook_from, rook_to);
-                return !IsSquareAttacked(rook_to, next_move_col, GetPieces(ALL_TYPES)) &&
-                       !IsSquareAttacked(to, next_move_col, GetPieces(ALL_TYPES));
+                return !IsAttackedByAny(rook_to, next_move_col, GetPieces(ALL_TYPES)) &&
+                       !IsAttackedByAny(to, next_move_col, GetPieces(ALL_TYPES));
             }
-            return !IsSquareAttacked(to, next_move_col, GetPieces(ALL_TYPES));
+            return !IsAttackedByAny(to, next_move_col, GetPieces(ALL_TYPES));
         }
 
         return true;
@@ -254,8 +253,8 @@ namespace Meetra {
         MovePiece(to, from);
 
         if (captured_piece) {
-            PutPiece(GetMoveType(m) == EN_PASSANT ? ColorToMove() == WHITE ? to + SOUTH : to + NORTH : to,
-                     captured_piece);
+            Square capture_s = GetMoveType(m) == EN_PASSANT ? ColorToMove() == WHITE ? to + SOUTH : to + NORTH : to;
+            PutPiece(capture_s, captured_piece);
         }
 
         if (IsPromotion(m)) {

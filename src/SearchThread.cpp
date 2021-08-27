@@ -11,10 +11,6 @@ namespace Meetra {
 
         active = true;
 
-        Score alpha = NEGATIVE_INF;
-        Score beta = POSITIVE_INF;
-        int aspiration_fail = 0;
-
         // iterative deepening
         for (depth_reached = 2;
              depth_reached <= Search::Globals::settings.max_allowed_depth && Search::Run(); depth_reached++) {
@@ -28,6 +24,9 @@ namespace Meetra {
             }
 
             max_qsearch_ply = depth_reached * 2;
+
+            Score alpha = NEGATIVE_INF;
+            Score beta = POSITIVE_INF;
 
             // alpha beta search over root moves
             for (curr_rm_num = 0; curr_rm_num < root_moves.size(); curr_rm_num++) {
