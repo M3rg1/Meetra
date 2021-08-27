@@ -205,7 +205,7 @@ namespace Meetra::Uci {
 
         try {
 
-            if(!value.empty() && value != "true" && value != "false" && !Utils::IsPositiveNumber(value)) {
+            if (!value.empty() && value != "true" && value != "false" && !Utils::IsPositiveNumber(value)) {
                 throw std::invalid_argument("Invalid option value!");
             }
 
@@ -262,6 +262,8 @@ namespace Meetra::Uci {
             } else if (option == "depth") {
                 settings.max_allowed_depth = std::stoi(value);
                 settings.fixed_depth = true;
+            } else if (option == "movestogo") {
+
             } else {
                 throw std::invalid_argument("Invalid search option: " + option);
             }

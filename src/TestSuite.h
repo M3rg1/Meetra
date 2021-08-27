@@ -128,6 +128,8 @@ namespace Meetra::TestSuite {
 
         auto tests = LoadTests();
 
+        auto start = std::chrono::steady_clock::now();
+
         bool tests_ok = true;
         for (int i = 0; i < tests.size(); i++) {
             Uci::SendToGui("Running test " + std::to_string(i + 1));
@@ -135,6 +137,11 @@ namespace Meetra::TestSuite {
                 tests_ok = false;
             }
         }
+
+        auto end = std::chrono::steady_clock::now();
+        auto time_elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+
+        Uci::SendToGui("All tests finished in " + std::to_string(time_elapsed_ms) + "ms.");
 
         if (tests_ok) {
             Uci::SendToGui("============= ALL TESTS OK =============");
