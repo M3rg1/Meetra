@@ -1,4 +1,4 @@
-# Test suite for automatic bulk perft testing of move generator.
+# Test suite for automatic bulk perft testing.
 # Can be invoked via the 'test' uci command.
 # Lines starting with '#' are ignored, comments can be added after the fen string using the '#' symbol.
 # Tests can be freely added or removed, just make sure to follow the format: 'depth x result y fen string # comment'.

@@ -38,10 +38,10 @@ namespace Meetra {
 #pragma region ===== Game State info getters =====
         [[nodiscard]] inline CastlingRights GetCR() const { return static_cast<CastlingRights>(curr_data.state & ALL_CR); }
         [[nodiscard]] inline ZobristHash GetZobristHash() const { return curr_data.hash; }
-        [[nodiscard]] inline bool CanWhiteShortCR() const { return (curr_data.state & WHITE_SHORT) != 0; }
-        [[nodiscard]] inline bool CanWhiteLongCR() const { return (curr_data.state & WHITE_LONG) != 0; }
-        [[nodiscard]] inline bool CanBlackShortCR() const { return (curr_data.state & BLACK_SHORT) != 0; }
-        [[nodiscard]] inline bool CanBlackLongCR() const { return (curr_data.state & BLACK_LONG) != 0; }
+        [[nodiscard]] inline bool CanWhiteShortCR() const { return curr_data.state & WHITE_SHORT; }
+        [[nodiscard]] inline bool CanWhiteLongCR() const { return curr_data.state & WHITE_LONG; }
+        [[nodiscard]] inline bool CanBlackShortCR() const { return curr_data.state & BLACK_SHORT; }
+        [[nodiscard]] inline bool CanBlackLongCR() const { return curr_data.state & BLACK_LONG; }
         [[nodiscard]] inline bool CanCastleAny() const { return curr_data.state & ALL_CR; }
         [[nodiscard]] inline Square EpSquare() const { return static_cast<Square >(curr_data.state & 0x3F); }
         [[nodiscard]] inline Color ColorToMove() const { return static_cast<Color>((curr_data.state >> 10) & 0x1); }
