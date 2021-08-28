@@ -2,7 +2,7 @@
 #define MEETRA_SEARCH_H
 
 #include "Board.h"
-#include "Evaluation.h"
+#include "Evaluator.h"
 #include "TranspositionTable.h"
 #include "SearchThread.h"
 
@@ -91,8 +91,8 @@ namespace Meetra::Search {
     void RequestTime(long time_ms);
     [[nodiscard]] long ElapsedTimeMs();
     [[nodiscard]] bool EnoughTimeLeft();
-    [[nodiscard]] inline bool Run() { return Globals::run.load(std::memory_order_relaxed); }
-    [[nodiscard]] inline bool Finished() { return Globals::finished.load(std::memory_order_relaxed); }
+    [[nodiscard]] inline bool Run() { return Globals::run.load(std::memory_order_acquire); }
+    [[nodiscard]] inline bool Finished() { return Globals::finished.load(std::memory_order_acquire); }
     inline void ShowShowCurrLine(bool show) { Globals::show_currline = show; }
     inline void SetPliesMuted(int ply_muted) { Globals::plies_muted = std::max(1, ply_muted); }
     inline void ShowCurrMoveInfo(bool show) { Globals::show_currmove = show; }

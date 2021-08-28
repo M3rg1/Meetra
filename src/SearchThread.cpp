@@ -135,11 +135,18 @@ namespace Meetra {
         tt_flag = ALPHA;
         bool moves_available = false;
 
+        bool used_tt_move = tt_move == ZERO_MOVE;
+
         while ((move = move_gen.GetBestMove<MoveGen::NORMAL>())) {
 
-            /*if(move == tt_move) {
-                continue;
-            }*/
+            // temporary fix to not play TT move twice, this should be fixed in the generator before evaluating the move
+            if(move == tt_move) {
+                if(used_tt_move) {
+                    continue;
+                } else {
+                    used_tt_move = true;
+                }
+            }
 
             if (!board.MakeMove(move)) {
                 board.UnmakeMove(move);
@@ -198,7 +205,7 @@ namespace Meetra {
         curr_rm->seldepth = std::max(ply, curr_rm->seldepth);
         seldepth_reached = std::max(ply, seldepth_reached);
 
-        auto score = Evaluation::BoardEval(board);
+        auto score = board.GetEval();
 
         if (score > alpha) {
             if (score >= beta) {
@@ -220,10 +227,12 @@ namespace Meetra {
                 board.UnmakeMove(move);
                 continue;
             }
+
             nodes_explored.fetch_add(1, std::memory_order_relaxed);
             curr_rm->nodes++;
             score = -QSearch(-beta, -alpha, ply + 1);
             board.UnmakeMove(move);
+
             if (score > alpha) {
                 if (score >= beta) {
                     return beta;

@@ -3,6 +3,7 @@
 
 #include "Types.h"
 #include "ZobristHash.h"
+#include "Evaluator.h"
 
 namespace Meetra {
 
@@ -19,6 +20,9 @@ namespace Meetra {
         bool MakeMove(Move m);
         void UnmakeMove(Move m);
         bool MakeUciMove(const std::string &move_string);
+        /*inline void Update() { curr_data.evaluator.SetBoard(*this); };*/
+        [[nodiscard]] inline Score GetEval() const { return curr_data.evaluator.GetBoardEval(); };
+        [[nodiscard]] inline Score GetMoveEval(Move m) const { return curr_data.evaluator.GetMoveEval(*this, m); };
         [[nodiscard]] bool IsMoveLegal(Move m) const;
         [[nodiscard]] bool IsBoardValid() const;
         [[nodiscard]] bool IsAttackedByAny(Square s, Color attacked_by, Bitboard occ) const;
@@ -118,6 +122,7 @@ namespace Meetra {
         struct BoardData {
             GameState state;
             ZobristHash hash;
+            Evaluation::Evaluator evaluator;
         };
 
         BoardData history[MAX_GAME_LENGTH];
@@ -126,7 +131,7 @@ namespace Meetra {
         BoardData curr_data;
         Piece board[SQUARE_NR];
         Bitboard color_bbs[COLOR_NR];
-        Bitboard type_bbs[PIECE_TYPE_NR];
+        Bitboard type_bbs[PIECE_TYPE_NR + 1];
 #pragma endregion
     };
 }

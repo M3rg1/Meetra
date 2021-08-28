@@ -33,8 +33,8 @@ namespace Meetra {
     }
 
     enum PieceType : uint_fast8_t {
-        NONE_PIECE_TYPE, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING, ALL_TYPES,
-        PIECE_TYPE_NR
+        NONE_PIECE_TYPE = 0, PAWN = 1, KNIGHT = 2, BISHOP = 3, ROOK = 4, QUEEN = 5, KING = 6, ALL_TYPES,
+        PIECE_TYPE_NR = 7
     };
 
     enum Piece : uint_fast8_t {

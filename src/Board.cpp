@@ -29,6 +29,9 @@ namespace Meetra {
 
         curr_data.hash = Zobrist::GenHash(*this);
 
+        curr_data.evaluator = Evaluation::Evaluator();
+        curr_data.evaluator.SetBoard(*this);
+
         return true;
     }
 
@@ -62,18 +65,18 @@ namespace Meetra {
         Bitboard bishop_queen = (GetPieces(BISHOP, attackers_color) | queens) & Bitboards::GetUnboundBishopMoves(s);
         while (bishop_queen) {
             Square attacker_s = Bitboards::PopLsb(bishop_queen);
-            Bitboard blockers = Bitboards::GetRayBetweenSquares(attacker_s, s) & all_pieces;
-            if (Bitboards::ExactlyOne(blockers)) {
-                pinned_pieces |= blockers;
+            Bitboard blocker = Bitboards::GetRayBetweenSquares(attacker_s, s) & all_pieces;
+            if (Bitboards::ExactlyOne(blocker)) {
+                pinned_pieces |= blocker;
             }
         }
 
         Bitboard rook_queen = (GetPieces(ROOK, attackers_color) | queens) & Bitboards::GetUnboundRookMoves(s);
         while (rook_queen) {
             Square attacker_s = Bitboards::PopLsb(rook_queen);
-            Bitboard blockers = Bitboards::GetRayBetweenSquares(attacker_s, s) & all_pieces;
-            if (Bitboards::ExactlyOne(blockers)) {
-                pinned_pieces |= blockers;
+            Bitboard blocker = Bitboards::GetRayBetweenSquares(attacker_s, s) & all_pieces;
+            if (Bitboards::ExactlyOne(blocker)) {
+                pinned_pieces |= blocker;
             }
         }
 
@@ -170,6 +173,8 @@ namespace Meetra {
 
         history[history_cnt++] = curr_data;
 
+        curr_data.evaluator.MakeMove(*this, m);
+
         Color this_move_col = ColorToMove();
         ChangeColorToMove();
         Color next_move_col = ColorToMove();
@@ -224,10 +229,12 @@ namespace Meetra {
                 return true;
             } else if (move_type == EN_PASSANT) {
                 return !IsAttackedBySliders(Bitboards::Lsb(GetPieces(KING, this_move_col)), next_move_col,
-                                           GetPieces(ALL_TYPES));
+                                            GetPieces(ALL_TYPES));
             }
             return true;
-        } else if (TypeOfPiece(moved_piece) == KING) {
+        }
+
+        if (TypeOfPiece(moved_piece) == KING) {
             if (move_type == CASTLING) {
                 Square rook_to = RookMoveTo(from, to);
                 Square rook_from = RookMoveFrom(from, to);

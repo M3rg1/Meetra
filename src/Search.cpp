@@ -90,7 +90,7 @@ namespace Meetra::Search {
                 if (Globals::search_threads[i]->DidBeatMove(best_thread->GetBestRootMove())) {
                     best_thread = Globals::search_threads[i].get();
                 }
-                Uci::SendToGui(std::to_string(Globals::search_threads[i]->GetBestRootMove().depth));
+                Uci::SendToGui("Id: " + std::to_string(Globals::search_threads[i]->GetId()) + std::to_string(Globals::search_threads[i]->GetBestRootMove().depth));
             }
         }
 

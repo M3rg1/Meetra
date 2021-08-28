@@ -1,6 +1,5 @@
 #include "MoveGen.h"
 #include "Bitboards.h"
-#include "Evaluation.h"
 
 namespace Meetra {
 
@@ -85,8 +84,7 @@ namespace Meetra {
 
     void MoveGen::EvalMoves() {
         for (auto i = 0; i < moves_cnt; i++) {
-            move_eval[i].score =
-                    IsValidMove(move_eval[i].move) ? Evaluation::MoveEval(board, move_eval[i].move) : NEGATIVE_INF;
+            move_eval[i].score = IsValidMove(move_eval[i].move) ? board.GetMoveEval(move_eval[i].move) : NEGATIVE_INF;
         }
     }
 
@@ -168,6 +166,9 @@ namespace Meetra {
             Bitboard possible_moves = Bitboards::GetAttacksForPiece<PT>(origin_s, all_pieces) & legality_mask;
             if (PT != KING && blockers & SquareToBB(origin_s)) {
                 possible_moves &= Bitboards::GetRayBetweenEdges(king_square, origin_s);
+            }
+            if constexpr (PT == KING) {
+                possible_moves &= ~blockers;
             }
             while (possible_moves) {
                 Square destination_s = Bitboards::PopLsb(possible_moves);
