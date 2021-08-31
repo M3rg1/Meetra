@@ -1,4 +1,3 @@
-#include <sstream>
 #include "Search.h"
 #include "MoveGen.h"
 #include <chrono>
@@ -88,7 +87,7 @@ namespace Meetra::Search {
         SearchThread *best_thread = Globals::search_threads[0].get();
         if (Globals::multi_pv == 1) {
             for (auto i = 1; i < Globals::search_threads.size(); i++) {
-                while (Globals::search_threads[i]->IsThreadSearching()); // wait thread finishes search
+                while (Globals::search_threads[i]->IsThreadSearching()); // wait until thread finishes searching
                 if (Globals::search_threads[i]->DidBeatMove(best_thread->GetBestRootMove())) {
                     best_thread = Globals::search_threads[i].get();
                 }
@@ -105,24 +104,28 @@ namespace Meetra::Search {
     void StartSearch(SearchSettings s, Board board) {
 
         Globals::run = true;
+        InitSearch(s, board);
 
-        auto moves = Book::ProbeBook(board);
-        if (!moves.empty()) {
-            StopSearch();
-            std::vector<Move> out;
-            std::sample(
-                    moves.begin(),
-                    moves.end(),
-                    std::back_inserter(out),
-                    1,
-                    std::mt19937{std::random_device{}()}
-            );
-            Uci::SendToGui("bestmove " + GetMoveName(out[0]));
-            return;
+
+        if (Globals::use_book && !Globals::settings.fixed_depth && !Globals::settings.infinite &&
+            !Globals::settings.fixed_time && board.HistorySize() <= 40) {
+            auto moves = Book::ProbeBook(board);
+            if (!moves.empty()) {
+                StopSearch();
+                std::vector<Move> out;
+                std::sample(
+                        moves.begin(),
+                        moves.end(),
+                        std::back_inserter(out),
+                        1,
+                        std::mt19937{std::random_device{}()}
+                );
+                Uci::SendToGui("bestmove " + GetMoveName(out[0]));
+                return;
+            }
         }
 
 
-        InitSearch(s, board);
         auto root_moves = GenRootMoves(board);
 
         // if there's only one root move, and we are not in infinite or fixed depth/time search, return the only
@@ -147,12 +150,13 @@ namespace Meetra::Search {
         Globals::tt.Init();
         Globals::run = false;
         Globals::finished = true;
+        Globals::use_book = false;
         Globals::show_currline = false;
         Globals::multi_pv = 1;
         Globals::show_currmove = true;
         Globals::plies_muted = 1;
-        Globals::num_threads = DEFAULT_SEARCH_THREADS;
         Globals::last_update_time = 0;
+        Globals::num_threads = DEFAULT_SEARCH_THREADS;
         SetNumThreads(DEFAULT_SEARCH_THREADS);
     }
 

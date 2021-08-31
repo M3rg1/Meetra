@@ -35,6 +35,7 @@ namespace Meetra::Search {
         inline std::atomic<Depth> mt_depth;
         inline TranspositionTable tt;
         inline SearchSettings settings;
+        inline bool use_book;
         inline bool show_currline;
         inline bool show_currmove;
         inline int plies_muted;
@@ -93,6 +94,7 @@ namespace Meetra::Search {
     [[nodiscard]] bool EnoughTimeLeft();
     [[nodiscard]] inline bool Run() { return Globals::run.load(std::memory_order_acquire); }
     [[nodiscard]] inline bool Finished() { return Globals::finished.load(std::memory_order_acquire); }
+    inline void SetUseBook(bool use) { Globals::use_book = use; }
     inline void ShowShowCurrLine(bool show) { Globals::show_currline = show; }
     inline void SetPliesMuted(int ply_muted) { Globals::plies_muted = std::max(1, ply_muted); }
     inline void ShowCurrMoveInfo(bool show) { Globals::show_currmove = show; }

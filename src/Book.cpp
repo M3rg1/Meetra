@@ -1,7 +1,27 @@
 #include "Book.h"
 #include <filesystem>
+#include <vector>
+#include <fstream>
+#include "Uci.h"
+#include "Board.h"
+#include "MoveGen.h"
+#include "Bitboards.h"
+#include "BookKeys.h"
 
 namespace Meetra::Book {
+
+#define POS_REPEATED 7
+#define FILE_NAME "OpeningBooks/bestmove.mtr.bin"
+#define MAX_DEPTH 40
+#define INPUT_FILE "all.pgn"
+
+    struct BookEntry_count {
+
+        ZobristHash hash;
+        Move move;
+        int count = 0;
+
+    };
 
     ZobristHash GenBookHash(const Board &board) {
         ZobristHash hash = NEW_HASH;
@@ -28,18 +48,18 @@ namespace Meetra::Book {
         return hash;
     }
 
-    void BinarySearch(std::ifstream &stream, int left, int right, ZobristHash hash, std::vector<Move> &vec) {
+    std::vector<Move> BinarySearch(std::ifstream &stream, size_t left, size_t right, ZobristHash hash) {
 
+        std::vector<Move> moves;
         stream.seekg(0, std::ios::beg);
-
         right /= sizeof(BookEntry);
+        BookEntry book_entry;
 
         while (left <= right) {
 
             auto mid = (right + left) / 2;
             stream.seekg(mid * sizeof(BookEntry), std::ios::beg);
 
-            BookEntry book_entry(0, 0);
             stream.read((char *) &book_entry, sizeof(BookEntry));
 
             if (book_entry.hash > hash) {
@@ -54,45 +74,39 @@ namespace Meetra::Book {
 
             if (book_entry.hash == hash) {
                 do {
-                    vec.emplace_back(book_entry.move);
+                    moves.emplace_back(book_entry.move);
                 } while (stream.read((char *) &book_entry, sizeof(BookEntry)) && book_entry.hash == hash);
 
-                auto i = 1;
+                size_t i = 1;
                 while (stream.seekg((mid - i) * sizeof(BookEntry), std::ios::beg) &&
                        stream.read((char *) &book_entry, sizeof(BookEntry)) && book_entry.hash == hash) {
-                    vec.emplace_back(book_entry.move);
+                    moves.emplace_back(book_entry.move);
                     i++;
                 }
-                return;
+                break;
             }
         }
 
+        return std::move(moves);
     }
 
     std::vector<Move> ProbeBook(const Board &board) {
-
         std::ifstream read_book;
-        read_book.open("book5.mtr.bin", std::ios::in | std::ios::binary);
+        read_book.open(FILE_NAME, std::ios::in | std::ios::binary);
         if (!read_book.is_open()) {
             Uci::SendToGui("Could not open book.");
             return {};
         }
-
-        std::vector<Move> book_moves;
         ZobristHash my_hash = GenBookHash(board);
-
-        auto end = std::filesystem::file_size("book5.mtr.bin");
-
-        BinarySearch(read_book, 0, end, my_hash, book_moves);
-
-        return std::move(book_moves);
+        size_t end = std::filesystem::file_size(FILE_NAME);
+        return BinarySearch(read_book, 0, end, my_hash);
     }
 
 
     bool SaveBook(const std::vector<BookEntry> &book_entries) {
 
         std::ofstream book_file;
-        book_file.open("book_gm.mtr.bin", std::ios::out | std::ios::binary);
+        book_file.open(FILE_NAME, std::ios::out | std::ios::binary);
         if (!book_file.is_open()) {
             return false;
         }
@@ -105,45 +119,62 @@ namespace Meetra::Book {
     }
 
 
-    std::vector<BookEntry> RemoveBadPositions(std::vector<BookEntry> &positions) {
+    std::vector<BookEntry> RemoveBadPositions(std::vector<BookEntry_count> &positions) {
 
         std::sort(positions.begin(), positions.end(), [](const auto &e1, const auto &e2) {
             return e1.hash != e2.hash ? e1.hash < e2.hash : e1.move < e2.move;
         });
 
-        std::vector<BookEntry> out;
+        std::vector<BookEntry_count> out;
         int repeats = 0;
         for (int i = 0; i < positions.size() - 1; i++) {
             if (positions[i].hash == positions[i + 1].hash && positions[i].move == positions[i + 1].move) {
                 repeats++;
             } else {
-                if (repeats >= 20) {
+                if (repeats >= POS_REPEATED) {
+                    positions[i].count = repeats;
                     out.emplace_back(positions[i]);
                 }
                 repeats = 0;
             }
         }
 
-        Uci::SendToGui("Valid positions to save: " + std::to_string(out.size()));
-
         std::sort(out.begin(), out.end(), [](const auto &e1, const auto &e2) {
             return e1.hash != e2.hash ? e1.hash < e2.hash : e1.move < e2.move;
         });
 
-        return out;
+        std::vector<BookEntry> final;
+
+        for (int i = 0; i < out.size() - 1; i++) {
+            BookEntry_count best = out[i];
+            while (out[i].hash == out[i + 1].hash && i < out.size() - 1) {
+                if (best.count <= out[i + 1].count) {
+                    if (best.count > 10000) {
+                        final.emplace_back(BookEntry{best.hash, best.move});
+                    }
+                    best = out[i + 1];
+                }
+                i++;
+            }
+            final.emplace_back(BookEntry{best.hash, best.move});
+        }
+
+        Uci::SendToGui("Valid positions to save: " + std::to_string(final.size()));
+
+        return final;
     }
 
 
-    std::vector<BookEntry> ParsePgn() {
+    std::vector<BookEntry_count> ParsePgn() {
 
         std::ifstream pgn_file;
 
-        pgn_file.open("clean_gm.pgn", std::ios::in);
+        pgn_file.open(INPUT_FILE, std::ios::in);
         if (!pgn_file.is_open()) {
             return {};
         }
 
-        std::vector<BookEntry> positions;
+        std::vector<BookEntry_count> positions;
 
         std::string pieces = "PKQRBN";
         std::string files = "abcdefgh";
@@ -168,7 +199,7 @@ namespace Meetra::Book {
                 move_n = 0;
             }
 
-            if (move_n >= 30) {
+            if (move_n >= MAX_DEPTH) {
                 continue;
             }
 
@@ -177,7 +208,7 @@ namespace Meetra::Book {
             while (ss >> token) {
 
                 // only up to 10 moves / 20 plies
-                if (move_n >= 30 || token == ("1-0") || token == "0-1" || token == "1/2-1/2" || token == "*") {
+                if (move_n >= MAX_DEPTH || token == ("1-0") || token == "0-1" || token == "1/2-1/2" || token == "*") {
                     break;
                 }
 
@@ -301,7 +332,7 @@ namespace Meetra::Book {
 
                     ZobristHash hash = GenBookHash(board);
 
-                    positions.emplace_back(hash, move);
+                    positions.emplace_back(BookEntry_count{hash, move});
                     move_ok = true;
                     if (!board.MakeMove(move)) {
                         Uci::SendToGui("This should not happen! Line: " + line);

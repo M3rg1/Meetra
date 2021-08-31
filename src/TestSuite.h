@@ -14,7 +14,7 @@
 
 namespace Meetra::TestSuite {
 
-#define TEST_FILE_PATH "PerftTests.txt"
+#define TEST_FILE_PATH "PerftTests/tests.txt"
 
 
     class Test {
@@ -119,7 +119,7 @@ namespace Meetra::TestSuite {
             }
             test_file.close();
         } else {
-            throw std::ios_base::failure("Error! Could not locate the 'PerftTests.txt' file!");
+            throw std::ios_base::failure("Error! Could not locate the 'tests.txt' file!");
         }
         return tests;
     }

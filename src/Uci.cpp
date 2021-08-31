@@ -25,6 +25,7 @@ namespace Meetra::Uci {
             << MAX_HASH_SIZE << "\n"
             << "option name MultiPV type spin default 1 min 1 max 32\n"
             << "option name Mute plies type spin default 1 min 1 max 64\n"
+            << "option name OwnBook type check default false\n"
             << "option name Cores type spin default " << DEFAULT_SEARCH_THREADS << " min 1 max " << MAX_SEARCH_THREADS;
         return oss.str();
     }
@@ -222,6 +223,8 @@ namespace Meetra::Uci {
                 Search::SetNumThreads(std::stoi(value));
             } else if (option == "show current move") {
                 Search::ShowCurrMoveInfo(value == "true");
+            } else if (option == "ownbook") {
+                Search::SetUseBook(value == "true");
             } else {
                 throw std::domain_error("Unknown option: " + option);
             }
