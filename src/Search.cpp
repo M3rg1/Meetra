@@ -2,7 +2,9 @@
 #include "Search.h"
 #include "MoveGen.h"
 #include <chrono>
+#include <random>
 #include "Uci.h"
+#include "Book.h"
 
 namespace Meetra::Search {
 
@@ -90,7 +92,8 @@ namespace Meetra::Search {
                 if (Globals::search_threads[i]->DidBeatMove(best_thread->GetBestRootMove())) {
                     best_thread = Globals::search_threads[i].get();
                 }
-                Uci::SendToGui("Id: " + std::to_string(Globals::search_threads[i]->GetId()) + std::to_string(Globals::search_threads[i]->GetBestRootMove().depth));
+                Uci::SendToGui("Id: " + std::to_string(Globals::search_threads[i]->GetId()) +
+                               std::to_string(Globals::search_threads[i]->GetBestRootMove().depth));
             }
         }
 
@@ -100,8 +103,25 @@ namespace Meetra::Search {
     }
 
     void StartSearch(SearchSettings s, Board board) {
-        // initialize search related global variables and calculate remaining time, generate root moves
+
         Globals::run = true;
+
+        auto moves = Book::ProbeBook(board);
+        if (!moves.empty()) {
+            StopSearch();
+            std::vector<Move> out;
+            std::sample(
+                    moves.begin(),
+                    moves.end(),
+                    std::back_inserter(out),
+                    1,
+                    std::mt19937{std::random_device{}()}
+            );
+            Uci::SendToGui("bestmove " + GetMoveName(out[0]));
+            return;
+        }
+
+
         InitSearch(s, board);
         auto root_moves = GenRootMoves(board);
 

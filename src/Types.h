@@ -62,6 +62,17 @@ namespace Meetra {
     inline File FileFromChar(char c) { return static_cast<File>(c - 'a'); }
     inline char CharFromFile(File f) { return static_cast<char>(f + 'a'); }
 
+    inline Piece CharToPiece(char c) {
+        // if not found -> std::string:npos + 1 == 0 == NO_PIECE, else -> index + 1 == desired piece
+        static const std::string pieces = "PNBRQK  pnbrqk";
+        return static_cast<Piece>(pieces.find(c) + 1);
+    }
+
+    inline char PieceToChar(Piece p) {
+        static constexpr char pieces[] = "oPNBRQK  pnbrqk";
+        return pieces[p];
+    }
+
 
     enum PawnMoveDir : int_fast8_t {
         LEFT, RIGHT, ONE_FWD, TWO_FWD
@@ -139,13 +150,15 @@ namespace Meetra {
      * 0-5 from square
      * 6-11 to square
      * 12-15 MoveType flag
-     * if the last (15th) bit is 1, it's a promotion move -> prom bits  N = 100, B = 101, R = 110, Q = 111
+     * if the 14th bit is 1, it's a promotion move -> prom bits  N = 0010, B = 1010, R = 0110, Q = 0111
      */
+     // MMMMMMMM MMMMFFFF
+     // 00000000 00001111
     typedef uint16_t Move;
 
     enum MoveType : uint_fast16_t {
         ZERO_MOVE = 0, NO_FLAG = 0, EN_PASSANT = 1 << 12, CASTLING = 2 << 12, TWO_FORWARD = 3 << 12,
-        PROMOTE_KNIGHT = 4 << 13, PROMOTE_BISHOP = 5 << 13, PROMOTE_ROOK = 6 << 13, PROMOTE_QUEEN = 7 << 13
+        PROMOTE_KNIGHT = 4 << 12, PROMOTE_BISHOP = 5 << 12, PROMOTE_ROOK = 6 << 12, PROMOTE_QUEEN = 7 << 12
     };
 
 #pragma region ===== Initialization =====
@@ -173,11 +186,11 @@ namespace Meetra {
 #pragma region ===== Utils =====
 
     template<Color C>
-    inline Piece PieceFromPieceType(PieceType pt) { return static_cast<Piece>(C == WHITE ? pt - 1 : pt + 5); }
-    inline PieceType PieceTypeFromFlag(MoveType mt) { return static_cast<PieceType >((mt >> 13) - 2); }
+    inline int NumFromPieceType(PieceType pt) { return static_cast<Piece>(C == WHITE ? pt - 1 : pt + 5); }
+    inline PieceType PieceTypeFromFlag(MoveType mt) { return static_cast<PieceType >((mt >> 12) - 2); }
     inline Square FromSquare(Move m) { return static_cast<Square>(m & 0x3F); }
     inline Square ToSquare(Move m) { return static_cast<Square>((m & 0xFC0) >> 6); }
-    inline bool IsPromotion(Move m) { return m >> 15; }
+    inline bool IsPromotion(Move m) { return m >> 14; }
     inline MoveType GetMoveType(Move m) { return static_cast<MoveType>(m & 0xF000); }
     inline bool IsValidMove(Move m) { return m != ZERO_MOVE; }
     inline std::string GetMoveName(Move m) {

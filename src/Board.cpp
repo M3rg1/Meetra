@@ -291,17 +291,6 @@ namespace Meetra {
         return false;
     }
 
-    Piece CharToPiece(char c) {
-        // if not found -> std::string:npos + 1 == 0 == NO_PIECE, else -> index + 1 == desired piece
-        static const std::string pieces = "PNBRQK  pnbrqk";
-        return static_cast<Piece>(pieces.find(c) + 1);
-    }
-
-    char PieceToChar(Piece p) {
-        static constexpr char pieces[] = "oPNBRQK  pnbrqk";
-        return pieces[p];
-    }
-
     void Board::ParseFen(const std::string &fen) {
 
         std::istringstream iss(fen);

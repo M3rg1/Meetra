@@ -16,20 +16,38 @@ namespace Meetra::Zobrist {
         std::mt19937_64 mt(rd());
         std::uniform_int_distribution<uint64_t> distribution;
 
+        //std::ofstream keys_file;
+        //keys_file.open("zobrist_keys.txt", std::ios::out | std::ios::app);
+
+        //if(!keys_file.is_open()) {
+        //    Uci::SendToGui("??????");
+        //}
+
+        //keys_file << "White pieces:\n";
         for (auto &piece_types : piece_keys) {
             for (auto &key : piece_types) {
                 key = distribution(mt);
+                //keys_file << "0x" << std::setfill('0') << std::setw(16)  << std::hex << key << ", ";
             }
+            //keys_file << "\n";
         }
+        //keys_file << "Castling:\n";
         for (auto &key : castling_keys) {
             key = distribution(mt);
+            //keys_file << "0x" << std::setfill('0') << std::setw(16)  << std::hex << key << ", ";
         }
+        //keys_file << "\nEP square:\n";
         for (auto &key : ep_keys) {
             key = distribution(mt);
+            //keys_file << "0x" << std::setfill('0') << std::setw(16) <<  std::hex << key << ", ";
         }
+        //keys_file << "\nColor:\n";
         for (auto &key : to_move_keys) {
             key = distribution(mt);
+            //keys_file << "0x" << std::setfill('0') << std::setw(16)  << std::hex << key << ", ";
         }
+
+        //keys_file.close();
     }
 
     void PutPiece(ZobristHash &h, Piece p, Square s){
@@ -69,12 +87,12 @@ namespace Meetra::Zobrist {
             Bitboard pieces = board.GetPieces(pt, WHITE);
             while (pieces) {
                 Square s = Bitboards::PopLsb(pieces);
-                hash ^= piece_keys[s][PieceFromPieceType<WHITE>(pt)];
+                hash ^= piece_keys[s][NumFromPieceType<WHITE>(pt)];
             }
             pieces = board.GetPieces(pt, BLACK);
             while (pieces) {
                 Square s = Bitboards::PopLsb(pieces);
-                hash ^= piece_keys[s][PieceFromPieceType<BLACK>(pt)];
+                hash ^= piece_keys[s][NumFromPieceType<BLACK>(pt)];
             }
         }
 

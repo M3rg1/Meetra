@@ -1,0 +1,348 @@
+#include "Book.h"
+#include <filesystem>
+
+namespace Meetra::Book {
+
+    ZobristHash GenBookHash(const Board &board) {
+        ZobristHash hash = NEW_HASH;
+
+        for (PieceType pt = PAWN; pt <= KING; ++pt) {
+            Bitboard pieces = board.GetPieces(pt, WHITE);
+            while (pieces) {
+                Square s = Bitboards::PopLsb(pieces);
+                hash ^= Pieces_keys[s * 12 + NumFromPieceType<WHITE>(pt)];
+            }
+            pieces = board.GetPieces(pt, BLACK);
+            while (pieces) {
+                Square s = Bitboards::PopLsb(pieces);
+                hash ^= Pieces_keys[s * 12 + NumFromPieceType<BLACK>(pt)];
+            }
+        }
+
+        if (board.EpSquare()) {
+            hash ^= Ep_keys[FileFromSquare(board.EpSquare())];
+        }
+        hash ^= Castling_keys[board.GetCR() >> 6];
+        hash ^= Color_keys[board.ColorToMove()];
+
+        return hash;
+    }
+
+    void BinarySearch(std::ifstream &stream, int left, int right, ZobristHash hash, std::vector<Move> &vec) {
+
+        stream.seekg(0, std::ios::beg);
+
+        right /= sizeof(BookEntry);
+
+        while (left <= right) {
+
+            auto mid = (right + left) / 2;
+            stream.seekg(mid * sizeof(BookEntry), std::ios::beg);
+
+            BookEntry book_entry(0, 0);
+            stream.read((char *) &book_entry, sizeof(BookEntry));
+
+            if (book_entry.hash > hash) {
+                right = mid - 1;
+                continue;
+            }
+
+            if (book_entry.hash < hash) {
+                left = mid + 1;
+                continue;
+            }
+
+            if (book_entry.hash == hash) {
+                do {
+                    vec.emplace_back(book_entry.move);
+                } while (stream.read((char *) &book_entry, sizeof(BookEntry)) && book_entry.hash == hash);
+
+                auto i = 1;
+                while (stream.seekg((mid - i) * sizeof(BookEntry), std::ios::beg) &&
+                       stream.read((char *) &book_entry, sizeof(BookEntry)) && book_entry.hash == hash) {
+                    vec.emplace_back(book_entry.move);
+                    i++;
+                }
+                return;
+            }
+        }
+
+    }
+
+    std::vector<Move> ProbeBook(const Board &board) {
+
+        std::ifstream read_book;
+        read_book.open("book5.mtr.bin", std::ios::in | std::ios::binary);
+        if (!read_book.is_open()) {
+            Uci::SendToGui("Could not open book.");
+            return {};
+        }
+
+        std::vector<Move> book_moves;
+        ZobristHash my_hash = GenBookHash(board);
+
+        auto end = std::filesystem::file_size("book5.mtr.bin");
+
+        BinarySearch(read_book, 0, end, my_hash, book_moves);
+
+        return std::move(book_moves);
+    }
+
+
+    bool SaveBook(const std::vector<BookEntry> &book_entries) {
+
+        std::ofstream book_file;
+        book_file.open("book_gm.mtr.bin", std::ios::out | std::ios::binary);
+        if (!book_file.is_open()) {
+            return false;
+        }
+
+        for (const auto &e: book_entries) {
+            book_file.write((char *) &e, sizeof(BookEntry));
+        }
+
+        return true;
+    }
+
+
+    std::vector<BookEntry> RemoveBadPositions(std::vector<BookEntry> &positions) {
+
+        std::sort(positions.begin(), positions.end(), [](const auto &e1, const auto &e2) {
+            return e1.hash != e2.hash ? e1.hash < e2.hash : e1.move < e2.move;
+        });
+
+        std::vector<BookEntry> out;
+        int repeats = 0;
+        for (int i = 0; i < positions.size() - 1; i++) {
+            if (positions[i].hash == positions[i + 1].hash && positions[i].move == positions[i + 1].move) {
+                repeats++;
+            } else {
+                if (repeats >= 20) {
+                    out.emplace_back(positions[i]);
+                }
+                repeats = 0;
+            }
+        }
+
+        Uci::SendToGui("Valid positions to save: " + std::to_string(out.size()));
+
+        std::sort(out.begin(), out.end(), [](const auto &e1, const auto &e2) {
+            return e1.hash != e2.hash ? e1.hash < e2.hash : e1.move < e2.move;
+        });
+
+        return out;
+    }
+
+
+    std::vector<BookEntry> ParsePgn() {
+
+        std::ifstream pgn_file;
+
+        pgn_file.open("clean_gm.pgn", std::ios::in);
+        if (!pgn_file.is_open()) {
+            return {};
+        }
+
+        std::vector<BookEntry> positions;
+
+        std::string pieces = "PKQRBN";
+        std::string files = "abcdefgh";
+        std::string ranks = "12345678";
+
+        size_t move_n = 0;
+        size_t moves_cnt = 0;
+
+        std::string line;
+        Board board;
+
+        while (getline(pgn_file, line)) {
+
+            // comment or empty line
+            if (line.empty() || line.starts_with('[')) {
+                continue;
+            }
+
+            // new game
+            if (line.starts_with("1.")) {
+                board.NewPosition(STARTPOS_FEN);
+                move_n = 0;
+            }
+
+            if (move_n >= 30) {
+                continue;
+            }
+
+            std::stringstream ss(line);
+            std::string token;
+            while (ss >> token) {
+
+                // only up to 10 moves / 20 plies
+                if (move_n >= 30 || token == ("1-0") || token == "0-1" || token == "1/2-1/2" || token == "*") {
+                    break;
+                }
+
+                std::string origin;
+                std::string destination;
+                char promotion_to = 0;
+                char piece_str = 0;
+
+                Color col_move = move_n % 2 == 0 ? WHITE : BLACK;
+
+                // remove the move number from the beginning
+                if (token.find('.') != std::string::npos) {
+                    token.erase(0, token.find('.') + 1);
+                }
+
+                // remove check or checkmate symbol from the end
+                if (token.find('+') != std::string::npos || token.find('#') != std::string::npos) {
+                    token.erase(token.length() - 1);
+                }
+
+                // castle short
+                if (token == "O-O") {
+                    piece_str = 'K';
+                    origin = col_move == WHITE ? "e1" : "e8";
+                    destination = col_move == WHITE ? "g1" : "g8";
+                    token.clear();
+                }
+
+                // castle long
+                if (token == "O-O-O") {
+                    piece_str = 'K';
+                    origin = col_move == WHITE ? "e1" : "e8";
+                    destination = col_move == WHITE ? "c1" : "c8";
+                    token.clear();
+                }
+
+                // remove the take symbol
+                if (token.find('x') != std::string::npos) {
+                    token.erase(token.find('x'), 1);
+                }
+
+                // promotion move
+                if (token.find('=') != std::string::npos) {
+                    promotion_to = token[token.find('=') + 1];
+                    token.erase(token.find('='), 2);
+                }
+
+                // after trimming the string, now last 2 chars are destination square
+                if (!token.empty()) {
+                    destination = token.substr(token.length() - 2, 2);
+                    token.erase(token.length() - 2);
+                }
+
+                // the moved piece_str is now guaranteed to be on the first place of the token
+                if (!token.empty() && pieces.find(token[0]) != std::string::npos) {
+                    piece_str = token[0];
+                    token.erase(0, 1);
+                    // if no explicit piece symbol, it's a pawn move (just gotta check in case it's a castling move)
+                } else if (piece_str != 'K') {
+                    piece_str = 'P';
+                }
+
+                // if it's an ambiguous move, there will be an origin rank specified
+                if (!token.empty() && files.find(token[0]) != std::string::npos) {
+                    origin += token[0];
+                    token.erase(0, 1);
+                }
+
+                // if there wasn't origin rank, or the rank wasn't enough, there will be file rank
+                if (!token.empty() && ranks.find(token[0]) != std::string::npos) {
+                    origin += token[0];
+                }
+
+                // all pieces are uppercase in PGN notation, we need to convert to lowercase if it's a black piece
+                if (col_move == BLACK) {
+                    piece_str = static_cast<char>(std::tolower(piece_str));
+                }
+
+                MoveType flag = NO_FLAG;
+                if (promotion_to) {
+                    flag = promotion_to == 'Q' ? PROMOTE_QUEEN :
+                           promotion_to == 'R' ? PROMOTE_ROOK :
+                           promotion_to == 'B' ? PROMOTE_BISHOP :
+                           PROMOTE_KNIGHT;
+                }
+
+                Square to = NameToSquare(destination);
+                Piece piece = CharToPiece(piece_str);
+
+                bool move_ok = false;
+
+                MoveGen move_gen(board);
+                Move move;
+                while ((move = move_gen.GetAnyMove())) {
+
+                    // destination square is correct
+                    if (to != ToSquare(move)) {
+                        continue;
+                    }
+
+                    Square from = FromSquare(move);
+
+                    // moved piece is on the from square
+                    if (board.GetPieceOnSquare(from) != piece) {
+                        continue;
+                    }
+
+                    // we have full square name from the pgn, make sure it matches
+                    if (origin.length() == 2 && from != NameToSquare(origin)) {
+                        continue;
+                    }
+                    // we have either file or rank in the origin string
+                    if (origin.length() == 1 && !(FileFromChar(origin[0]) == FileFromSquare(from) ||
+                                                  RankFromChar(origin[0]) == RankFromSquare(from))) {
+                        continue;
+                    }
+                    // promotion move, make sure it has the correct promotion flag
+                    if (IsPromotion(move) && flag != GetMoveType(move)) {
+                        continue;
+                    }
+
+                    ZobristHash hash = GenBookHash(board);
+
+                    positions.emplace_back(hash, move);
+                    move_ok = true;
+                    if (!board.MakeMove(move)) {
+                        Uci::SendToGui("This should not happen! Line: " + line);
+                    }
+                    break;
+                }
+
+                if (!move_ok) {
+                    Uci::SendToGui("ERROR - line: " + line);
+                }
+
+                moves_cnt++;
+                move_n++;
+
+                if (moves_cnt % 1000000 == 0) {
+                    Uci::SendToGui("Moves done: " + std::to_string(moves_cnt));
+                }
+            }
+        }
+
+        Uci::SendToGui("DONE LOADING PGN - Positions found: " + std::to_string(moves_cnt));
+
+        return std::move(positions);
+    }
+
+    void CreateBook() {
+
+        auto entries = ParsePgn();
+        if (entries.empty()) {
+            Uci::SendToGui("No entries loaded from PGN file.");
+            return;
+        }
+
+        auto cleaned_entries = RemoveBadPositions(entries);
+        if (cleaned_entries.empty()) {
+            Uci::SendToGui("No valid entries to save.");
+            return;
+        }
+
+        if (!SaveBook(cleaned_entries)) {
+            Uci::SendToGui("Err saving book");
+        }
+    }
+}

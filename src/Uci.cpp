@@ -2,7 +2,6 @@
 #include "Uci.h"
 #include "Perft.h"
 #include "Search.h"
-#include "Spinlock.h"
 #include "Utils.h"
 #include "TestSuite.h"
 
@@ -53,12 +52,12 @@ namespace Meetra::Uci {
 
         Board board;
 
-        if (isatty(STDOUT_FILENO)) {
+        /*if (isatty(STDOUT_FILENO)) {
             SendToGui(GetLogo() + "\n"
                       + " v. " + GetVersion() + "\n"
                       + " Made by " + GetAuthor() + "\n\n"
                       + board.PPBoard());
-        }
+        }*/
 
         std::string token;
         std::string input;
@@ -90,7 +89,7 @@ namespace Meetra::Uci {
 
         } while (token != "quit" && !std::cin.eof());
 
-    } // mostyle 35, sometimes 45 and stometimes 25
+    }
 
     void BoardCommand(Board &board) {
         Uci::SendToGui(board.PPBoard());
@@ -110,8 +109,8 @@ namespace Meetra::Uci {
 
     void SendToGui(const std::string &data) {
 
-        static Spinlock spinlock;
-        ScopedSpinlock lock(spinlock);
+        static std::mutex mtx;
+        std::scoped_lock lock(mtx);
 
         std::cout << data << std::endl;
     }

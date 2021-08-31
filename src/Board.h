@@ -41,7 +41,9 @@ namespace Meetra {
 #pragma endregion
 
 #pragma region ===== Game State info getters =====
-        [[nodiscard]] inline CastlingRights GetCR() const { return static_cast<CastlingRights>(curr_data.state & ALL_CR); }
+        [[nodiscard]] inline CastlingRights GetCR() const {
+            return static_cast<CastlingRights>(curr_data.state & ALL_CR);
+        }
         [[nodiscard]] inline ZobristHash GetZobristHash() const { return curr_data.hash; }
         [[nodiscard]] inline bool CanWhiteShortCR() const { return curr_data.state & WHITE_SHORT; }
         [[nodiscard]] inline bool CanWhiteLongCR() const { return curr_data.state & WHITE_LONG; }
@@ -86,7 +88,6 @@ namespace Meetra {
         // bits 11-14 = captured piece (from last game state to this game state)
         // bits 15-22 = ply since last capture/pawn moves - 50 move rule
         // bits 23+ - total moves made
-        // TODO can have one bit flag for endgame - is that even worth doing now? check some eval techniques first
         typedef uint32_t GameState;
 #define NEW_GAME_STATE 0
 #pragma endregion
