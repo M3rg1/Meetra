@@ -11,7 +11,7 @@
 namespace Meetra::Book {
 
 #define POS_REPEATED 7
-#define FILE_NAME "OpeningBooks/bestmove.mtr.bin"
+#define FILE_NAME "tools/bestmove.mtr.bin"
 #define MAX_DEPTH 40
 #define INPUT_FILE "all.pgn"
 
