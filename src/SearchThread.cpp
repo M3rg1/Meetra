@@ -3,6 +3,7 @@
 #include "Uci.h"
 #include "MoveGen.h"
 #include "Search.h"
+#include <algorithm>
 
 namespace Meetra {
 
@@ -19,8 +20,8 @@ namespace Meetra {
             seldepth_reached = depth_reached;
 
             // if helper thread falls behind main thread, skip depth and go deeper
-            if (!IsMainThread() && depth_reached <= Search::Globals::mt_depth.load(std::memory_order_relaxed)) {
-                depth_reached = Search::Globals::mt_depth.load(std::memory_order_relaxed) + id;
+            if (!IsMainThread() && depth_reached <= Search::Globals::mt_depth.load(std::memory_order_acquire)) {
+                depth_reached = Search::Globals::mt_depth.load(std::memory_order_acquire) + id;
             }
 
             max_qsearch_ply = depth_reached * 2;
@@ -35,11 +36,11 @@ namespace Meetra {
                 curr_rm->seldepth = depth_reached;
 
                 if (IsMainThread() && Search::Globals::show_currmove && Search::ElapsedTimeMs() > 1000) {
-                    Uci::SendToGui(GetCurrMoveInfo());
+                    Uci::Send(GetCurrMoveInfo());
                 }
 
-                // if main thread already finished active this depth, there's no reason for helper thread to remain
-                if (!IsMainThread() && depth_reached < Search::Globals::mt_depth.load(std::memory_order_relaxed)) {
+                // if main thread already finished this depth, there's no reason for helper thread to remain
+                if (!IsMainThread() && depth_reached < Search::Globals::mt_depth.load(std::memory_order_acquire)) {
                     break;
                 }
 
@@ -52,7 +53,7 @@ namespace Meetra {
                 if (!Search::Run()) {
                     break;
                 }
-
+//info depth 0 seldepth 0 nodes 2539 time 21 nps 120904 hashfull 0 score mate 500 pv d5b6
                 curr_rm->previous_score = curr_rm->score;
                 curr_rm->depth = depth_reached;
 
@@ -67,14 +68,14 @@ namespace Meetra {
             } // end alpha beta loop
 
             // sort based on score -> previous score -> node count
-            std::stable_sort(root_moves.begin(), root_moves.end());
+            std::ranges::stable_sort(root_moves);
 
-            // checking time and updating GUI when main thread finishes active depth
+            // checking time and updating GUI when main thread finishes depth
             if (IsMainThread()) {
 
                 Search::Globals::mt_depth.store(depth_reached, std::memory_order_relaxed);
 
-                // active if we don't have enough time left for a deeper search or mate has been found, and we are not
+                // finish if we don't have enough time left for a deeper search or mate has been found, and we are not
                 // performing fixed time/depth/infinite or multipv search
                 if (!Search::Run() || !Search::EnoughTimeLeft() ||
                     (MateFound() && Search::Globals::multi_pv == 1 && !Search::Globals::settings.infinite &&
@@ -84,7 +85,7 @@ namespace Meetra {
 
                 // update GUI with info about currently finished depth we searched
                 if (depth_reached > Search::Globals::plies_muted) {
-                    Uci::SendToGui(GetSearchInfo());
+                    Uci::Send(GetSearchInfo());
                 }
             }
         } // end iterative deepening loop
@@ -95,8 +96,7 @@ namespace Meetra {
         }
     }
 
-    Score SearchThread::NegaMax(Score alpha, Score beta, Depth depth, Depth ply, /*std::vector<Move> &pv_line*/
-                                Search::PVMoveLine &pv_line) {
+    Score SearchThread::NegaMax(Score alpha, Score beta, Depth depth, Depth ply, Search::PVMoveLine &pv_line) {
 
         if (IsMainThread()) {
             CheckTimers();
@@ -104,6 +104,7 @@ namespace Meetra {
 
         // terminating conditions, either we reached a draw, or max depth - in that case switch to qsearch
         if (board.IsRepetition() || board.Move50Rule()) {
+            // FIXME for the 50 move rule, on the 50th move it could be a mate move = win
             return -DRAW_SCORE;
         } else if (depth == 0) {
             return QSearch(alpha, beta, ply);
@@ -140,8 +141,8 @@ namespace Meetra {
         while ((move = move_gen.GetBestMove<MoveGen::NORMAL>())) {
 
             // temporary fix to not play TT move twice, this should be fixed in the generator before evaluating the move
-            if(move == tt_move) {
-                if(used_tt_move) {
+            if (move == tt_move) {
+                if (used_tt_move) {
                     continue;
                 } else {
                     used_tt_move = true;
@@ -361,9 +362,9 @@ namespace Meetra {
             StopSearch();
         } else if (Globals::last_update_time + UPDATE_INFO_INTERVAL < elapsed_time) {
             Globals::last_update_time = elapsed_time;
-            Uci::SendToGui(GetUpdateSearchInfo());
+            Uci::Send(GetUpdateSearchInfo());
             if (Globals::show_currline) {
-                Uci::SendToGui(GetCurrLineInfo());
+                Uci::Send(GetCurrLineInfo());
             }
         }
     }
@@ -420,7 +421,7 @@ namespace Meetra {
     }
 
     bool SearchThread::DidBeatMove(const Search::RootMove &other) const {
-        auto rm = std::find(root_moves.begin(), root_moves.end(), other);
+        auto rm = std::ranges::find(root_moves, other);
         if (rm->depth < other.depth) {
             return false;
         }
@@ -428,7 +429,7 @@ namespace Meetra {
             return true;
         }
         if (rm->depth == other.depth) {
-            if (GetBestRootMove() != other) {
+            if (GetBestRootMove().move != other.move) {
                 return true;
             }
         }

@@ -16,7 +16,7 @@ namespace Meetra {
 
         if (size_mb > MAX_HASH_SIZE || size_mb < MIN_HASH_SIZE) {
             auto init_to = std::clamp(size_mb, MIN_HASH_SIZE, MAX_HASH_SIZE);
-            Uci::SendToGui("Invalid TT size! Initializing to: " + std::to_string(init_to) + "MB");
+            Uci::Send("Invalid TT size! Initializing to: " + std::to_string(init_to) + "MB");
             Init(init_to);
             return;
         }
@@ -27,10 +27,10 @@ namespace Meetra {
             table = std::make_unique<TTBucket[]>(buckets_count);
         } catch (const std::bad_alloc &e) {
             if (size_mb <= MIN_HASH_SIZE) {
-                Uci::SendToGui("TT memory allocation failure, exiting!");
+                Uci::Send("TT memory allocation failure, exiting!");
             }
             size_mb = std::max(size_mb / 2, MIN_HASH_SIZE);
-            Uci::SendToGui("TT memory alloc failure, attempting to initialize with " + std::to_string(size_mb) + " MB");
+            Uci::Send("TT memory alloc failure, attempting to initialize with " + std::to_string(size_mb) + " MB");
             Init(size_mb);
             return;
         }

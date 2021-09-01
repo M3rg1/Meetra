@@ -23,7 +23,7 @@ namespace Meetra::TestSuite {
 
             Board board;
             if (!board.NewPosition(fen)) {
-                Uci::SendToGui("Error parsing FEN, skipping test.\n=== TEST ERROR ===\n");
+                Uci::Send("Error parsing FEN, skipping test.\n=== TEST ERROR ===\n");
                 return false;
             }
 
@@ -48,7 +48,7 @@ namespace Meetra::TestSuite {
                 oss << "\n=== TEST OK ===\n";
             }
 
-            Uci::SendToGui(oss.str());
+            Uci::Send(oss.str());
 
             return result == expected;
         }
@@ -112,7 +112,7 @@ namespace Meetra::TestSuite {
                 if (line.empty() || line[line.find_first_not_of(' ')] == '#') {
                     continue;
                 }
-                std::stringstream ss(line);
+                std::istringstream ss(line);
                 Test t;
                 ss >> t;
                 tests.emplace_back(t);
@@ -132,7 +132,7 @@ namespace Meetra::TestSuite {
 
         bool tests_ok = true;
         for (int i = 0; i < tests.size(); i++) {
-            Uci::SendToGui("Running test " + std::to_string(i + 1));
+            Uci::Send("Running test " + std::to_string(i + 1));
             if (!tests[i].RunTest()) {
                 tests_ok = false;
             }
@@ -141,12 +141,12 @@ namespace Meetra::TestSuite {
         auto end = std::chrono::steady_clock::now();
         auto time_elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
-        Uci::SendToGui("All tests finished in " + std::to_string(time_elapsed_ms) + "ms.");
+        Uci::Send("All tests finished in " + std::to_string(time_elapsed_ms) + "ms.");
 
         if (tests_ok) {
-            Uci::SendToGui("============= ALL TESTS OK =============");
+            Uci::Send("============= ALL TESTS OK =============");
         } else {
-            Uci::SendToGui("============= ERROR IN TESTS =============");
+            Uci::Send("============= ERROR IN TESTS =============");
         }
     }
 

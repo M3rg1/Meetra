@@ -12,7 +12,7 @@ namespace Meetra::Search {
 #define DEFAULT_SEARCH_TIME 1000
 #define DEFAULT_SEARCH_THREADS 1
 #define UPDATE_INFO_INTERVAL 1000
-#define MAX_SEARCH_THREADS 8
+#define MAX_SEARCH_THREADS 16
 #define MIN_MATE_EVAL (MATE_SCORE - MAX_SEARCH_DEPTH)
 
     struct SearchSettings {
@@ -72,14 +72,17 @@ namespace Meetra::Search {
 
         explicit RootMove(Move m) : move(m) {}
 
-        bool operator<(const RootMove &mn) const {
-            return mn.score != score ? mn.score < score :
-                   mn.previous_score != previous_score ? mn.previous_score < previous_score :
-                   mn.nodes < nodes;
+        std::strong_ordering operator<=>(const RootMove &mn) const {
+            return mn.score != score ? mn.score <=> score :
+                   mn.previous_score != previous_score ? mn.previous_score <=> previous_score :
+                   mn.nodes <=> nodes;
         }
 
         bool operator==(const RootMove &other) const {
             return move == other.move;
+        }
+        bool operator!=(const RootMove &other) const {
+            return !(*this == other);
         }
     };
 

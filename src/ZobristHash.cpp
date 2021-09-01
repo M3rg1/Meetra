@@ -20,7 +20,7 @@ namespace Meetra::Zobrist {
         //keys_file.open("zobrist_keys.txt", std::ios::out | std::ios::app);
 
         //if(!keys_file.is_open()) {
-        //    Uci::SendToGui("??????");
+        //    Uci::Send("??????");
         //}
 
         //keys_file << "White pieces:\n";

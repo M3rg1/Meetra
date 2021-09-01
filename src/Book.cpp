@@ -7,12 +7,13 @@
 #include "MoveGen.h"
 #include "Bitboards.h"
 #include "BookKeys.h"
+#include <algorithm>
 
 namespace Meetra::Book {
 
-#define POS_REPEATED 7
-#define FILE_NAME "tools/bestmove.mtr.bin"
-#define MAX_DEPTH 40
+#define POS_REPEATED 5
+#define FILE_NAME "tools/bestmove_rep5.mtr.bin"
+#define MAX_DEPTH 30
 #define INPUT_FILE "all.pgn"
 
     struct BookEntry_count {
@@ -94,7 +95,7 @@ namespace Meetra::Book {
         std::ifstream read_book;
         read_book.open(FILE_NAME, std::ios::in | std::ios::binary);
         if (!read_book.is_open()) {
-            Uci::SendToGui("Could not open book.");
+            Uci::Send("Could not open book.");
             return {};
         }
         ZobristHash my_hash = GenBookHash(board);
@@ -121,9 +122,11 @@ namespace Meetra::Book {
 
     std::vector<BookEntry> RemoveBadPositions(std::vector<BookEntry_count> &positions) {
 
-        std::sort(positions.begin(), positions.end(), [](const auto &e1, const auto &e2) {
+        auto cmp_pos = [](const auto &e1, const auto &e2) {
             return e1.hash != e2.hash ? e1.hash < e2.hash : e1.move < e2.move;
-        });
+        };
+
+        std::ranges::sort(positions, cmp_pos);
 
         std::vector<BookEntry_count> out;
         int repeats = 0;
@@ -139,9 +142,7 @@ namespace Meetra::Book {
             }
         }
 
-        std::sort(out.begin(), out.end(), [](const auto &e1, const auto &e2) {
-            return e1.hash != e2.hash ? e1.hash < e2.hash : e1.move < e2.move;
-        });
+        std::ranges::sort(out, cmp_pos);
 
         std::vector<BookEntry> final;
 
@@ -159,7 +160,7 @@ namespace Meetra::Book {
             final.emplace_back(BookEntry{best.hash, best.move});
         }
 
-        Uci::SendToGui("Valid positions to save: " + std::to_string(final.size()));
+        Uci::Send("Valid positions to save: " + std::to_string(final.size()));
 
         return final;
     }
@@ -203,11 +204,10 @@ namespace Meetra::Book {
                 continue;
             }
 
-            std::stringstream ss(line);
+            std::istringstream ss(line);
             std::string token;
             while (ss >> token) {
 
-                // only up to 10 moves / 20 plies
                 if (move_n >= MAX_DEPTH || token == ("1-0") || token == "0-1" || token == "1/2-1/2" || token == "*") {
                     break;
                 }
@@ -335,25 +335,25 @@ namespace Meetra::Book {
                     positions.emplace_back(BookEntry_count{hash, move});
                     move_ok = true;
                     if (!board.MakeMove(move)) {
-                        Uci::SendToGui("This should not happen! Line: " + line);
+                        Uci::Send("This should not happen! Line: " + line);
                     }
                     break;
                 }
 
                 if (!move_ok) {
-                    Uci::SendToGui("ERROR - line: " + line);
+                    Uci::Send("ERROR - line: " + line);
                 }
 
                 moves_cnt++;
                 move_n++;
 
                 if (moves_cnt % 1000000 == 0) {
-                    Uci::SendToGui("Moves done: " + std::to_string(moves_cnt));
+                    Uci::Send("Moves done: " + std::to_string(moves_cnt));
                 }
             }
         }
 
-        Uci::SendToGui("DONE LOADING PGN - Positions found: " + std::to_string(moves_cnt));
+        Uci::Send("DONE LOADING PGN - Positions found: " + std::to_string(moves_cnt));
 
         return std::move(positions);
     }
@@ -362,18 +362,18 @@ namespace Meetra::Book {
 
         auto entries = ParsePgn();
         if (entries.empty()) {
-            Uci::SendToGui("No entries loaded from PGN file.");
+            Uci::Send("No entries loaded from PGN file.");
             return;
         }
 
         auto cleaned_entries = RemoveBadPositions(entries);
         if (cleaned_entries.empty()) {
-            Uci::SendToGui("No valid entries to save.");
+            Uci::Send("No valid entries to save.");
             return;
         }
 
         if (!SaveBook(cleaned_entries)) {
-            Uci::SendToGui("Err saving book");
+            Uci::Send("Err saving book");
         }
     }
 }

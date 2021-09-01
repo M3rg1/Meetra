@@ -52,7 +52,7 @@ namespace Meetra {
             uint64_t nodes = depth > 1 ? Perft(depth - 1, board) : 1;
             board.UnmakeMove(m);
             total_nodes += nodes;
-            Uci::SendToGui(GetMoveName(m) + ": " + std::to_string(nodes));
+            Uci::Send(GetMoveName(m) + ": " + std::to_string(nodes));
         }
 
         auto end = std::chrono::steady_clock::now();
@@ -65,7 +65,7 @@ namespace Meetra {
             << " | Nodes explored: " << total_nodes
             << " | NPS: " << nps;
 
-        Uci::SendToGui(oss.str());
+        Uci::Send(oss.str());
     }
 
 }

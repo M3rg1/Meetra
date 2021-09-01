@@ -4,6 +4,7 @@
 #include "Types.h"
 #include "ZobristHash.h"
 #include "Evaluator.h"
+#include <array>
 
 namespace Meetra {
 

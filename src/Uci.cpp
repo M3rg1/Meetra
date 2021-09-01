@@ -4,6 +4,7 @@
 #include "Search.h"
 #include "Utils.h"
 #include "TestSuite.h"
+#include <algorithm>
 
 namespace Meetra::Uci {
 
@@ -53,12 +54,12 @@ namespace Meetra::Uci {
 
         Board board;
 
-        /*if (isatty(STDOUT_FILENO)) {
-            SendToGui(GetLogo() + "\n"
-                      + " v. " + GetVersion() + "\n"
-                      + " Made by " + GetAuthor() + "\n\n"
-                      + board.PPBoard());
-        }*/
+        if (isatty(STDOUT_FILENO)) {
+            Send(GetLogo() + "\n"
+                 + " v. " + GetVersion() + "\n"
+                 + " Made by " + GetAuthor() + "\n\n"
+                 + board.PPBoard());
+        }
 
         std::string token;
         std::string input;
@@ -85,7 +86,7 @@ namespace Meetra::Uci {
                 else UnknownCommand();
 
             } catch (std::exception &e) {
-                Uci::SendToGui(e.what());
+                Uci::Send("info string " + std::string(e.what()));
             }
 
         } while (token != "quit" && !std::cin.eof());
@@ -93,7 +94,7 @@ namespace Meetra::Uci {
     }
 
     void BoardCommand(Board &board) {
-        Uci::SendToGui(board.PPBoard());
+        Uci::Send(board.PPBoard());
     }
 
     void TestCommand() {
@@ -105,10 +106,10 @@ namespace Meetra::Uci {
     }
 
     void UnknownCommand() {
-        SendToGui("Unknown command, please see the engine documentation for available commands.");
+        Send("Unknown command, please see the engine documentation for available commands.");
     }
 
-    void SendToGui(const std::string &data) {
+    void Send(const std::string &data) {
 
         static std::mutex mtx;
         std::scoped_lock lock(mtx);
@@ -117,7 +118,7 @@ namespace Meetra::Uci {
     }
 
     void UciCommand() {
-        SendToGui(
+        Send(
                 "id name " + GetName() + " v. " + GetVersion() + '\n'
                 + "id author " + GetAuthor() + "\n"
                 + GetOptions() + "\n"
@@ -143,7 +144,7 @@ namespace Meetra::Uci {
     }
 
     void IsReadyCommand() {
-        SendToGui("readyok");
+        Send("readyok");
     }
 
     void PositionCommand(std::istringstream &iss, Board &board) {
@@ -198,7 +199,7 @@ namespace Meetra::Uci {
         }
 
         option.pop_back();
-        std::transform(option.begin(), option.end(), option.begin(), ::tolower);
+        std::ranges::transform(option, option.begin(), tolower);
 
         std::string value;
         iss >> value;

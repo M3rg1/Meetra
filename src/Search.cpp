@@ -4,6 +4,8 @@
 #include <random>
 #include "Uci.h"
 #include "Book.h"
+#include <algorithm>
+
 
 namespace Meetra::Search {
 
@@ -91,13 +93,14 @@ namespace Meetra::Search {
                 if (Globals::search_threads[i]->DidBeatMove(best_thread->GetBestRootMove())) {
                     best_thread = Globals::search_threads[i].get();
                 }
-                Uci::SendToGui("Id: " + std::to_string(Globals::search_threads[i]->GetId()) +
-                               std::to_string(Globals::search_threads[i]->GetBestRootMove().depth));
+                /*Uci::Send("info string Id: " + std::to_string(Globals::search_threads[i]->GetId()) + " depth: " +
+                               std::to_string(Globals::search_threads[i]->GetBestRootMove().depth) + " " + std::to_string(Globals::search_threads[i]->IsThreadSearching()));*/
             }
         }
 
-        Uci::SendToGui(best_thread->GetSearchInfo());
-        Uci::SendToGui("bestmove " + GetMoveName(best_thread->GetBestRootMove().move));
+        Uci::Send(best_thread->GetSearchInfo());
+        Uci::Send("bestmove " + GetMoveName(best_thread->GetBestRootMove().move));
+        //Uci::Send("info string Best thread id " + std::to_string(best_thread->GetId()));
         Globals::finished = true;
     }
 
@@ -108,19 +111,18 @@ namespace Meetra::Search {
 
 
         if (Globals::use_book && !Globals::settings.fixed_depth && !Globals::settings.infinite &&
-            !Globals::settings.fixed_time && board.HistorySize() <= 40) {
+            !Globals::settings.fixed_time && board.HistorySize() <= 30) {
             auto moves = Book::ProbeBook(board);
             if (!moves.empty()) {
                 StopSearch();
                 std::vector<Move> out;
-                std::sample(
-                        moves.begin(),
-                        moves.end(),
+                std::ranges::sample(
+                        moves,
                         std::back_inserter(out),
                         1,
                         std::mt19937{std::random_device{}()}
                 );
-                Uci::SendToGui("bestmove " + GetMoveName(out[0]));
+                Uci::Send("bestmove " + GetMoveName(out[0]));
                 return;
             }
         }
@@ -134,16 +136,16 @@ namespace Meetra::Search {
             (root_moves.size() == 1 &&
              (!Globals::settings.infinite || !Globals::settings.fixed_depth || !Globals::settings.fixed_time))) {
             StopSearch();
-            Uci::SendToGui("bestmove " + GetMoveName(root_moves.empty() ? ZERO_MOVE : root_moves[0].move));
+            Uci::Send("bestmove " + GetMoveName(root_moves.empty() ? ZERO_MOVE : root_moves[0].move));
             return;
         }
 
         // initialize and start each thread
-        std::sort(root_moves.begin(), root_moves.end());
-        for (auto &search_thread: Globals::search_threads) {
-            search_thread->InitNewSearch(board, root_moves);
-            search_thread->StartThread();
-        }
+        std::ranges::sort(root_moves);
+        std::ranges::for_each(Globals::search_threads, [&](auto &e) { e->InitNewSearch(board, root_moves); });
+        // we have to first initialize them all, in case of very fast time control and main thread finishes before
+        // we even initialize helper threads, and then attempts to extract best move from them
+        std::ranges::for_each(Globals::search_threads, [&](auto &e) { e->StartThread(); });
     }
 
     void Init() {
@@ -177,7 +179,7 @@ namespace Meetra::Search {
 
         if (num > MAX_SEARCH_THREADS || num < 1) {
             auto init_to = std::clamp(num, 1, MAX_SEARCH_THREADS);
-            Uci::SendToGui("Invalid threads count! Initializing to: " + std::to_string(init_to) + " threads");
+            Uci::Send("Invalid threads count! Initializing to: " + std::to_string(init_to) + " threads");
             SetNumThreads(init_to);
             return;
         }

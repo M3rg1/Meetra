@@ -4,6 +4,7 @@
 #include "Uci.h"
 #include "Utils.h"
 #include "MoveGen.h"
+#include <algorithm>
 
 namespace Meetra {
 
@@ -18,9 +19,9 @@ namespace Meetra {
         history_cnt = 0;
         curr_data.state = NEW_GAME_STATE;
 
-        std::fill(std::begin(board), std::end(board), NO_PIECE);
-        std::fill(std::begin(color_bbs), std::end(color_bbs), EMPTY_BB);
-        std::fill(std::begin(type_bbs), std::end(type_bbs), EMPTY_BB);
+        std::ranges::fill(board, NO_PIECE);
+        std::ranges::fill(color_bbs, EMPTY_BB);
+        std::ranges::fill(type_bbs, EMPTY_BB);
 
         if (!ParseFenValidate(fen) || !IsBoardValid()) {
             *this = previous;

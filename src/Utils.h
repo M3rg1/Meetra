@@ -1,6 +1,7 @@
 #ifndef MEETRA_UTILS_H
 #define MEETRA_UTILS_H
 
+#include <algorithm>
 
 namespace Meetra::Utils {
 
@@ -9,7 +10,7 @@ namespace Meetra::Utils {
     }
 
     inline bool AllUniqueChars(std::string str) {
-        std::sort(str.begin(), str.end());
+        std::ranges::sort(str);
         for (int i = 0; i < str.length() - 1; i++) {
             if (str[i] == str[i + 1]) {
                 return false;
