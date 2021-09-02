@@ -72,10 +72,10 @@ namespace Meetra::Search {
 
         explicit RootMove(Move m) : move(m) {}
 
-        std::strong_ordering operator<=>(const RootMove &mn) const {
-            return mn.score != score ? mn.score <=> score :
-                   mn.previous_score != previous_score ? mn.previous_score <=> previous_score :
-                   mn.nodes <=> nodes;
+        std::strong_ordering operator<=>(const RootMove &other) const {
+            return other.score != score ? other.score <=> score :
+                   other.previous_score != previous_score ? other.previous_score <=> previous_score :
+                   other.nodes <=> nodes;
         }
 
         bool operator==(const RootMove &other) const {

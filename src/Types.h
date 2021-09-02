@@ -19,11 +19,11 @@ namespace Meetra {
     typedef uint64_t Bitboard;
 #define EMPTY_BB 0
 
-    enum GenPhase : uint_fast8_t {
+    enum GenPhase {
         CAPTURE, QUIET, END, DOUBLE_CHECK
     };
 
-    enum Color : uint_fast8_t {
+    enum Color {
         WHITE, BLACK,
         COLOR_NR
     };
@@ -32,12 +32,12 @@ namespace Meetra {
         return static_cast<Color>(!c);
     }
 
-    enum PieceType : uint_fast8_t {
+    enum PieceType {
         NONE_PIECE_TYPE = 0, PAWN = 1, KNIGHT = 2, BISHOP = 3, ROOK = 4, QUEEN = 5, KING = 6, ALL_TYPES,
         PIECE_TYPE_NR = 7
     };
 
-    enum Piece : uint_fast8_t {
+    enum Piece  {
         NO_PIECE = 0,
         W_PAWN = 1, W_KNIGHT = 2, W_BISHOP = 3, W_ROOK = 4, W_QUEEN = 5, W_KING = 6,
         B_PAWN = 9, B_KNIGHT = 10, B_BISHOP = 11, B_ROOK = 12, B_QUEEN = 13, B_KING = 14,
@@ -47,12 +47,12 @@ namespace Meetra {
     inline PieceType TypeOfPiece(Piece p) { return static_cast<PieceType>(p & 7); }
     inline Piece NewPiece(PieceType pt, Color c) { return static_cast<Piece>((c << 3) | pt); }
 
-    enum Rank : int_fast8_t {
+    enum Rank {
         RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8,
         RANK_NR
     };
 
-    enum File : int_fast8_t {
+    enum File {
         FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H,
         FILE_NR
     };
@@ -74,15 +74,15 @@ namespace Meetra {
     }
 
 
-    enum PawnMoveDir : int_fast8_t {
+    enum PawnMoveDir {
         LEFT, RIGHT, ONE_FWD, TWO_FWD
     };
 
-    enum Direction : int_fast8_t {
+    enum Direction {
         NORTH = 8, NORTH_EAST = 9, EAST = 1, SOUTH_EAST = -7, SOUTH = -8, SOUTH_WEST = -9, WEST = -1, NORTH_WEST = 7
     };
 
-    enum Square : uint_fast8_t {
+    enum Square {
         A1, B1, C1, D1, E1, F1, G1, H1,
         A2, B2, C2, D2, E2, F2, G2, H2,
         A3, B3, C3, D3, E3, F3, G3, H3,

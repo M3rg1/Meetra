@@ -1,6 +1,8 @@
 #include "Bitboards.h"
 #include "MagicNumbers.h"
 #include <sstream>
+#include <algorithm>
+#include "Uci.h"
 
 namespace Meetra::Bitboards {
 
@@ -63,8 +65,8 @@ namespace Meetra::Bitboards {
         Rank r = RankFromSquare(s);
         return diag_masks[f + r] | anti_diag_masks[r + 7 - f];
     }
-    Bitboard MakeRayToEdge(Square s1, Square s2);
-    Bitboard MakeRay(Square s1, Square s2);
+    Bitboard GenRayToEdge(Square s1, Square s2);
+    Bitboard GenRay(Square s1, Square s2);
     Bitboard GetRayBetweenEdges(Square s1, Square s2) { return rays_between_board_edges[s1][s2]; }
     Bitboard GetRayBetweenSquares(Square s1, Square s2) { return rays_between_squares[s1][s2]; }
 
@@ -81,7 +83,7 @@ namespace Meetra::Bitboards {
         return b;
     }
 
-    Bitboard GetDiagMoves(Square s, Bitboard occ) {
+    Bitboard GenDiagMoves(Square s, Bitboard occ) {
         Bitboard bitboard = SquareToBB(s);
         File f = FileFromSquare(s);
         Rank r = RankFromSquare(s);
@@ -90,7 +92,7 @@ namespace Meetra::Bitboards {
                                                                     - (ReverseBits(bitboard) << 1))) & move_mask;
     }
 
-    Bitboard GetAntiDiagMoves(Square s, Bitboard occ) {
+    Bitboard GenAntiDiagMoves(Square s, Bitboard occ) {
         Bitboard b = SquareToBB(s);
         File f = FileFromSquare(s);
         Rank r = RankFromSquare(s);
@@ -99,25 +101,25 @@ namespace Meetra::Bitboards {
                 ReverseBits(ReverseBits(occ & move_mask) - (ReverseBits(b) << 1))) & move_mask;
     }
 
-    Bitboard GetHorizontalMoves(Square s, Bitboard occ) {
+    Bitboard GenHorizontalMoves(Square s, Bitboard occ) {
         Bitboard b = SquareToBB(s);
         Rank r = RankFromSquare(s);
         return ((occ - (b << 1)) ^ ReverseBits(ReverseBits(occ) - (ReverseBits(b) << 1))) & rank_masks[r];
     }
 
-    Bitboard GetVerticalMoves(Square s, Bitboard occ) {
+    Bitboard GenVerticalMoves(Square s, Bitboard occ) {
         Bitboard b = SquareToBB(s);
         File f = FileFromSquare(s);
         return (((occ & file_masks[f]) - (b << 1)) ^
                 ReverseBits(ReverseBits(occ & file_masks[f]) - (ReverseBits(b) << 1))) & file_masks[f];
     }
 
-    Bitboard GetDiagAndAntiDiagMoves(Square s, Bitboard occ) {
-        return GetAntiDiagMoves(s, occ) | GetDiagMoves(s, occ);
+    Bitboard GenBishopMoves(Square s, Bitboard occ) {
+        return GenAntiDiagMoves(s, occ) | GenDiagMoves(s, occ);
     }
 
-    Bitboard GetHorAndVertMoves(Square s, Bitboard occ) {
-        return GetVerticalMoves(s, occ) | GetHorizontalMoves(s, occ);
+    Bitboard GenRookMoves(Square s, Bitboard occ) {
+        return GenVerticalMoves(s, occ) | GenHorizontalMoves(s, occ);
     }
 #pragma endregion
 
@@ -143,10 +145,10 @@ namespace Meetra::Bitboards {
 
     }
 
-    void FillMagics() {
+    void GenMagics() {
         for (Square s = A1; s <= H8; ++s) {
-            SetBlockersRecursive(r_magics[s], s, EMPTY_BB, GetUnboundRookMoves(s), GetHorAndVertMoves);
-            SetBlockersRecursive(b_magics[s], s, EMPTY_BB, GetUnboundBishopMoves(s), GetDiagAndAntiDiagMoves);
+            SetBlockersRecursive(r_magics[s], s, EMPTY_BB, GetUnboundRookMoves(s), GenRookMoves);
+            SetBlockersRecursive(b_magics[s], s, EMPTY_BB, GetUnboundBishopMoves(s), GenBishopMoves);
         }
     }
 
@@ -194,32 +196,29 @@ namespace Meetra::Bitboards {
 
 #pragma region ===== Precomputing king, knight moves and pawn attacks =====
 
-    void InitPawnAttacks() {
+    void GenPawnAttacks() {
         for (Square s = A1; s <= H8; ++s) {
-            Bitboard attacks = EMPTY_BB;
-            for (auto m: {7, 9}) {
-                if (s + m <= H8 && s + m >= A1) {
-                    attacks |= SquareToBB(s + m);
+            Bitboard white_attacks = EMPTY_BB;
+            Bitboard black_attacks = EMPTY_BB;
+            for (auto m: {NORTH_WEST, NORTH_EAST}) {
+                if (s + m < 64) {
+                    white_attacks |= SquareToBB(s + m);
+                }
+                if (s - m >= 0) {
+                    black_attacks |= SquareToBB(s - m);
                 }
             }
-            attacks &= FileFromSquare(s) > FILE_C ? ~file_masks[FILE_A] : ~file_masks[FILE_H];
-            pawn_attacks[WHITE][s] = attacks;
-
-            attacks = EMPTY_BB;
-            for (auto m: {-7, -9}) {
-                if (s + m <= H8 && s + m >= A1) {
-                    attacks |= SquareToBB(s + m);
-                }
-            }
-            attacks &= FileFromSquare(s) > FILE_C ? ~file_masks[FILE_A] : ~file_masks[FILE_H];
-            pawn_attacks[BLACK][s] = attacks;
+            white_attacks &= FileFromSquare(s) > FILE_C ? ~file_masks[FILE_A] : ~file_masks[FILE_H];
+            black_attacks &= FileFromSquare(s) > FILE_C ? ~file_masks[FILE_A] : ~file_masks[FILE_H];
+            pawn_attacks[WHITE][s] = white_attacks;
+            pawn_attacks[BLACK][s] = black_attacks;
         }
     }
 
-    void InitKingMoves() {
+    void GenKingMoves() {
         for (Square s = A1; s <= H8; ++s) {
             Bitboard moves = EMPTY_BB;
-            for (Direction d: {NORTH, NORTH_EAST, EAST, SOUTH_EAST, SOUTH, SOUTH_WEST, WEST, NORTH_WEST}) {
+            for (auto d: {NORTH, NORTH_EAST, EAST, SOUTH_EAST, SOUTH, SOUTH_WEST, WEST, NORTH_WEST}) {
                 if (s + d <= H8 && s + d >= A1) {
                     moves |= SquareToBB(s + d);
                 }
@@ -229,12 +228,12 @@ namespace Meetra::Bitboards {
         }
     }
 
-    void InitKnightMoves() {
+    void GenKnightMoves() {
         for (Square s = A1; s <= H8; ++s) {
             Bitboard moves = EMPTY_BB;
-            for (auto m: {6, 10, 15, 17, -6, -10, -15, -17}) {
-                if (s + m <= H8 && s + m >= A1) {
-                    moves |= SquareToBB(s + m);
+            for (auto d: {6, 10, 15, 17, -6, -10, -15, -17}) {
+                if (s + d <= H8 && s + d >= A1) {
+                    moves |= SquareToBB(s + d);
                 }
             }
             moves &= FileFromSquare(s) > FILE_D ? ~file_masks[FILE_A] & ~file_masks[FILE_B] : ~file_masks[FILE_H] &
@@ -244,7 +243,9 @@ namespace Meetra::Bitboards {
     }
 #pragma endregion
 
-    Bitboard MakeRayToEdge(Square s1, Square s2) {
+#pragma region ===== Generate helper rays =====
+
+    Bitboard GenRayToEdge(Square s1, Square s2) {
 
         File f1 = FileFromSquare(s1);
         Rank r1 = RankFromSquare(s1);
@@ -265,7 +266,7 @@ namespace Meetra::Bitboards {
     }
 
 
-    Bitboard MakeRay(Square s1, Square s2) {
+    Bitboard GenRay(Square s1, Square s2) {
 
         Square max = std::max(s1, s2);
         Square min = std::min(s1, s2);
@@ -291,23 +292,18 @@ namespace Meetra::Bitboards {
         return EMPTY_BB;
     }
 
-    void InitRaysBetweenSquares() {
+    void GenRaysBetweenSquares() {
         for (Square origin = A1; origin <= H8; ++origin) {
             for (Square destination = A1; destination <= H8; ++destination) {
-                rays_between_squares[origin][destination] = MakeRay(origin, destination);
-                rays_between_board_edges[origin][destination] = MakeRayToEdge(origin, destination);
+                rays_between_squares[origin][destination] = GenRay(origin, destination);
+                rays_between_board_edges[origin][destination] = GenRayToEdge(origin, destination);
             }
         }
     }
 
-    void Init() {
-        InitRaysBetweenSquares();
-        InitMagic();
-        FillMagics();
-        InitKingMoves();
-        InitKnightMoves();
-        InitPawnAttacks();
-    }
+#pragma enregion
+
+#pragma region ===== Public getter functions =====
 
     Bitboard GetRookAttacks(Square s, Bitboard occ) {
         Magic m = r_magics[s];
@@ -353,4 +349,16 @@ namespace Meetra::Bitboards {
         oss << "    A  B  C  D  E  F  G  H";
         return oss.str();
     }
+
+#pragma endregion
+
+    void Init() {
+        GenRaysBetweenSquares();
+        InitMagic();
+        GenMagics();
+        GenKingMoves();
+        GenKnightMoves();
+        GenPawnAttacks();
+    }
 }
+

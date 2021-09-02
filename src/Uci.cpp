@@ -187,7 +187,7 @@ namespace Meetra::Uci {
     void SetOptionCommand(std::istringstream &iss) {
 
         if (!Search::Finished()) {
-            throw std::invalid_argument("Cannot change settings while search is ongoing!");
+            throw std::runtime_error("Cannot change settings while search is ongoing!");
         }
 
         std::string token;

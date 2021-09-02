@@ -141,10 +141,9 @@ namespace Meetra::Search {
         }
 
         // initialize and start each thread
-        std::ranges::sort(root_moves);
-        std::ranges::for_each(Globals::search_threads, [&](auto &e) { e->InitNewSearch(board, root_moves); });
         // we have to first initialize them all, in case of very fast time control and main thread finishes before
         // we even initialize helper threads, and then attempts to extract best move from them
+        std::ranges::for_each(Globals::search_threads, [&](auto &e) { e->InitNewSearch(board, root_moves); });
         std::ranges::for_each(Globals::search_threads, [&](auto &e) { e->StartThread(); });
     }
 
