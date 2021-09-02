@@ -61,7 +61,7 @@ namespace Meetra {
                                           (static_cast<double>(time_elapsed_ns) / 1000000000.0));
 
         std::ostringstream oss;
-        oss << "Time elapsed: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms"
+        oss << "\nTime elapsed: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms"
             << " | Nodes explored: " << total_nodes
             << " | NPS: " << nps;
 

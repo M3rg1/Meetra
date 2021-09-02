@@ -134,7 +134,7 @@ namespace Meetra {
         Move move;
         Search::PVMoveLine line;
         tt_flag = ALPHA;
-        bool moves_available = false;
+        bool no_moves = true;
 
         bool used_tt_move = tt_move == ZERO_MOVE;
 
@@ -154,7 +154,7 @@ namespace Meetra {
                 continue;
             }
 
-            moves_available = true;
+            no_moves = false;
             nodes_explored.fetch_add(1, std::memory_order_relaxed);
             curr_rm->nodes++;
             line.Clear();
@@ -187,11 +187,8 @@ namespace Meetra {
             }
         }
 
-        if (!moves_available) {
-            if (move_gen.IsKingInCheck()) {
-                return -MATE_SCORE + ply;
-            }
-            return -DRAW_SCORE;
+        if (no_moves) {
+            return move_gen.IsKingInCheck() ? -MATE_SCORE + ply : -DRAW_SCORE;
         }
 
         // whatever we learnt about this position, store it in TT for later use

@@ -72,7 +72,7 @@ namespace Meetra {
         };
 
         struct TTBucket {
-            TTEntry bucket_entries[TT_ENTRIES_PER_BUCKET];
+            TTEntry bucket_entries[TT_ENTRIES_PER_BUCKET]{};
         };
 
         Epoch current_epoch;

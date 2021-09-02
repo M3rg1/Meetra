@@ -46,10 +46,11 @@ namespace Meetra {
         struct p_MoveScore {
             Move move;
             Score score;
+
+            bool operator<(const p_MoveScore &other) const {
+                return score < other.score;
+            }
         };
-        static inline bool CompScoreLesserMAE(const p_MoveScore &a1, const p_MoveScore &a2) {
-            return a1.score < a2.score;
-        }
 
         const Board &board;
 

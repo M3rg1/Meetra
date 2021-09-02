@@ -76,7 +76,7 @@ namespace Meetra {
     }
 
     Move MoveGen::PickBestMove() {
-        auto it = std::max_element(move_eval, move_eval + moves_cnt, CompScoreLesserMAE);
+        auto it = std::max_element(move_eval, move_eval + moves_cnt);
         return PopRef(*it);
     }
 
@@ -119,7 +119,7 @@ namespace Meetra {
                 break;
         }
     }
-// 1767, 1798, 1775, 1766, 1766
+
     template<GenPhase phase, Color C>
     void MoveGen::GenMovesForPhase() {
 

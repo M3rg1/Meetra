@@ -94,7 +94,7 @@ namespace Meetra::Uci {
     }
 
     void BoardCommand(Board &board) {
-        Uci::Send(board.PPBoard());
+        Uci::Send("\n" + board.PPBoard());
     }
 
     void TestCommand() {

@@ -166,6 +166,12 @@ namespace Meetra::Bitboards {
             ray = ((file_masks[f] ^ SquareToBB(s)) << (SQUARE_NR - (s + 1))) >> (SQUARE_NR - (s + 1));
             r_inner |= ray & ~rank_masks[RANK_1];
 
+            r_magics[s].shift = static_cast<uint8_t>(64 - r_magic_shift[s]);
+            r_magics[s].inner_mask = r_inner;
+            r_magics[s].magic_num = rook_magic_num[s];
+            r_magics[s].attacks = s == A1 ? r_table : r_magics[s - 1].attacks + (1 << r_magic_shift[s - 1]);
+
+
             Bitboard b_inner = EMPTY_BB;
             for (Direction d: {SOUTH_WEST, SOUTH_EAST, NORTH_EAST, NORTH_WEST}) {
                 ray = EMPTY_BB;
@@ -176,11 +182,6 @@ namespace Meetra::Bitboards {
                 }
                 b_inner |= ray & ~file_masks[FILE_A] & ~rank_masks[RANK_1] & ~file_masks[FILE_H] & ~rank_masks[RANK_8];
             }
-
-            r_magics[s].shift = static_cast<uint8_t>(64 - r_magic_shift[s]);
-            r_magics[s].inner_mask = r_inner;
-            r_magics[s].magic_num = rook_magic_num[s];
-            r_magics[s].attacks = s == A1 ? r_table : r_magics[s - 1].attacks + (1 << r_magic_shift[s - 1]);
 
             b_magics[s].shift = static_cast<uint8_t>(64 - b_magic_shift[s]);
             b_magics[s].inner_mask = b_inner;
