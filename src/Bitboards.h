@@ -26,6 +26,31 @@ namespace Meetra::Bitboards {
         return s;
     }
 
+    template<Direction D>
+    constexpr Bitboard Shift(Bitboard b) {
+        if constexpr (D == NORTH) return b << 8;
+        else if constexpr (D == SOUTH) return b >> 8;
+        else if constexpr (D == EAST) return (b & ~0x8080808080808080UL) << 1;
+        else if constexpr (D == WEST) return (b & ~0x0101010101010101UL) >> 1;
+        else if constexpr (D == NORTH_EAST) return (b & ~0x8080808080808080UL) << 9;
+        else if constexpr (D == NORTH_WEST) return (b & ~0x0101010101010101UL) << 7;
+        else if constexpr (D == SOUTH_EAST) return (b & ~0x8080808080808080UL) >> 7;
+        else if constexpr (D == SOUTH_WEST) return (b & ~0x0101010101010101UL) >> 9;
+        else return 0;
+    }
+
+    inline Bitboard Shift(Direction shift_dir, Bitboard b) {
+        if (shift_dir == NORTH) return Shift<NORTH>(b);
+        else if (shift_dir == SOUTH) return Shift<SOUTH>(b);
+        else if (shift_dir == EAST) return Shift<EAST>(b);
+        else if (shift_dir == WEST) return Shift<WEST>(b);
+        else if (shift_dir == NORTH_EAST) return Shift<NORTH_EAST>(b);
+        else if (shift_dir == NORTH_WEST) return Shift<NORTH_WEST>(b);
+        else if (shift_dir == SOUTH_EAST) return Shift<SOUTH_EAST>(b);
+        else if (shift_dir == SOUTH_WEST) return Shift<SOUTH_WEST>(b);
+        else return 0;
+    }
+
     // win64 https://www.chessprogramming.org/BitScan -> Processor Instructions for Bitscans
     /*inline Square Lsb(Bitboard b) {
         unsigned long idx;

@@ -53,7 +53,7 @@ namespace Meetra {
                 if (!Search::Run()) {
                     break;
                 }
-//info depth 0 seldepth 0 nodes 2539 time 21 nps 120904 hashfull 0 score mate 500 pv d5b6
+
                 curr_rm->previous_score = curr_rm->score;
                 curr_rm->depth = depth_reached;
 

@@ -82,15 +82,6 @@ namespace Meetra {
         NORTH = 8, NORTH_EAST = 9, EAST = 1, SOUTH_EAST = -7, SOUTH = -8, SOUTH_WEST = -9, WEST = -1, NORTH_WEST = 7
     };
 
-    enum DirectionIndex : uint_fast8_t {
-        NORTH_IDX, NORTH_EAST_IDX, EAST_IDX, SOUTH_EAST_IDX, SOUTH_IDX, SOUTH_WEST_IDX, WEST_IDX, NORTH_WEST_IDX,
-        DIRECTION_IDX_NR
-    };
-
-    constexpr Direction Directions[DIRECTION_IDX_NR]{
-            NORTH, NORTH_EAST, EAST, SOUTH_EAST, SOUTH, SOUTH_WEST, WEST, NORTH_WEST
-    };
-
     enum Square : uint_fast8_t {
         A1, B1, C1, D1, E1, F1, G1, H1,
         A2, B2, C2, D2, E2, F2, G2, H2,
@@ -244,7 +235,6 @@ inline T& operator/=(T& d, int i) { return d = T(int(d) / i); }
     ENABLE_INCR_OPERATORS_ON(Square)
     ENABLE_INCR_OPERATORS_ON(File)
     ENABLE_INCR_OPERATORS_ON(Rank)
-    ENABLE_INCR_OPERATORS_ON(DirectionIndex)
     ENABLE_INCR_OPERATORS_ON(Direction)
     //ENABLE_INCR_OPERATORS_ON(GenPhase)
 

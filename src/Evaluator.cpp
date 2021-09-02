@@ -34,8 +34,7 @@ namespace Meetra::Evaluation {
 
         mgScore = mg[to_move] - mg[OtherColor(to_move)];
         egScore = eg[to_move] - eg[OtherColor(to_move)];
-        mgPhase = gamePhase;
-        if (mgPhase > 24) mgPhase = 24;
+        mgPhase = std::min(gamePhase, 24);
         egPhase = 24 - mgPhase;
     }
 
@@ -73,8 +72,7 @@ namespace Meetra::Evaluation {
 
         mgScore = mg[enemy_col] - mg[to_move];
         egScore = eg[enemy_col] - eg[to_move];
-        mgPhase = gamePhase;
-        if (mgPhase > 24) mgPhase = 24;
+        mgPhase = std::min(gamePhase, 24);
         egPhase = 24 - mgPhase;
     }
 
@@ -152,8 +150,7 @@ namespace Meetra::Evaluation {
 
         mgScore = mg[enemy_col] - mg[to_move];
         egScore = eg[enemy_col] - eg[to_move];
-        mgPhase = gamePhase;
-        if (mgPhase > 24) mgPhase = 24;
+        mgPhase = std::min(gamePhase, 24);
         egPhase = 24 - mgPhase;
     }
 }

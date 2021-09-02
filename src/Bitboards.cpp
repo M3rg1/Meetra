@@ -40,33 +40,31 @@ namespace Meetra::Bitboards {
 
     struct Magic {
         Bitboard *attacks;
-        Bitboard inner_board_mask;
+        Bitboard inner_mask;
         uint64_t magic_num;
         uint8_t shift;
     };
 
-    Magic bishop_magics[SQUARE_NR];
-    Magic rook_magics[SQUARE_NR];
-
+    Magic b_magics[SQUARE_NR];
+    Magic r_magics[SQUARE_NR];
     Bitboard king_moves[SQUARE_NR];
     Bitboard knight_moves[SQUARE_NR];
-
     Bitboard pawn_attacks[COLOR_NR][SQUARE_NR];
-
-    Bitboard rays[SQUARE_NR][DIRECTION_IDX_NR];
-    Bitboard inner_rays[SQUARE_NR][DIRECTION_IDX_NR];
 
     Bitboard rays_between_squares[SQUARE_NR][SQUARE_NR];
     Bitboard rays_between_board_edges[SQUARE_NR][SQUARE_NR];
 
-    Bitboard rook_unbound_moves[SQUARE_NR];
-    Bitboard bishop_unbound_moves[SQUARE_NR];
+    Bitboard r_table[88064];
+    Bitboard b_table[4800];
 
-    Bitboard rook_table[88064];
-    Bitboard bishop_table[4800];
-
-    Bitboard GetUnboundRookMoves(Square s) { return rook_unbound_moves[s]; }
-    Bitboard GetUnboundBishopMoves(Square s) { return bishop_unbound_moves[s]; }
+    Bitboard GetUnboundRookMoves(Square s) { return file_masks[FileFromSquare(s)] | rank_masks[RankFromSquare(s)]; }
+    Bitboard GetUnboundBishopMoves(Square s) {
+        File f = FileFromSquare(s);
+        Rank r = RankFromSquare(s);
+        return diag_masks[f + r] | anti_diag_masks[r + 7 - f];
+    }
+    Bitboard MakeRayToEdge(Square s1, Square s2);
+    Bitboard MakeRay(Square s1, Square s2);
     Bitboard GetRayBetweenEdges(Square s1, Square s2) { return rays_between_board_edges[s1][s2]; }
     Bitboard GetRayBetweenSquares(Square s1, Square s2) { return rays_between_squares[s1][s2]; }
 
@@ -85,14 +83,18 @@ namespace Meetra::Bitboards {
 
     Bitboard GetDiagMoves(Square s, Bitboard occ) {
         Bitboard bitboard = SquareToBB(s);
-        Bitboard move_mask = rays[s][NORTH_EAST_IDX] | rays[s][SOUTH_WEST_IDX];
+        File f = FileFromSquare(s);
+        Rank r = RankFromSquare(s);
+        Bitboard move_mask = anti_diag_masks[r + 7 - f];
         return (((occ & move_mask) - (bitboard << 1)) ^ ReverseBits(ReverseBits(occ & move_mask)
                                                                     - (ReverseBits(bitboard) << 1))) & move_mask;
     }
 
     Bitboard GetAntiDiagMoves(Square s, Bitboard occ) {
         Bitboard b = SquareToBB(s);
-        Bitboard move_mask = rays[s][NORTH_WEST_IDX] | rays[s][SOUTH_EAST_IDX];
+        File f = FileFromSquare(s);
+        Rank r = RankFromSquare(s);
+        Bitboard move_mask = diag_masks[f + r];
         return (((occ & move_mask) - (b << 1)) ^
                 ReverseBits(ReverseBits(occ & move_mask) - (ReverseBits(b) << 1))) & move_mask;
     }
@@ -126,7 +128,7 @@ namespace Meetra::Bitboards {
                               Bitboard (*move_generator)(Square, Bitboard)) {
 
         if (explore_occ == EMPTY_BB) {
-            auto idx = ((blockers & m.inner_board_mask) * m.magic_num) >> m.shift;
+            auto idx = ((blockers & m.inner_mask) * m.magic_num) >> m.shift;
             m.attacks[idx] = move_generator(origin, blockers);
             return;
         }
@@ -143,27 +145,48 @@ namespace Meetra::Bitboards {
 
     void FillMagics() {
         for (Square s = A1; s <= H8; ++s) {
-            SetBlockersRecursive(rook_magics[s], s, EMPTY_BB, rook_unbound_moves[s], GetHorAndVertMoves);
-            SetBlockersRecursive(bishop_magics[s], s, EMPTY_BB, bishop_unbound_moves[s], GetDiagAndAntiDiagMoves);
+            SetBlockersRecursive(r_magics[s], s, EMPTY_BB, GetUnboundRookMoves(s), GetHorAndVertMoves);
+            SetBlockersRecursive(b_magics[s], s, EMPTY_BB, GetUnboundBishopMoves(s), GetDiagAndAntiDiagMoves);
         }
     }
 
     void InitMagic() {
         for (Square s = A1; s <= H8; ++s) {
-            rook_magics[s].shift = static_cast<uint8_t>(64 - rook_magic_shift[s]);
-            rook_magics[s].inner_board_mask = inner_rays[s][NORTH_IDX] | inner_rays[s][EAST_IDX]
-                                              | inner_rays[s][SOUTH_IDX] | inner_rays[s][WEST_IDX];
-            rook_magics[s].magic_num = rook_magic_num[s];
-            rook_magics[s].attacks = s == A1 ? rook_table : rook_magics[s - 1].attacks + (1 << rook_magic_shift[s - 1]);
 
-            bishop_magics[s].shift = static_cast<uint8_t>(64 - bishop_magic_shift[s]);
-            bishop_magics[s].inner_board_mask = inner_rays[s][NORTH_WEST_IDX] | inner_rays[s][NORTH_EAST_IDX]
-                                                | inner_rays[s][SOUTH_EAST_IDX] | inner_rays[s][SOUTH_WEST_IDX];
-            bishop_magics[s].magic_num = bishop_magic_num[s];
-            bishop_magics[s].attacks =
-                    s == A1 ? bishop_table : bishop_magics[s - 1].attacks + (1 << bishop_magic_shift[s - 1]);
+            File f = FileFromSquare(s);
+            Rank r = RankFromSquare(s);
+
+            Bitboard r_inner = EMPTY_BB;
+            Bitboard ray = ((rank_masks[r] ^ SquareToBB(s)) >> s) << s;
+            r_inner |= ray & ~file_masks[FILE_H];
+            ray = ((rank_masks[r] ^ SquareToBB(s)) << (SQUARE_NR - (s + 1))) >> (SQUARE_NR - (s + 1));
+            r_inner |= ray & ~file_masks[FILE_A];
+            ray = ((file_masks[f] ^ SquareToBB(s)) >> s) << s;
+            r_inner |= ray & ~rank_masks[RANK_8];
+            ray = ((file_masks[f] ^ SquareToBB(s)) << (SQUARE_NR - (s + 1))) >> (SQUARE_NR - (s + 1));
+            r_inner |= ray & ~rank_masks[RANK_1];
+
+            Bitboard b_inner = EMPTY_BB;
+            for (Direction d: {SOUTH_WEST, SOUTH_EAST, NORTH_EAST, NORTH_WEST}) {
+                ray = EMPTY_BB;
+                Bitboard attacked_square = SquareToBB(s);
+                while (attacked_square) {
+                    attacked_square = Shift(d, attacked_square);
+                    ray |= attacked_square;
+                }
+                b_inner |= ray & ~file_masks[FILE_A] & ~rank_masks[RANK_1] & ~file_masks[FILE_H] & ~rank_masks[RANK_8];
+            }
+
+            r_magics[s].shift = static_cast<uint8_t>(64 - r_magic_shift[s]);
+            r_magics[s].inner_mask = r_inner;
+            r_magics[s].magic_num = rook_magic_num[s];
+            r_magics[s].attacks = s == A1 ? r_table : r_magics[s - 1].attacks + (1 << r_magic_shift[s - 1]);
+
+            b_magics[s].shift = static_cast<uint8_t>(64 - b_magic_shift[s]);
+            b_magics[s].inner_mask = b_inner;
+            b_magics[s].magic_num = bishop_magic_num[s];
+            b_magics[s].attacks = s == A1 ? b_table : b_magics[s - 1].attacks + (1 << b_magic_shift[s - 1]);
         }
-        FillMagics();
     }
 #pragma endregion
 
@@ -171,10 +194,9 @@ namespace Meetra::Bitboards {
 #pragma region ===== Precomputing king, knight moves and pawn attacks =====
 
     void InitPawnAttacks() {
-        int possible_moves[] = {7, 9};
         for (Square s = A1; s <= H8; ++s) {
             Bitboard attacks = EMPTY_BB;
-            for (int m : possible_moves) {
+            for (auto m: {7, 9}) {
                 if (s + m <= H8 && s + m >= A1) {
                     attacks |= SquareToBB(s + m);
                 }
@@ -183,9 +205,9 @@ namespace Meetra::Bitboards {
             pawn_attacks[WHITE][s] = attacks;
 
             attacks = EMPTY_BB;
-            for (int m : possible_moves) {
-                if (s - m <= H8 && s - m >= A1) {
-                    attacks |= SquareToBB(s - m);
+            for (auto m: {-7, -9}) {
+                if (s + m <= H8 && s + m >= A1) {
+                    attacks |= SquareToBB(s + m);
                 }
             }
             attacks &= FileFromSquare(s) > FILE_C ? ~file_masks[FILE_A] : ~file_masks[FILE_H];
@@ -196,7 +218,7 @@ namespace Meetra::Bitboards {
     void InitKingMoves() {
         for (Square s = A1; s <= H8; ++s) {
             Bitboard moves = EMPTY_BB;
-            for (Direction d : Directions) {
+            for (Direction d: {NORTH, NORTH_EAST, EAST, SOUTH_EAST, SOUTH, SOUTH_WEST, WEST, NORTH_WEST}) {
                 if (s + d <= H8 && s + d >= A1) {
                     moves |= SquareToBB(s + d);
                 }
@@ -207,10 +229,9 @@ namespace Meetra::Bitboards {
     }
 
     void InitKnightMoves() {
-        int possible_moves[] = {6, 10, 15, 17, -6, -10, -15, -17};
         for (Square s = A1; s <= H8; ++s) {
             Bitboard moves = EMPTY_BB;
-            for (int m : possible_moves) {
+            for (auto m: {6, 10, 15, 17, -6, -10, -15, -17}) {
                 if (s + m <= H8 && s + m >= A1) {
                     moves |= SquareToBB(s + m);
                 }
@@ -222,92 +243,6 @@ namespace Meetra::Bitboards {
     }
 #pragma endregion
 
-
-    // Init rays in all direction from every square to the edge of the board
-    void InitRays() {
-        for (Rank r = RANK_1; r < RANK_NR; ++r) {
-            for (File f = FILE_A; f < FILE_NR; ++f) {
-                Square s = SquareFromFiRa(f, r);
-
-                Bitboard ray = ((rank_masks[r] ^ SquareToBB(s)) >> s) << s;
-                rays[s][EAST_IDX] = ray;
-                inner_rays[s][EAST_IDX] = ray & ~file_masks[FILE_H];
-
-                ray = ((rank_masks[r] ^ SquareToBB(s)) << (SQUARE_NR - (s + 1))) >> (SQUARE_NR - (s + 1));
-                rays[s][WEST_IDX] = ray;
-                inner_rays[s][WEST_IDX] = ray & ~file_masks[FILE_A];
-
-                ray = ((file_masks[f] ^ SquareToBB(s)) >> s) << s;
-                rays[s][NORTH_IDX] = ray;
-                inner_rays[s][NORTH_IDX] = ray & ~rank_masks[RANK_8];
-
-                ray = ((file_masks[f] ^ SquareToBB(s)) << (SQUARE_NR - (s + 1))) >> (SQUARE_NR - (s + 1));
-                rays[s][SOUTH_IDX] = ray;
-                inner_rays[s][SOUTH_IDX] = ray & ~rank_masks[RANK_1];
-
-                ray = EMPTY_BB;
-                Bitboard files_to_move = SquareToBB(s);
-                Bitboard attacked_square = files_to_move;
-                do {
-                    attacked_square >>= 9;
-                    files_to_move >>= 1;
-                    if (files_to_move & rank_masks[r]) {
-                        ray |= attacked_square;
-                    } else {
-                        break;
-                    }
-                } while (attacked_square);
-                rays[s][SOUTH_WEST_IDX] = ray;
-                inner_rays[s][SOUTH_WEST_IDX] = ray & ~file_masks[FILE_A] & ~rank_masks[RANK_1];
-
-                ray = EMPTY_BB;
-                files_to_move = SquareToBB(s);
-                attacked_square = files_to_move;
-                do {
-                    attacked_square >>= 7;
-                    files_to_move <<= 1;
-                    if (files_to_move & rank_masks[r]) {
-                        ray |= attacked_square;
-                    } else {
-                        break;
-                    }
-                } while (attacked_square);
-                rays[s][SOUTH_EAST_IDX] = ray;
-                inner_rays[s][SOUTH_EAST_IDX] = ray & ~file_masks[FILE_H] & ~rank_masks[RANK_1];
-
-                ray = EMPTY_BB;
-                files_to_move = SquareToBB(s);
-                attacked_square = files_to_move;
-                do {
-                    attacked_square <<= 9;
-                    files_to_move <<= 1;
-                    if (files_to_move & rank_masks[r]) {
-                        ray |= attacked_square;
-                    } else {
-                        break;
-                    }
-                } while (attacked_square);
-                rays[s][NORTH_EAST_IDX] = ray;
-                inner_rays[s][NORTH_EAST_IDX] = ray & ~file_masks[FILE_H] & ~rank_masks[RANK_8];
-
-                ray = EMPTY_BB;
-                files_to_move = SquareToBB(s);
-                attacked_square = files_to_move;
-                do {
-                    attacked_square <<= 7;
-                    files_to_move >>= 1;
-                    if (files_to_move & rank_masks[r]) {
-                        ray |= attacked_square;
-                    } else {
-                        break;
-                    }
-                } while (attacked_square);
-                rays[s][NORTH_WEST_IDX] = ray;
-                inner_rays[s][NORTH_WEST_IDX] = ray & ~file_masks[FILE_A] & ~rank_masks[RANK_8];
-            }
-        }
-    }
-
     Bitboard MakeRayToEdge(Square s1, Square s2) {
 
         File f1 = FileFromSquare(s1);
@@ -315,35 +250,24 @@ namespace Meetra::Bitboards {
         File f2 = FileFromSquare(s2);
         Rank r2 = RankFromSquare(s2);
 
-        Bitboard ray = EMPTY_BB;
-
         if (r1 == r2) {
-            ray = rank_masks[r1];
+            return rank_masks[r1];
         } else if (f1 == f2) {
-            ray = file_masks[f1];
+            return file_masks[f1];
         } else if ((int) f1 + r1 == f2 + r2) {
-            ray = diag_masks[f1 + r1];
+            return diag_masks[f1 + r1];
         } else if ((int) f1 - r1 == (int) f2 - r2) {
-            ray = anti_diag_masks[r1 + 7 - f1];
+            return anti_diag_masks[r1 + 7 - f1];
         }
 
-        return ray;
+        return EMPTY_BB;
     }
 
 
     Bitboard MakeRay(Square s1, Square s2) {
 
-        Square min, max;
-
-        if (s1 > s2) {
-            max = s1;
-            min = s2;
-        } else {
-            max = s2;
-            min = s1;
-        }
-
-        Bitboard mask = SquareToBB(max) - (SquareToBB(min) << 1);
+        Square max = std::max(s1, s2);
+        Square min = std::min(s1, s2);
 
         Rank r_max = RankFromSquare(max);
         File f_max = FileFromSquare(max);
@@ -351,19 +275,19 @@ namespace Meetra::Bitboards {
         Rank r_min = RankFromSquare(min);
         File f_min = FileFromSquare(min);
 
-        Bitboard ray = EMPTY_BB;
+        Bitboard mask = SquareToBB(max) - (SquareToBB(min) << 1);
 
         if (r_max == r_min) {
-            ray = rank_masks[r_max] & mask;
+            return rank_masks[r_max] & mask;
         } else if (f_max == f_min) {
-            ray = file_masks[f_max] & mask;
+            return file_masks[f_max] & mask;
         } else if ((int) f_min + r_min == f_max + r_max) {
-            ray = diag_masks[f_max + r_max] & mask;
+            return diag_masks[f_max + r_max] & mask;
         } else if ((int) f_min - r_min == (int) f_max - r_max) {
-            ray = anti_diag_masks[r_max + 7 - f_max] & mask;
+            return anti_diag_masks[r_max + 7 - f_max] & mask;
         }
 
-        return ray;
+        return EMPTY_BB;
     }
 
     void InitRaysBetweenSquares() {
@@ -372,31 +296,26 @@ namespace Meetra::Bitboards {
                 rays_between_squares[origin][destination] = MakeRay(origin, destination);
                 rays_between_board_edges[origin][destination] = MakeRayToEdge(origin, destination);
             }
-            rook_unbound_moves[origin] =
-                    rays[origin][NORTH_IDX] | rays[origin][WEST_IDX] | rays[origin][EAST_IDX] | rays[origin][SOUTH_IDX];
-            bishop_unbound_moves[origin] =
-                    rays[origin][NORTH_WEST_IDX] | rays[origin][SOUTH_WEST_IDX] | rays[origin][SOUTH_EAST_IDX] |
-                    rays[origin][NORTH_EAST_IDX];
         }
     }
 
     void Init() {
-        InitRays();
         InitRaysBetweenSquares();
         InitMagic();
+        FillMagics();
         InitKingMoves();
         InitKnightMoves();
         InitPawnAttacks();
     }
 
     Bitboard GetRookAttacks(Square s, Bitboard occ) {
-        Magic m = rook_magics[s];
-        return m.attacks[((occ & m.inner_board_mask) * m.magic_num) >> m.shift];
+        Magic m = r_magics[s];
+        return m.attacks[((occ & m.inner_mask) * m.magic_num) >> m.shift];
     }
 
     Bitboard GetBishopAttacks(Square s, Bitboard occ) {
-        Magic m = bishop_magics[s];
-        return m.attacks[((occ & m.inner_board_mask) * m.magic_num) >> m.shift];
+        Magic m = b_magics[s];
+        return m.attacks[((occ & m.inner_mask) * m.magic_num) >> m.shift];
     }
 
     template<PieceType PT>

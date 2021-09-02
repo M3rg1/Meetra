@@ -37,19 +37,6 @@ namespace Meetra {
         return C == WHITE ? (SIDE == SHORT ? 0x60 : 0xE) : (SIDE == SHORT ? 0x6000000000000000 : 0xE00000000000000);
     }
 
-    template<Direction D>
-    constexpr Bitboard BitShift(Bitboard b) {
-        if constexpr (D == NORTH) return b << 8;
-        else if constexpr (D == SOUTH) return b >> 8;
-        else if constexpr (D == EAST) return (b & ~0x8080808080808080UL) << 1;
-        else if constexpr (D == WEST) return (b & ~0x0101010101010101UL) >> 1;
-        else if constexpr (D == NORTH_EAST) return (b & ~0x8080808080808080UL) << 9;
-        else if constexpr (D == NORTH_WEST) return (b & ~0x0101010101010101UL) << 7;
-        else if constexpr (D == SOUTH_EAST) return (b & ~0x8080808080808080UL) >> 7;
-        else if constexpr (D == SOUTH_WEST) return (b & ~0x0101010101010101UL) >> 9;
-        else return 0;
-    }
-
     MoveGen::MoveGen(const Board &board) : board(board) {
 
         my_color = board.ColorToMove();
@@ -181,8 +168,8 @@ namespace Meetra {
     void MoveGen::GenPawnForwardMoves() {
 
         constexpr Direction push_dir = PawnFwdDir<C>();
-        Bitboard pawns_one_fw = BitShift<push_dir>(board.GetPieces(PAWN, C)) & empty_squares;
-        Bitboard pawns_two_fw = BitShift<push_dir>(pawns_one_fw) & empty_squares & TwoFwdRank<C>() & phase_mask;
+        Bitboard pawns_one_fw = Bitboards::Shift<push_dir>(board.GetPieces(PAWN, C)) & empty_squares;
+        Bitboard pawns_two_fw = Bitboards::Shift<push_dir>(pawns_one_fw) & empty_squares & TwoFwdRank<C>() & phase_mask;
         Bitboard pawn_prom = pawns_one_fw & phase_mask & PromotionRank<C>();
         pawns_one_fw &= phase_mask & ~PromotionRank<C>();
 
@@ -216,8 +203,8 @@ namespace Meetra {
 
         Bitboard pawns = board.GetPieces(PAWN, C);
         constexpr Direction capture_dir = D == LEFT ? PawnCaptureLeftDir<C>() : PawnCaptureRightDir<C>();
-        Bitboard captures = BitShift<capture_dir>(pawns) & phase_mask & ~PromotionRank<C>();
-        Bitboard promotions = BitShift<capture_dir>(pawns) & phase_mask & PromotionRank<C>();
+        Bitboard captures = Bitboards::Shift<capture_dir>(pawns) & phase_mask & ~PromotionRank<C>();
+        Bitboard promotions = Bitboards::Shift<capture_dir>(pawns) & phase_mask & PromotionRank<C>();
 
         while (promotions) {
             Square dest_s = Bitboards::PopLsb(promotions);
@@ -268,14 +255,12 @@ namespace Meetra {
 
     template<Color C>
     bool MoveGen::CanCastleShort() const {
-        return cr & (C == WHITE ? WHITE_SHORT : BLACK_SHORT) &&
-               (all_pieces & CastlingWalkSq<C, SHORT>()) == EMPTY_BB;
+        return cr & (C == WHITE ? WHITE_SHORT : BLACK_SHORT) && (all_pieces & CastlingWalkSq<C, SHORT>()) == EMPTY_BB;
     }
 
     template<Color C>
     bool MoveGen::CanCastleLong() const {
-        return cr & (C == WHITE ? WHITE_LONG : BLACK_LONG) &&
-               (all_pieces & CastlingWalkSq<C, LONG>()) == EMPTY_BB;
+        return cr & (C == WHITE ? WHITE_LONG : BLACK_LONG) && (all_pieces & CastlingWalkSq<C, LONG>()) == EMPTY_BB;
     }
 
     bool MoveGen::IsPseudoLegal(Move m) const {
@@ -388,10 +373,10 @@ namespace Meetra {
         constexpr Direction move_dir = D == LEFT ? PawnCaptureLeftDir<C>() :
                                        D == RIGHT ? PawnCaptureRightDir<C>() :
                                        PawnFwdDir<C>();
-        Bitboard moves = BitShift<move_dir>(SquareToBB(FromSquare(m)));
+        Bitboard moves = Bitboards::Shift<move_dir>(SquareToBB(FromSquare(m)));
         moves &= D == LEFT || D == RIGHT ? enemy_pieces : empty_squares;
         moves &= P ? PromotionRank<C>() : ~PromotionRank<C>();
-        moves = D == TWO_FWD ? BitShift<move_dir>(moves) & empty_squares & TwoFwdRank<C>() & legal_moves :
+        moves = D == TWO_FWD ? Bitboards::Shift<move_dir>(moves) & empty_squares & TwoFwdRank<C>() & legal_moves :
                 moves & legal_moves;
 
         if (moves) {
