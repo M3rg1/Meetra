@@ -28,8 +28,8 @@ namespace Meetra {
         return C == WHITE ? 0x00000000FF000000UL : 0x000000FF00000000UL;
     }
 
-    enum CastlingSide : bool {
-        SHORT = true, LONG = false
+    enum CastlingSide {
+        SHORT, LONG
     };
 
     template<Color C, CastlingSide SIDE>

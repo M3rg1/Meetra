@@ -62,17 +62,16 @@ namespace Meetra {
     inline File FileFromChar(char c) { return static_cast<File>(c - 'a'); }
     inline char CharFromFile(File f) { return static_cast<char>(f + 'a'); }
 
+    constexpr std::string_view pieces = "oPNBRQK  pnbrqk";
+
     inline Piece CharToPiece(char c) {
-        // if not found -> std::string:npos + 1 == 0 == NO_PIECE, else -> index + 1 == desired piece
-        static const std::string pieces = "PNBRQK  pnbrqk";
-        return static_cast<Piece>(pieces.find(c) + 1);
+        // if not found -> std::string:npos + 1 == 0 == NO_PIECE, else -> index == desired piece
+        return static_cast<Piece>(pieces.find(c));
     }
 
     inline char PieceToChar(Piece p) {
-        static constexpr char pieces[] = "oPNBRQK  pnbrqk";
         return pieces[p];
     }
-
 
     enum PawnMoveDir {
         LEFT, RIGHT, ONE_FWD, TWO_FWD
@@ -95,7 +94,6 @@ namespace Meetra {
         SQUARE_ZERO = 0,
     };
 
-
     inline Square SquareFromFiRa(File f, Rank r) { return static_cast<Square>((r << 3) | f); }
     inline File FileFromSquare(Square s) { return static_cast<File>(s & 7); }
     inline Rank RankFromSquare(Square s) { return static_cast<Rank>(s >> 3); }
@@ -108,7 +106,7 @@ namespace Meetra {
     }
 
 #pragma region ===== Castling related stuff =====
-    enum CastlingRights : uint_fast16_t {
+    enum CastlingRights {
         NO_CASTLING = 0, WHITE_SHORT = 1 << 6, WHITE_LONG = 1 << 7, BLACK_SHORT = 1 << 8, BLACK_LONG = 1 << 9,
         WHITE_ALL_CR = WHITE_SHORT | WHITE_LONG,
         BLACK_ALL_CR = BLACK_LONG | BLACK_SHORT,
@@ -147,7 +145,7 @@ namespace Meetra {
      // 00000000 00001111
     typedef uint16_t Move;
 
-    enum MoveType : uint_fast16_t {
+    enum MoveType {
         ZERO_MOVE = 0, NO_FLAG = 0, EN_PASSANT = 1 << 12, CASTLING = 2 << 12, TWO_FORWARD = 3 << 12,
         PROMOTE_KNIGHT = 4 << 12, PROMOTE_BISHOP = 5 << 12, PROMOTE_ROOK = 6 << 12, PROMOTE_QUEEN = 7 << 12
     };

@@ -194,53 +194,22 @@ namespace Meetra::Bitboards {
 #pragma endregion
 
 
-#pragma region ===== Precomputing king, knight moves and pawn attacks =====
+#pragma region ===== Precomputing king, knight moves, pawn attacks =====
 
-    void GenPawnAttacks() {
-        for (Square s = A1; s <= H8; ++s) {
-            Bitboard white_attacks = EMPTY_BB;
-            Bitboard black_attacks = EMPTY_BB;
-            for (auto m: {NORTH_WEST, NORTH_EAST}) {
-                if (s + m < 64) {
-                    white_attacks |= SquareToBB(s + m);
-                }
-                if (s - m >= 0) {
-                    black_attacks |= SquareToBB(s - m);
-                }
-            }
-            white_attacks &= FileFromSquare(s) > FILE_C ? ~file_masks[FILE_A] : ~file_masks[FILE_H];
-            black_attacks &= FileFromSquare(s) > FILE_C ? ~file_masks[FILE_A] : ~file_masks[FILE_H];
-            pawn_attacks[WHITE][s] = white_attacks;
-            pawn_attacks[BLACK][s] = black_attacks;
-        }
-    }
-
-    void GenKingMoves() {
+    void GenPieceMoves(std::initializer_list<int> dirs, Bitboard output[]) {
         for (Square s = A1; s <= H8; ++s) {
             Bitboard moves = EMPTY_BB;
-            for (auto d: {NORTH, NORTH_EAST, EAST, SOUTH_EAST, SOUTH, SOUTH_WEST, WEST, NORTH_WEST}) {
+            for (auto d: dirs) {
                 if (s + d <= H8 && s + d >= A1) {
                     moves |= SquareToBB(s + d);
                 }
             }
-            moves &= FileFromSquare(s) > FILE_D ? ~file_masks[FILE_A] : ~file_masks[FILE_H];
-            king_moves[s] = moves;
+            File f = FileFromSquare(s);
+            moves &= f > FILE_D ? ~file_masks[FILE_A] & ~file_masks[FILE_B] : ~file_masks[FILE_H] & ~file_masks[FILE_G];
+            output[s] = moves;
         }
     }
 
-    void GenKnightMoves() {
-        for (Square s = A1; s <= H8; ++s) {
-            Bitboard moves = EMPTY_BB;
-            for (auto d: {6, 10, 15, 17, -6, -10, -15, -17}) {
-                if (s + d <= H8 && s + d >= A1) {
-                    moves |= SquareToBB(s + d);
-                }
-            }
-            moves &= FileFromSquare(s) > FILE_D ? ~file_masks[FILE_A] & ~file_masks[FILE_B] : ~file_masks[FILE_H] &
-                                                                                              ~file_masks[FILE_G];
-            knight_moves[s] = moves;
-        }
-    }
 #pragma endregion
 
 #pragma region ===== Generate helper rays =====
@@ -256,9 +225,9 @@ namespace Meetra::Bitboards {
             return rank_masks[r1];
         } else if (f1 == f2) {
             return file_masks[f1];
-        } else if ((int) f1 + r1 == f2 + r2) {
+        } else if (f1 + r1 == f2 + r2) {
             return diag_masks[f1 + r1];
-        } else if ((int) f1 - r1 == (int) f2 - r2) {
+        } else if (f1 - r1 == f2 - r2) {
             return anti_diag_masks[r1 + 7 - f1];
         }
 
@@ -283,9 +252,9 @@ namespace Meetra::Bitboards {
             return rank_masks[r_max] & mask;
         } else if (f_max == f_min) {
             return file_masks[f_max] & mask;
-        } else if ((int) f_min + r_min == f_max + r_max) {
+        } else if (f_min + r_min == f_max + r_max) {
             return diag_masks[f_max + r_max] & mask;
-        } else if ((int) f_min - r_min == (int) f_max - r_max) {
+        } else if (f_min - r_min ==  f_max - r_max) {
             return anti_diag_masks[r_max + 7 - f_max] & mask;
         }
 
@@ -333,6 +302,26 @@ namespace Meetra::Bitboards {
     template Bitboard GetAttacksForPiece<QUEEN>(Square, Bitboard, Color);
     template Bitboard GetAttacksForPiece<KING>(Square, Bitboard, Color);
 
+#pragma endregion
+
+#pragma region ===== Misc =====
+
+    void Init() {
+        GenRaysBetweenSquares();
+        InitMagic();
+        // rook + bishop moves
+        GenMagics();
+        // white pawns
+        GenPieceMoves({NORTH_EAST, NORTH_WEST}, pawn_attacks[WHITE]);
+        // black pawns
+        GenPieceMoves({SOUTH_EAST, SOUTH_WEST}, pawn_attacks[BLACK]);
+        // king
+        GenPieceMoves({NORTH, NORTH_EAST, EAST, SOUTH_EAST, SOUTH, SOUTH_WEST, WEST, NORTH_WEST}, king_moves);
+        // knight
+        GenPieceMoves({NORTH + 2 * EAST, 2 * NORTH + EAST, NORTH + 2 * WEST, 2 * NORTH + WEST,
+                       SOUTH + 2 * EAST, 2 * SOUTH + EAST, SOUTH + 2 * WEST, 2 * SOUTH + WEST}, knight_moves);
+    }
+
     std::string PPBitboard(Bitboard b) {
         std::ostringstream oss;
         for (Rank r = RANK_8; r >= RANK_1; --r) {
@@ -351,14 +340,5 @@ namespace Meetra::Bitboards {
     }
 
 #pragma endregion
-
-    void Init() {
-        GenRaysBetweenSquares();
-        InitMagic();
-        GenMagics();
-        GenKingMoves();
-        GenKnightMoves();
-        GenPawnAttacks();
-    }
 }
 

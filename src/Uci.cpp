@@ -86,7 +86,7 @@ namespace Meetra::Uci {
                 else UnknownCommand();
 
             } catch (std::exception &e) {
-                Uci::Send("info string " + std::string(e.what()));
+                Uci::Send("info string ERROR: " + std::string(e.what()));
             }
 
         } while (token != "quit" && !std::cin.eof());
@@ -109,7 +109,7 @@ namespace Meetra::Uci {
         Send("Unknown command, please see the engine documentation for available commands.");
     }
 
-    void Send(const std::string &data) {
+    void Send(const std::string_view &data) {
 
         static std::mutex mtx;
         std::scoped_lock lock(mtx);
@@ -204,8 +204,6 @@ namespace Meetra::Uci {
         std::string value;
         iss >> value;
 
-        try {
-
             if (!value.empty() && value != "true" && value != "false" && !Utils::IsPositiveNumber(value)) {
                 throw std::invalid_argument("Invalid option value!");
             }
@@ -229,14 +227,6 @@ namespace Meetra::Uci {
             } else {
                 throw std::domain_error("Unknown option: " + option);
             }
-
-        } catch (const std::invalid_argument &e) {
-            throw std::invalid_argument("Invalid option value!");
-        } catch (const std::domain_error &e) {
-            throw;
-        } catch (const std::out_of_range &e) {
-            throw;
-        }
     }
 
     Search::SearchSettings ParseSearchOptions(std::istringstream &iss) {

@@ -177,9 +177,9 @@ namespace Meetra::Book {
 
         std::vector<BookEntry_count> positions;
 
-        std::string pieces = "PKQRBN";
-        std::string files = "abcdefgh";
-        std::string ranks = "12345678";
+        std::string_view pieces = "PKQRBN";
+        std::string_view files = "abcdefgh";
+        std::string_view ranks = "12345678";
 
         size_t move_n = 0;
         size_t moves_cnt = 0;
