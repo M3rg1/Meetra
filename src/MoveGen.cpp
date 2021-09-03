@@ -375,9 +375,7 @@ namespace Meetra {
     template<Color C, PawnMoveDir D, bool P>
     bool MoveGen::HelperValidatePawnMove(Move m) const {
 
-        constexpr Direction move_dir = D == LEFT ? PawnCapLeft<C>() :
-                                       D == RIGHT ? PawnCapRight<C>() :
-                                       PawnFwd<C>();
+        constexpr Direction move_dir = PawnMove<C, D>();
         Bitboard moves = Bitboards::Shift<move_dir>(SquareToBB(FromSquare(m)));
         moves &= D == LEFT || D == RIGHT ? enemy_pieces : empty_squares;
         moves &= P ? PromRank<C>() : ~PromRank<C>();

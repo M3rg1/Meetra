@@ -30,7 +30,6 @@ namespace Meetra {
         [[nodiscard]] Move GetAnyMove();
         [[nodiscard]] bool IsPseudoLegal(Move m) const;
         [[nodiscard]] inline bool IsKingInCheck() const { return checkers; }
-        [[nodiscard]] inline GenPhase IsPhase() const { return gen_phase; }
 
     private:
 

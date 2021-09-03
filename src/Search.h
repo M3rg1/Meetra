@@ -56,7 +56,7 @@ namespace Meetra::Search {
         void PutMove(Move m) { moves[len++] = m; }
         void Clear() { len = 0; }
         void PutLine(const PVMoveLine &other) {
-            std::ranges::copy_n(other.moves, other.len, moves + len);
+            std::copy_n(other.moves, other.len, moves + len);
             len += other.len;
         }
     };

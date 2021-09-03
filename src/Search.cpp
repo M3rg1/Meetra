@@ -122,7 +122,7 @@ namespace Meetra::Search {
                         1,
                         std::mt19937{std::random_device{}()}
                 );
-                Uci::Send("bestmove " + GetMoveName(out[0]));
+                Uci::Send("bestmove " + GetMoveName(out.front()));
                 return;
             }
         }
@@ -133,10 +133,10 @@ namespace Meetra::Search {
         // if there's only one root move, and we are not in infinite or fixed depth/time search, return the only
         // possible move immediately
         if (root_moves.empty() ||
-            (root_moves.size() == 1 &&
-             (!Globals::settings.infinite || !Globals::settings.fixed_depth || !Globals::settings.fixed_time))) {
+            (root_moves.size() == 1 && !Globals::settings.infinite && !Globals::settings.fixed_depth &&
+             !Globals::settings.fixed_time)) {
             StopSearch();
-            Uci::Send("bestmove " + GetMoveName(root_moves.empty() ? ZERO_MOVE : root_moves[0].move));
+            Uci::Send("bestmove " + GetMoveName(root_moves.empty() ? ZERO_MOVE : root_moves.front().move));
             return;
         }
 

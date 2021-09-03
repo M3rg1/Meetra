@@ -4,6 +4,7 @@
 #include "MoveGen.h"
 #include "Search.h"
 #include <algorithm>
+#include <random>
 
 namespace Meetra {
 
