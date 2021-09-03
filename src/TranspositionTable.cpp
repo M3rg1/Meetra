@@ -27,8 +27,9 @@ namespace Meetra {
             table = std::make_unique<TTBucket[]>(buckets_count);
         } catch (const std::bad_alloc &e) {
             if (size_mb <= MIN_HASH_SIZE) {
-                Uci::Send("TT memory allocation failure, exiting!");
-                exit(EXIT_FAILURE);
+                Uci::Send("TT memory allocation failure, TT size is 0!");
+                buckets_count = 0;
+                return;
             }
             size_mb = std::max(size_mb / 2, MIN_HASH_SIZE);
             Uci::Send("TT memory alloc failure, attempting to initialize with " + std::to_string(size_mb) + " MB");
@@ -59,6 +60,10 @@ namespace Meetra {
     }
 
     void TranspositionTable::Save(ZobristHash key, Score score, Depth depth, Move move, EntryFlag flag, Depth ply) {
+
+        if(buckets_count == 0) {
+            return;
+        }
 
         TTBucket &bucket = table[key % buckets_count];
         TTEntry *entry_to_write = nullptr;
@@ -98,10 +103,14 @@ namespace Meetra {
     void TranspositionTable::Probe(ZobristHash key, Score alpha, Score beta,
                                    Depth depth, Depth ply, Score &score, EntryFlag &flag, Move &move) const {
 
-        Key32 key_32 = Zobrist::Make32Key(key);
         flag = NOT_FOUND;
         move = ZERO_MOVE;
 
+        if(buckets_count == 0) {
+            return;
+        }
+
+        Key32 key_32 = Zobrist::Make32Key(key);
         TTBucket &bucket = table[key % buckets_count];
 
         for (auto &entry: bucket.bucket_entries) {
@@ -125,21 +134,5 @@ namespace Meetra {
                 return;
             }
         }
-    }
-
-    Move TranspositionTable::GetPVMove(ZobristHash key) const {
-
-        Key32 key_32 = Zobrist::Make32Key(key);
-        TTBucket &bucket = table[key % buckets_count];
-
-        for (auto &entry: bucket.bucket_entries) {
-            if (entry.Get32Key() == key_32) {
-                if (entry.GetFlag() == EXACT_SCORE) {
-                    return entry.GetMove();
-                }
-                return ZERO_MOVE;
-            }
-        }
-        return ZERO_MOVE;
     }
 }

@@ -109,7 +109,7 @@ namespace Meetra::Uci {
         Send("Unknown command, please see the engine documentation for available commands.");
     }
 
-    void Send(const std::string_view &data) {
+    void Send(std::string_view data) {
 
         static std::mutex mtx;
         std::scoped_lock lock(mtx);
@@ -137,10 +137,9 @@ namespace Meetra::Uci {
 
     void PerftCommand(std::istringstream &iss, Board &board) {
         std::string token;
-        if (iss >> token) {
-            Depth depth = std::stoi(token);
-            RunPerft(depth, board);
-        }
+        iss >> token;
+        Depth depth = std::stoi(token);
+        RunPerft(depth, board);
     }
 
     void IsReadyCommand() {
@@ -204,29 +203,29 @@ namespace Meetra::Uci {
         std::string value;
         iss >> value;
 
-            if (!value.empty() && value != "true" && value != "false" && !Utils::IsPositiveNumber(value)) {
-                throw std::invalid_argument("Invalid option value!");
-            }
+        if (!value.empty() && value != "true" && value != "false" && !Utils::IsPositiveNumber(value)) {
+            throw std::invalid_argument("Invalid option value!");
+        }
 
-            if (option == "hash") {
-                Search::SetTTSize(std::stoi(value));
-            } else if (option == "clear hash") {
-                Search::ClearTT();
-            } else if (option == "multipv") {
-                Search::SetMultiPv(std::stoi(value));
-            } else if (option == "uci_showcurrline") {
-                Search::ShowShowCurrLine(value == "true");
-            } else if (option == "mute plies") {
-                Search::SetPliesMuted(std::stoi(value));
-            } else if (option == "cores") {
-                Search::SetNumThreads(std::stoi(value));
-            } else if (option == "show current move") {
-                Search::ShowCurrMoveInfo(value == "true");
-            } else if (option == "ownbook") {
-                Search::SetUseBook(value == "true");
-            } else {
-                throw std::domain_error("Unknown option: " + option);
-            }
+        if (option == "hash") {
+            Search::SetTTSize(std::stoi(value));
+        } else if (option == "clear hash") {
+            Search::ClearTT();
+        } else if (option == "multipv") {
+            Search::SetMultiPv(std::stoi(value));
+        } else if (option == "uci_showcurrline") {
+            Search::ShowShowCurrLine(value == "true");
+        } else if (option == "mute plies") {
+            Search::SetPliesMuted(std::stoi(value));
+        } else if (option == "cores") {
+            Search::SetNumThreads(std::stoi(value));
+        } else if (option == "show current move") {
+            Search::ShowCurrMoveInfo(value == "true");
+        } else if (option == "ownbook") {
+            Search::SetUseBook(value == "true");
+        } else {
+            throw std::domain_error("Unknown option: " + option);
+        }
     }
 
     Search::SearchSettings ParseSearchOptions(std::istringstream &iss) {

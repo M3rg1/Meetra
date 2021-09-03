@@ -2,7 +2,6 @@
 #include "MagicNumbers.h"
 #include <sstream>
 #include <algorithm>
-#include "Uci.h"
 
 namespace Meetra::Bitboards {
 
@@ -196,7 +195,7 @@ namespace Meetra::Bitboards {
 
 #pragma region ===== Precomputing king, knight moves, pawn attacks =====
 
-    void GenPieceMoves(std::initializer_list<int> dirs, Bitboard output[]) {
+    void GenPieceMoves(std::initializer_list<Direction> dirs, Bitboard output[]) {
         for (Square s = A1; s <= H8; ++s) {
             Bitboard moves = EMPTY_BB;
             for (auto d: dirs) {
@@ -285,7 +284,7 @@ namespace Meetra::Bitboards {
     }
 
     template<PieceType PT>
-    Bitboard GetAttacksForPiece(Square s, Bitboard occ, Color c) {
+    Bitboard GetAttacks(Square s, Bitboard occ, Color c)  {
         if constexpr (PT == PAWN) return pawn_attacks[c][s];
         else if constexpr (PT == BISHOP) return GetBishopAttacks(s, occ);
         else if constexpr (PT == ROOK) return GetRookAttacks(s, occ);
@@ -295,12 +294,12 @@ namespace Meetra::Bitboards {
         else return EMPTY_BB;
     }
 
-    template Bitboard GetAttacksForPiece<PAWN>(Square, Bitboard, Color);
-    template Bitboard GetAttacksForPiece<KNIGHT>(Square, Bitboard, Color);
-    template Bitboard GetAttacksForPiece<BISHOP>(Square, Bitboard, Color);
-    template Bitboard GetAttacksForPiece<ROOK>(Square, Bitboard, Color);
-    template Bitboard GetAttacksForPiece<QUEEN>(Square, Bitboard, Color);
-    template Bitboard GetAttacksForPiece<KING>(Square, Bitboard, Color);
+    template Bitboard GetAttacks<PAWN>(Square s, Bitboard occ, Color c);
+    template Bitboard GetAttacks<KNIGHT>(Square s, Bitboard occ, Color c);
+    template Bitboard GetAttacks<BISHOP>(Square s, Bitboard occ, Color c);
+    template Bitboard GetAttacks<ROOK>(Square s, Bitboard occ, Color c);
+    template Bitboard GetAttacks<QUEEN>(Square s, Bitboard occ, Color c);
+    template Bitboard GetAttacks<KING>(Square s, Bitboard occ, Color c);
 
 #pragma endregion
 

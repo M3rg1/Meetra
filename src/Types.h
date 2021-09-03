@@ -62,15 +62,15 @@ namespace Meetra {
     inline File FileFromChar(char c) { return static_cast<File>(c - 'a'); }
     inline char CharFromFile(File f) { return static_cast<char>(f + 'a'); }
 
-    constexpr std::string_view pieces = "oPNBRQK  pnbrqk";
+    constexpr std::string_view piece_char = "oPNBRQK  pnbrqk";
 
     inline Piece CharToPiece(char c) {
         // if not found -> std::string:npos + 1 == 0 == NO_PIECE, else -> index == desired piece
-        return static_cast<Piece>(pieces.find(c));
+        return static_cast<Piece>(piece_char.find(c));
     }
 
     inline char PieceToChar(Piece p) {
-        return pieces[p];
+        return piece_char[p];
     }
 
     enum PawnMoveDir {
@@ -155,7 +155,7 @@ namespace Meetra {
     inline Move NewMove(Square from, Square to, MoveType flag) { return static_cast<Move>(NewMove(from, to) | flag); }
     // Make a move from UCI move string, if the move is a promotion, it will set the appropriate flag,
     // however for non-promotion special moves (castling, two forward ...) it wont.
-    inline Move NewMoveFromName(const std::string &move_name) {
+    inline Move NewMoveFromName(std::string_view move_name) {
 
         Square s_from = NameToSquare(&move_name[0]);
         Square s_to = NameToSquare(&move_name[2]);

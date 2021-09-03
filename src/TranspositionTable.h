@@ -29,7 +29,6 @@ namespace Meetra {
 
         void Probe(ZobristHash key, Score alpha, Score beta, Depth depth, Depth ply, Score &score,
                    EntryFlag &flag, Move &move) const;
-        [[nodiscard]] Move GetPVMove(ZobristHash key) const;
         // 0.01 == 1% usage, 0.1 == 10% usage, 1 == 100% usage
         [[nodiscard]] inline double Usage() const {
             double usage = static_cast<double>(used_entries.load(std::memory_order_relaxed))

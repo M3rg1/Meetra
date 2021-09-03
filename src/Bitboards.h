@@ -14,7 +14,7 @@ namespace Meetra::Bitboards {
     [[nodiscard]] Bitboard GetRayBetweenSquares(Square s1, Square s2);
 
     template<PieceType PT>
-    [[nodiscard]] Bitboard GetAttacksForPiece(Square s, Bitboard occ = EMPTY_BB, Color c = WHITE);
+    [[nodiscard]] Bitboard GetAttacks(Square s, Bitboard occ = EMPTY_BB, Color c = WHITE) ;
     [[nodiscard]] std::string PPBitboard(Bitboard b);
     [[nodiscard]] inline bool MoreThanOne(Bitboard b) { return (b & (b - 1)); }
     [[nodiscard]] inline bool ExactlyOne(Bitboard b) { return b && !MoreThanOne(b); }
@@ -36,7 +36,7 @@ namespace Meetra::Bitboards {
         else if constexpr (D == NORTH_WEST) return (b & ~0x0101010101010101UL) << 7;
         else if constexpr (D == SOUTH_EAST) return (b & ~0x8080808080808080UL) >> 7;
         else if constexpr (D == SOUTH_WEST) return (b & ~0x0101010101010101UL) >> 9;
-        else return 0;
+        else return EMPTY_BB;
     }
 
     inline Bitboard Shift(Direction shift_dir, Bitboard b) {
@@ -48,7 +48,7 @@ namespace Meetra::Bitboards {
         else if (shift_dir == NORTH_WEST) return Shift<NORTH_WEST>(b);
         else if (shift_dir == SOUTH_EAST) return Shift<SOUTH_EAST>(b);
         else if (shift_dir == SOUTH_WEST) return Shift<SOUTH_WEST>(b);
-        else return 0;
+        else return EMPTY_BB;
     }
 
     // win64 https://www.chessprogramming.org/BitScan -> Processor Instructions for Bitscans

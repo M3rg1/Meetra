@@ -68,7 +68,7 @@ namespace Meetra {
         Bitboard all_pieces;
         Bitboard empty_squares;
         Square king_square;
-        Square ep_square;
+        Square ep_s;
 
         Color my_color;
         Color enemy_color;

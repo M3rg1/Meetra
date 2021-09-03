@@ -113,30 +113,30 @@ namespace Meetra {
     }
 
     bool Board::IsAttackedByAny(Square s, Color attacked_by, Bitboard occ) const {
-        return Bitboards::GetAttacksForPiece<ROOK>(s, occ) &
+        return Bitboards::GetAttacks<ROOK>(s, occ) &
                (GetPieces(ROOK, attacked_by) | GetPieces(QUEEN, attacked_by)) ||
-               Bitboards::GetAttacksForPiece<BISHOP>(s, occ) &
-               (GetPieces(BISHOP, attacked_by) | GetPieces(QUEEN, attacked_by)) ||
-               Bitboards::GetAttacksForPiece<KNIGHT>(s) & GetPieces(KNIGHT, attacked_by) ||
-               Bitboards::GetAttacksForPiece<PAWN>(s, occ, OtherColor(attacked_by)) & GetPieces(PAWN, attacked_by) ||
-               Bitboards::GetAttacksForPiece<KING>(s) & GetPieces(KING, attacked_by);
+                Bitboards::GetAttacks<BISHOP>(s, occ) &
+                (GetPieces(BISHOP, attacked_by) | GetPieces(QUEEN, attacked_by)) ||
+                Bitboards::GetAttacks<KNIGHT>(s) & GetPieces(KNIGHT, attacked_by) ||
+                Bitboards::GetAttacks<PAWN>(s, occ, OtherColor(attacked_by)) & GetPieces(PAWN, attacked_by) ||
+                Bitboards::GetAttacks<KING>(s) & GetPieces(KING, attacked_by);
     }
 
     Bitboard Board::AttackedBy(Square s, Color attacked_by, Bitboard occ) const {
-        return (Bitboards::GetAttacksForPiece<PAWN>(s, occ, OtherColor(attacked_by)) & GetPieces(PAWN, attacked_by)) |
-               (Bitboards::GetAttacksForPiece<KNIGHT>(s) & GetPieces(KNIGHT, attacked_by)) |
-               (Bitboards::GetAttacksForPiece<BISHOP>(s, occ) &
+        return (Bitboards::GetAttacks<PAWN>(s, occ, OtherColor(attacked_by)) & GetPieces(PAWN, attacked_by)) |
+               (Bitboards::GetAttacks<KNIGHT>(s) & GetPieces(KNIGHT, attacked_by)) |
+               (Bitboards::GetAttacks<BISHOP>(s, occ) &
                 (GetPieces(BISHOP, attacked_by) | GetPieces(QUEEN, attacked_by))) |
-               (Bitboards::GetAttacksForPiece<ROOK>(s, occ) &
+               (Bitboards::GetAttacks<ROOK>(s, occ) &
                 (GetPieces(ROOK, attacked_by) | GetPieces(QUEEN, attacked_by))) |
-               (Bitboards::GetAttacksForPiece<KING>(s) & GetPieces(KING, attacked_by));
+               (Bitboards::GetAttacks<KING>(s) & GetPieces(KING, attacked_by));
     }
 
     bool Board::IsAttackedBySliders(Square s, Color attacked_by, Bitboard occ) const {
-        return Bitboards::GetAttacksForPiece<ROOK>(s, occ) &
+        return Bitboards::GetAttacks<ROOK>(s, occ) &
                (GetPieces(ROOK, attacked_by) | GetPieces(QUEEN, attacked_by)) ||
-               Bitboards::GetAttacksForPiece<BISHOP>(s, occ) &
-               (GetPieces(BISHOP, attacked_by) | GetPieces(QUEEN, attacked_by));
+                Bitboards::GetAttacks<BISHOP>(s, occ) &
+                (GetPieces(BISHOP, attacked_by) | GetPieces(QUEEN, attacked_by));
     }
 
     void Board::RemovePiece(Square s) {

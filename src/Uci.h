@@ -7,7 +7,7 @@ namespace Meetra::Uci {
 
     void Init();
     void Listen();
-    void Send(const std::string_view &data);
+    void Send(std::string_view data);
 }
 
 #endif //MEETRA_UCI_H
