@@ -68,7 +68,6 @@ namespace Meetra {
         TTBucket &bucket = table[key % buckets_count];
         TTEntry *entry_to_write = nullptr;
         Key32 key_32 = Zobrist::Make32Key(key);
-        score = RemoveMatePly(score, ply);
         int worst_entry_score = INT_MAX;
 
         for (auto &entry: bucket.bucket_entries) {
@@ -96,7 +95,7 @@ namespace Meetra {
             if (entry_to_write->GetEpoch() != current_epoch) {
                 used_entries.fetch_add(1, std::memory_order::relaxed);
             }
-            entry_to_write->SaveEntry(key_32, score, depth, move, flag, current_epoch);
+            entry_to_write->SaveEntry(key_32, RemoveMatePly(score, ply), depth, move, flag, current_epoch);
         }
     }
 
