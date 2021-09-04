@@ -309,19 +309,18 @@ namespace Meetra {
         if (token.find('k') != std::string::npos) SetCastlingRights(BLACK_SHORT);
         if (token.find('q') != std::string::npos) SetCastlingRights(BLACK_LONG);
 
-        if (iss >> token && token != "-") {
+        iss >> token;
+        if (token != "-") {
             File file = FileFromChar(token[0]);
             Rank rank = RankFromChar(token[1]);
             SetEpSquare(SquareFromFiRa(file, rank));
         }
 
-        if (iss >> token) {
-            SetPly(std::stoi(token));
-        }
+        iss >> token;
+        SetPly(std::stoi(token));
 
-        if (iss >> token) {
-            SetMoveNumber(std::stoi(token));
-        }
+        iss >> token;
+        SetMoveNumber(std::stoi(token));
     }
 
     bool Board::ParseFenValidate(const std::string &fen) {
