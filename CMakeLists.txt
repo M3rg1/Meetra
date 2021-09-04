@@ -9,6 +9,7 @@ set(GCC_COVERAGE_COMPILE_FLAGS "-pthread")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
 
 # -fno-inline-small-functions -- no inlining
+# -fno-exceptions -- turn off exceptions (*possibly* very small speedup)
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -funroll-loops")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -pedantic -Wextra -Wno-unknown-pragmas -Wno-class-memaccess -Wno-sign-compare")
 
@@ -23,4 +24,4 @@ add_executable(Meetra src/Main.cpp src/Uci.cpp src/Uci.h src/Bitboards.cpp src/B
         src/Board.cpp src/Board.h src/MoveGen.cpp src/MoveGen.h src/MagicNumbers.h src/Search.cpp src/Search.h
         src/Evaluator.cpp src/Evaluator.h src/EvalValues.h src/TranspositionTable.cpp src/TranspositionTable.h
         src/ZobristHash.cpp src/ZobristHash.h src/SearchThread.cpp src/SearchThread.h src/Utils.h src/TestSuite.h
-        src/Book.cpp src/Book.h src/BookKeys.h)
+        src/Book.cpp src/Book.h)
