@@ -51,7 +51,7 @@ namespace Meetra::Zobrist {
     }
 
     void PutPiece(ZobristHash &h, Piece p, Square s){
-        h ^= piece_keys[s][p];
+        h ^= piece_keys[s][NumFromPiece(p)];
     }
 
     void RemovePiece(ZobristHash &h, Piece p, Square s){

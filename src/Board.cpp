@@ -64,7 +64,7 @@ namespace Meetra {
         Bitboard queens = GetPieces(QUEEN, attackers_color);
 
         Bitboard attackers = ((GetPieces(BISHOP, attackers_color) | queens) & Bitboards::GetUnboundBishopMoves(s)) |
-                             (GetPieces(ROOK, attackers_color) | queens) & Bitboards::GetUnboundRookMoves(s);
+                             ((GetPieces(ROOK, attackers_color) | queens) & Bitboards::GetUnboundRookMoves(s));
         while (attackers) {
             Square attacker_s = Bitboards::PopLsb(attackers);
             Bitboard blocker = Bitboards::GetRayBetweenSquares(attacker_s, s) & all_pieces;

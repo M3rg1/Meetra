@@ -88,7 +88,7 @@ namespace Meetra::Book {
             }
         }
 
-        return std::move(moves);
+        return moves;
     }
 
     std::vector<Move> ProbeBook(const Board &board) {
@@ -355,7 +355,7 @@ namespace Meetra::Book {
 
         Uci::Send("DONE LOADING PGN - Positions found: " + std::to_string(moves_cnt));
 
-        return std::move(positions);
+        return positions;
     }
 
     void CreateBook() {

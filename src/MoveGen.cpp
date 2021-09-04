@@ -3,25 +3,10 @@
 
 namespace Meetra {
 
-    template<Color C>
-    constexpr Direction PawnFwd() {
-        return C == WHITE ? NORTH : SOUTH;
-    }
-
-    template<Color C>
-    constexpr Direction PawnCapLeft() {
-        return C == WHITE ? NORTH_WEST : SOUTH_EAST;
-    }
-
     template<Color C, PawnMoveDir DIR>
     constexpr Direction PawnMove() {
         return C == WHITE ? DIR == LEFT ? NORTH_WEST : DIR == RIGHT ? NORTH_EAST : NORTH :
                DIR == LEFT ? SOUTH_EAST : DIR == RIGHT ? SOUTH_WEST : SOUTH;
-    }
-
-    template<Color C>
-    constexpr Direction PawnCapRight() {
-        return C == WHITE ? NORTH_EAST : SOUTH_WEST;
     }
 
     template<Color C>
@@ -77,7 +62,7 @@ namespace Meetra {
 
     void MoveGen::EvalMoves() {
         for (auto i = 0; i < moves_cnt; i++) {
-            move_eval[i].score = IsValidMove(move_eval[i].move) ? board.GetMoveEval(move_eval[i].move) : NEGATIVE_INF;
+            move_eval[i].score = move_eval[i].move != ZERO_MOVE ? board.GetMoveEval(move_eval[i].move) : NEGATIVE_INF;
         }
     }
 

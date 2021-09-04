@@ -174,14 +174,15 @@ namespace Meetra {
 
 #pragma region ===== Utils =====
 
+
     template<Color C>
-    inline int NumFromPieceType(PieceType pt) { return static_cast<Piece>(C == WHITE ? pt - 1 : pt + 5); }
+    inline int NumFromPieceType(PieceType pt) { return C == WHITE ? pt - 1 : pt + 5; }
+    inline int NumFromPiece(Piece p) { return ColorOfPiece(p) == WHITE ? p - 1 : p - 3; }
     inline PieceType PieceTypeFromFlag(MoveType mt) { return static_cast<PieceType >((mt >> 12) - 2); }
     inline Square FromSquare(Move m) { return static_cast<Square>(m & 0x3F); }
     inline Square ToSquare(Move m) { return static_cast<Square>((m & 0xFC0) >> 6); }
     inline bool IsPromotion(Move m) { return m >> 14; }
     inline MoveType GetMoveType(Move m) { return static_cast<MoveType>(m & 0xF000); }
-    inline bool IsValidMove(Move m) { return m != ZERO_MOVE; }
     inline std::string GetMoveName(Move m) {
 
         if (m == ZERO_MOVE) {

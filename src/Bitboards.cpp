@@ -58,18 +58,6 @@ namespace Meetra::Bitboards {
     Bitboard r_table[88064];
     Bitboard b_table[4800];
 
-    Bitboard GetUnboundRookMoves(Square s) { return file_masks[FileFromSquare(s)] | rank_masks[RankFromSquare(s)]; }
-    Bitboard GetUnboundBishopMoves(Square s) {
-        File f = FileFromSquare(s);
-        Rank r = RankFromSquare(s);
-        return diag_masks[f + r] | anti_diag_masks[r + 7 - f];
-    }
-    Bitboard GenRayToEdge(Square s1, Square s2);
-    Bitboard GenRay(Square s1, Square s2);
-    Bitboard GetRayBetweenEdges(Square s1, Square s2) { return rays_between_board_edges[s1][s2]; }
-    Bitboard GetRayBetweenSquares(Square s1, Square s2) { return rays_between_squares[s1][s2]; }
-
-
 #pragma region ===== Hyperbola Quintessence, Reverse Bitboards (for magics initialization) =====
 
     Bitboard ReverseBits(Bitboard b) {
@@ -172,7 +160,6 @@ namespace Meetra::Bitboards {
             r_magics[s].magic_num = rook_magic_num[s];
             r_magics[s].attacks = s == A1 ? r_table : r_magics[s - 1].attacks + (1 << r_magic_shift[s - 1]);
 
-
             Bitboard b_inner = EMPTY_BB;
             for (Direction d: {SOUTH_WEST, SOUTH_EAST, NORTH_EAST, NORTH_WEST}) {
                 ray = EMPTY_BB;
@@ -193,7 +180,7 @@ namespace Meetra::Bitboards {
 #pragma endregion
 
 
-#pragma region ===== Precomputing king, knight moves, pawn attacks =====
+#pragma region ===== Precomputing king moves, knight moves, pawn attacks =====
 
     void GenPieceMoves(std::initializer_list<Direction> dirs, Bitboard output[]) {
         for (Square s = A1; s <= H8; ++s) {
@@ -272,6 +259,15 @@ namespace Meetra::Bitboards {
 #pragma enregion
 
 #pragma region ===== Public getter functions =====
+
+    Bitboard GetUnboundRookMoves(Square s) { return file_masks[FileFromSquare(s)] | rank_masks[RankFromSquare(s)]; }
+    Bitboard GetUnboundBishopMoves(Square s) {
+        File f = FileFromSquare(s);
+        Rank r = RankFromSquare(s);
+        return diag_masks[f + r] | anti_diag_masks[r + 7 - f];
+    }
+    Bitboard GetRayBetweenEdges(Square s1, Square s2) { return rays_between_board_edges[s1][s2]; }
+    Bitboard GetRayBetweenSquares(Square s1, Square s2) { return rays_between_squares[s1][s2]; }
 
     Bitboard GetRookAttacks(Square s, Bitboard occ) {
         Magic m = r_magics[s];

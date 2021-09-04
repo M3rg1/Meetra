@@ -61,7 +61,7 @@ namespace Meetra {
 
     void TranspositionTable::Save(ZobristHash key, Score score, Depth depth, Move move, EntryFlag flag, Depth ply) {
 
-        if(buckets_count == 0) {
+        if (buckets_count == 0) {
             return;
         }
 
@@ -106,7 +106,7 @@ namespace Meetra {
         flag = NOT_FOUND;
         move = ZERO_MOVE;
 
-        if(buckets_count == 0) {
+        if (buckets_count == 0) {
             return;
         }
 
