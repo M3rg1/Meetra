@@ -109,24 +109,21 @@ namespace Meetra::Search {
         Globals::run = true;
         InitSearch(s, board);
 
-
         if (Globals::use_book && !Globals::settings.fixed_depth && !Globals::settings.infinite &&
             !Globals::settings.fixed_time && board.HistorySize() <= 30) {
             auto moves = Book::ProbeBook(board);
             if (!moves.empty()) {
                 StopSearch();
-                std::vector<Move> out;
                 std::ranges::sample(
                         moves,
-                        std::back_inserter(out),
+                        std::back_inserter(moves),
                         1,
                         std::mt19937{std::random_device{}()}
                 );
-                Uci::Send("bestmove " + GetMoveName(out.front()));
+                Uci::Send("bestmove " + GetMoveName(moves.back()));
                 return;
             }
         }
-
 
         auto root_moves = GenRootMoves(board);
 
