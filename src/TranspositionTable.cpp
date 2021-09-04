@@ -115,8 +115,8 @@ namespace Meetra {
         for (auto &entry: bucket.bucket_entries) {
             if (entry.Get32Key() == key_32) {
                 move = entry.GetMove();
-                score = AddMatePly(entry.GetScore(), ply);
                 if (entry.GetDepth() >= depth) {
+                    score = AddMatePly(entry.GetScore(), ply);
                     if (entry.GetFlag() == ALPHA && score <= alpha) {
                         entry.SetEpoch(current_epoch);
                         score = alpha;
