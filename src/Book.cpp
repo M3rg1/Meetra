@@ -11,7 +11,7 @@
 namespace Meetra::Book {
 
 #define POS_REPEATED 5
-#define FILE_NAME "tools/bestmove_rep5.mtr.bin"
+#define FILE_NAME "tools/bestmove_r5d30.mtr.bin"
 #define MAX_DEPTH 30
 #define INPUT_FILE "all.pgn"
 

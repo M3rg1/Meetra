@@ -14,21 +14,20 @@ namespace Meetra::Zobrist {
 
         auto seed = 7299078832781365792;
         std::mt19937_64 mt(seed);
-        std::uniform_int_distribution<uint64_t> distribution;
 
         for (auto &piece_types : piece_keys) {
             for (auto &key : piece_types) {
-                key = distribution(mt);
+                key = mt();
             }
         }
         for (auto &key : castling_keys) {
-            key = distribution(mt);
+            key = mt();
         }
         for (auto &key : ep_keys) {
-            key = distribution(mt);
+            key = mt();
         }
         for (auto &key : to_move_keys) {
-            key = distribution(mt);
+            key = mt();
         }
     }
 
