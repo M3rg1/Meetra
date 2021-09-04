@@ -103,9 +103,15 @@ namespace Meetra {
             CheckTimers();
         }
 
-        // terminating conditions, either we reached a draw, or max depth - in that case switch to qsearch
-        if (board.IsRepetition() || board.Move50Rule()) {
-            // FIXME for the 50 move rule, on the 50th move it could be a mate move = win
+
+        if (board.Move50Rule()) {
+            // it could be a checkmate on the 50th move
+            MoveGen mg(board);
+            if (mg.GetAnyMove() == ZERO_MOVE) {
+                return -MATE_SCORE + ply;
+            }
+            return -DRAW_SCORE;
+        } else if (board.IsRepetition()) {
             return -DRAW_SCORE;
         } else if (depth == 0) {
             return QSearch(alpha, beta, ply);
