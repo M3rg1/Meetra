@@ -6,7 +6,6 @@
 #include "Board.h"
 #include "MoveGen.h"
 #include "Bitboards.h"
-#include "BookKeys.h"
 #include <algorithm>
 
 namespace Meetra::Book {
@@ -17,37 +16,10 @@ namespace Meetra::Book {
 #define INPUT_FILE "all.pgn"
 
     struct BookEntry_count {
-
         ZobristHash hash;
         Move move;
         int count = 0;
-
     };
-
-    ZobristHash GenBookHash(const Board &board) {
-        ZobristHash hash = NEW_HASH;
-
-        for (PieceType pt = PAWN; pt <= KING; ++pt) {
-            Bitboard pieces = board.GetPieces(pt, WHITE);
-            while (pieces) {
-                Square s = Bitboards::PopLsb(pieces);
-                hash ^= Pieces_keys[s * 12 + NumFromPieceType<WHITE>(pt)];
-            }
-            pieces = board.GetPieces(pt, BLACK);
-            while (pieces) {
-                Square s = Bitboards::PopLsb(pieces);
-                hash ^= Pieces_keys[s * 12 + NumFromPieceType<BLACK>(pt)];
-            }
-        }
-
-        if (board.EpSquare()) {
-            hash ^= Ep_keys[FileFromSquare(board.EpSquare())];
-        }
-        hash ^= Castling_keys[board.GetCR() >> 6];
-        hash ^= Color_keys[board.ColorToMove()];
-
-        return hash;
-    }
 
     std::vector<Move> BinarySearch(std::ifstream &stream, size_t left, size_t right, ZobristHash hash) {
 
@@ -98,9 +70,9 @@ namespace Meetra::Book {
             Uci::Send("Could not open book.");
             return {};
         }
-        ZobristHash my_hash = GenBookHash(board);
+
         size_t end = std::filesystem::file_size(FILE_NAME);
-        return BinarySearch(read_book, 0, end, my_hash);
+        return BinarySearch(read_book, 0, end, board.GetZobristHash());
     }
 
 
@@ -330,9 +302,7 @@ namespace Meetra::Book {
                         continue;
                     }
 
-                    ZobristHash hash = GenBookHash(board);
-
-                    positions.emplace_back(BookEntry_count{hash, move});
+                    positions.emplace_back(BookEntry_count{board.GetZobristHash(), move});
                     move_ok = true;
                     if (!board.MakeMove(move)) {
                         Uci::Send("This should not happen! Line: " + line);

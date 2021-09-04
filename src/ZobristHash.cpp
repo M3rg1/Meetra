@@ -12,42 +12,24 @@ namespace Meetra::Zobrist {
 
     void Init() {
 
-        std::random_device rd;
-        std::mt19937_64 mt(rd());
+        auto seed = 7299078832781365792;
+        std::mt19937_64 mt(seed);
         std::uniform_int_distribution<uint64_t> distribution;
 
-        //std::ofstream keys_file;
-        //keys_file.open("zobrist_keys.txt", std::ios::out | std::ios::app);
-
-        //if(!keys_file.is_open()) {
-        //    Uci::Send("??????");
-        //}
-
-        //keys_file << "White pieces:\n";
         for (auto &piece_types : piece_keys) {
             for (auto &key : piece_types) {
                 key = distribution(mt);
-                //keys_file << "0x" << std::setfill('0') << std::setw(16)  << std::hex << key << ", ";
             }
-            //keys_file << "\n";
         }
-        //keys_file << "Castling:\n";
         for (auto &key : castling_keys) {
             key = distribution(mt);
-            //keys_file << "0x" << std::setfill('0') << std::setw(16)  << std::hex << key << ", ";
         }
-        //keys_file << "\nEP square:\n";
         for (auto &key : ep_keys) {
             key = distribution(mt);
-            //keys_file << "0x" << std::setfill('0') << std::setw(16) <<  std::hex << key << ", ";
         }
-        //keys_file << "\nColor:\n";
         for (auto &key : to_move_keys) {
             key = distribution(mt);
-            //keys_file << "0x" << std::setfill('0') << std::setw(16)  << std::hex << key << ", ";
         }
-
-        //keys_file.close();
     }
 
     void PutPiece(ZobristHash &h, Piece p, Square s){
