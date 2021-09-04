@@ -129,7 +129,10 @@ namespace Meetra {
     template<GenPhase phase, Color C>
     void MoveGen::GenMovesForPhase() {
 
-        if constexpr (phase == QUIET) {
+        if constexpr (phase == DOUBLE_CHECK) {
+            GenMovesForPieceType<KING, C>(enemy_pieces | empty_squares);
+            return;
+        } else if constexpr (phase == QUIET) {
             phase_mask = legal_moves & empty_squares;
             GenCastlingMoves<C>();
             GenPawnForwardMoves<C>();
@@ -140,9 +143,6 @@ namespace Meetra {
             GenPawnCaptures<C, RIGHT>();
             GenEnPassantMoves<C>();
             GenMovesForPieceType<KING, C>(enemy_pieces);
-        } else if constexpr (phase == DOUBLE_CHECK) {
-            GenMovesForPieceType<KING, C>(enemy_pieces | empty_squares);
-            return;
         }
 
         GenMovesForPieceType<KNIGHT, C>(phase_mask);
@@ -157,11 +157,8 @@ namespace Meetra {
         while (pieces) {
             Square origin_s = Bitboards::PopLsb(pieces);
             Bitboard possible_moves = Bitboards::GetAttacks<PT>(origin_s, all_pieces) & legality_mask;
-            if (PT != KING && blockers & SquareToBB(origin_s)) {
+            if (blockers & SquareToBB(origin_s)) {
                 possible_moves &= Bitboards::GetRayBetweenEdges(king_square, origin_s);
-            }
-            if constexpr (PT == KING) {
-                possible_moves &= ~blockers;
             }
             while (possible_moves) {
                 Square destination_s = Bitboards::PopLsb(possible_moves);
@@ -175,29 +172,29 @@ namespace Meetra {
 
         constexpr Direction push_dir = PawnMove<C, ONE_FWD>();
         Bitboard pawns = board.GetPieces(PAWN, C);
-        Bitboard pawns_one_fw = Bitboards::Shift<push_dir>(pawns) & empty_squares;
-        Bitboard pawns_two_fw = Bitboards::Shift<push_dir>(pawns_one_fw) & empty_squares & TwoFwdRank<C>() & phase_mask;
-        Bitboard pawn_prom = pawns_one_fw & phase_mask & PromRank<C>();
-        pawns_one_fw &= phase_mask & ~PromRank<C>();
+        Bitboard one_fwd = Bitboards::Shift<push_dir>(pawns) & empty_squares;
+        Bitboard two_fwd = Bitboards::Shift<push_dir>(one_fwd) & empty_squares & TwoFwdRank<C>() & phase_mask;
+        Bitboard promotions = one_fwd & phase_mask & PromRank<C>();
+        one_fwd &= phase_mask & ~PromRank<C>();
 
-        while (pawn_prom) {
-            Square dest_s = Bitboards::PopLsb(pawn_prom);
+        while (promotions) {
+            Square dest_s = Bitboards::PopLsb(promotions);
             Square origin_s = dest_s - push_dir;
             if (!DiscoveryCheck(origin_s, dest_s)) {
                 PutPromMoves(origin_s, dest_s);
             }
         }
 
-        while (pawns_two_fw) {
-            Square dest_s = Bitboards::PopLsb(pawns_two_fw);
+        while (two_fwd) {
+            Square dest_s = Bitboards::PopLsb(two_fwd);
             Square origin_s = dest_s - push_dir - push_dir;
             if (!DiscoveryCheck(origin_s, dest_s)) {
                 PutMove(NewMove(origin_s, dest_s, TWO_FORWARD));
             }
         }
 
-        while (pawns_one_fw) {
-            Square dest_s = Bitboards::PopLsb(pawns_one_fw);
+        while (one_fwd) {
+            Square dest_s = Bitboards::PopLsb(one_fwd);
             Square origin_s = dest_s - push_dir;
             if (!DiscoveryCheck(origin_s, dest_s)) {
                 PutMove(NewMove(origin_s, dest_s));
@@ -208,10 +205,10 @@ namespace Meetra {
     template<Color C, PawnMoveDir D>
     void MoveGen::GenPawnCaptures() {
 
-        Bitboard pawns = board.GetPieces(PAWN, C);
         constexpr Direction capture_dir = PawnMove<C, D>();
-        Bitboard captures = Bitboards::Shift<capture_dir>(pawns) & phase_mask & ~PromRank<C>();
-        Bitboard promotions = Bitboards::Shift<capture_dir>(pawns) & phase_mask & PromRank<C>();
+        Bitboard captures = Bitboards::Shift<capture_dir>(board.GetPieces(PAWN, C)) & phase_mask;
+        Bitboard promotions = captures & PromRank<C>();
+        captures &= ~PromRank<C>();
 
         while (promotions) {
             Square dest_s = Bitboards::PopLsb(promotions);

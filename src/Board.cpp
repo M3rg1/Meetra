@@ -63,18 +63,10 @@ namespace Meetra {
         Bitboard all_pieces = GetPieces(ALL_TYPES);
         Bitboard queens = GetPieces(QUEEN, attackers_color);
 
-        Bitboard bishop_queen = (GetPieces(BISHOP, attackers_color) | queens) & Bitboards::GetUnboundBishopMoves(s);
-        while (bishop_queen) {
-            Square attacker_s = Bitboards::PopLsb(bishop_queen);
-            Bitboard blocker = Bitboards::GetRayBetweenSquares(attacker_s, s) & all_pieces;
-            if (Bitboards::ExactlyOne(blocker)) {
-                pinned_pieces |= blocker;
-            }
-        }
-
-        Bitboard rook_queen = (GetPieces(ROOK, attackers_color) | queens) & Bitboards::GetUnboundRookMoves(s);
-        while (rook_queen) {
-            Square attacker_s = Bitboards::PopLsb(rook_queen);
+        Bitboard attackers = ((GetPieces(BISHOP, attackers_color) | queens) & Bitboards::GetUnboundBishopMoves(s)) |
+                             (GetPieces(ROOK, attackers_color) | queens) & Bitboards::GetUnboundRookMoves(s);
+        while (attackers) {
+            Square attacker_s = Bitboards::PopLsb(attackers);
             Bitboard blocker = Bitboards::GetRayBetweenSquares(attacker_s, s) & all_pieces;
             if (Bitboards::ExactlyOne(blocker)) {
                 pinned_pieces |= blocker;

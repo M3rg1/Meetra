@@ -126,7 +126,6 @@ namespace Meetra {
         // do a check of the retrieved move, if it's legal to play in the current position and not corrupted,
         // chances are, the score is correct as well
         if (move_gen.IsPseudoLegal(tt_move)) {
-            // we have a good match and will be making a cutoff
             if (tt_flag == ALPHA || tt_flag == BETA) {
                 return score;
             }
@@ -198,7 +197,6 @@ namespace Meetra {
             return move_gen.IsKingInCheck() ? -MATE_SCORE + ply : -DRAW_SCORE;
         }
 
-        // whatever we learnt about this position, store it in TT for later use
         Search::Globals::tt.Save(board.GetZobristHash(), alpha, depth, best_move, tt_flag, ply);
 
         return alpha;
@@ -206,7 +204,6 @@ namespace Meetra {
 
     Score SearchThread::QSearch(Score alpha, Score beta, Depth ply) {
 
-        // update seldepth_reached for this root move and max seldepth_reached for this thread
         curr_rm->seldepth = std::max(ply, curr_rm->seldepth);
         seldepth_reached = std::max(ply, seldepth_reached);
 
@@ -226,7 +223,6 @@ namespace Meetra {
         }*/
 
         Move move;
-        // iterate over all available captures
         while ((move = move_gen.GetBestMove<MoveGen::QSEARCH>())) {
             if (!board.MakeMove(move)) {
                 board.UnmakeMove(move);
@@ -269,10 +265,10 @@ namespace Meetra {
 
     std::string SearchThread::GetUpdateSearchInfo() const {
 
-        uint64_t total_nodes = 0;
-        for (const auto &t: Search::Globals::search_threads) {
-            total_nodes += t->NodesExplored();
-        }
+        uint64_t total_nodes = std::accumulate(Search::Globals::search_threads.begin(),
+                                               Search::Globals::search_threads.end(),
+                                               0,
+                                               [&](auto sum, auto const &t) { return sum + t->NodesExplored(); });
 
         auto elapsed_ms = Search::ElapsedTimeMs();
         auto nps = static_cast<uint64_t>(
@@ -292,10 +288,10 @@ namespace Meetra {
 
     std::string SearchThread::GetSearchInfo() const {
 
-        uint64_t total_nodes = 0;
-        for (const auto &t: Search::Globals::search_threads) {
-            total_nodes += t->NodesExplored();
-        }
+        uint64_t total_nodes = std::accumulate(Search::Globals::search_threads.begin(),
+                                               Search::Globals::search_threads.end(),
+                                               0,
+                                               [&](auto sum, auto const &t) { return sum + t->NodesExplored(); });
 
         auto elapsed_ms = Search::ElapsedTimeMs();
         auto nps = static_cast<uint64_t>(
