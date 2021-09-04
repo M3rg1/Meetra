@@ -29,8 +29,6 @@ namespace Meetra {
         }
 
         curr_data.hash = Zobrist::GenHash(*this);
-
-        curr_data.evaluator = Evaluation::Evaluator();
         curr_data.evaluator.SetBoard(*this);
 
         return true;
