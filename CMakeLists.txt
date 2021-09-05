@@ -2,12 +2,10 @@ cmake_minimum_required(VERSION 3.20.2)
 project(Meetra)
 
 set(CMAKE_CXX_STANDARD 23)
-SET(CMAKE_EXE_LINKER_FLAGS "-static")
+SET(CMAKE_EXE_LINKER_FLAGS "-static -lrt -pthread -Wl,--whole-archive -lpthread -Wl,--no-whole-archive")
 # https://stackoverflow.com/questions/35116327/when-g-static-link-pthread-cause-segmentation-fault-why/45271521
-set(GCC_COVERAGE_COMPILE_FLAGS "-lrt -pthread -Wl,--whole-archive -lpthread -Wl,--no-whole-archive")
 #set(GCC_COVERAGE_COMPILE_FLAGS "-DDEBUG_BUILD")
 #set(GCC_COVERAGE_COMPILE_FLAGS "-Wall -Wextra -pedantic -Wconversion -Wno-unknown-pragmas -DDEBUG_BUILD -pthread")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
 
 # -fno-inline-small-functions -- no inlining
 # -fno-exceptions -- turn off exceptions (*possibly* very small speedup)
