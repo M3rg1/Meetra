@@ -108,6 +108,7 @@ namespace Meetra::Bitboards {
     Bitboard GenRookMoves(Square s, Bitboard occ) {
         return GenVerticalMoves(s, occ) | GenHorizontalMoves(s, occ);
     }
+
 #pragma endregion
 
 
@@ -142,41 +143,27 @@ namespace Meetra::Bitboards {
     void InitMagic() {
         for (Square s = A1; s <= H8; ++s) {
 
-            File f = FileFromSquare(s);
-            Rank r = RankFromSquare(s);
+            Bitboard inner;
 
-            Bitboard r_inner = EMPTY_BB;
-            Bitboard ray = ((rank_masks[r] ^ SquareToBB(s)) >> s) << s;
-            r_inner |= ray & ~file_masks[FILE_H];
-            ray = ((rank_masks[r] ^ SquareToBB(s)) << (SQUARE_NR - (s + 1))) >> (SQUARE_NR - (s + 1));
-            r_inner |= ray & ~file_masks[FILE_A];
-            ray = ((file_masks[f] ^ SquareToBB(s)) >> s) << s;
-            r_inner |= ray & ~rank_masks[RANK_8];
-            ray = ((file_masks[f] ^ SquareToBB(s)) << (SQUARE_NR - (s + 1))) >> (SQUARE_NR - (s + 1));
-            r_inner |= ray & ~rank_masks[RANK_1];
+            inner = (GenHorizontalMoves(s, EMPTY_BB) & ~file_masks[FILE_A] & ~file_masks[FILE_H]) |
+                    (GenVerticalMoves(s, EMPTY_BB) & ~rank_masks[RANK_1] & ~rank_masks[RANK_8]);
 
             r_magics[s].shift = static_cast<uint8_t>(64 - r_magic_shift[s]);
-            r_magics[s].inner_mask = r_inner;
+            r_magics[s].inner_mask = inner;
             r_magics[s].magic_num = rook_magic_num[s];
             r_magics[s].attacks = s == A1 ? r_table : r_magics[s - 1].attacks + (1 << r_magic_shift[s - 1]);
 
-            Bitboard b_inner = EMPTY_BB;
-            for (Direction d: {SOUTH_WEST, SOUTH_EAST, NORTH_EAST, NORTH_WEST}) {
-                ray = EMPTY_BB;
-                Bitboard attacked_square = SquareToBB(s);
-                while (attacked_square) {
-                    attacked_square = Shift(d, attacked_square);
-                    ray |= attacked_square;
-                }
-                b_inner |= ray & ~file_masks[FILE_A] & ~rank_masks[RANK_1] & ~file_masks[FILE_H] & ~rank_masks[RANK_8];
-            }
+
+            inner = GenBishopMoves(s, EMPTY_BB) & ~file_masks[FILE_A] & ~rank_masks[RANK_1] & ~file_masks[FILE_H] &
+                    ~rank_masks[RANK_8];
 
             b_magics[s].shift = static_cast<uint8_t>(64 - b_magic_shift[s]);
-            b_magics[s].inner_mask = b_inner;
+            b_magics[s].inner_mask = inner;
             b_magics[s].magic_num = bishop_magic_num[s];
             b_magics[s].attacks = s == A1 ? b_table : b_magics[s - 1].attacks + (1 << b_magic_shift[s - 1]);
         }
     }
+
 #pragma endregion
 
 
@@ -240,7 +227,7 @@ namespace Meetra::Bitboards {
             return file_masks[f_max] & mask;
         } else if (f_min + r_min == f_max + r_max) {
             return diag_masks[f_max + r_max] & mask;
-        } else if (f_min - r_min ==  f_max - r_max) {
+        } else if (f_min - r_min == f_max - r_max) {
             return anti_diag_masks[r_max + 7 - f_max] & mask;
         }
 
@@ -261,12 +248,15 @@ namespace Meetra::Bitboards {
 #pragma region ===== Public getter functions =====
 
     Bitboard GetUnboundRookMoves(Square s) { return file_masks[FileFromSquare(s)] | rank_masks[RankFromSquare(s)]; }
+
     Bitboard GetUnboundBishopMoves(Square s) {
         File f = FileFromSquare(s);
         Rank r = RankFromSquare(s);
         return diag_masks[f + r] | anti_diag_masks[r + 7 - f];
     }
+
     Bitboard GetRayBetweenEdges(Square s1, Square s2) { return rays_between_board_edges[s1][s2]; }
+
     Bitboard GetRayBetweenSquares(Square s1, Square s2) { return rays_between_squares[s1][s2]; }
 
     Bitboard GetRookAttacks(Square s, Bitboard occ) {
@@ -280,7 +270,7 @@ namespace Meetra::Bitboards {
     }
 
     template<PieceType PT>
-    Bitboard GetAttacks(Square s, Bitboard occ, Color c)  {
+    Bitboard GetAttacks(Square s, Bitboard occ, Color c) {
         if constexpr (PT == PAWN) return pawn_attacks[c][s];
         else if constexpr (PT == BISHOP) return GetBishopAttacks(s, occ);
         else if constexpr (PT == ROOK) return GetRookAttacks(s, occ);
@@ -291,10 +281,15 @@ namespace Meetra::Bitboards {
     }
 
     template Bitboard GetAttacks<PAWN>(Square s, Bitboard occ, Color c);
+
     template Bitboard GetAttacks<KNIGHT>(Square s, Bitboard occ, Color c);
+
     template Bitboard GetAttacks<BISHOP>(Square s, Bitboard occ, Color c);
+
     template Bitboard GetAttacks<ROOK>(Square s, Bitboard occ, Color c);
+
     template Bitboard GetAttacks<QUEEN>(Square s, Bitboard occ, Color c);
+
     template Bitboard GetAttacks<KING>(Square s, Bitboard occ, Color c);
 
 #pragma endregion
