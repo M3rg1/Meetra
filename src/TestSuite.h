@@ -119,7 +119,7 @@ namespace Meetra::TestSuite {
             }
             test_file.close();
         } else {
-            throw std::ios_base::failure("Error! Could not locate the 'PerftTests.txt' file!");
+            Uci::SendInfo("Could not open the 'PerftTests.txt' file!");
         }
         return tests;
     }
@@ -127,6 +127,9 @@ namespace Meetra::TestSuite {
     inline void RunPerftTests() {
 
         auto tests = LoadTests();
+        if(tests.empty()) {
+            return;
+        }
 
         auto start = std::chrono::steady_clock::now();
 

@@ -15,9 +15,13 @@ namespace Meetra::Uci {
                "| |\\/| / -_) -_)  _| '_/ _` |\n"  \
                "|_|  |_\\___\\___|\\__|_| \\__,_|";
     }
+
     std::string GetName() { return "Meetra"; }
+
     std::string GetVersion() { return "0.0.1"; }
+
     std::string GetAuthor() { return "M3rg1"; }
+
     std::string GetOptions() {
         std::ostringstream oss;
         oss << "option name Clear Hash type button\n"
@@ -33,17 +37,29 @@ namespace Meetra::Uci {
     }
 
     void UciCommand();
+
     void IsReadyCommand();
+
     void GoCommand(std::istringstream &iss, const Board &board);
+
     void UciNewGameCommand();
+
     void PositionCommand(std::istringstream &iss, Board &board);
+
     void PerftCommand(std::istringstream &iss, Board &board);
+
     void SetOptionCommand(std::istringstream &iss);
+
     void StopCommand();
+
     void BoardCommand(const Board &board);
+
     void TestCommand();
+
     void QuitCommand();
+
     void UnknownCommand();
+
     Search::SearchSettings ParseSearchOptions(std::istringstream &iss);
 
     void Init() {
@@ -71,24 +87,19 @@ namespace Meetra::Uci {
             std::istringstream iss(input);
             iss >> token;
 
-            try {
-
-                if (token == "uci") UciCommand();
-                else if (token == "isready") IsReadyCommand();
-                else if (token == "go") GoCommand(iss, board);
-                else if (token == "position") PositionCommand(iss, board);
-                else if (token == "setoption") SetOptionCommand(iss);
-                else if (token == "stop") StopCommand();
-                else if (token == "ucinewgame") UciNewGameCommand();
-                else if (token == "perft") PerftCommand(iss, board);
-                else if (token == "board") BoardCommand(board);
-                else if (token == "test") TestCommand();
-                else if (token == "quit") QuitCommand();
-                else UnknownCommand();
-
-            } catch (std::exception &e) {
-                Uci::Send("info string ERROR: " + std::string(e.what()));
-            }
+            if (token == "uci") UciCommand();
+            else if (token == "isready") IsReadyCommand();
+            else if (token == "go") GoCommand(iss, board);
+            else if (token == "position") PositionCommand(iss, board);
+            else if (token == "setoption") SetOptionCommand(iss);
+            else if (token == "stop") StopCommand();
+            else if (token == "ucinewgame") UciNewGameCommand();
+            else if (token == "perft") PerftCommand(iss, board);
+            else if (token == "board") BoardCommand(board);
+            else if (token == "test") TestCommand();
+            else if (token == "quit") QuitCommand();
+            else if (token.empty()) continue;
+            else UnknownCommand();
 
         } while (token != "quit" && !std::cin.eof());
 
@@ -116,6 +127,10 @@ namespace Meetra::Uci {
         std::scoped_lock lock(mtx);
 
         std::cout << data << std::endl;
+    }
+
+    void SendInfo(const std::string &data) {
+        Send("info string " + data);
     }
 
     void UciCommand() {
@@ -163,13 +178,14 @@ namespace Meetra::Uci {
         }
 
         if (!board.NewPosition(fen)) {
-            throw std::invalid_argument("Invalid fen string!");
+            SendInfo("Invalid fen string!");
         }
 
         if (token == "moves") {
             while (iss >> token) {
                 if (!board.MakeUciMove(token)) {
-                    throw std::invalid_argument("Invalid move: " + token);
+                    SendInfo("Invalid move: " + token);
+                    return;
                 }
             }
         }
@@ -187,7 +203,7 @@ namespace Meetra::Uci {
     void SetOptionCommand(std::istringstream &iss) {
 
         if (!Search::Finished()) {
-            throw std::runtime_error("Cannot change settings while search is ongoing!");
+            SendInfo("Cannot change settings while search is ongoing!");
         }
 
         std::string token;
@@ -205,7 +221,8 @@ namespace Meetra::Uci {
         iss >> value;
 
         if (!value.empty() && value != "true" && value != "false" && !Utils::IsPositiveNumber(value)) {
-            throw std::invalid_argument("Invalid option value!");
+            SendInfo("Invalid option value " + value);
+            return;
         }
 
         if (option == "hash") {
@@ -225,7 +242,7 @@ namespace Meetra::Uci {
         } else if (option == "ownbook") {
             Search::SetUseBook(value == "true");
         } else {
-            throw std::domain_error("Unknown option: " + option);
+            SendInfo("Unknown option: " + option);
         }
     }
 
@@ -240,7 +257,8 @@ namespace Meetra::Uci {
             iss >> value;
 
             if (!Utils::IsPositiveNumber(value)) {
-                throw std::invalid_argument("Invalid value: " + value + " for option: " + option);
+                SendInfo("Invalid value: " + value + " for option: " + option);
+                continue;
             }
 
             if (option == "wtime") settings.white_time = std::stoi(value);
@@ -258,7 +276,7 @@ namespace Meetra::Uci {
             } else if (option == "movestogo") {
 
             } else {
-                throw std::invalid_argument("Invalid search option: " + option);
+                SendInfo("Unknown search option: " + option);
             }
             //else if (token == "ponder") infinite = true; - need to implement ponderhit command for this (there we set search_timer)
             //else if movestogo - thats when we get time increment

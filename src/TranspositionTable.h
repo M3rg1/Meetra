@@ -5,6 +5,7 @@
 #include <atomic>
 #include "Board.h"
 #include "ZobristHash.h"
+#include "Uci.h"
 
 namespace Meetra {
 
@@ -21,9 +22,8 @@ namespace Meetra {
 
     public:
 
-        void Init(int size_mb = DEFAULT_HASH_SIZE);
+        void Init(size_t size_mb = DEFAULT_HASH_SIZE);
         void Save(ZobristHash key, Score score, Depth depth, Move move, EntryFlag flag, Depth ply);
-        void Resize(int size_mb);
         void NewSearch();
         void Clear();
 
@@ -31,6 +31,7 @@ namespace Meetra {
                    EntryFlag &flag, Move &move) const;
         // 0.01 == 1% usage, 0.1 == 10% usage, 1 == 100% usage
         [[nodiscard]] inline double Usage() const {
+            if (buckets_count == 0) return 0.0;
             double usage = static_cast<double>(used_entries.load(std::memory_order_relaxed))
                            / static_cast<double>(buckets_count * TT_ENTRIES_PER_BUCKET);
             return std::min(usage, 1.0);

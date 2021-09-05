@@ -98,7 +98,7 @@ namespace Meetra::Search {
 
         Uci::Send(best_thread->GetSearchInfo());
         Uci::Send("bestmove " + GetMoveName(best_thread->GetBestRootMove().move));
-        //Uci::Send("info string Best thread id " + std::to_string(best_thread->GetId()));
+        //Uci::SendInfo("Best thread id " + std::to_string(best_thread->GetId()));
         Globals::finished = true;
     }
 
@@ -172,10 +172,8 @@ namespace Meetra::Search {
     void SetNumThreads(int num) {
 
         if (num > MAX_SEARCH_THREADS || num < 1) {
-            auto init_to = std::clamp(num, 1, MAX_SEARCH_THREADS);
-            Uci::Send("info string Invalid threads count! Initializing to: " + std::to_string(init_to) + " threads");
-            SetNumThreads(init_to);
-            return;
+            num = std::clamp(num, 1, MAX_SEARCH_THREADS);
+            Uci::SendInfo("Invalid threads count! Initializing to: " + std::to_string(num) + " threads");
         }
 
         Globals::num_threads = num;

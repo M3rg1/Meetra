@@ -104,7 +104,7 @@ namespace Meetra::Search {
     inline void StopSearch() { Globals::run = false; }
     inline void SetMultiPv(int pv_num) { Globals::multi_pv = std::max(1, pv_num); }
     inline void ClearTT() { Globals::tt.Clear(); }
-    inline void SetTTSize(int size_mb) { Globals::tt.Resize(size_mb); }
+    inline void SetTTSize(int size_mb) { Globals::tt.Init(size_mb); }
     void SetNumThreads(int num);
 
 }

@@ -67,7 +67,7 @@ namespace Meetra::Book {
         std::ifstream read_book;
         read_book.open(FILE_NAME, std::ios::in | std::ios::binary);
         if (!read_book.is_open()) {
-            Uci::Send("info string Could not open book.");
+            Uci::SendInfo("Could not open book.");
             return {};
         }
 
