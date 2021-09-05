@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.20.2)
 project(Meetra)
 
 set(CMAKE_CXX_STANDARD 23)
-
+set(CMAKE_EXE_LINKER_FLAGS "-static")
 set(GCC_COVERAGE_COMPILE_FLAGS "-pthread")
 #set(GCC_COVERAGE_COMPILE_FLAGS "-DDEBUG_BUILD")
 #set(GCC_COVERAGE_COMPILE_FLAGS "-Wall -Wextra -pedantic -Wconversion -Wno-unknown-pragmas -DDEBUG_BUILD -pthread")

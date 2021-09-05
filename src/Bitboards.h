@@ -3,6 +3,7 @@
 
 #include "Types.h"
 #include <bit>
+#include <intrin.h>
 
 namespace Meetra::Bitboards {
 
@@ -19,6 +20,12 @@ namespace Meetra::Bitboards {
     [[nodiscard]] inline bool MoreThanOne(Bitboard b) { return (b & (b - 1)); }
     [[nodiscard]] inline bool ExactlyOne(Bitboard b) { return b && !MoreThanOne(b); }
     [[nodiscard]] inline int PopCount(Bitboard b) { return std::__popcount(b); }
+
+    /*inline Square Lsb(Bitboard b) {
+        unsigned long idx;
+        _BitScanForward64(&idx, b);
+        return (Square) idx;
+    }*/
     [[nodiscard]] inline Square Lsb(Bitboard b) { return static_cast<Square>(__builtin_ctzll(b)); }
     inline Square PopLsb(Bitboard &b) {
         Square s = Lsb(b);
@@ -50,14 +57,6 @@ namespace Meetra::Bitboards {
         else if (shift_dir == SOUTH_WEST) return Shift<SOUTH_WEST>(b);
         else return EMPTY_BB;
     }
-
-    // win64 https://www.chessprogramming.org/BitScan -> Processor Instructions for Bitscans
-    /*inline Square Lsb(Bitboard b) {
-        unsigned long idx;
-        _BitScanForward64(&idx, b);
-        return (Square) idx;
-    }*/
-
 }
 
 #endif //MEETRA_BITBOARDS_H

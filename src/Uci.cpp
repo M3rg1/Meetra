@@ -5,6 +5,7 @@
 #include "Utils.h"
 #include "TestSuite.h"
 #include <algorithm>
+#include <unistd.h>
 
 namespace Meetra::Uci {
 
