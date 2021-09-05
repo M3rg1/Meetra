@@ -120,7 +120,7 @@ namespace Meetra::Book {
 
         for (int i = 0; i < out.size() - 1; i++) {
             BookEntry_count best = out[i];
-            while (out[i].hash == out[i + 1].hash && i < out.size() - 1) {
+            while (i < out.size() - 1 && out[i].hash == out[i + 1].hash) {
                 if (best.count <= out[i + 1].count) {
                     if (best.count > 10000) {
                         final.emplace_back(BookEntry{best.hash, best.move});

@@ -21,7 +21,7 @@ namespace Meetra {
 
         SearchThread();
         ~SearchThread();
-        void InitNewSearch(Board b, std::vector<Search::RootMove> moves);
+        void InitNewSearch(const Board &b, const std::vector<Search::RootMove> &moves);
         void Shutdown();
         void StartThread();
         void Search();

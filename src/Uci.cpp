@@ -34,13 +34,13 @@ namespace Meetra::Uci {
 
     void UciCommand();
     void IsReadyCommand();
-    void GoCommand(std::istringstream &iss, Board &board);
+    void GoCommand(std::istringstream &iss, const Board &board);
     void UciNewGameCommand();
     void PositionCommand(std::istringstream &iss, Board &board);
     void PerftCommand(std::istringstream &iss, Board &board);
     void SetOptionCommand(std::istringstream &iss);
     void StopCommand();
-    void BoardCommand(Board &board);
+    void BoardCommand(const Board &board);
     void TestCommand();
     void QuitCommand();
     void UnknownCommand();
@@ -94,7 +94,7 @@ namespace Meetra::Uci {
 
     }
 
-    void BoardCommand(Board &board) {
+    void BoardCommand(const Board &board) {
         Uci::Send("\n" + board.PPBoard());
     }
 
@@ -127,7 +127,7 @@ namespace Meetra::Uci {
         );
     }
 
-    void GoCommand(std::istringstream &iss, Board &board) {
+    void GoCommand(std::istringstream &iss, const Board &board) {
         if (Search::Run()) {
             return;
         }

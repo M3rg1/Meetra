@@ -1,6 +1,7 @@
 #include "TranspositionTable.h"
 #include "Search.h"
 #include "Uci.h"
+#include <algorithm>
 
 namespace Meetra {
 

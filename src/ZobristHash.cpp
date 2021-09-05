@@ -2,6 +2,8 @@
 #include "ZobristHash.h"
 #include "Bitboards.h"
 #include "Board.h"
+#include <algorithm>
+#include "Uci.h"
 
 namespace Meetra::Zobrist {
 
@@ -14,21 +16,14 @@ namespace Meetra::Zobrist {
 
         auto seed = 7299078832781365792;
         std::mt19937_64 mt(seed);
+        auto gen = [&](){ return mt(); };
 
         for (auto &piece_types : piece_keys) {
-            for (auto &key : piece_types) {
-                key = mt();
-            }
+            std::ranges::generate(piece_types, gen);
         }
-        for (auto &key : castling_keys) {
-            key = mt();
-        }
-        for (auto &key : ep_keys) {
-            key = mt();
-        }
-        for (auto &key : to_move_keys) {
-            key = mt();
-        }
+        std::ranges::generate(castling_keys, gen);
+        std::ranges::generate(ep_keys, gen);
+        std::ranges::generate(to_move_keys, gen);
     }
 
     void PutPiece(ZobristHash &h, Piece p, Square s){

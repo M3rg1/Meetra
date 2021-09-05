@@ -369,9 +369,8 @@ namespace Meetra {
         }
     }
 
-    SearchThread::SearchThread() {
+    SearchThread::SearchThread() : active(false) {
         id = next_id++;
-        active = false;
         thread = std::jthread([&](const std::stop_token &stop_token) {
             while (true) {
                 {
@@ -391,9 +390,9 @@ namespace Meetra {
         Shutdown();
     }
 
-    void SearchThread::InitNewSearch(Board b, std::vector<Search::RootMove> moves) {
+    void SearchThread::InitNewSearch(const Board &b, const std::vector<Search::RootMove> &moves) {
         board = b;
-        root_moves = std::move(moves);
+        root_moves = moves;
         curr_rm = &root_moves[0];
         curr_rm_num = 0;
         depth_reached = 0;
