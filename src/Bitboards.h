@@ -3,7 +3,6 @@
 
 #include "Types.h"
 #include <bit>
-#include <intrin.h>
 
 namespace Meetra::Bitboards {
 
