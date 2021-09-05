@@ -2,8 +2,12 @@ cmake_minimum_required(VERSION 3.20.2)
 project(Meetra)
 
 set(CMAKE_CXX_STANDARD 23)
-SET(CMAKE_EXE_LINKER_FLAGS "-static -lrt -pthread -Wl,--whole-archive -lpthread -Wl,--no-whole-archive")
+
 # https://stackoverflow.com/questions/35116327/when-g-static-link-pthread-cause-segmentation-fault-why/45271521
+# https://stackoverflow.com/questions/65335620/terminate-called-after-throwing-an-instance-of-stdsystem-error/65348893#65348893
+# -lrt for ubuntu
+SET(CMAKE_EXE_LINKER_FLAGS "-static -pthread -Wl,--undefined=pthread_create,--undefined=pthread_cancel")
+
 #set(GCC_COVERAGE_COMPILE_FLAGS "-DDEBUG_BUILD")
 #set(GCC_COVERAGE_COMPILE_FLAGS "-Wall -Wextra -pedantic -Wconversion -Wno-unknown-pragmas -DDEBUG_BUILD -pthread")
 
