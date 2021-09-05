@@ -27,7 +27,7 @@ namespace Meetra::Zobrist {
     }
 
     void PutPiece(ZobristHash &h, Piece p, Square s){
-        h ^= piece_keys[s][NumFromPiece(p)];
+        h ^= piece_keys[s][IdxFromPiece(p)];
     }
 
     void RemovePiece(ZobristHash &h, Piece p, Square s){
@@ -63,12 +63,12 @@ namespace Meetra::Zobrist {
             Bitboard pieces = board.GetPieces(pt, WHITE);
             while (pieces) {
                 Square s = Bitboards::PopLsb(pieces);
-                hash ^= piece_keys[s][NumFromPieceType<WHITE>(pt)];
+                hash ^= piece_keys[s][IdxFromPieceType<WHITE>(pt)];
             }
             pieces = board.GetPieces(pt, BLACK);
             while (pieces) {
                 Square s = Bitboards::PopLsb(pieces);
-                hash ^= piece_keys[s][NumFromPieceType<BLACK>(pt)];
+                hash ^= piece_keys[s][IdxFromPieceType<BLACK>(pt)];
             }
         }
 

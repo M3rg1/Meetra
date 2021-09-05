@@ -57,12 +57,15 @@ namespace Meetra {
 
     Bitboard Board::PinnedPiecesForSquare(Square s, Color attackers_color) const {
 
-        Bitboard pinned_pieces = EMPTY_BB;
         Bitboard all_pieces = GetPieces(ALL_TYPES);
         Bitboard queens = GetPieces(QUEEN, attackers_color);
+        Bitboard bishops = GetPieces(BISHOP, attackers_color);
+        Bitboard rooks = GetPieces(ROOK, attackers_color);
 
-        Bitboard attackers = ((GetPieces(BISHOP, attackers_color) | queens) & Bitboards::GetUnboundBishopMoves(s)) |
-                             ((GetPieces(ROOK, attackers_color) | queens) & Bitboards::GetUnboundRookMoves(s));
+        Bitboard attackers = ((bishops | queens) & Bitboards::GetUnboundBishopMoves(s)) |
+                             ((rooks | queens) & Bitboards::GetUnboundRookMoves(s));
+
+        Bitboard pinned_pieces = EMPTY_BB;
         while (attackers) {
             Square attacker_s = Bitboards::PopLsb(attackers);
             Bitboard blocker = Bitboards::GetRayBetweenSquares(attacker_s, s) & all_pieces;
@@ -180,12 +183,10 @@ namespace Meetra {
         Square from = FromSquare(m);
         Square to = ToSquare(m);
 
-        if (GetCR() && (SquareToBB(from) | SquareToBB(to)) & 0x9100000000000091UL) {
+        if (GetCR() && ((SquareToBB(from) | SquareToBB(to)) & 0x9100000000000091UL)) {
             CastlingRights previous_cr = GetCR();
             RemoveCastlingRights(static_cast<CastlingRights>(castling_mask[from] | castling_mask[to]));
-            if (previous_cr != GetCR()) {
-                Zobrist::UpdateCr(curr_data.hash, previous_cr, GetCR());
-            }
+            Zobrist::UpdateCr(curr_data.hash, previous_cr, GetCR());
         }
 
         MoveType move_type = GetMoveType(m);

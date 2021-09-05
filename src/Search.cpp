@@ -93,8 +93,6 @@ namespace Meetra::Search {
                 if (Globals::search_threads[i]->DidBeatMove(best_thread->GetBestRootMove())) {
                     best_thread = Globals::search_threads[i].get();
                 }
-                /*Uci::Send("info string Id: " + std::to_string(Globals::search_threads[i]->GetId()) + " depth: " +
-                               std::to_string(Globals::search_threads[i]->GetBestRootMove().depth) + " " + std::to_string(Globals::search_threads[i]->IsThreadSearching()));*/
             }
         }
 
@@ -175,7 +173,7 @@ namespace Meetra::Search {
 
         if (num > MAX_SEARCH_THREADS || num < 1) {
             auto init_to = std::clamp(num, 1, MAX_SEARCH_THREADS);
-            Uci::Send("Invalid threads count! Initializing to: " + std::to_string(init_to) + " threads");
+            Uci::Send("info string Invalid threads count! Initializing to: " + std::to_string(init_to) + " threads");
             SetNumThreads(init_to);
             return;
         }

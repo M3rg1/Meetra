@@ -94,10 +94,10 @@ namespace Meetra {
         SQUARE_ZERO = 0,
     };
 
+    inline Bitboard SquareToBB(Square s) { return static_cast<Bitboard>(0x1) << s; }
     inline Square SquareFromFiRa(File f, Rank r) { return static_cast<Square>((r << 3) | f); }
     inline File FileFromSquare(Square s) { return static_cast<File>(s & 7); }
     inline Rank RankFromSquare(Square s) { return static_cast<Rank>(s >> 3); }
-    inline Bitboard SquareToBB(Square s) { return static_cast<Bitboard>(0x1) << s; }
     inline Square NameToSquare(const std::string& name) {
         return SquareFromFiRa(FileFromChar(name[0]), RankFromChar(name[1]));
     }
@@ -113,7 +113,7 @@ namespace Meetra {
         ALL_CR = WHITE_SHORT | WHITE_LONG | BLACK_SHORT | BLACK_LONG
     };
 
-    constexpr CastlingRights castling_mask[SQUARE_NR]{
+    inline CastlingRights castling_mask[SQUARE_NR]{
             WHITE_LONG, NO_CASTLING, NO_CASTLING, NO_CASTLING, WHITE_ALL_CR, NO_CASTLING, NO_CASTLING, WHITE_SHORT,
             NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING,
             NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING,
@@ -176,8 +176,8 @@ namespace Meetra {
 
 
     template<Color C>
-    inline int NumFromPieceType(PieceType pt) { return C == WHITE ? pt - 1 : pt + 5; }
-    inline int NumFromPiece(Piece p) { return ColorOfPiece(p) == WHITE ? p - 1 : p - 3; }
+    inline int IdxFromPieceType(PieceType pt) { return C == WHITE ? pt - 1 : pt + 5; }
+    inline int IdxFromPiece(Piece p) { return ColorOfPiece(p) == WHITE ? p - 1 : p - 3; }
     inline PieceType PieceTypeFromFlag(MoveType mt) { return static_cast<PieceType >((mt >> 12) - 2); }
     inline Square FromSquare(Move m) { return static_cast<Square>(m & 0x3F); }
     inline Square ToSquare(Move m) { return static_cast<Square>((m & 0xFC0) >> 6); }
