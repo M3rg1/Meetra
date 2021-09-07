@@ -210,6 +210,10 @@ namespace Meetra::Bitboards {
 
     Bitboard GenRay(Square s1, Square s2) {
 
+        if(s1 == s2) {
+            return EMPTY_BB;
+        }
+
         Square max = std::max(s1, s2);
         Square min = std::min(s1, s2);
 
@@ -255,7 +259,7 @@ namespace Meetra::Bitboards {
         return diag_masks[f + r] | anti_diag_masks[r + 7 - f];
     }
 
-    Bitboard GetRayBetweenEdges(Square s1, Square s2) { return rays_between_board_edges[s1][s2]; }
+    Bitboard GetRayToBorders(Square s1, Square s2) { return rays_between_board_edges[s1][s2]; }
 
     Bitboard GetRayBetweenSquares(Square s1, Square s2) { return rays_between_squares[s1][s2]; }
 
@@ -281,20 +285,19 @@ namespace Meetra::Bitboards {
     }
 
     template Bitboard GetAttacks<PAWN>(Square s, Bitboard occ, Color c);
-
     template Bitboard GetAttacks<KNIGHT>(Square s, Bitboard occ, Color c);
-
     template Bitboard GetAttacks<BISHOP>(Square s, Bitboard occ, Color c);
-
     template Bitboard GetAttacks<ROOK>(Square s, Bitboard occ, Color c);
-
     template Bitboard GetAttacks<QUEEN>(Square s, Bitboard occ, Color c);
-
     template Bitboard GetAttacks<KING>(Square s, Bitboard occ, Color c);
 
 #pragma endregion
 
 #pragma region ===== Misc =====
+
+    Bitboard GetRankMask(Rank r) {
+        return rank_masks[r];
+    }
 
     void Init() {
         GenRaysBetweenSquares();

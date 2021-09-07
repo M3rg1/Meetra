@@ -26,10 +26,12 @@ namespace Meetra {
         [[nodiscard]] inline Score GetMoveEval(Move m) const { return curr_data.evaluator.GetMoveEval(*this, m); };
         [[nodiscard]] bool IsMoveLegal(Move m) const;
         [[nodiscard]] bool IsBoardValid() const;
+        [[nodiscard]] bool AllSquaresSafe(Bitboard squares, Color attacker, Bitboard occ) const ;
         [[nodiscard]] bool IsAttackedByAny(Square s, Color attacked_by, Bitboard occ) const;
         [[nodiscard]] bool IsAttackedBySliders(Square s, Color attacked_by, Bitboard occ) const;
         [[nodiscard]] Bitboard AttackedBy(Square s, Color attacked_by, Bitboard occ) const;
         [[nodiscard]] Bitboard PinnedPiecesForSquare(Square s, Color blockers_color) const;
+        [[nodiscard]] std::string GetMoveName(Move m) const;
 
 #pragma region ===== Getters =====
         [[nodiscard]] inline int HistorySize() const { return static_cast<int>(history_cnt); }
@@ -42,21 +44,25 @@ namespace Meetra {
 #pragma endregion
 
 #pragma region ===== Game State info getters =====
-        [[nodiscard]] inline CastlingRights GetCR() const {
-            return static_cast<CastlingRights>(curr_data.state & ALL_CR);
-        }
+        [[nodiscard]] Move RookCastlingMove(Square king_to, Bitboard cr, Color c) const;
+        [[nodiscard]] inline Bitboard GetCr() const { return curr_data.cr; }
         [[nodiscard]] inline ZobristHash GetZobristHash() const { return curr_data.hash; }
-        [[nodiscard]] inline bool CanWhiteShortCR() const { return curr_data.state & WHITE_SHORT; }
-        [[nodiscard]] inline bool CanWhiteLongCR() const { return curr_data.state & WHITE_LONG; }
-        [[nodiscard]] inline bool CanBlackShortCR() const { return curr_data.state & BLACK_SHORT; }
-        [[nodiscard]] inline bool CanBlackLongCR() const { return curr_data.state & BLACK_LONG; }
-        [[nodiscard]] inline bool CanCastleAny() const { return curr_data.state & ALL_CR; }
+        [[nodiscard]] inline bool CanWShortCastle() const { return curr_data.cr & K_rook; }
+        [[nodiscard]] inline bool CanWLongCastle() const { return curr_data.cr & Q_rook; }
+        [[nodiscard]] inline bool CanBShortCastle() const { return curr_data.cr & k_rook; }
+        [[nodiscard]] inline bool CanBLongCastle() const { return curr_data.cr & q_rook; }
+        [[nodiscard]] inline bool CanCastleAny() const { return curr_data.cr; }
         [[nodiscard]] inline Square EpSquare() const { return static_cast<Square >(curr_data.state & 0x3F); }
         [[nodiscard]] inline Color ColorToMove() const { return static_cast<Color>((curr_data.state >> 10) & 0x1); }
         [[nodiscard]] inline Piece CapturedPiece() const { return static_cast<Piece>((curr_data.state >> 11) & 0xF); }
         [[nodiscard]] inline int Ply() const { return static_cast<int>((curr_data.state >> 15) & 0xFF); }
         [[nodiscard]] inline int TotalMoves() const { return static_cast<int>(curr_data.state >> 23); }
         [[nodiscard]] inline bool Move50Rule() const { return Ply() >= 100; };
+        template<Color C, CastlingSide S>
+        [[nodiscard]] inline Bitboard RookSqBB() const {
+            return S == LONG ? C == WHITE ? curr_data.cr & Q_rook : curr_data.cr & q_rook :
+                               C == WHITE ? curr_data.cr & K_rook : curr_data.cr & k_rook;
+        }
         [[nodiscard]] inline bool IsRepetition() const {
             // http://www.talkchess.com/forum3/viewtopic.php?f=7&t=51000&start=20
             // should implement draw at 1st repetition in the search tree, 2nd in actual game history
@@ -83,8 +89,8 @@ namespace Meetra {
 #pragma region ===== Game State definitions =====
         // from right to left
         // bits 0-5 = ep square index
-        // bits 6-7 = castling rights white
-        // bits 7-9 = castling rights black
+        // bits 6-7 = castling rights white // OBSOLETE
+        // bits 7-9 = castling rights black // OBSOLETE
         // bit  10 = player to move
         // bits 11-14 = captured piece (from last game state to this game state)
         // bits 15-22 = ply since last capture/pawn moves - 50 move rule
@@ -96,15 +102,14 @@ namespace Meetra {
 #pragma region ===== Game State modifications =====
         // requires new game state
         inline void SetEpSquare(Square s) { curr_data.state |= static_cast<GameState>(s); }
-        inline void SetCastlingRights(CastlingRights cr) { curr_data.state |= static_cast<GameState>(cr); }
         inline void SetColorToMove(Color c) { curr_data.state |= static_cast<GameState>(c << 10); }
         inline void SetCapturedPiece(Piece p) { curr_data.state |= static_cast<GameState>(p << 11); }
         inline void SetPly(int ply) { curr_data.state |= static_cast<GameState>(ply << 15); }
         inline void SetMoveNumber(int move_num) { curr_data.state |= static_cast<GameState>(move_num << 23); }
+        //inline void SetCastlingRights2(CastlingRights cr);
 
         // modify current game state
         inline void ResetPly() { curr_data.state &= static_cast<GameState>(~(0xFF << 15)); }
-        inline void RemoveCastlingRights(CastlingRights cr) { curr_data.state &= static_cast<GameState>(~cr); }
         inline void IncrementMoveNumber(Color col_to_move) { curr_data.state += col_to_move << 23; }
         inline void IncrementPly() { curr_data.state += 1 << 15; }
         inline void ClearCapturedPiece() { curr_data.state &= static_cast<GameState>(~0x7800); }
@@ -124,8 +129,15 @@ namespace Meetra {
         struct BoardData {
             GameState state;
             ZobristHash hash;
+            Bitboard cr;
             Evaluation::Evaluator evaluator;
         };
+
+        // original positions of rooks that are available for castling
+        Bitboard K_rook;
+        Bitboard Q_rook;
+        Bitboard k_rook;
+        Bitboard q_rook;
 
         BoardData history[MAX_GAME_LENGTH];
         size_t history_cnt;

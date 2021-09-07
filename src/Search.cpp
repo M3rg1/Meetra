@@ -2,7 +2,6 @@
 #include "MoveGen.h"
 #include <chrono>
 #include <random>
-#include "Uci.h"
 #include "Book.h"
 #include <algorithm>
 
@@ -97,7 +96,7 @@ namespace Meetra::Search {
         }
 
         Uci::Send(best_thread->GetSearchInfo());
-        Uci::Send("bestmove " + GetMoveName(best_thread->GetBestRootMove().move));
+        Uci::Send("bestmove " + best_thread->GetBestRmName());
         //Uci::SendInfo("Best thread id " + std::to_string(best_thread->GetId()));
         Globals::finished = true;
     }
@@ -118,26 +117,25 @@ namespace Meetra::Search {
                         1,
                         std::mt19937{std::random_device{}()}
                 );
-                Uci::Send("bestmove " + GetMoveName(moves.back()));
+                Uci::Send("bestmove " + board.GetMoveName(moves.back()));
                 return;
             }
         }
 
         auto root_moves = GenRootMoves(board);
 
-        // if there's only one root move, and we are not in infinite or fixed depth/time search, return the only
-        // possible move immediately
+        // if there's only one root move, and we are not in infinite or fixed depth/time search, return it immediately
         if (root_moves.empty() ||
             (root_moves.size() == 1 && !Globals::settings.infinite && !Globals::settings.fixed_depth &&
              !Globals::settings.fixed_time)) {
             StopSearch();
-            Uci::Send("bestmove " + GetMoveName(root_moves.empty() ? ZERO_MOVE : root_moves.front().move));
+            Uci::Send("bestmove " + board.GetMoveName(root_moves.empty() ? ZERO_MOVE : root_moves.front().move));
             return;
         }
 
         // initialize and start each thread
         // we have to first initialize them all, in case of very fast time control and main thread finishes before
-        // we even initialize helper threads, and then attempts to extract best move from them
+        // we even initialize helper threads
         std::ranges::for_each(Globals::search_threads, [&](auto &e) { e->InitNewSearch(board, root_moves); });
         std::ranges::for_each(Globals::search_threads, [&](auto &e) { e->StartThread(); });
     }
@@ -146,6 +144,7 @@ namespace Meetra::Search {
         Globals::tt.Init();
         Globals::run = false;
         Globals::finished = true;
+        Globals::chess960 =  false;
         Globals::use_book = false;
         Globals::show_currline = false;
         Globals::multi_pv = 1;

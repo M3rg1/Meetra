@@ -58,7 +58,7 @@ namespace Meetra {
         p_MoveScore move_eval[MAX_LEGAL_MOVES];
         size_t moves_cnt;
 
-        CastlingRights cr;
+        Bitboard cr;
         Bitboard checkers;
         Bitboard blockers;
         Bitboard legal_moves;
@@ -115,10 +115,9 @@ namespace Meetra {
         template<Color C>
         void GenCastlingMoves();
 
-        template<Color C>
-        [[nodiscard]] bool CanCastleLong() const;
-        template<Color C>
-        [[nodiscard]] bool CanCastleShort() const;
+        template<Color C, CastlingSide S>
+        [[nodiscard]] bool CanCastle() const;
+
         [[nodiscard]] bool DiscoveryCheck(Square origin, Square destination) const;
     };
 

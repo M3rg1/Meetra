@@ -19,7 +19,7 @@ namespace Meetra::TestSuite {
 
     class Test {
     public:
-        bool RunTest() {
+        inline bool RunTest() {
 
             Board board;
             if (!board.NewPosition(fen)) {
@@ -54,7 +54,17 @@ namespace Meetra::TestSuite {
         }
 
         friend std::istream &operator>>(std::istream &is, Test &t) {
+
             std::string token;
+            // for parsing Ethereal's chess 960 perft suite
+/*            while(is >> token && token != ";D1") {
+                t.fen += token + " ";
+            }
+            t.fen.pop_back();
+            while(is >> token && token != ";D5");
+            t.depth = 5;
+            is >> t.expected;*/
+
             if (is >> token && token == "depth") {
                 is >> token;
                 t.depth = std::stoi(token); // can't directly convert via >> to Depth (uint8)
@@ -133,23 +143,23 @@ namespace Meetra::TestSuite {
 
         auto start = std::chrono::steady_clock::now();
 
-        bool tests_ok = true;
+        int errors = 0;
         for (int i = 0; i < tests.size(); i++) {
             Uci::Send("Running test " + std::to_string(i + 1));
             if (!tests[i].RunTest()) {
-                tests_ok = false;
+                errors++;
             }
         }
 
         auto end = std::chrono::steady_clock::now();
         auto time_elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
-        Uci::Send("All tests finished in " + std::to_string(time_elapsed_ms) + "ms.");
+        Uci::Send("Finished in " + std::to_string(time_elapsed_ms) + "ms.");
 
-        if (tests_ok) {
+        if (errors == 0) {
             Uci::Send("============= ALL TESTS OK =============");
         } else {
-            Uci::Send("============= ERROR IN TESTS =============");
+            Uci::Send("============= " + std::to_string(errors) + " ERRORS IN TESTS =============");
         }
     }
 

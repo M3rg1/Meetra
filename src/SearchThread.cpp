@@ -263,6 +263,10 @@ namespace Meetra {
         return root_moves[0];
     }
 
+    std::string SearchThread::GetBestRmName() const {
+        return board.GetMoveName(root_moves[0].move);
+    }
+
     std::string SearchThread::GetUpdateSearchInfo() const {
 
         uint64_t total_nodes = std::accumulate(Search::Globals::search_threads.begin(),
@@ -323,9 +327,9 @@ namespace Meetra {
                 oss << "cp " << score;
             }
 
-            oss << " pv " << GetMoveName(move);
+            oss << " pv " << board.GetMoveName(move);
             for (int j = 0; j < root_moves[i].pv.Size(); j++) {
-                oss << ' ' << GetMoveName(root_moves[i].pv.At(j));
+                oss << ' ' << board.GetMoveName(root_moves[i].pv.At(j));
             }
             if (i + 1 < pvs_to_send) {
                 oss << '\n';
@@ -336,13 +340,13 @@ namespace Meetra {
     }
 
     std::string SearchThread::GetCurrMoveInfo() const {
-        return "info currmove " + GetMoveName(curr_rm->move) + " currmovenumber " + std::to_string(curr_rm_num + 1);
+        return "info currmove " + board.GetMoveName(curr_rm->move) + " currmovenumber " + std::to_string(curr_rm_num + 1);
     }
 
     std::string SearchThread::GetCurrLineInfo() const {
-        std::string ret = "info currline " + GetMoveName(curr_rm->move);
+        std::string ret = "info currline " + board.GetMoveName(curr_rm->move);
         for (int i = 0; i < curr_rm->pv.Size(); i++) {
-            ret += ' ' + GetMoveName(curr_rm->pv.At(i));
+            ret += ' ' + board.GetMoveName(curr_rm->pv.At(i));
         }
         return ret;
     }

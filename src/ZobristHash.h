@@ -20,7 +20,7 @@ namespace Meetra {
         void MovePiece(ZobristHash &h, Piece p, Square from, Square to);
         void RemoveEp(ZobristHash &h, Square s);
         void AddEp(ZobristHash &h, Square s);
-        void UpdateCr(ZobristHash &h, CastlingRights previous, CastlingRights current);
+        void UpdateCr(ZobristHash &h, Bitboard previous, Bitboard current);
         void UpdateColor(ZobristHash &h, Color to_move);
 
     }

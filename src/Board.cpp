@@ -5,6 +5,7 @@
 #include "Utils.h"
 #include "MoveGen.h"
 #include <algorithm>
+#include "Search.h"
 
 namespace Meetra {
 
@@ -18,10 +19,14 @@ namespace Meetra {
 
         history_cnt = 0;
         curr_data.state = NEW_GAME_STATE;
-
+        curr_data.cr = EMPTY_BB;
         std::ranges::fill(board, NO_PIECE);
         std::ranges::fill(color_bbs, EMPTY_BB);
         std::ranges::fill(type_bbs, EMPTY_BB);
+        K_rook = EMPTY_BB;
+        Q_rook = EMPTY_BB;
+        k_rook = EMPTY_BB;
+        q_rook = EMPTY_BB;
 
         if (!ParseFenValidate(fen) || !IsBoardValid()) {
             *this = previous;
@@ -80,16 +85,19 @@ namespace Meetra {
     // takes a pseudo legal move and checks whether it is legal
     bool Board::IsMoveLegal(Move m) const {
 
-        if (TypeOfPiece(GetPieceOnSquare(FromSquare(m))) == KING) {
-            Color enemy_color = OtherColor(ColorToMove());
-            Bitboard occ = GetPieces(ALL_TYPES);
+        if (GetPieceTypeOnSq(FromSquare(m)) == KING) {
             if (GetMoveType(m) == CASTLING) {
                 Square to = ToSquare(m);
-                return !IsAttackedByAny(to, enemy_color, occ) &&
-                       !IsAttackedByAny(RookMoveTo(FromSquare(m), to), enemy_color, occ);
+                Square from = FromSquare(m);
+                Move r_move = RookCastlingMove(to, GetCr(), ColorToMove());
+                Square r_from = FromSquare(r_move);
+                // the xor is for chess960, when king doesn't, but the rook moving would open an attack on the king
+                Bitboard occ = GetPieces(ALL_TYPES) ^ SquareToBB(r_from);
+                Bitboard king_walk = Bitboards::GetRayBetweenSquares(from, to) | SquareToBB(to);
+                return AllSquaresSafe(king_walk, OtherColor(ColorToMove()), occ);
             }
-            occ ^= SquareToBB(FromSquare(m));
-            return !IsAttackedByAny(ToSquare(m), enemy_color, occ);
+            Bitboard occ = GetPieces(ALL_TYPES) ^ SquareToBB(FromSquare(m));
+            return !IsAttackedByAny(ToSquare(m), OtherColor(ColorToMove()), occ);
         }
 
         if (GetMoveType(m) == EN_PASSANT) {
@@ -99,6 +107,7 @@ namespace Meetra {
             Square capture_square = my_color == WHITE ? to + SOUTH : to + NORTH;
             Square king_s = Bitboards::Lsb(GetPieces(KING, my_color));
             Bitboard occ = GetPieces(ALL_TYPES) ^ SquareToBB(capture_square) ^ (SquareToBB(from) | SquareToBB(to));
+            // ep move can't open us to attacks by anything other than slider pieces
             return !IsAttackedBySliders(king_s, OtherColor(my_color), occ);
         }
 
@@ -149,9 +158,9 @@ namespace Meetra {
 
     void Board::MovePiece(Square from, Square to) {
         Piece p = board[from];
-        board[to] = p;
         board[from] = NO_PIECE;
-        Bitboard from_to = SquareToBB(from) | SquareToBB(to);
+        board[to] = p;
+        Bitboard from_to = SquareToBB(from) ^ SquareToBB(to);
         color_bbs[ColorOfPiece(p)] ^= from_to;
         type_bbs[TypeOfPiece(p)] ^= from_to;
         type_bbs[ALL_TYPES] ^= from_to;
@@ -167,12 +176,12 @@ namespace Meetra {
 
         curr_data.evaluator.MakeMove(*this, m);
 
-        Color this_move_col = ColorToMove();
+        Color this_col = ColorToMove();
         ChangeColorToMove();
-        Color next_move_col = ColorToMove();
-        Zobrist::UpdateColor(curr_data.hash, next_move_col);
+        Color next_col = ColorToMove();
+        Zobrist::UpdateColor(curr_data.hash, next_col);
 
-        IncrementMoveNumber(this_move_col);
+        IncrementMoveNumber(this_col);
         IncrementPly();
         ClearCapturedPiece();
         if (EpSquare()) {
@@ -183,17 +192,21 @@ namespace Meetra {
         Square from = FromSquare(m);
         Square to = ToSquare(m);
 
-        if (GetCR() && ((SquareToBB(from) | SquareToBB(to)) & 0x9100000000000091UL)) {
-            CastlingRights previous_cr = GetCR();
-            RemoveCastlingRights(static_cast<CastlingRights>(castling_mask[from] | castling_mask[to]));
-            Zobrist::UpdateCr(curr_data.hash, previous_cr, GetCR());
+        MoveType move_type = GetMoveType(m);
+
+        Piece captured_piece = move_type == EN_PASSANT ? NewPiece(PAWN, next_col) : GetPieceOnSquare(to);
+
+        // in chess960, when castling, we remove the rook from its square before moving, and put it back later
+        // we also need to set captured piece to none, in case the king doesn't move from its square
+        if (Search::Globals::chess960 && move_type == CASTLING) {
+            captured_piece = NO_PIECE;
+            Move rook_move = RookCastlingMove(to, GetCr(), this_col);
+            Square rook_from = FromSquare(rook_move);
+            RemovePiece(rook_from);
         }
 
-        MoveType move_type = GetMoveType(m);
-        Piece captured_piece = move_type == EN_PASSANT ? NewPiece(PAWN, next_move_col) : GetPieceOnSquare(to);
-
         if (captured_piece) {
-            Square capture_square = move_type == EN_PASSANT ? (this_move_col == WHITE ? to + SOUTH : to + NORTH) : to;
+            Square capture_square = move_type == EN_PASSANT ? (this_col == WHITE ? to + SOUTH : to + NORTH) : to;
             RemovePiece(capture_square);
             Zobrist::RemovePiece(curr_data.hash, captured_piece, capture_square);
             SetCapturedPiece(captured_piece);
@@ -204,36 +217,48 @@ namespace Meetra {
         MovePiece(from, to);
         Zobrist::MovePiece(curr_data.hash, moved_piece, from, to);
 
+        Bitboard previous_cr = curr_data.cr;
+        curr_data.cr &= ~(SquareToBB(from) | SquareToBB(to));
+        Zobrist::UpdateCr(curr_data.hash, previous_cr, GetCr());
+
         if (TypeOfPiece(moved_piece) == PAWN) {
             ResetPly();
             if (move_type == TWO_FORWARD) {
-                SetEpSquare(this_move_col == WHITE ? to + SOUTH : to + NORTH);
+                SetEpSquare(this_col == WHITE ? to + SOUTH : to + NORTH);
                 Zobrist::AddEp(curr_data.hash, EpSquare());
                 return true;
             } else if (IsPromotion(m)) {
-                Piece promoted_to = NewPiece(PieceTypeFromFlag(move_type), this_move_col);
+                Piece promoted_to = NewPiece(PieceTypeFromFlag(move_type), this_col);
                 RemovePiece(to);
                 Zobrist::RemovePiece(curr_data.hash, moved_piece, to);
                 PutPiece(to, promoted_to);
                 Zobrist::PutPiece(curr_data.hash, promoted_to, to);
                 return true;
             } else if (move_type == EN_PASSANT) {
-                return !IsAttackedBySliders(Bitboards::Lsb(GetPieces(KING, this_move_col)), next_move_col,
+                return !IsAttackedBySliders(Bitboards::Lsb(GetPieces(KING, this_col)), next_col,
                                             GetPieces(ALL_TYPES));
             }
             return true;
         }
 
         if (TypeOfPiece(moved_piece) == KING) {
+
+            curr_data.cr &= this_col == WHITE ? Bitboards::GetRankMask(RANK_8) : Bitboards::GetRankMask(RANK_1);
+            Zobrist::UpdateCr(curr_data.hash, previous_cr, GetCr());
+
             if (move_type == CASTLING) {
-                Square rook_to = RookMoveTo(from, to);
-                Square rook_from = RookMoveFrom(from, to);
-                MovePiece(rook_from, rook_to);
-                Zobrist::MovePiece(curr_data.hash, NewPiece(ROOK, this_move_col), rook_from, rook_to);
-                return !IsAttackedByAny(rook_to, next_move_col, GetPieces(ALL_TYPES)) &&
-                       !IsAttackedByAny(to, next_move_col, GetPieces(ALL_TYPES));
+                Move r_move = RookCastlingMove(to, previous_cr, this_col);
+                Square r_to = ToSquare(r_move);
+                Square r_from = FromSquare(r_move);
+                // put back the rook in chess 960 castling
+                Search::Globals::chess960 ? PutPiece(r_to, NewPiece(ROOK, this_col)) : MovePiece(r_from, r_to);
+                Zobrist::MovePiece(curr_data.hash, NewPiece(ROOK, this_col), r_from, r_to);
+
+                Bitboard king_walk = Bitboards::GetRayBetweenSquares(from, to) | SquareToBB(to);
+                return AllSquaresSafe(king_walk, next_col, GetPieces(ALL_TYPES));
             }
-            return !IsAttackedByAny(to, next_move_col, GetPieces(ALL_TYPES));
+
+            return !IsAttackedByAny(to, next_col, GetPieces(ALL_TYPES));
         }
 
         return true;
@@ -247,6 +272,15 @@ namespace Meetra {
 
         curr_data = history[--history_cnt];
 
+        // ches960 castling, special case
+        if (Search::Globals::chess960 && GetMoveType(m) == CASTLING) {
+            Move rook_move = RookCastlingMove(to, GetCr(), ColorToMove());
+            RemovePiece(ToSquare(rook_move));
+            MovePiece(to, from);
+            PutPiece(FromSquare(rook_move), NewPiece(ROOK, ColorToMove()));
+            return;
+        }
+
         MovePiece(to, from);
 
         if (captured_piece) {
@@ -258,9 +292,26 @@ namespace Meetra {
             RemovePiece(from);
             PutPiece(from, NewPiece(PAWN, ColorToMove()));
         } else if (GetMoveType(m) == CASTLING) {
-            MovePiece(RookMoveTo(from, to), RookMoveFrom(from, to));
-            PutPiece(from, NewPiece(KING, ColorToMove()));
+            Move rook_move = RookCastlingMove(to, GetCr(), ColorToMove());
+            MovePiece(ToSquare(rook_move), FromSquare(rook_move));
         }
+    }
+
+    bool Board::AllSquaresSafe(Bitboard squares, Color attacker, Bitboard occ) const {
+        while (squares) {
+            Square s = Bitboards::PopLsb(squares);
+            if (IsAttackedByAny(s, attacker, occ)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    Move Board::RookCastlingMove(Square king_to, Bitboard cr, Color c) const {
+        cr &= c == WHITE ? Bitboards::GetRankMask(RANK_1) : Bitboards::GetRankMask(RANK_8);
+        Square to = FileFromSquare(king_to) == FILE_G ? king_to - 1 : king_to + 1;
+        Square from = FileFromSquare(to) == FILE_F ? Bitboards::Msb(cr) : Bitboards::Lsb(cr);
+        return NewMove(from, to);
     }
 
     bool Board::MakeUciMove(const std::string &move_string) {
@@ -303,16 +354,20 @@ namespace Meetra {
         SetColorToMove(token == "w" ? WHITE : BLACK);
 
         iss >> token;
-        if (token.find('K') != std::string::npos) SetCastlingRights(WHITE_SHORT);
-        if (token.find('Q') != std::string::npos) SetCastlingRights(WHITE_LONG);
-        if (token.find('k') != std::string::npos) SetCastlingRights(BLACK_SHORT);
-        if (token.find('q') != std::string::npos) SetCastlingRights(BLACK_LONG);
+        if (token.find('K') != std::string::npos) curr_data.cr |= SquareToBB(H1);
+        if (token.find('Q') != std::string::npos) curr_data.cr |= SquareToBB(A1);
+        if (token.find('k') != std::string::npos) curr_data.cr |= SquareToBB(H8);
+        if (token.find('q') != std::string::npos) curr_data.cr |= SquareToBB(A8);
+        for (char c: token) {
+            if ('A' <= c && c <= 'H') curr_data.cr |= SquareToBB(SqFromFiRa(FileFromChar(tolower(c)), RANK_1));
+            if ('a' <= c && c <= 'h') curr_data.cr |= SquareToBB(SqFromFiRa(FileFromChar(c), RANK_8));
+        }
 
         iss >> token;
         if (token != "-") {
             File file = FileFromChar(token[0]);
             Rank rank = RankFromChar(token[1]);
-            SetEpSquare(SquareFromFiRa(file, rank));
+            SetEpSquare(SqFromFiRa(file, rank));
         }
 
         iss >> token;
@@ -348,7 +403,7 @@ namespace Meetra {
                 f += c - '0';
             } else if (CharToPiece(c) != NO_PIECE) {
                 prev_is_digit = false;
-                PutPiece(SquareFromFiRa(f, r), CharToPiece(c));
+                PutPiece(SqFromFiRa(f, r), CharToPiece(c));
                 ++f;
             } else {
                 return false;
@@ -364,11 +419,59 @@ namespace Meetra {
 
         // castling rights
         if (iss >> token) {
-            if (Utils::ContainsOnlyChars(token, "KQkq") && Utils::AllUniqueChars(token)) {
-                if (token.find('K') != std::string::npos) SetCastlingRights(WHITE_SHORT);
-                if (token.find('Q') != std::string::npos) SetCastlingRights(WHITE_LONG);
-                if (token.find('k') != std::string::npos) SetCastlingRights(BLACK_SHORT);
-                if (token.find('q') != std::string::npos) SetCastlingRights(BLACK_LONG);
+            if (Utils::ContainsOnlyChars(token, "KQkqABCDEFGHabcdefgh") && Utils::AllUniqueChars(token)) {
+
+                Bitboard w_king = GetPieces(KING, WHITE);
+                Bitboard b_king = GetPieces(KING, BLACK);
+                Bitboard w_rooks = GetPieces(ROOK, WHITE) & Bitboards::GetRankMask(RANK_1);
+                Bitboard b_rooks = GetPieces(ROOK, BLACK) & Bitboards::GetRankMask(RANK_8);
+
+                for(char c : token) {
+
+                    if (c == 'K') {
+                        Bitboard r_square = SquareToBB(Bitboards::Msb(w_rooks));
+                        curr_data.cr |= r_square;
+                        K_rook = r_square;
+                    }
+                    if (c == 'Q') {
+                        Bitboard r_square = SquareToBB(Bitboards::Lsb(w_rooks));
+                        curr_data.cr |= r_square;
+                        Q_rook = r_square;
+                    }
+                    if (c == 'k') {
+                        Bitboard r_square = SquareToBB(Bitboards::Msb(b_rooks));
+                        curr_data.cr |= r_square;
+                        k_rook = r_square;
+                    }
+                    if (c == 'q') {
+                        Bitboard r_square = SquareToBB(Bitboards::Lsb(b_rooks));
+                        curr_data.cr |= r_square;
+                        q_rook = r_square;
+                    }
+                    if ('A' <= c && c <= 'H') {
+                        Bitboard r_square = SquareToBB(SqFromFiRa(FileFromChar(tolower(c)), RANK_1));
+                        curr_data.cr |= r_square;
+                        if (r_square > w_king) {
+                            K_rook = r_square;
+                        } else {
+                            Q_rook = r_square;
+                        }
+                    }
+                    if ('a' <= c && c <= 'h') {
+                        Bitboard r_square = SquareToBB(SqFromFiRa(FileFromChar(c), RANK_8));
+                        curr_data.cr |= r_square;
+                        if (r_square > b_king) {
+                            k_rook = r_square;
+                        } else {
+                            q_rook = r_square;
+                        }
+                    }
+                }
+
+                if ((curr_data.cr & GetPieces(ROOK)) != curr_data.cr) {
+                    return false;
+                }
+
             } else if (token != "-") {
                 return false;
             }
@@ -379,7 +482,7 @@ namespace Meetra {
             if (token.length() == 2 && token[0] >= 'a' && token[0] <= 'h' && token[1] >= '1' && token[1] <= '8') {
                 File file = FileFromChar(token[0]);
                 Rank rank = RankFromChar(token[1]);
-                SetEpSquare(SquareFromFiRa(file, rank));
+                SetEpSquare(SqFromFiRa(file, rank));
             } else if (token != "-") {
                 return false;
             }
@@ -408,6 +511,31 @@ namespace Meetra {
         return true;
     }
 
+    std::string Board::GetMoveName(Move m) const {
+
+        if (m == ZERO_MOVE) {
+            return "0000";
+        }
+
+        std::string ret = SquareToName(FromSquare(m)) + SquareToName(ToSquare(m));
+
+        // chess 960 castling is denoted by capturing own rook
+        if(Search::Globals::chess960 && GetMoveType(m) == CASTLING) {
+            Move r_move = RookCastlingMove(ToSquare(m), GetCr(), ColorToMove());
+            ret = SquareToName(FromSquare(m)) + SquareToName(FromSquare(r_move));
+        }
+
+        if (IsPromotion(m)) {
+            MoveType prom_flag = GetMoveType(m);
+            ret += prom_flag == PROMOTE_QUEEN ? 'q' :
+                   prom_flag == PROMOTE_ROOK ? 'r' :
+                   prom_flag == PROMOTE_BISHOP ? 'b' :
+                   'n';
+        }
+
+        return ret;
+    }
+
     std::string Board::PPBoard() const {
 
         std::ostringstream oss;
@@ -415,7 +543,7 @@ namespace Meetra {
         for (Rank r = RANK_8; r >= RANK_1; --r) {
             oss << std::to_string(r + 1) << " |";
             for (File f = FILE_A; f <= FILE_H; ++f) {
-                oss << ' ' << PieceToChar(GetPieceOnSquare(SquareFromFiRa(f, r))) << ' ';
+                oss << ' ' << PieceToChar(GetPieceOnSquare(SqFromFiRa(f, r))) << ' ';
             }
             oss << '\n';
         }
@@ -426,10 +554,10 @@ namespace Meetra {
         if (!CanCastleAny()) {
             oss << '-';
         } else {
-            if (CanWhiteShortCR()) oss << 'K';
-            if (CanWhiteLongCR()) oss << 'Q';
-            if (CanBlackShortCR()) oss << 'k';
-            if (CanBlackLongCR()) oss << 'q';
+            if (CanWShortCastle()) oss << 'K';
+            if (CanWLongCastle()) oss << 'Q';
+            if (CanBShortCastle()) oss << 'k';
+            if (CanBLongCastle()) oss << 'q';
         }
         oss << " | EP square: " << (EpSquare() == SQUARE_ZERO ? "-" : SquareToName(EpSquare())) << '\n'
             << "Fullmove clock: " << TotalMoves() << " | Halfmove clock: " << Ply();

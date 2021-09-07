@@ -64,8 +64,9 @@ namespace Meetra::Evaluation {
             gamePhase += EvalValues::gamephaseInc[prom_to];
             gamePhase -= EvalValues::gamephaseInc[PAWN];
         } else if (GetMoveType(m) == CASTLING) {
-            Square r_to = RookMoveTo(from, to);
-            Square r_from = RookMoveFrom(from, to);
+            Move r_move = board.RookCastlingMove(to, board.GetCr(), to_move);
+            Square r_to = ToSquare(r_move);
+            Square r_from = FromSquare(r_move);
             mg[to_move] += EvalValues::mg_table[to_move][ROOK][r_to] - EvalValues::mg_table[to_move][ROOK][r_from];
             eg[to_move] += EvalValues::eg_table[to_move][ROOK][r_to] - EvalValues::eg_table[to_move][ROOK][r_from];
         }
@@ -103,8 +104,9 @@ namespace Meetra::Evaluation {
             mg_val -= EvalValues::mg_table[to_move][PAWN][to];
             eg_val -= EvalValues::eg_table[to_move][PAWN][to];
         } else if (GetMoveType(m) == CASTLING) {
-            Square rook_to = RookMoveTo(from, to);
-            Square rook_from = RookMoveFrom(from, to);
+            Move rook_move = board.RookCastlingMove(to, board.GetCr(), to_move);
+            Square rook_to = ToSquare(rook_move);
+            Square rook_from = FromSquare(rook_move);
             mg_val += EvalValues::mg_table[to_move][ROOK][rook_to] - EvalValues::mg_table[to_move][ROOK][rook_from];
             eg_val += EvalValues::eg_table[to_move][ROOK][rook_to] - EvalValues::eg_table[to_move][ROOK][rook_from];
         }
@@ -140,8 +142,9 @@ namespace Meetra::Evaluation {
             gamePhase -= EvalValues::gamephaseInc[prom_to];
             gamePhase += EvalValues::gamephaseInc[PAWN];
         } else if (GetMoveType(m) == CASTLING) {
-            Square rook_to = RookMoveTo(from, to);
-            Square rook_from = RookMoveFrom(from, to);
+            Move rook_move = board.RookCastlingMove(to, board.GetCr(), to_move);
+            Square rook_to = ToSquare(rook_move);
+            Square rook_from = FromSquare(rook_move);
             mg[to_move] -=
                     EvalValues::mg_table[to_move][ROOK][rook_to] - EvalValues::mg_table[to_move][ROOK][rook_from];
             eg[to_move] -=

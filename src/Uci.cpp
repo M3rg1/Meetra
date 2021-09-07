@@ -32,32 +32,22 @@ namespace Meetra::Uci {
             << "option name MultiPV type spin default 1 min 1 max 32\n"
             << "option name Mute plies type spin default 1 min 1 max 64\n"
             << "option name OwnBook type check default false\n"
-            << "option name Cores type spin default " << DEFAULT_SEARCH_THREADS << " min 1 max " << MAX_SEARCH_THREADS;
+            << "option name Cores type spin default " << DEFAULT_SEARCH_THREADS << " min 1 max " << MAX_SEARCH_THREADS
+            << "option name UCI_Chess960 type check default false";
         return oss.str();
     }
 
     void UciCommand();
-
     void IsReadyCommand();
-
     void GoCommand(std::istringstream &iss, const Board &board);
-
     void UciNewGameCommand();
-
     void PositionCommand(std::istringstream &iss, Board &board);
-
     void PerftCommand(std::istringstream &iss, Board &board);
-
     void SetOptionCommand(std::istringstream &iss);
-
     void StopCommand();
-
     void BoardCommand(const Board &board);
-
     void TestCommand();
-
     void QuitCommand();
-
     void UnknownCommand();
 
     Search::SearchSettings ParseSearchOptions(std::istringstream &iss);
@@ -106,7 +96,7 @@ namespace Meetra::Uci {
     }
 
     void BoardCommand(const Board &board) {
-        Uci::Send("\n" + board.PPBoard());
+        Uci::Send('\n' + board.PPBoard());
     }
 
     void TestCommand() {
@@ -179,6 +169,7 @@ namespace Meetra::Uci {
 
         if (!board.NewPosition(fen)) {
             SendInfo("Invalid fen string!");
+            return;
         }
 
         if (token == "moves") {
@@ -241,6 +232,8 @@ namespace Meetra::Uci {
             Search::ShowCurrMoveInfo(value == "true");
         } else if (option == "ownbook") {
             Search::SetUseBook(value == "true");
+        }else if (option == "uci_chess960"){
+            Search::SetChess960(value == "true");
         } else {
             SendInfo("Unknown option: " + option);
         }
@@ -250,28 +243,20 @@ namespace Meetra::Uci {
 
         Search::SearchSettings settings;
         std::string option;
-        std::string value;
 
         while (iss >> option) {
 
-            iss >> value;
-
-            if (!Utils::IsPositiveNumber(value)) {
-                SendInfo("Invalid value: " + value + " for option: " + option);
-                continue;
-            }
-
-            if (option == "wtime") settings.white_time = std::stoi(value);
-            else if (option == "btime") settings.black_time = std::stoi(value);
-            else if (option == "winc") settings.white_increment = std::stoi(value);
-            else if (option == "binc") settings.black_increment = std::stoi(value);
+            if (option == "wtime") iss >> settings.white_time;
+            else if (option == "btime") iss >> settings.black_time;
+            else if (option == "winc") iss >> settings.white_increment;
+            else if (option == "binc") iss >> settings.black_increment;
             else if (option == "movetime") {
                 settings.fixed_time = true;
-                settings.allowed_time = std::stoi(value);
+                iss >> settings.allowed_time;
             } else if (option == "infinite") {
                 settings.infinite = true;
             } else if (option == "depth") {
-                settings.max_allowed_depth = std::stoi(value);
+                iss >> settings.max_allowed_depth;
                 settings.fixed_depth = true;
             } else if (option == "movestogo") {
 

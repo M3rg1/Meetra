@@ -10,7 +10,7 @@ namespace Meetra::Bitboards {
 
     [[nodiscard]] Bitboard GetUnboundRookMoves(Square s);
     [[nodiscard]] Bitboard GetUnboundBishopMoves(Square s);
-    [[nodiscard]] Bitboard GetRayBetweenEdges(Square s1, Square s2);
+    [[nodiscard]] Bitboard GetRayToBorders(Square s1, Square s2);
     [[nodiscard]] Bitboard GetRayBetweenSquares(Square s1, Square s2);
 
     template<PieceType PT>
@@ -25,6 +25,8 @@ namespace Meetra::Bitboards {
         _BitScanForward64(&idx, b);
         return (Square) idx;
     }*/
+    [[nodiscard]] Bitboard GetRankMask(Rank r);
+    [[nodiscard]] inline Square Msb(Bitboard b) { return static_cast<Square>(63 ^ __builtin_clzll(b)); }
     [[nodiscard]] inline Square Lsb(Bitboard b) { return static_cast<Square>(__builtin_ctzll(b)); }
     inline Square PopLsb(Bitboard &b) {
         Square s = Lsb(b);

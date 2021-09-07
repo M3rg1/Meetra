@@ -3,12 +3,11 @@
 #include "Bitboards.h"
 #include "Board.h"
 #include <algorithm>
-#include "Uci.h"
 
 namespace Meetra::Zobrist {
 
     uint64_t piece_keys[64][12];
-    uint64_t castling_keys[16];
+    uint64_t castling_keys[64];
     uint64_t ep_keys[8];
     uint64_t to_move_keys[2];
 
@@ -16,9 +15,9 @@ namespace Meetra::Zobrist {
 
         auto seed = 7299078832781365792;
         std::mt19937_64 mt(seed);
-        auto gen = [&](){ return mt(); };
+        auto gen = [&] { return mt(); };
 
-        for (auto &piece_types : piece_keys) {
+        for (auto &piece_types: piece_keys) {
             std::ranges::generate(piece_types, gen);
         }
         std::ranges::generate(castling_keys, gen);
@@ -26,11 +25,11 @@ namespace Meetra::Zobrist {
         std::ranges::generate(to_move_keys, gen);
     }
 
-    void PutPiece(ZobristHash &h, Piece p, Square s){
+    void PutPiece(ZobristHash &h, Piece p, Square s) {
         h ^= piece_keys[s][IdxFromPiece(p)];
     }
 
-    void RemovePiece(ZobristHash &h, Piece p, Square s){
+    void RemovePiece(ZobristHash &h, Piece p, Square s) {
         PutPiece(h, p, s);
     }
 
@@ -38,19 +37,22 @@ namespace Meetra::Zobrist {
         h ^= ep_keys[FileFromSquare(s)];
     }
 
-    void RemoveEp(ZobristHash &h, Square s){
+    void RemoveEp(ZobristHash &h, Square s) {
         AddEp(h, s);
     }
 
-    void UpdateCr(ZobristHash &h, CastlingRights previous, CastlingRights current){
-        h ^= castling_keys[previous >> 6] ^ castling_keys[current >> 6];
+    void UpdateCr(ZobristHash &h, Bitboard previous, Bitboard current) {
+        Bitboard cr_change = previous ^ current;
+        while (cr_change) {
+            h ^= castling_keys[Bitboards::PopLsb(cr_change)];
+        }
     }
 
-    void UpdateColor(ZobristHash &h, Color to_move){
+    void UpdateColor(ZobristHash &h, Color to_move) {
         h ^= to_move_keys[OtherColor(to_move)] ^ to_move_keys[to_move];
     }
 
-    void MovePiece(ZobristHash &h, Piece p, Square from, Square to){
+    void MovePiece(ZobristHash &h, Piece p, Square from, Square to) {
         RemovePiece(h, p, from);
         PutPiece(h, p, to);
     }
@@ -75,7 +77,12 @@ namespace Meetra::Zobrist {
         if (board.EpSquare()) {
             hash ^= ep_keys[FileFromSquare(board.EpSquare())];
         }
-        hash ^= castling_keys[board.GetCR() >> 6];
+
+        Bitboard cr = board.GetCr();
+        while(cr) {
+            hash ^= castling_keys[Bitboards::PopLsb(cr)];
+        }
+
         hash ^= to_move_keys[board.ColorToMove()];
 
         return hash;

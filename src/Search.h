@@ -35,6 +35,7 @@ namespace Meetra::Search {
         inline std::atomic<Depth> mt_depth;
         inline TranspositionTable tt;
         inline SearchSettings settings;
+        inline bool chess960;
         inline bool use_book;
         inline bool show_currline;
         inline bool show_currmove;
@@ -105,6 +106,7 @@ namespace Meetra::Search {
     inline void SetMultiPv(int pv_num) { Globals::multi_pv = std::max(1, pv_num); }
     inline void ClearTT() { Globals::tt.Clear(); }
     inline void SetTTSize(int size_mb) { Globals::tt.Init(size_mb); }
+    inline void SetChess960(bool set) { Globals::chess960 = set; }
     void SetNumThreads(int num);
 
 }

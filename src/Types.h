@@ -95,42 +95,21 @@ namespace Meetra {
     };
 
     inline Bitboard SquareToBB(Square s) { return static_cast<Bitboard>(0x1) << s; }
-    inline Square SquareFromFiRa(File f, Rank r) { return static_cast<Square>((r << 3) | f); }
+    inline Square SqFromFiRa(File f, Rank r) { return static_cast<Square>((r << 3) | f); }
     inline File FileFromSquare(Square s) { return static_cast<File>(s & 7); }
     inline Rank RankFromSquare(Square s) { return static_cast<Rank>(s >> 3); }
     inline Square NameToSquare(const std::string& name) {
-        return SquareFromFiRa(FileFromChar(name[0]), RankFromChar(name[1]));
+        return SqFromFiRa(FileFromChar(name[0]), RankFromChar(name[1]));
     }
     inline std::string SquareToName(Square s) {
         return {CharFromFile(FileFromSquare(s)), CharFromRank(RankFromSquare(s))};
     }
 
 #pragma region ===== Castling related stuff =====
-    enum CastlingRights {
-        NO_CASTLING = 0, WHITE_SHORT = 1 << 6, WHITE_LONG = 1 << 7, BLACK_SHORT = 1 << 8, BLACK_LONG = 1 << 9,
-        WHITE_ALL_CR = WHITE_SHORT | WHITE_LONG,
-        BLACK_ALL_CR = BLACK_LONG | BLACK_SHORT,
-        ALL_CR = WHITE_SHORT | WHITE_LONG | BLACK_SHORT | BLACK_LONG
+    enum CastlingSide {
+        SHORT, LONG
     };
 
-    inline CastlingRights castling_mask[SQUARE_NR]{
-            WHITE_LONG, NO_CASTLING, NO_CASTLING, NO_CASTLING, WHITE_ALL_CR, NO_CASTLING, NO_CASTLING, WHITE_SHORT,
-            NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING,
-            NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING,
-            NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING,
-            NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING,
-            NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING,
-            NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING, NO_CASTLING,
-            BLACK_LONG, NO_CASTLING, NO_CASTLING, NO_CASTLING, BLACK_ALL_CR, NO_CASTLING, NO_CASTLING, BLACK_SHORT
-    };
-
-    inline Square RookMoveTo(Square king_from, Square king_to) {
-        return king_to > king_from ? static_cast<Square>(king_to - 1) : static_cast<Square>(king_to + 1);
-    }
-
-    inline Square RookMoveFrom(Square king_from, Square king_to) {
-        return king_to > king_from ? static_cast<Square>(king_to + 1) : static_cast<Square>(king_to - 2);
-    }
 #pragma endregion
 
 #pragma region ===== Move =====
@@ -183,24 +162,7 @@ namespace Meetra {
     inline Square ToSquare(Move m) { return static_cast<Square>((m & 0xFC0) >> 6); }
     inline bool IsPromotion(Move m) { return m >> 14; }
     inline MoveType GetMoveType(Move m) { return static_cast<MoveType>(m & 0xF000); }
-    inline std::string GetMoveName(Move m) {
 
-        if (m == ZERO_MOVE) {
-            return "0000";
-        }
-
-        std::string ret = SquareToName(FromSquare(m)) + SquareToName(ToSquare(m));
-
-        if (IsPromotion(m)) {
-            MoveType prom_flag = GetMoveType(m);
-            ret += prom_flag == PROMOTE_QUEEN ? 'q' :
-                   prom_flag == PROMOTE_ROOK ? 'r' :
-                   prom_flag == PROMOTE_BISHOP ? 'b' :
-                   'n';
-        }
-
-        return ret;
-    }
 #pragma endregion
 #pragma endregion
 
