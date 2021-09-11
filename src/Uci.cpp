@@ -33,6 +33,7 @@ namespace Meetra::Uci {
             << "option name Mute plies type spin default 1 min 1 max 64\n"
             << "option name OwnBook type check default false\n"
             << "option name Cores type spin default " << DEFAULT_SEARCH_THREADS << " min 1 max " << MAX_SEARCH_THREADS
+            << "\n"
             << "option name UCI_Chess960 type check default false";
         return oss.str();
     }

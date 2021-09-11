@@ -254,6 +254,8 @@ namespace Meetra {
         return (pieces & walk_sq) == EMPTY_BB;
     }
 
+#pragma region ===== Validating whether a move is pseudo-legal =====
+
     bool MoveGen::IsPseudoLegal(Move m) const {
 
         if (m == ZERO_MOVE) {
@@ -393,4 +395,7 @@ namespace Meetra {
         }
         return false;
     }
+
+#pragma endregion
+
 }

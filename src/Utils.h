@@ -5,10 +5,6 @@
 
 namespace Meetra::Utils {
 
-    inline bool IsPositiveNumber(std::string_view str) {
-        return str.find_first_not_of("0123456789") == std::string_view::npos;
-    }
-
     inline bool AllUniqueChars(std::string str) {
         std::ranges::sort(str);
         for (int i = 0; i < str.length() - 1; i++) {
@@ -21,6 +17,10 @@ namespace Meetra::Utils {
 
     inline bool ContainsOnlyChars(std::string_view str, std::string_view chars) {
         return str.find_first_not_of(chars) == std::string_view::npos;
+    }
+
+    inline bool IsPositiveNumber(std::string_view str) {
+        return ContainsOnlyChars(str, "0123456789");
     }
 
 }

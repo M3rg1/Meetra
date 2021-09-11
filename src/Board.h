@@ -32,6 +32,7 @@ namespace Meetra {
         [[nodiscard]] Bitboard AttackedBy(Square s, Color attacked_by, Bitboard occ) const;
         [[nodiscard]] Bitboard PinnedPiecesForSquare(Square s, Color blockers_color) const;
         [[nodiscard]] std::string GetMoveName(Move m) const;
+        [[nodiscard]] Move NewMoveFromName(std::string_view move_name) const;
 
 #pragma region ===== Getters =====
         [[nodiscard]] inline int HistorySize() const { return static_cast<int>(history_cnt); }
@@ -87,6 +88,7 @@ namespace Meetra {
 
     private:
 #pragma region ===== Game State definitions =====
+        // TODO consider removing GameSate altogether, and replacing it with individual variables
         // from right to left
         // bits 0-5 = ep square index
         // bits 6-7 = castling rights white // OBSOLETE

@@ -67,12 +67,9 @@ namespace Meetra::Search {
         std::vector<RootMove> moves;
         Move move;
         while ((move = move_gen.GetBestMove<MoveGen::NORMAL>())) {
-            if (!board.MakeMove(move)) {
-                board.UnmakeMove(move);
-                continue;
+            if (board.IsMoveLegal(move)) {
+                moves.emplace_back(move);
             }
-            board.UnmakeMove(move);
-            moves.emplace_back(move);
         }
         return moves;
     }
@@ -107,7 +104,7 @@ namespace Meetra::Search {
         InitSearch(s, board);
 
         if (Globals::use_book && !Globals::settings.fixed_depth && !Globals::settings.infinite &&
-            !Globals::settings.fixed_time && board.HistorySize() <= 30) {
+            !Globals::settings.fixed_time && !Globals::chess960 && board.HistorySize() <= 30) {
             auto moves = Book::ProbeBook(board);
             if (!moves.empty()) {
                 StopSearch();

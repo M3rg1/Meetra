@@ -45,7 +45,7 @@ namespace Meetra {
         }
 
         TTBucket &bucket = table[key % buckets_count];
-        TTEntry *entry_to_write = nullptr;
+        TTEntry *entry_to_write;
         Key32 key_32 = Zobrist::Make32Key(key);
         int worst_entry_score = INT_MAX;
 
@@ -54,6 +54,8 @@ namespace Meetra {
             if (entry.Get32Key() == key_32) {
                 if (entry.GetEpoch() != current_epoch || entry.GetDepth() <= depth) {
                     entry_to_write = &entry;
+                } else {
+                    entry_to_write = nullptr;
                 }
                 break;
             }

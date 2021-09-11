@@ -29,6 +29,7 @@ namespace Meetra {
 
             Score alpha = NEGATIVE_INF;
             Score beta = POSITIVE_INF;
+            bool search_pv = true;
 
             // alpha beta search over root moves
             for (curr_rm_num = 0; curr_rm_num < root_moves.size(); curr_rm_num++) {
@@ -48,7 +49,17 @@ namespace Meetra {
                 nodes_explored.fetch_add(1, std::memory_order_relaxed);
                 curr_rm->nodes++;
                 board.MakeMove(curr_rm->move);
-                Score score = -NegaMax(-beta, -alpha, depth_reached - 1, 2, curr_rm->pv);
+
+                Score score;
+                if(search_pv) {
+                    score = -NegaMax(-beta, -alpha, depth_reached - 1, 2, curr_rm->pv);
+                } else {
+                    score = -NegaMax(-alpha - 1, -alpha, depth_reached - 1, 2, curr_rm->pv);
+                    if(score > alpha) {
+                        score = -NegaMax(-beta, -alpha, depth_reached - 1, 2, curr_rm->pv);
+                    }
+                }
+                //Score score = -NegaMax(-beta, -alpha, depth_reached - 1, 2, curr_rm->pv);
                 board.UnmakeMove(curr_rm->move);
 
                 if (!Search::Run()) {
@@ -61,6 +72,7 @@ namespace Meetra {
                 if (Search::Globals::multi_pv > 1) {
                     curr_rm->score = score;
                 } else if (score > alpha) {
+                    search_pv = false;
                     curr_rm->score = score;
                     alpha = score;
                 } else {
@@ -141,6 +153,7 @@ namespace Meetra {
         Search::PVMoveLine line;
         tt_flag = ALPHA;
         bool no_moves = true;
+        bool search_pv = true;
 
         bool used_tt_move = tt_move == ZERO_MOVE;
 
@@ -163,8 +176,19 @@ namespace Meetra {
             no_moves = false;
             nodes_explored.fetch_add(1, std::memory_order_relaxed);
             curr_rm->nodes++;
-            line.Clear();
-            score = -NegaMax(-beta, -alpha, depth - 1, ply + 1, line);
+            if(search_pv) {
+                score = -NegaMax(-beta, -alpha, depth - 1, ply + 1, line);
+            } else {
+                score = -NegaMax(-alpha - 1, -alpha, depth - 1, ply + 1, line);
+                if(score > alpha && score < beta) {
+                    score = -NegaMax(-beta, -alpha, depth - 1, ply + 1, line);
+                }
+            } // setoption name clear hash
+
+
+            // position fen 8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - -
+            // position fen r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -
+
             board.UnmakeMove(move);
 
             if (!Search::Run()) {
@@ -189,6 +213,7 @@ namespace Meetra {
 
                     tt_flag = EXACT_SCORE;
                     alpha = score;
+                    search_pv = false;
                 }
             }
         }

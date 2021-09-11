@@ -134,21 +134,6 @@ namespace Meetra {
     inline Move NewMove(Square from, Square to, MoveType flag) { return static_cast<Move>(NewMove(from, to) | flag); }
     // Make a move from UCI move string, if the move is a promotion, it will set the appropriate flag,
     // however for non-promotion special moves (castling, two forward ...) it wont.
-    inline Move NewMoveFromName(std::string_view move_name) {
-
-        Square s_from = NameToSquare(&move_name[0]);
-        Square s_to = NameToSquare(&move_name[2]);
-
-        if (move_name.length() > 4) {
-            MoveType flag = move_name[4] == 'q' ? PROMOTE_QUEEN :
-                            move_name[4] == 'r' ? PROMOTE_ROOK :
-                            move_name[4] == 'b' ? PROMOTE_BISHOP :
-                            PROMOTE_KNIGHT;
-            return NewMove(s_from, s_to, flag);
-        }
-
-        return NewMove(s_from, s_to);
-    }
 #pragma endregion
 
 #pragma region ===== Utils =====

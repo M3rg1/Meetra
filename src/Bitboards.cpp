@@ -169,7 +169,7 @@ namespace Meetra::Bitboards {
 
 #pragma region ===== Precomputing king moves, knight moves, pawn attacks =====
 
-    void GenPieceMoves(std::initializer_list<Direction> dirs, Bitboard output[]) {
+    void GenPieceMoves(std::initializer_list<Direction> dirs, Bitboard output[SQUARE_NR]) {
         for (Square s = A1; s <= H8; ++s) {
             Bitboard moves = EMPTY_BB;
             for (auto d: dirs) {

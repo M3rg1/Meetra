@@ -5,7 +5,7 @@
 #include "EvalValues.h"
 #include "Book.h"
 
-int main(int argc, char *arv[]) {
+int main() {
 
     Meetra::Uci::Init();
     Meetra::Bitboards::Init();
