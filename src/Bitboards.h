@@ -20,11 +20,6 @@ namespace Meetra::Bitboards {
     [[nodiscard]] inline bool ExactlyOne(Bitboard b) { return b && !MoreThanOne(b); }
     [[nodiscard]] inline int PopCount(Bitboard b) { return std::__popcount(b); }
 
-    /*inline Square Lsb(Bitboard b) {
-        unsigned long idx;
-        _BitScanForward64(&idx, b);
-        return (Square) idx;
-    }*/
     [[nodiscard]] Bitboard GetRankMask(Rank r);
     [[nodiscard]] inline Square Msb(Bitboard b) { return static_cast<Square>(63 ^ __builtin_clzll(b)); }
     [[nodiscard]] inline Square Lsb(Bitboard b) { return static_cast<Square>(__builtin_ctzll(b)); }
@@ -44,18 +39,6 @@ namespace Meetra::Bitboards {
         else if constexpr (D == NORTH_WEST) return (b & ~0x0101010101010101UL) << 7;
         else if constexpr (D == SOUTH_EAST) return (b & ~0x8080808080808080UL) >> 7;
         else if constexpr (D == SOUTH_WEST) return (b & ~0x0101010101010101UL) >> 9;
-        else return EMPTY_BB;
-    }
-
-    inline Bitboard Shift(Direction shift_dir, Bitboard b) {
-        if (shift_dir == NORTH) return Shift<NORTH>(b);
-        else if (shift_dir == SOUTH) return Shift<SOUTH>(b);
-        else if (shift_dir == EAST) return Shift<EAST>(b);
-        else if (shift_dir == WEST) return Shift<WEST>(b);
-        else if (shift_dir == NORTH_EAST) return Shift<NORTH_EAST>(b);
-        else if (shift_dir == NORTH_WEST) return Shift<NORTH_WEST>(b);
-        else if (shift_dir == SOUTH_EAST) return Shift<SOUTH_EAST>(b);
-        else if (shift_dir == SOUTH_WEST) return Shift<SOUTH_WEST>(b);
         else return EMPTY_BB;
     }
 }

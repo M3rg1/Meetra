@@ -338,52 +338,6 @@ namespace Meetra {
         return false;
     }
 
-    // do not use, doesn't work anymore with  chess 960
-    void Board::ParseFen(const std::string &fen) {
-
-        std::istringstream iss(fen);
-        std::string token;
-
-        iss >> token;
-        Square s = A8;
-        for (char c: token) {
-            if (std::isdigit(c)) {
-                s += c - '0';
-            } else if (c == '/') {
-                s -= 16;
-            } else {
-                PutPiece(s, CharToPiece(c));
-                ++s;
-            }
-        }
-
-        iss >> token;
-        SetColorToMove(token == "w" ? WHITE : BLACK);
-
-        iss >> token;
-        for (char c: token) {
-            if (token.find('K') != std::string::npos) curr_data.cr |= SquareToBB(H1);
-            if (token.find('Q') != std::string::npos) curr_data.cr |= SquareToBB(A1);
-            if (token.find('k') != std::string::npos) curr_data.cr |= SquareToBB(H8);
-            if (token.find('q') != std::string::npos) curr_data.cr |= SquareToBB(A8);
-            if ('A' <= c && c <= 'H') curr_data.cr |= SquareToBB(SqFromFiRa(FileFromChar(tolower(c)), RANK_1));
-            if ('a' <= c && c <= 'h') curr_data.cr |= SquareToBB(SqFromFiRa(FileFromChar(c), RANK_8));
-        }
-
-        iss >> token;
-        if (token != "-") {
-            File file = FileFromChar(token[0]);
-            Rank rank = RankFromChar(token[1]);
-            SetEpSquare(SqFromFiRa(file, rank));
-        }
-
-        iss >> token;
-        SetPly(std::stoi(token));
-
-        iss >> token;
-        SetMoveNumber(std::stoi(token));
-    }
-
     bool Board::ParseFenValidate(const std::string &fen) {
 
         std::istringstream iss(fen);
@@ -456,7 +410,7 @@ namespace Meetra {
                         q_rook = r_square;
                     }
                     if ('A' <= c && c <= 'H') {
-                        Bitboard r_square = SquareToBB(SqFromFiRa(FileFromChar(tolower(c)), RANK_1));
+                        Bitboard r_square = SquareToBB(SqFromFiRa(FileFromChar(tolower(c, std::locale())), RANK_1));
                         curr_data.cr |= r_square;
                         r_square > w_king ? K_rook = r_square : Q_rook = r_square;
                     }
@@ -552,13 +506,11 @@ namespace Meetra {
 
         if (Search::Globals::chess960) {
             Piece p = GetPieceOnSquare(s_to);
-            PieceType pt = TypeOfPiece(p);
-            Color c = ColorOfPiece(p);
-            if (c == ColorToMove() && pt == ROOK) {
+            if (ColorOfPiece(p) == ColorToMove() && TypeOfPiece(p) == ROOK) {
                 if (s_to > s_from) {
-                    return NewMove(s_from, c == WHITE ? G1 : G8, CASTLING);
+                    return NewMove(s_from, ColorOfPiece(p) == WHITE ? G1 : G8, CASTLING);
                 } else {
-                    return NewMove(s_from, c == WHITE ? C1 : C8, CASTLING);
+                    return NewMove(s_from, ColorOfPiece(p) == WHITE ? C1 : C8, CASTLING);
                 }
             }
         }
@@ -571,7 +523,7 @@ namespace Meetra {
         std::ostringstream oss;
 
         for (Rank r = RANK_8; r >= RANK_1; --r) {
-            oss << std::to_string(r + 1) << " |";
+            oss << r + 1 << " |";
             for (File f = FILE_A; f <= FILE_H; ++f) {
                 oss << ' ' << PieceToChar(GetPieceOnSquare(SqFromFiRa(f, r))) << ' ';
             }
@@ -581,7 +533,7 @@ namespace Meetra {
             << "  | A  B  C  D  E  F  G  H\n\n"
             << "Player to move: " << (ColorToMove() == WHITE ? "white\n" : "black\n")
             << "Castling rights: ";
-        if (!CanCastleAny()) {
+        if (!GetCr()) {
             oss << '-';
         } else {
             if (CanWShortCastle()) oss << 'K';
@@ -589,7 +541,7 @@ namespace Meetra {
             if (CanBShortCastle()) oss << 'k';
             if (CanBLongCastle()) oss << 'q';
         }
-        oss << " | EP square: " << (EpSquare() == SQUARE_ZERO ? "-" : SquareToName(EpSquare())) << '\n'
+        oss << " | EP square: " << (EpSquare() ? SquareToName(EpSquare()) : "-") << '\n'
             << "Fullmove clock: " << TotalMoves() << " | Halfmove clock: " << Ply();
 
         return oss.str();

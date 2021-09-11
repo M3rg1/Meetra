@@ -145,8 +145,11 @@ namespace Meetra::Uci {
     void PerftCommand(std::istringstream &iss, Board &board) {
         std::string token;
         iss >> token;
-        Depth depth = std::stoi(token);
-        RunPerft(depth, board);
+        if (!Utils::IsPositiveNumber(token)) {
+            SendInfo("Invalid perft depth");
+            return;
+        }
+        RunPerft(std::stoi(token), board);
     }
 
     void IsReadyCommand() {

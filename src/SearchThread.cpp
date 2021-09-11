@@ -129,11 +129,11 @@ namespace Meetra {
             return QSearch(alpha, beta, ply);
         }
 
-        EntryFlag tt_flag;
+        TTFlag tt_flag;
         Move tt_move;
         Score score;
         MoveGen move_gen(board);
-        Search::Globals::tt.Probe(board.GetZobristHash(), alpha, beta, depth, ply, score, tt_flag, tt_move);
+        Search::Globals::tt.Probe(board.GetHash(), alpha, beta, depth, ply, score, tt_flag, tt_move);
 
         // do a check of the retrieved move, if it's legal to play in the current position and not corrupted,
         // chances are, the score is correct as well
@@ -207,7 +207,7 @@ namespace Meetra {
                     pv_line.PutLine(line);
 
                     if (score >= beta) {
-                        Search::Globals::tt.Save(board.GetZobristHash(), beta, depth, move, BETA, ply);
+                        Search::Globals::tt.Save(board.GetHash(), beta, depth, move, BETA, ply);
                         return beta;
                     }
 
@@ -222,7 +222,7 @@ namespace Meetra {
             return move_gen.IsKingInCheck() ? -MATE_SCORE + ply : -DRAW_SCORE;
         }
 
-        Search::Globals::tt.Save(board.GetZobristHash(), alpha, depth, best_move, tt_flag, ply);
+        Search::Globals::tt.Save(board.GetHash(), alpha, depth, best_move, tt_flag, ply);
 
         return alpha;
     }

@@ -14,7 +14,7 @@ namespace Meetra {
 #define MAX_HASH_SIZE 8192
 #define TT_ENTRIES_PER_BUCKET 4
 
-    enum EntryFlag : uint8_t {
+    enum TTFlag {
         EXACT_SCORE, ALPHA, BETA, NOT_FOUND
     };
 
@@ -23,12 +23,12 @@ namespace Meetra {
     public:
 
         void Init(size_t size_mb = DEFAULT_HASH_SIZE);
-        void Save(ZobristHash key, Score score, Depth depth, Move move, EntryFlag flag, Depth ply);
+        void Save(ZobristHash key, Score score, Depth depth, Move move, TTFlag flag, Depth ply);
         void NewSearch();
         void Clear();
 
         void Probe(ZobristHash key, Score alpha, Score beta, Depth depth, Depth ply, Score &score,
-                   EntryFlag &flag, Move &move) const;
+                   TTFlag &flag, Move &move) const;
         // 0.01 == 1% usage, 0.1 == 10% usage, 1 == 100% usage
         [[nodiscard]] inline double Usage() const {
             if (buckets_count == 0) return 0.0;
@@ -38,6 +38,8 @@ namespace Meetra {
         }
 
     private:
+
+        using Epoch = int;
 
         // 10 bytes + 2 alignment
         class TTEntry {
@@ -52,16 +54,15 @@ namespace Meetra {
             [[nodiscard]] inline Score GetScore() const { return static_cast<Score>(score); }
             [[nodiscard]] inline Depth GetDepth() const { return static_cast<Depth>(depth); }
             [[nodiscard]] inline Move GetMove() const { return static_cast<Move>(move); }
-            [[nodiscard]] inline EntryFlag GetFlag() const { return static_cast<EntryFlag>(epoch_and_flag & 0x3); }
+            [[nodiscard]] inline TTFlag GetFlag() const { return static_cast<TTFlag>(epoch_and_flag & 0x3); }
             [[nodiscard]] inline Epoch GetEpoch() const { return static_cast<Epoch>(epoch_and_flag >> 2); }
-            [[nodiscard]] inline bool IsEmpty() const { return GetEpoch() == 0; }
 
             inline void SetEpoch(Epoch e) {
                 epoch_and_flag &= 0x3;
                 epoch_and_flag |= static_cast<uint8_t>(e) << 2;
             }
 
-            inline void SaveEntry(Key32 k, Score s, Depth d, Move m, EntryFlag f, Epoch e) {
+            inline void SaveEntry(Key32 k, Score s, Depth d, Move m, TTFlag f, Epoch e) {
                 key = static_cast<uint32_t>(k);
                 score = static_cast<int16_t>(s);
                 depth = static_cast<uint8_t>(d);

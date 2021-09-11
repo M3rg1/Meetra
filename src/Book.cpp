@@ -72,7 +72,7 @@ namespace Meetra::Book {
         }
 
         size_t end = std::filesystem::file_size(FILE_NAME);
-        return BinarySearch(read_book, 0, end, board.GetZobristHash());
+        return BinarySearch(read_book, 0, end, board.GetHash());
     }
 
 
@@ -302,7 +302,7 @@ namespace Meetra::Book {
                         continue;
                     }
 
-                    positions.emplace_back(BookEntry_count{board.GetZobristHash(), move});
+                    positions.emplace_back(BookEntry_count{board.GetHash(), move});
                     move_ok = true;
                     if (!board.MakeMove(move)) {
                         Uci::Send("This should not happen! Line: " + line);

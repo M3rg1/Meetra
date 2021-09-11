@@ -38,7 +38,7 @@ namespace Meetra {
         std::fill_n(table.get(), buckets_count, TTBucket());
     }
 
-    void TranspositionTable::Save(ZobristHash key, Score score, Depth depth, Move move, EntryFlag flag, Depth ply) {
+    void TranspositionTable::Save(ZobristHash key, Score score, Depth depth, Move move, TTFlag flag, Depth ply) {
 
         if (buckets_count == 0) {
             return;
@@ -81,7 +81,7 @@ namespace Meetra {
     }
 
     void TranspositionTable::Probe(ZobristHash key, Score alpha, Score beta,
-                                   Depth depth, Depth ply, Score &score, EntryFlag &flag, Move &move) const {
+                                   Depth depth, Depth ply, Score &score, TTFlag &flag, Move &move) const {
 
         flag = NOT_FOUND;
         move = ZERO_MOVE;

@@ -5,18 +5,16 @@
 
 namespace Meetra {
 
-    typedef uint_fast8_t Epoch;
+    using Depth = int;
 
-    typedef uint_fast8_t Depth;
+    using Score = int;
 
-    typedef int_fast16_t Score;
-
-    typedef uint_fast64_t ZobristHash;
+    using ZobristHash = uint64_t;
 #define NEW_HASH 0
 
-    typedef uint_fast64_t Key32;
+    using Key32 = uint32_t;
 
-    typedef uint64_t Bitboard;
+    using Bitboard = uint64_t;
 #define EMPTY_BB 0
 
     enum GenPhase {
@@ -29,7 +27,7 @@ namespace Meetra {
     };
 
     inline Color OtherColor(Color c) {
-        return static_cast<Color>(!c);
+        return static_cast<Color>(c ^ 1);
     }
 
     enum PieceType {
@@ -65,7 +63,6 @@ namespace Meetra {
     constexpr std::string_view piece_char = "oPNBRQK  pnbrqk";
 
     inline Piece CharToPiece(char c) {
-        // if not found -> std::string:npos + 1 == 0 == NO_PIECE, else -> index == desired piece
         return static_cast<Piece>(piece_char.find(c));
     }
 
@@ -91,7 +88,6 @@ namespace Meetra {
         A7, B7, C7, D7, E7, F7, G7, H7,
         A8, B8, C8, D8, E8, F8, G8, H8,
         SQUARE_NR,
-        SQUARE_ZERO = 0,
     };
 
     inline Bitboard SquareToBB(Square s) { return static_cast<Bitboard>(0x1) << s; }
@@ -105,12 +101,9 @@ namespace Meetra {
         return {CharFromFile(FileFromSquare(s)), CharFromRank(RankFromSquare(s))};
     }
 
-#pragma region ===== Castling related stuff =====
     enum CastlingSide {
         SHORT, LONG
     };
-
-#pragma endregion
 
 #pragma region ===== Move =====
     /**
@@ -120,35 +113,25 @@ namespace Meetra {
      * 12-15 MoveType flag
      * if the 14th bit is 1, it's a promotion move -> prom bits  N = 0010, B = 1010, R = 0110, Q = 0111
      */
-     // MMMMMMMM MMMMFFFF
-     // 00000000 00001111
-    typedef uint16_t Move;
+    using Move = uint16_t;
 
     enum MoveType {
         ZERO_MOVE = 0, NO_FLAG = 0, EN_PASSANT = 1 << 12, CASTLING = 2 << 12, TWO_FORWARD = 3 << 12,
         PROMOTE_KNIGHT = 4 << 12, PROMOTE_BISHOP = 5 << 12, PROMOTE_ROOK = 6 << 12, PROMOTE_QUEEN = 7 << 12
     };
 
-#pragma region ===== Initialization =====
     inline Move NewMove(Square from, Square to) { return static_cast<Move>(from | to << 6); }
     inline Move NewMove(Square from, Square to, MoveType flag) { return static_cast<Move>(NewMove(from, to) | flag); }
-    // Make a move from UCI move string, if the move is a promotion, it will set the appropriate flag,
-    // however for non-promotion special moves (castling, two forward ...) it wont.
-#pragma endregion
-
-#pragma region ===== Utils =====
-
 
     template<Color C>
     inline int IdxFromPieceType(PieceType pt) { return C == WHITE ? pt - 1 : pt + 5; }
     inline int IdxFromPiece(Piece p) { return ColorOfPiece(p) == WHITE ? p - 1 : p - 3; }
-    inline PieceType PieceTypeFromFlag(MoveType mt) { return static_cast<PieceType >((mt >> 12) - 2); }
+    inline PieceType PieceTypeFromFlag(MoveType mt) { return static_cast<PieceType>((mt >> 12) - 2); }
     inline Square FromSquare(Move m) { return static_cast<Square>(m & 0x3F); }
     inline Square ToSquare(Move m) { return static_cast<Square>((m & 0xFC0) >> 6); }
     inline bool IsPromotion(Move m) { return m >> 14; }
     inline MoveType GetMoveType(Move m) { return static_cast<MoveType>(m & 0xF000); }
 
-#pragma endregion
 #pragma endregion
 
 
@@ -157,24 +140,12 @@ namespace Meetra {
 #define ENABLE_BASE_OPERATORS_ON(T)                                \
 inline T operator+(T d1, int d2) { return T(int(d1) + d2); }    \
 inline T operator-(T d1, int d2) { return T(int(d1) - d2); }    \
-inline T operator-(T d) { return T(-int(d)); }                  \
 inline T& operator+=(T& d1, int d2) { return d1 = d1 + d2; }       \
-inline T& operator-=(T& d1, int d2) { return d1 = d1 - d2; }
+inline T& operator-=(T& d1, int d2) { return d1 = d1 - d2; }      \
 
 #define ENABLE_INCR_OPERATORS_ON(T)                                \
 inline T& operator++(T& d) { return d = T(int(d) + 1); }           \
-inline T& operator--(T& d) { return d = T(int(d) - 1); }           \
-
-#define ENABLE_FULL_OPERATORS_ON(T)                                \
-ENABLE_BASE_OPERATORS_ON(T)                                        \
-inline T operator*(int i, T d) { return T(i * int(d)); }        \
-inline T operator*(T d, int i) { return T(int(d) * i); }        \
-inline T operator/(T d, int i) { return T(int(d) / i); }        \
-inline int operator/(T d1, T d2) { return int(d1) / int(d2); }  \
-inline T& operator*=(T& d, int i) { return d = T(int(d) * i); }    \
-inline T& operator/=(T& d, int i) { return d = T(int(d) / i); }
-
-    ENABLE_BASE_OPERATORS_ON(Square)
+inline T& operator--(T& d) { return d = T(int(d) - 1); }
 
     ENABLE_INCR_OPERATORS_ON(Piece)
     ENABLE_INCR_OPERATORS_ON(PieceType)
@@ -182,22 +153,18 @@ inline T& operator/=(T& d, int i) { return d = T(int(d) / i); }
     ENABLE_INCR_OPERATORS_ON(File)
     ENABLE_INCR_OPERATORS_ON(Rank)
     ENABLE_INCR_OPERATORS_ON(Direction)
-    //ENABLE_INCR_OPERATORS_ON(GenPhase)
 
-    ENABLE_FULL_OPERATORS_ON(File)
-    ENABLE_FULL_OPERATORS_ON(Rank)
-    ENABLE_FULL_OPERATORS_ON(Direction)
+    ENABLE_BASE_OPERATORS_ON(Square)
+    ENABLE_BASE_OPERATORS_ON(File)
+    ENABLE_BASE_OPERATORS_ON(Rank)
 
-    /// Additional operators to add a Direction to a Square
-    inline Square operator+(Square s, Direction d) { return Square(int(s) + int(d)); }
-    inline Square operator-(Square s, Direction d) { return Square(int(s) - int(d)); }
-    inline Square &operator+=(Square &s, Direction d) { return s = s + d; }
-    inline Square &operator-=(Square &s, Direction d) { return s = s - d; }
+    ENABLE_BASE_OPERATORS_ON(Direction)
 
-#undef ENABLE_FULL_OPERATORS_ON
+inline Direction operator*(int i, Direction d) { return Direction(i * int(d)); }        \
+inline Direction operator*(Direction d, int i) { return Direction(int(d) * i); }        \
+
 #undef ENABLE_INCR_OPERATORS_ON
 #undef ENABLE_BASE_OPERATORS_ON
-
 
 #pragma endregion
 

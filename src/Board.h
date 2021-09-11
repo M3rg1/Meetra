@@ -47,12 +47,11 @@ namespace Meetra {
 #pragma region ===== Game State info getters =====
         [[nodiscard]] Move RookCastlingMove(Square king_to, Color c) const;
         [[nodiscard]] inline Bitboard GetCr() const { return curr_data.cr; }
-        [[nodiscard]] inline ZobristHash GetZobristHash() const { return curr_data.hash; }
+        [[nodiscard]] inline ZobristHash GetHash() const { return curr_data.hash; }
         [[nodiscard]] inline bool CanWShortCastle() const { return curr_data.cr & K_rook; }
         [[nodiscard]] inline bool CanWLongCastle() const { return curr_data.cr & Q_rook; }
         [[nodiscard]] inline bool CanBShortCastle() const { return curr_data.cr & k_rook; }
         [[nodiscard]] inline bool CanBLongCastle() const { return curr_data.cr & q_rook; }
-        [[nodiscard]] inline bool CanCastleAny() const { return curr_data.cr; }
         [[nodiscard]] inline Square EpSquare() const { return static_cast<Square >(curr_data.state & 0x3F); }
         [[nodiscard]] inline Color ColorToMove() const { return static_cast<Color>((curr_data.state >> 10) & 0x1); }
         [[nodiscard]] inline Piece CapturedPiece() const { return static_cast<Piece>((curr_data.state >> 11) & 0xF); }
@@ -87,7 +86,6 @@ namespace Meetra {
 #pragma endregion
 
     private:
-#pragma region ===== Game State definitions =====
         // TODO consider removing GameSate altogether, and replacing it with individual variables
         // from right to left
         // bits 0-5 = ep square index
@@ -97,9 +95,8 @@ namespace Meetra {
         // bits 11-14 = captured piece (from last game state to this game state)
         // bits 15-22 = ply since last capture/pawn moves - 50 move rule
         // bits 23+ - total moves made
-        typedef uint32_t GameState;
+        using GameState = uint32_t;
 #define NEW_GAME_STATE 0
-#pragma endregion
 
 #pragma region ===== Game State modifications =====
         // requires new game state
@@ -108,7 +105,6 @@ namespace Meetra {
         inline void SetCapturedPiece(Piece p) { curr_data.state |= static_cast<GameState>(p << 11); }
         inline void SetPly(int ply) { curr_data.state |= static_cast<GameState>(ply << 15); }
         inline void SetMoveNumber(int move_num) { curr_data.state |= static_cast<GameState>(move_num << 23); }
-        //inline void SetCastlingRights2(CastlingRights cr);
 
         // modify current game state
         inline void ResetPly() { curr_data.state &= static_cast<GameState>(~(0xFF << 15)); }
@@ -120,7 +116,6 @@ namespace Meetra {
 #pragma endregion
 
 #pragma region ===== Update inner structures =====
-        void ParseFen(const std::string &fen);
         bool ParseFenValidate(const std::string &fen);
         void RemovePiece(Square s);
         void PutPiece(Square s, Piece p);

@@ -80,7 +80,6 @@ namespace Meetra {
     }
 
     template Move MoveGen::GetBestMove<MoveGen::QSEARCH>();
-
     template Move MoveGen::GetBestMove<MoveGen::NORMAL>();
 
     template<Color C, MoveGen::GEN_TYPE Type>
@@ -242,8 +241,7 @@ namespace Meetra {
             return false;
         }
 
-        // for chess 960 we need to calculate all the squares that we travel through and make sure they are empty
-        // we don't care about them being under attack, that will be taken care of in the MakeMove function
+        // (for chess 960) we need to calculate all the squares that we travel through and make sure they are empty
         Square r_dest = S == LONG ? C == WHITE ? D1 : D8 : C == WHITE ? F1 : F8;
         Square k_dest = S == LONG ? C == WHITE ? C1 : C8 : C == WHITE ? G1 : G8;
         Bitboard pieces = all_pieces ^ rook_bb ^ SquareToBB(king_square);
@@ -275,7 +273,7 @@ namespace Meetra {
             return false;
         }
 
-        // the moved piece is of our color
+        // the moved piece is of color to move
         if (ColorOfPiece(moved_piece) != my_color) {
             return false;
         }
