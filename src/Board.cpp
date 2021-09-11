@@ -89,7 +89,7 @@ namespace Meetra {
             if (GetMoveType(m) == CASTLING) {
                 Square to = ToSquare(m);
                 Square from = FromSquare(m);
-                Move r_move = RookCastlingMove(to, GetCr(), ColorToMove());
+                Move r_move = RookCastlingMove(to, ColorToMove());
                 Square r_from = FromSquare(r_move);
                 // the xor is for chess960, when king doesn't move, but the rook moving could open an attack on the king
                 Bitboard occ = GetPieces(ALL_TYPES) ^ SquareToBB(r_from);
@@ -200,7 +200,7 @@ namespace Meetra {
         // we also need to set captured piece to none, in case the king doesn't move from its square
         if (Search::Globals::chess960 && move_type == CASTLING) {
             captured_piece = NO_PIECE;
-            Move rook_move = RookCastlingMove(to, GetCr(), this_col);
+            Move rook_move = RookCastlingMove(to, this_col);
             Square rook_from = FromSquare(rook_move);
             RemovePiece(rook_from);
         }
@@ -250,7 +250,7 @@ namespace Meetra {
             Zobrist::UpdateCr(curr_data.hash, previous_cr, GetCr());
 
             if (move_type == CASTLING) {
-                Move r_move = RookCastlingMove(to, previous_cr, this_col);
+                Move r_move = RookCastlingMove(to, this_col);
                 Square r_to = ToSquare(r_move);
                 Square r_from = FromSquare(r_move);
                 // put back the rook in chess 960 castling
@@ -277,7 +277,7 @@ namespace Meetra {
 
         // ches960 castling, special case
         if (Search::Globals::chess960 && GetMoveType(m) == CASTLING) {
-            Move rook_move = RookCastlingMove(to, GetCr(), ColorToMove());
+            Move rook_move = RookCastlingMove(to,ColorToMove());
             RemovePiece(ToSquare(rook_move));
             MovePiece(to, from);
             PutPiece(FromSquare(rook_move), NewPiece(ROOK, ColorToMove()));
@@ -295,7 +295,7 @@ namespace Meetra {
             RemovePiece(from);
             PutPiece(from, NewPiece(PAWN, ColorToMove()));
         } else if (GetMoveType(m) == CASTLING) {
-            Move rook_move = RookCastlingMove(to, GetCr(), ColorToMove());
+            Move rook_move = RookCastlingMove(to, ColorToMove());
             MovePiece(ToSquare(rook_move), FromSquare(rook_move));
         }
     }
@@ -310,7 +310,7 @@ namespace Meetra {
         return true;
     }
 
-    Move Board::RookCastlingMove(Square king_to, Bitboard cr, Color c) const {
+    Move Board::RookCastlingMove(Square king_to, Color c) const {
         Square to = FileFromSquare(king_to) == FILE_G ? king_to - 1 : king_to + 1;
         Square from = FileFromSquare(to) == FILE_F ? c == WHITE ? Bitboards::Lsb(K_rook) : Bitboards::Lsb(k_rook) :
                                                      c == WHITE ? Bitboards::Lsb(Q_rook) : Bitboards::Lsb(q_rook);
@@ -520,7 +520,9 @@ namespace Meetra {
 
         // chess 960 castling is denoted by capturing own rook
         if(Search::Globals::chess960 && GetMoveType(m) == CASTLING) {
-            Move r_move = RookCastlingMove(ToSquare(m), GetCr(), ColorToMove());
+            Rank r = RankFromSquare(FromSquare(m));
+            Color c = r == RANK_1 ? WHITE : BLACK;
+            Move r_move = RookCastlingMove(ToSquare(m), c);
             ret = SquareToName(FromSquare(m)) + SquareToName(FromSquare(r_move));
         }
 

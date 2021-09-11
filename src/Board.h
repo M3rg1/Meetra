@@ -45,7 +45,7 @@ namespace Meetra {
 #pragma endregion
 
 #pragma region ===== Game State info getters =====
-        [[nodiscard]] Move RookCastlingMove(Square king_to, Bitboard cr, Color c) const;
+        [[nodiscard]] Move RookCastlingMove(Square king_to, Color c) const;
         [[nodiscard]] inline Bitboard GetCr() const { return curr_data.cr; }
         [[nodiscard]] inline ZobristHash GetZobristHash() const { return curr_data.hash; }
         [[nodiscard]] inline bool CanWShortCastle() const { return curr_data.cr & K_rook; }

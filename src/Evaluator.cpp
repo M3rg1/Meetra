@@ -64,7 +64,7 @@ namespace Meetra::Evaluation {
             gamePhase += EvalValues::gamephaseInc[prom_to];
             gamePhase -= EvalValues::gamephaseInc[PAWN];
         } else if (GetMoveType(m) == CASTLING) {
-            Move r_move = board.RookCastlingMove(to, board.GetCr(), to_move);
+            Move r_move = board.RookCastlingMove(to, to_move);
             Square r_to = ToSquare(r_move);
             Square r_from = FromSquare(r_move);
             mg[to_move] += EvalValues::mg_table[to_move][ROOK][r_to] - EvalValues::mg_table[to_move][ROOK][r_from];
@@ -104,7 +104,7 @@ namespace Meetra::Evaluation {
             mg_val -= EvalValues::mg_table[to_move][PAWN][to];
             eg_val -= EvalValues::eg_table[to_move][PAWN][to];
         } else if (GetMoveType(m) == CASTLING) {
-            Move rook_move = board.RookCastlingMove(to, board.GetCr(), to_move);
+            Move rook_move = board.RookCastlingMove(to, to_move);
             Square rook_to = ToSquare(rook_move);
             Square rook_from = FromSquare(rook_move);
             mg_val += EvalValues::mg_table[to_move][ROOK][rook_to] - EvalValues::mg_table[to_move][ROOK][rook_from];
@@ -142,7 +142,7 @@ namespace Meetra::Evaluation {
             gamePhase -= EvalValues::gamephaseInc[prom_to];
             gamePhase += EvalValues::gamephaseInc[PAWN];
         } else if (GetMoveType(m) == CASTLING) {
-            Move rook_move = board.RookCastlingMove(to, board.GetCr(), to_move);
+            Move rook_move = board.RookCastlingMove(to, to_move);
             Square rook_to = ToSquare(rook_move);
             Square rook_from = FromSquare(rook_move);
             mg[to_move] -=
