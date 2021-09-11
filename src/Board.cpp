@@ -319,7 +319,6 @@ namespace Meetra {
 
     bool Board::MakeUciMove(const std::string &move_string) {
 
-        // TODO chess 960 castling move?
         Move move_made = NewMoveFromName(move_string);
         MoveGen move_gen(*this);
         Move move;
@@ -327,6 +326,9 @@ namespace Meetra {
         while ((move = move_gen.GetAnyMove())) {
             if (FromSquare(move) == FromSquare(move_made) && ToSquare(move) == ToSquare(move_made)) {
                 if (IsPromotion(move) && move != move_made) {
+                    continue;
+                }
+                if(GetMoveType(move_made) == CASTLING && GetMoveType(move) != CASTLING) {
                     continue;
                 }
                 MakeMove(move);

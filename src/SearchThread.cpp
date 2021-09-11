@@ -59,7 +59,7 @@ namespace Meetra {
                         score = -NegaMax(-beta, -alpha, depth_reached - 1, 2, curr_rm->pv);
                     }
                 }
-                //Score score = -NegaMax(-beta, -alpha, depth_reached - 1, 2, curr_rm->pv);
+
                 board.UnmakeMove(curr_rm->move);
 
                 if (!Search::Run()) {
