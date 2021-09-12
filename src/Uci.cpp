@@ -32,7 +32,7 @@ namespace Meetra::Uci {
             << "option name MultiPV type spin default 1 min 1 max 32\n"
             << "option name Mute plies type spin default 1 min 1 max 64\n"
             << "option name OwnBook type check default false\n"
-            << "option name Cores type spin default " << DEFAULT_SEARCH_THREADS << " min 1 max " << MAX_SEARCH_THREADS
+            << "option name Threads type spin default " << DEFAULT_SEARCH_THREADS << " min 1 max " << MAX_SEARCH_THREADS
             << "\n"
             << "option name UCI_Chess960 type check default false";
         return oss.str();
@@ -230,7 +230,7 @@ namespace Meetra::Uci {
             Search::ShowShowCurrLine(value == "true");
         } else if (option == "mute plies") {
             Search::SetPliesMuted(std::stoi(value));
-        } else if (option == "cores") {
+        } else if (option == "threads") {
             Search::SetNumThreads(std::stoi(value));
         } else if (option == "show current move") {
             Search::ShowCurrMoveInfo(value == "true");
