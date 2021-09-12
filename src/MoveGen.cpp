@@ -27,9 +27,9 @@ namespace Meetra {
         all_pieces = board.GetPieces(ALL_TYPES);
         king_square = Bitboards::Lsb(board.GetPieces(KING, my_color));
         checkers = board.AttackedBy(king_square, enemy_color, all_pieces);
-        blockers = board.PinnedPiecesForSquare(king_square, enemy_color);
+        blockers = board.PinnedToSquare(king_square, enemy_color);
         enemy_pieces = board.GetPieces(enemy_color);
-        empty_squares = board.GetEmptySquares();
+        empty_squares = ~all_pieces;
         ep_s = board.EpSquare();
         moves_cnt = 0;
         legal_moves = 0xFFFFFFFFFFFFFFFFUL;

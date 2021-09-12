@@ -4,7 +4,6 @@
 #include "Types.h"
 #include "ZobristHash.h"
 #include "Evaluator.h"
-#include <array>
 
 namespace Meetra {
 
@@ -30,7 +29,7 @@ namespace Meetra {
         [[nodiscard]] bool IsAttackedByAny(Square s, Color attacked_by, Bitboard occ) const;
         [[nodiscard]] bool IsAttackedBySliders(Square s, Color attacked_by, Bitboard occ) const;
         [[nodiscard]] Bitboard AttackedBy(Square s, Color attacked_by, Bitboard occ) const;
-        [[nodiscard]] Bitboard PinnedPiecesForSquare(Square s, Color blockers_color) const;
+        [[nodiscard]] Bitboard PinnedToSquare(Square s, Color blockers_color) const;
         [[nodiscard]] std::string GetMoveName(Move m) const;
         [[nodiscard]] Move NewMoveFromName(std::string_view move_name) const;
 
@@ -39,7 +38,6 @@ namespace Meetra {
         [[nodiscard]] inline Bitboard GetPieces(PieceType pt, Color c) const { return type_bbs[pt] & color_bbs[c]; }
         [[nodiscard]] inline Bitboard GetPieces(PieceType pt) const { return type_bbs[pt]; }
         [[nodiscard]] inline Bitboard GetPieces(Color c) const { return color_bbs[c]; }
-        [[nodiscard]] inline Bitboard GetEmptySquares() const { return ~GetPieces(ALL_TYPES); }
         [[nodiscard]] inline Piece GetPieceOnSquare(Square s) const { return board[s]; }
         [[nodiscard]] inline PieceType GetPieceTypeOnSq(Square s) const { return TypeOfPiece(GetPieceOnSquare(s)); }
 #pragma endregion
@@ -142,7 +140,7 @@ namespace Meetra {
         BoardData curr_data;
         Piece board[SQUARE_NR];
         Bitboard color_bbs[COLOR_NR];
-        Bitboard type_bbs[PIECE_TYPE_NR + 1];
+        Bitboard type_bbs[PIECE_TYPE_NR + 1]; // + 1 for all_types
 #pragma endregion
     };
 }

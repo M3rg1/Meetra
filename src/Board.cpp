@@ -60,12 +60,12 @@ namespace Meetra {
         return true;
     }
 
-    Bitboard Board::PinnedPiecesForSquare(Square s, Color attackers_color) const {
+    Bitboard Board::PinnedToSquare(Square s, Color blockers_color) const {
 
         Bitboard all_pieces = GetPieces(ALL_TYPES);
-        Bitboard queens = GetPieces(QUEEN, attackers_color);
-        Bitboard bishops = GetPieces(BISHOP, attackers_color);
-        Bitboard rooks = GetPieces(ROOK, attackers_color);
+        Bitboard queens = GetPieces(QUEEN, blockers_color);
+        Bitboard bishops = GetPieces(BISHOP, blockers_color);
+        Bitboard rooks = GetPieces(ROOK, blockers_color);
 
         Bitboard attackers = ((bishops | queens) & Bitboards::GetUnboundBishopMoves(s)) |
                              ((rooks | queens) & Bitboards::GetUnboundRookMoves(s));
