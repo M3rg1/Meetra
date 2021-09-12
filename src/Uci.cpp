@@ -203,6 +203,10 @@ namespace Meetra::Uci {
 
         std::string token;
         iss >> token; // name
+        if(token != "name") {
+            SendInfo("Invalid option name");
+            return;
+        }
 
         std::string option;
         while (iss >> token && token != "value") {
