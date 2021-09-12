@@ -194,7 +194,7 @@ namespace Meetra {
         Piece captured_piece = move_type == EN_PASSANT ? NewPiece(PAWN, next_col) : GetPieceOnSquare(to);
 
         // in chess960, when castling, we remove the rook from its square before moving, and put it back later
-        // we also need to set captured piece to none, in case the king doesn't move from its square
+        // we also need to set captured piece to none, in case the king tries to capture itself
         if (Search::Globals::chess960 && move_type == CASTLING) {
             captured_piece = NO_PIECE;
             Move rook_move = RookCastlingMove(to, this_col);
@@ -250,7 +250,7 @@ namespace Meetra {
                 Move r_move = RookCastlingMove(to, this_col);
                 Square r_to = ToSquare(r_move);
                 Square r_from = FromSquare(r_move);
-                // put back the rook in chess 960 castling
+                // put back the rook that we took out earlier in chess 960 castling
                 Search::Globals::chess960 ? PutPiece(r_to, NewPiece(ROOK, this_col)) : MovePiece(r_from, r_to);
                 Zobrist::MovePiece(state.hash, NewPiece(ROOK, this_col), r_from, r_to);
 

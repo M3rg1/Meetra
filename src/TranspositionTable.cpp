@@ -40,10 +40,6 @@ namespace Meetra {
 
     void TranspositionTable::Save(Hash64 key, Score score, Depth depth, Move move, TTFlag flag, Depth ply) {
 
-        if (buckets_count == 0) {
-            return;
-        }
-
         TTBucket &bucket = table[key % buckets_count];
         TTEntry *entry_to_write;
         Hash32 key_32 = Zobrist::MakeHash32(key);
@@ -51,7 +47,7 @@ namespace Meetra {
 
         for (auto &entry: bucket.bucket_entries) {
 
-            if (entry.Get32Key() == key_32) {
+            if (entry.GetHash32() == key_32) {
                 if (entry.GetEpoch() != current_epoch || entry.GetDepth() <= depth) {
                     entry_to_write = &entry;
                 } else {
@@ -86,15 +82,11 @@ namespace Meetra {
         flag = NOT_FOUND;
         move = ZERO_MOVE;
 
-        if (buckets_count == 0) {
-            return;
-        }
-
         Hash32 key_32 = Zobrist::MakeHash32(key);
         TTBucket &bucket = table[key % buckets_count];
 
         for (auto &entry: bucket.bucket_entries) {
-            if (entry.Get32Key() == key_32) {
+            if (entry.GetHash32() == key_32) {
                 move = entry.GetMove();
                 if (entry.GetDepth() >= depth) {
                     score = AddMatePly(entry.GetScore(), ply);

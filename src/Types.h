@@ -30,8 +30,9 @@ namespace Meetra {
     }
 
     enum PieceType {
-        NONE_PIECE_TYPE = 0, PAWN = 1, KNIGHT = 2, BISHOP = 3, ROOK = 4, QUEEN = 5, KING = 6, ALL_TYPES,
-        PIECE_TYPE_NR = 7
+        NONE_PIECE_TYPE = 0, PAWN = 1, KNIGHT = 2, BISHOP = 3, ROOK = 4, QUEEN = 5, KING = 6,
+        PIECE_TYPE_NR,
+        ALL_TYPES = 7
     };
 
     enum Piece  {

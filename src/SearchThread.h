@@ -2,7 +2,6 @@
 #define MEETRA_SEARCHTHREAD_H
 
 #include <vector>
-#include "Uci.h"
 #include <thread>
 #include <mutex>
 #include <condition_variable>
