@@ -1,11 +1,8 @@
 #include "Book.h"
 #include <filesystem>
-#include <vector>
 #include <fstream>
 #include "Uci.h"
-#include "Board.h"
 #include "MoveGen.h"
-#include "Bitboards.h"
 #include <algorithm>
 
 namespace Meetra::Book {

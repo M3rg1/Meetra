@@ -20,7 +20,7 @@ namespace Meetra::Utils {
     }
 
     inline bool IsPositiveNumber(std::string_view str) {
-        return ContainsOnlyChars(str, "0123456789");
+        return !str.empty() && ContainsOnlyChars(str, "0123456789");
     }
 
 }

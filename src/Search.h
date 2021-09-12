@@ -23,6 +23,7 @@ namespace Meetra::Search {
         long allowed_time = DEFAULT_SEARCH_TIME;
         Depth max_allowed_depth = MAX_SEARCH_DEPTH;
 
+        long moves_to_go = 0;
         long white_time = 0;
         long black_time = 0;
         long white_increment = 0;

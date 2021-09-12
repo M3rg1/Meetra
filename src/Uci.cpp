@@ -263,7 +263,7 @@ namespace Meetra::Uci {
                 iss >> settings.max_allowed_depth;
                 settings.fixed_depth = true;
             } else if (option == "movestogo") {
-
+                iss >> settings.moves_to_go;
             } else {
                 SendInfo("Unknown search option: " + option);
             }

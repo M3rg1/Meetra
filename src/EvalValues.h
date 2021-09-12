@@ -2,7 +2,6 @@
 #define MEETRA_EVALVALUES_H
 
 #include "Types.h"
-#include "Uci.h"
 
 namespace Meetra::EvalValues {
 
