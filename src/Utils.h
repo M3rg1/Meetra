@@ -7,7 +7,7 @@ namespace Meetra::Utils {
 
     inline bool AllUniqueChars(std::string str) {
         std::ranges::sort(str);
-        for (int i = 0; i < str.length() - 1; i++) {
+        for (size_t i = 0; i < str.length() - 1; i++) {
             if (str[i] == str[i + 1]) {
                 return false;
             }

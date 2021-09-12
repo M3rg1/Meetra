@@ -142,7 +142,7 @@ namespace Meetra::TestSuite {
         auto start = std::chrono::steady_clock::now();
 
         int errors = 0;
-        for (int i = 0; i < tests.size(); i++) {
+        for (size_t i = 0; i < tests.size(); i++) {
             Uci::Send("Running test " + std::to_string(i + 1));
             if (!tests[i].RunTest()) {
                 errors++;

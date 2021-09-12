@@ -329,7 +329,7 @@ namespace Meetra {
 
         std::ostringstream oss;
 
-        for (auto i = 0; i < pvs_to_send; i++) {
+        for (size_t i = 0; i < pvs_to_send; i++) {
             oss << "info";
             if (pvs_to_send > 1) oss << " multipv " << i + 1;
             oss << " depth " << static_cast<int>(root_moves[i].depth)
@@ -353,7 +353,7 @@ namespace Meetra {
             }
 
             oss << " pv " << board.MoveToName(move);
-            for (int j = 0; j < root_moves[i].pv.Size(); j++) {
+            for (size_t j = 0; j < root_moves[i].pv.Size(); j++) {
                 oss << ' ' << board.MoveToName(root_moves[i].pv.At(j));
             }
             if (i + 1 < pvs_to_send) {
@@ -370,7 +370,7 @@ namespace Meetra {
 
     std::string SearchThread::GetCurrLineInfo() const {
         std::string ret = "info currline " + board.MoveToName(curr_rm->move);
-        for (int i = 0; i < curr_rm->pv.Size(); i++) {
+        for (size_t i = 0; i < curr_rm->pv.Size(); i++) {
             ret += ' ' + board.MoveToName(curr_rm->pv.At(i));
         }
         return ret;

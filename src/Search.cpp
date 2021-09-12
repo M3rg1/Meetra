@@ -84,7 +84,7 @@ namespace Meetra::Search {
         // missing entirely
         SearchThread *best_thread = Globals::search_threads[0].get();
         if (Globals::multi_pv == 1) {
-            for (auto i = 1; i < Globals::search_threads.size(); i++) {
+            for (size_t i = 1; i < Globals::search_threads.size(); i++) {
                 while (Globals::search_threads[i]->IsThreadSearching()); // wait until thread finishes searching
                 if (Globals::search_threads[i]->DidBeatMove(best_thread->GetBestRootMove())) {
                     best_thread = Globals::search_threads[i].get();

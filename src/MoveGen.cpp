@@ -52,7 +52,7 @@ namespace Meetra {
     }
 
     void MoveGen::EvalMoves() {
-        for (auto i = 0; i < moves_cnt; i++) {
+        for (size_t i = 0; i < moves_cnt; i++) {
             move_eval[i].score = move_eval[i].move != ZERO_MOVE ? board.GetMoveEval(move_eval[i].move) : NEGATIVE_INF;
         }
     }

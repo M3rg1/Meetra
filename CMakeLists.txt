@@ -9,7 +9,7 @@ SET(CMAKE_EXE_LINKER_FLAGS "-static -pthread -Wl,--whole-archive -lpthread -Wl,-
 # -fno-inline-small-functions -- no inlining
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -funroll-loops -fno-exceptions")
 
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -pedantic -Wextra -Wno-unknown-pragmas -Wno-class-memaccess -Wno-sign-compare")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -pedantic -Wextra -Wno-unknown-pragmas")
 
 # https://stackoverflow.com/questions/39241757/why-two-compiler-flags-needs-to-be-passed-for-code-coverage-in-gcc
 # https://www.youtube.com/watch?v=7xObVomisE4

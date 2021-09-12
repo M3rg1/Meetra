@@ -99,7 +99,7 @@ namespace Meetra::Book {
 
         std::vector<BookEntry_count> out;
         int repeats = 0;
-        for (int i = 0; i < positions.size() - 1; i++) {
+        for (size_t i = 0; i < positions.size() - 1; i++) {
             if (positions[i].hash == positions[i + 1].hash && positions[i].move == positions[i + 1].move) {
                 repeats++;
             } else {
@@ -115,7 +115,7 @@ namespace Meetra::Book {
 
         std::vector<BookEntry> final;
 
-        for (int i = 0; i < out.size() - 1; i++) {
+        for (size_t i = 0; i < out.size() - 1; i++) {
             BookEntry_count best = out[i];
             while (i < out.size() - 1 && out[i].hash == out[i + 1].hash) {
                 if (best.count <= out[i + 1].count) {
