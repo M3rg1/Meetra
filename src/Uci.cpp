@@ -213,6 +213,11 @@ namespace Meetra::Uci {
             option += token + " ";
         }
 
+        if(option.empty()) {
+            SendInfo("Invalid option name");
+            return;
+        }
+
         option.pop_back();
         std::ranges::transform(option, option.begin(), tolower);
 
