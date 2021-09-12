@@ -11,16 +11,16 @@ namespace Meetra {
 
         void Init();
 
-        [[nodiscard]] ZobristHash GenHash(const Board &board);
-        [[nodiscard]] inline Key32 Make32Key(ZobristHash zobrist_hash) { return zobrist_hash >> 32; }
+        [[nodiscard]] Hash64 GenHash64(const Board &board);
+        [[nodiscard]] inline Hash32 MakeHash32(Hash64 hash64) { return hash64 >> 32; }
 
-        void PutPiece(ZobristHash &h, Piece p, Square s);
-        void RemovePiece(ZobristHash &h, Piece p,Square s);
-        void MovePiece(ZobristHash &h, Piece p, Square from, Square to);
-        void RemoveEp(ZobristHash &h, Square s);
-        void AddEp(ZobristHash &h, Square s);
-        void UpdateCr(ZobristHash &h, Bitboard previous, Bitboard current);
-        void UpdateColor(ZobristHash &h, Color to_move);
+        void PutPiece(Hash64 &h, Piece p, Square s);
+        void RemovePiece(Hash64 &h, Piece p, Square s);
+        void MovePiece(Hash64 &h, Piece p, Square from, Square to);
+        void RemoveEp(Hash64 &h, Square s);
+        void AddEp(Hash64 &h, Square s);
+        void UpdateCr(Hash64 &h, Bitboard previous, Bitboard current);
+        void UpdateColor(Hash64 &h, Color to_move);
 
     }
 }

@@ -66,7 +66,7 @@ namespace Meetra::Search {
         MoveGen move_gen(board);
         std::vector<RootMove> moves;
         Move move;
-        while ((move = move_gen.GetBestMove<MoveGen::NORMAL>())) {
+        while ((move = move_gen.GetBestMove<NORMAL>())) {
             if (board.IsMoveLegal(move)) {
                 moves.emplace_back(move);
             }
@@ -94,7 +94,6 @@ namespace Meetra::Search {
 
         Uci::Send(best_thread->GetSearchInfo());
         Uci::Send("bestmove " + best_thread->GetBestRmName());
-        //Uci::SendInfo("Best thread id " + std::to_string(best_thread->GetId()));
         Globals::finished = true;
     }
 
@@ -114,7 +113,7 @@ namespace Meetra::Search {
                         1,
                         std::mt19937{std::random_device{}()}
                 );
-                Uci::Send("bestmove " + board.GetMoveName(moves.back()));
+                Uci::Send("bestmove " + board.MoveToName(moves.back()));
                 return;
             }
         }
@@ -126,13 +125,12 @@ namespace Meetra::Search {
             (root_moves.size() == 1 && !Globals::settings.infinite && !Globals::settings.fixed_depth &&
              !Globals::settings.fixed_time)) {
             StopSearch();
-            Uci::Send("bestmove " + board.GetMoveName(root_moves.empty() ? ZERO_MOVE : root_moves.front().move));
+            Uci::Send("bestmove " + board.MoveToName(root_moves.empty() ? ZERO_MOVE : root_moves.front().move));
             return;
         }
 
-        // initialize and start each thread
         // we have to first initialize them all, in case of very fast time control and main thread finishes before
-        // we even initialize helper threads
+        // initialization of helper threads is done
         std::ranges::for_each(Globals::search_threads, [&](auto &e) { e->InitNewSearch(board, root_moves); });
         std::ranges::for_each(Globals::search_threads, [&](auto &e) { e->StartThread(); });
     }

@@ -295,7 +295,7 @@ namespace Meetra::Bitboards {
 
 #pragma region ===== Misc =====
 
-    Bitboard GetRankMask(Rank r) {
+    Bitboard RankMask(Rank r) {
         return rank_masks[r];
     }
 

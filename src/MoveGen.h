@@ -6,12 +6,13 @@
 
 namespace Meetra {
 
+    enum GenType : bool {
+        QSEARCH = true, NORMAL = false
+    };
+
     class MoveGen {
 
     public:
-        enum GEN_TYPE : bool {
-            QSEARCH = true, NORMAL = false
-        };
 
         explicit MoveGen(const Board &board);
 
@@ -20,12 +21,7 @@ namespace Meetra {
             move_eval[moves_cnt++].score = 10000;
         }
 
-        inline void PutKillerMove(Move killer_move) {
-            move_eval[moves_cnt].move = killer_move;
-            move_eval[moves_cnt++].score = 9000;
-        }
-
-        template<GEN_TYPE Type>
+        template<GenType Type>
         [[nodiscard]] Move GetBestMove();
         [[nodiscard]] Move GetAnyMove();
         [[nodiscard]] bool IsPseudoLegal(Move m) const;
@@ -58,7 +54,6 @@ namespace Meetra {
         p_MoveScore move_eval[MAX_LEGAL_MOVES];
         size_t moves_cnt;
 
-        Bitboard cr;
         Bitboard checkers;
         Bitboard blockers;
         Bitboard legal_moves;
@@ -75,10 +70,6 @@ namespace Meetra {
 
         [[nodiscard]] inline bool Empty() const { return moves_cnt == 0; }
         inline Move PopMove() { return move_eval[--moves_cnt].move; }
-        inline Move PopAtIdx(size_t idx) {
-            std::swap(move_eval[idx], move_eval[--moves_cnt]);
-            return move_eval[moves_cnt].move;
-        }
         inline Move PopRef(p_MoveScore &it) {
             std::swap(it, move_eval[--moves_cnt]);
             return move_eval[moves_cnt].move;
@@ -94,7 +85,7 @@ namespace Meetra {
         Move PickBestMove();
         void EvalMoves();
 
-        template<Color C, GEN_TYPE Type>
+        template<Color C, GenType Type>
         void NextPhase();
 
         template<GenPhase phase, Color C>

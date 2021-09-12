@@ -2,15 +2,14 @@
 #include "Bitboards.h"
 #include "EvalValues.h"
 #include "Board.h"
+#include <algorithm>
 
 namespace Meetra::Evaluation {
 
     void Evaluator::SetBoard(const Board &board) {
 
-        mg[WHITE] = 0;
-        mg[BLACK] = 0;
-        eg[WHITE] = 0;
-        eg[BLACK] = 0;
+        std::ranges::fill(mg, 0);
+        std::ranges::fill(eg, 0);
         gamePhase = 0;
 
         for (PieceType pt = PAWN; pt <= KING; ++pt) {

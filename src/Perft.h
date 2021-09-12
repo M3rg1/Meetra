@@ -52,7 +52,7 @@ namespace Meetra {
             uint64_t nodes = depth > 1 ? Perft(depth - 1, board) : 1;
             board.UnmakeMove(m);
             total_nodes += nodes;
-            Uci::Send(board.GetMoveName(m) + ": " + std::to_string(nodes));
+            Uci::Send(board.MoveToName(m) + ": " + std::to_string(nodes));
         }
 
         auto end = std::chrono::steady_clock::now();

@@ -2,7 +2,6 @@
 #define MEETRA_TESTSUITE_H
 
 #include <string>
-#include <utility>
 #include <vector>
 #include "Types.h"
 #include "Board.h"
@@ -66,8 +65,7 @@ namespace Meetra::TestSuite {
             is >> t.expected;*/
 
             if (is >> token && token == "depth") {
-                is >> token;
-                t.depth = std::stoi(token); // can't directly convert via >> to Depth (uint8)
+                is >> t.depth;
             }
             if (is >> token && token == "result") {
                 is >> t.expected;

@@ -8,7 +8,7 @@
 namespace Meetra::Book {
 
     struct BookEntry {
-        ZobristHash hash;
+        Hash64 hash;
         Move move;
     };
 

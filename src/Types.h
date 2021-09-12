@@ -9,10 +9,9 @@ namespace Meetra {
 
     using Score = int;
 
-    using ZobristHash = uint64_t;
+    using Hash64 = uint64_t;
+    using Hash32 = uint32_t;
 #define NEW_HASH 0
-
-    using Key32 = uint32_t;
 
     using Bitboard = uint64_t;
 #define EMPTY_BB 0
@@ -88,6 +87,7 @@ namespace Meetra {
         A7, B7, C7, D7, E7, F7, G7, H7,
         A8, B8, C8, D8, E8, F8, G8, H8,
         SQUARE_NR,
+        ZERO_SQ = 0
     };
 
     inline Bitboard SquareToBB(Square s) { return static_cast<Bitboard>(0x1) << s; }
@@ -102,7 +102,7 @@ namespace Meetra {
     }
 
     enum CastlingSide {
-        SHORT, LONG
+        SHORT, LONG, CS_NR
     };
 
 #pragma region ===== Move =====

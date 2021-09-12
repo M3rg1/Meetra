@@ -33,7 +33,6 @@ namespace Meetra {
         ep_s = board.EpSquare();
         moves_cnt = 0;
         legal_moves = 0xFFFFFFFFFFFFFFFFUL;
-        cr = board.GetCr();
 
         if (IsKingInCheck()) {
             if (Bitboards::MoreThanOne(checkers)) {
@@ -63,7 +62,7 @@ namespace Meetra {
         return PopRef(*it);
     }
 
-    template<MoveGen::GEN_TYPE Type>
+    template<GenType Type>
     Move MoveGen::GetBestMove() {
         while (Empty()) {
             my_color == WHITE ? NextPhase<WHITE, Type>() : NextPhase<BLACK, Type>();
@@ -79,10 +78,10 @@ namespace Meetra {
         return PopMove();
     }
 
-    template Move MoveGen::GetBestMove<MoveGen::QSEARCH>();
-    template Move MoveGen::GetBestMove<MoveGen::NORMAL>();
+    template Move MoveGen::GetBestMove<QSEARCH>();
+    template Move MoveGen::GetBestMove<NORMAL>();
 
-    template<Color C, MoveGen::GEN_TYPE Type>
+    template<Color C, GenType Type>
     void MoveGen::NextPhase() {
         switch (gen_phase) {
             case CAPTURE:
@@ -204,9 +203,8 @@ namespace Meetra {
     }
 
     // allow movement only on a line between piece and king, if piece is a blocker
-    bool MoveGen::DiscoveryCheck(Square origin, Square destination) const {
-        return (blockers & SquareToBB(origin)) &&
-               !(Bitboards::GetRayToBorders(king_square, origin) & SquareToBB(destination));
+    bool MoveGen::DiscoveryCheck(Square orig, Square dest) const {
+        return (blockers & SquareToBB(orig)) && !(Bitboards::GetRayToBorders(king_square, orig) & SquareToBB(dest));
     }
 
     template<Color C>
@@ -236,7 +234,7 @@ namespace Meetra {
     template<Color C, CastlingSide S>
     bool MoveGen::CanCastle() const {
 
-        Bitboard rook_bb = board.RookSqBB<C, S>();
+        Bitboard rook_bb = board.RookSqBB(C, S);
         if (!rook_bb) {
             return false;
         }

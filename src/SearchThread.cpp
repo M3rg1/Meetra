@@ -157,7 +157,7 @@ namespace Meetra {
 
         bool used_tt_move = tt_move == ZERO_MOVE;
 
-        while ((move = move_gen.GetBestMove<MoveGen::NORMAL>())) {
+        while ((move = move_gen.GetBestMove<NORMAL>())) {
 
             // temporary fix to not play TT move twice, this should be fixed in the generator before evaluating the move
             if (move == tt_move) {
@@ -248,7 +248,7 @@ namespace Meetra {
         }*/
 
         Move move;
-        while ((move = move_gen.GetBestMove<MoveGen::QSEARCH>())) {
+        while ((move = move_gen.GetBestMove<QSEARCH>())) {
             if (!board.MakeMove(move)) {
                 board.UnmakeMove(move);
                 continue;
@@ -289,7 +289,7 @@ namespace Meetra {
     }
 
     std::string SearchThread::GetBestRmName() const {
-        return board.GetMoveName(root_moves[0].move);
+        return board.MoveToName(root_moves[0].move);
     }
 
     std::string SearchThread::GetUpdateSearchInfo() const {
@@ -352,9 +352,9 @@ namespace Meetra {
                 oss << "cp " << score;
             }
 
-            oss << " pv " << board.GetMoveName(move);
+            oss << " pv " << board.MoveToName(move);
             for (int j = 0; j < root_moves[i].pv.Size(); j++) {
-                oss << ' ' << board.GetMoveName(root_moves[i].pv.At(j));
+                oss << ' ' << board.MoveToName(root_moves[i].pv.At(j));
             }
             if (i + 1 < pvs_to_send) {
                 oss << '\n';
@@ -365,13 +365,13 @@ namespace Meetra {
     }
 
     std::string SearchThread::GetCurrMoveInfo() const {
-        return "info currmove " + board.GetMoveName(curr_rm->move) + " currmovenumber " + std::to_string(curr_rm_num + 1);
+        return "info currmove " + board.MoveToName(curr_rm->move) + " currmovenumber " + std::to_string(curr_rm_num + 1);
     }
 
     std::string SearchThread::GetCurrLineInfo() const {
-        std::string ret = "info currline " + board.GetMoveName(curr_rm->move);
+        std::string ret = "info currline " + board.MoveToName(curr_rm->move);
         for (int i = 0; i < curr_rm->pv.Size(); i++) {
-            ret += ' ' + board.GetMoveName(curr_rm->pv.At(i));
+            ret += ' ' + board.MoveToName(curr_rm->pv.At(i));
         }
         return ret;
     }

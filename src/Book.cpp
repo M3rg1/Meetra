@@ -16,12 +16,12 @@ namespace Meetra::Book {
 #define INPUT_FILE "all.pgn"
 
     struct BookEntry_count {
-        ZobristHash hash;
+        Hash64 hash;
         Move move;
         int count = 0;
     };
 
-    std::vector<Move> BinarySearch(std::ifstream &stream, size_t left, size_t right, ZobristHash hash) {
+    std::vector<Move> BinarySearch(std::ifstream &stream, size_t left, size_t right, Hash64 hash) {
 
         std::vector<Move> moves;
         stream.seekg(0, std::ios::beg);

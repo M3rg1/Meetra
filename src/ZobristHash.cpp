@@ -25,41 +25,41 @@ namespace Meetra::Zobrist {
         std::ranges::generate(to_move_keys, gen);
     }
 
-    void PutPiece(ZobristHash &h, Piece p, Square s) {
+    void PutPiece(Hash64 &h, Piece p, Square s) {
         h ^= piece_keys[s][IdxFromPiece(p)];
     }
 
-    void RemovePiece(ZobristHash &h, Piece p, Square s) {
+    void RemovePiece(Hash64 &h, Piece p, Square s) {
         PutPiece(h, p, s);
     }
 
-    void AddEp(ZobristHash &h, Square s) {
+    void AddEp(Hash64 &h, Square s) {
         h ^= ep_keys[FileFromSquare(s)];
     }
 
-    void RemoveEp(ZobristHash &h, Square s) {
+    void RemoveEp(Hash64 &h, Square s) {
         AddEp(h, s);
     }
 
-    void UpdateCr(ZobristHash &h, Bitboard previous, Bitboard current) {
+    void UpdateCr(Hash64 &h, Bitboard previous, Bitboard current) {
         Bitboard cr_change = previous ^ current;
         while (cr_change) {
             h ^= castling_keys[Bitboards::PopLsb(cr_change)];
         }
     }
 
-    void UpdateColor(ZobristHash &h, Color to_move) {
+    void UpdateColor(Hash64 &h, Color to_move) {
         h ^= to_move_keys[OtherColor(to_move)] ^ to_move_keys[to_move];
     }
 
-    void MovePiece(ZobristHash &h, Piece p, Square from, Square to) {
+    void MovePiece(Hash64 &h, Piece p, Square from, Square to) {
         RemovePiece(h, p, from);
         PutPiece(h, p, to);
     }
 
-    ZobristHash GenHash(const Board &board) {
+    Hash64 GenHash64(const Board &board) {
 
-        ZobristHash hash = NEW_HASH;
+        Hash64 hash = NEW_HASH;
 
         for (PieceType pt = PAWN; pt <= KING; ++pt) {
             Bitboard pieces = board.GetPieces(pt, WHITE);

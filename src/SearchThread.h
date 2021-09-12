@@ -32,7 +32,6 @@ namespace Meetra {
         [[nodiscard]] inline bool IsThreadSearching() const { return active.load(std::memory_order_acquire); };
         [[nodiscard]] inline uint64_t NodesExplored() const { return nodes_explored.load(std::memory_order_relaxed); }
         [[nodiscard]] std::string GetSearchInfo() const;
-        [[nodiscard]] inline int GetId() const { return id; }
 
     private:
 
