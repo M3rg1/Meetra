@@ -20,7 +20,6 @@ namespace Meetra {
         bool MakeMove(Move m);
         void UnmakeMove(Move m);
         bool MakeUciMove(const std::string &move_string);
-        /*inline void Update() { state.evaluator.SetBoard(*this); };*/
         [[nodiscard]] inline Score GetEval() const { return state.evaluator.GetBoardEval(); };
         [[nodiscard]] inline Score GetMoveEval(Move m) const { return state.evaluator.GetMoveEval(*this, m); };
         [[nodiscard]] bool IsMoveLegal(Move m) const;
@@ -95,14 +94,14 @@ namespace Meetra {
 
 #pragma region ===== Data =====
         struct BoardState {
-            Hash64 hash = 0;
+            Hash64 hash;
             int ply = 0;
             int moves = 1;
             Color to_move = WHITE;
             Piece captured_piece = NO_PIECE;
             Square ep_square = ZERO_SQ;
             Bitboard cr = EMPTY_BB;
-            Evaluation::Evaluator evaluator{};
+            Evaluation::Evaluator evaluator;
         };
 
         // original positions of rooks that are available for castling
