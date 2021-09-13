@@ -292,7 +292,7 @@ namespace Meetra {
 
         uint64_t total_nodes = std::accumulate(Search::Globals::search_threads.begin(),
                                                Search::Globals::search_threads.end(),
-                                               0,
+                                               0ULL,
                                                [&](auto sum, auto const &t) { return sum + t->NodesExplored(); });
 
         auto elapsed_ms = Search::ElapsedTimeMs();
@@ -315,7 +315,7 @@ namespace Meetra {
 
         uint64_t total_nodes = std::accumulate(Search::Globals::search_threads.begin(),
                                                Search::Globals::search_threads.end(),
-                                               0,
+                                               0ULL,
                                                [&](auto sum, auto const &t) { return sum + t->NodesExplored(); });
 
         auto elapsed_ms = Search::ElapsedTimeMs();
