@@ -79,6 +79,7 @@ namespace Meetra {
     }
 
     template Move MoveGen::GetBestMove<QSEARCH>();
+
     template Move MoveGen::GetBestMove<NORMAL>();
 
     template<Color C, GenType Type>
@@ -250,18 +251,21 @@ namespace Meetra {
         return (pieces & walk_sq) == EMPTY_BB;
     }
 
-#pragma region ===== Validating whether a move is pseudo-legal =====
 
+    // this function does not guarantee the move is actually pseudo legal, it only guarantees that when the move is made
+    // and unmade, it won't crash the program. It does a lot of general validations that should catch most corrupted moves.
+    // It should be used to validate potentially corrupted moves, for example moves from TT.
     bool MoveGen::IsPseudoLegal(Move m) const {
 
+        // ZERO_MOVE is always legal
         if (m == ZERO_MOVE) {
             return true;
         }
 
-        // there exists a piece on the origin square
+        // there exists a piece on the origin square and its of the correct color
         Square from = FromSquare(m);
         Piece moved_piece = board.GetPieceOnSquare(from);
-        if (moved_piece == NO_PIECE) {
+        if (moved_piece == NO_PIECE || ColorOfPiece(moved_piece) != my_color) {
             return false;
         }
 
@@ -271,107 +275,57 @@ namespace Meetra {
             return false;
         }
 
-        // the moved piece is of color to move
-        if (ColorOfPiece(moved_piece) != my_color) {
-            return false;
-        }
-
-        // destination is not occupied by a friendly piece
+        // destination is either empty or occupied by enemy piece, but not a king (king captures are not allowed)
         Piece dest_piece = board.GetPieceOnSquare(ToSquare(m));
-        if (dest_piece != NO_PIECE && ColorOfPiece(dest_piece) == my_color) {
+        if (dest_piece != NO_PIECE && (ColorOfPiece(dest_piece) == my_color || TypeOfPiece(dest_piece) == KING)) {
             return false;
         }
 
-        // castling validation
+        // make sure we only move to the allowed squares
+        Square to = ToSquare(m);
+        if (!(SquareToBB(to) & legal_moves) && moved_pt != KING) {
+            return false;
+        }
+
+        // castling validation, castling is a bit more complex because of chess960, we just generate the castling move
+        // and compare them
         MoveType move_type = GetMoveType(m);
         if (move_type == CASTLING) {
             return my_color == WHITE ? ValidateCastling<WHITE>(m) : ValidateCastling<BLACK>(m);
         }
 
-        // ep validation
-        if (move_type == EN_PASSANT) {
-            if (ep_s && moved_pt == PAWN) {
-                Bitboard attacker = Bitboards::GetAttacks<PAWN>(ep_s, EMPTY_BB, enemy_color) &
-                                    SquareToBB(from);
-                if (attacker && m == NewMove(Bitboards::Lsb(attacker), ep_s, EN_PASSANT)) {
-                    return true;
-                }
+        // check that pawn move has the correct flag
+        if (moved_pt == PAWN && move_type != NO_FLAG) {
+            // has to have the correct move flag for a pawn, IsPromotion function isn't enough to validate promotions,
+            // since that function is very lazy and only checks the promotion bit, and the flag itself still could be incorrect
+            if (move_type != EN_PASSANT && move_type != TWO_FORWARD && move_type != PROMOTE_QUEEN &&
+                move_type != PROMOTE_ROOK && move_type != PROMOTE_BISHOP && move_type != PROMOTE_KNIGHT) {
+                return false;
             }
+
+            // for double pawn push, make sure it is actually a double push and the destination is on the correct rank
+            Bitboard mask = my_color == WHITE ? TwoFwdRank<WHITE>() : TwoFwdRank<BLACK>();
+            if (move_type == TWO_FORWARD && ((to ^ from) != 16 || !(SquareToBB(to) & mask))) {
+                return false;
+            }
+
+            // if en passant, make sure there is actually an ep square
+            if (move_type == EN_PASSANT && ep_s != to) {
+                return false;
+            }
+        }
+
+        // for non-pawn moves, there's no flags that they can have now
+        if (moved_pt != PAWN && move_type != NO_FLAG) {
             return false;
         }
 
-        // check if it's possible to generate a move that would match our tested move
-        // this is quite slow, but it's fairly simple and 100% thorough
-        if (moved_pt == KING) return move_type == NO_FLAG && ValidateMoveForPiece<KING>(m);
-        else if (moved_pt == QUEEN) return move_type == NO_FLAG && ValidateMoveForPiece<QUEEN>(m);
-        else if (moved_pt == ROOK) return move_type == NO_FLAG && ValidateMoveForPiece<ROOK>(m);
-        else if (moved_pt == BISHOP) return move_type == NO_FLAG && ValidateMoveForPiece<BISHOP>(m);
-        else if (moved_pt == KNIGHT) return move_type == NO_FLAG && ValidateMoveForPiece<KNIGHT>(m);
-        else if (moved_pt == PAWN) {
-            return my_color == WHITE ? ValidatePawnMove<WHITE>(m) : ValidatePawnMove<BLACK>(m);
+        // our pseudo legal move gen doesn't allow discovery checks
+        if (DiscoveryCheck(from, to)) {
+            return false;
         }
 
-        return false;
-    }
-
-    template<PieceType PT>
-    bool MoveGen::ValidateMoveForPiece(Move m) const {
-        Bitboard legality_mask = enemy_pieces | empty_squares;
-        if constexpr (PT != KING) {
-            legality_mask &= legal_moves;
-        }
-        Square from = FromSquare(m);
-        Square to = ToSquare(m);
-        Bitboard possible_moves = Bitboards::GetAttacks<PT>(from, all_pieces) & legality_mask;
-        if (PT != KING && blockers & SquareToBB(from)) {
-            possible_moves &= Bitboards::GetRayToBorders(king_square, from);
-        }
-        while (possible_moves) {
-            if (to == Bitboards::PopLsb(possible_moves)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    template<Color C>
-    bool MoveGen::ValidatePawnMove(Move m) const {
-
-        MoveType move_type = GetMoveType(m);
-
-        if (move_type == NO_FLAG) {
-            return HelperValidatePawnMove<C, LEFT, false>(m) || HelperValidatePawnMove<C, RIGHT, false>(m) ||
-                   HelperValidatePawnMove<C, ONE_FWD, false>(m);
-        }
-        if (move_type == TWO_FORWARD) {
-            return HelperValidatePawnMove<C, TWO_FWD, false>(m);
-        }
-        if (move_type == PROMOTE_QUEEN || move_type == PROMOTE_ROOK ||
-            move_type == PROMOTE_BISHOP || move_type == PROMOTE_KNIGHT) {
-            return HelperValidatePawnMove<C, LEFT, true>(m) || HelperValidatePawnMove<C, RIGHT, true>(m) ||
-                   HelperValidatePawnMove<C, ONE_FWD, true>(m);
-        }
-
-        return false;
-    }
-
-    template<Color C, PawnMoveDir D, bool P>
-    bool MoveGen::HelperValidatePawnMove(Move m) const {
-
-        constexpr Direction move_dir = PawnMove<C, D>();
-        Bitboard moves = Bitboards::Shift<move_dir>(SquareToBB(FromSquare(m)));
-        moves &= D == LEFT || D == RIGHT ? enemy_pieces : empty_squares;
-        moves &= P ? PromRank<C>() : ~PromRank<C>();
-        moves = D == TWO_FWD ? Bitboards::Shift<move_dir>(moves) & empty_squares & TwoFwdRank<C>() & legal_moves :
-                moves & legal_moves;
-
-        if (moves) {
-            Square dest_s = Bitboards::Lsb(moves);
-            if (ToSquare(m) == dest_s && !DiscoveryCheck(FromSquare(m), dest_s)) {
-                return true;
-            }
-        }
-        return false;
+        return true;
     }
 
     template<Color C>
@@ -391,7 +345,4 @@ namespace Meetra {
         }
         return false;
     }
-
-#pragma endregion
-
 }

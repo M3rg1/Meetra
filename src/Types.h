@@ -129,7 +129,7 @@ namespace Meetra {
     inline int IdxFromPiece(Piece p) { return ColorOfPiece(p) == WHITE ? p - 1 : p - 3; }
     inline PieceType PieceTypeFromFlag(MoveType mt) { return static_cast<PieceType>((mt >> 12) - 2); }
     inline Square FromSquare(Move m) { return static_cast<Square>(m & 0x3F); }
-    inline Square ToSquare(Move m) { return static_cast<Square>((m & 0xFC0) >> 6); }
+    inline Square ToSquare(Move m) { return static_cast<Square>(m >> 6 & 0x3F); }
     inline bool IsPromotion(Move m) { return m >> 14; }
     inline MoveType GetMoveType(Move m) { return static_cast<MoveType>(m & 0xF000); }
 
