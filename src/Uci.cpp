@@ -74,6 +74,7 @@ namespace Meetra::Uci {
 
         do {
 
+            token.clear();
             std::getline(std::cin, input);
             std::istringstream iss(input);
             iss >> token;

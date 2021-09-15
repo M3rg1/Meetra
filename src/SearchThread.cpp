@@ -8,6 +8,10 @@
 
 namespace Meetra {
 
+    bool IsMateScore(Score s) {
+        return s != NEGATIVE_INF && std::abs(s) > MIN_MATE_EVAL;
+    }
+
     // the main search function, iterative deepening framework
     void SearchThread::Search() {
 
@@ -144,6 +148,15 @@ namespace Meetra {
             // no cutoff, but we got some move from TT, we will play it as the first move in the main negamax loop
             if (tt_move != ZERO_MOVE) {
                 move_gen.PutTTMove(tt_move);
+            }
+        }
+
+        // https://www.chessprogramming.org/Reverse_Futility_Pruning
+        if (depth < 6 && tt_flag != EXACT_SCORE && !move_gen.IsKingInCheck() && !IsMateScore(beta) && !IsMateScore(alpha)) {
+            Score static_score = board.GetEval();
+            Score score_margin = 100 * depth;
+            if (static_score - score_margin >= beta) {
+                return static_score - score_margin; // beta;
             }
         }
 

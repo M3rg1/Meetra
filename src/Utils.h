@@ -25,7 +25,4 @@ namespace Meetra::Utils {
 
 }
 
-
-
-
 #endif //MEETRA_UTILS_H
