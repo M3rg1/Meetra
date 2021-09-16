@@ -152,9 +152,7 @@ namespace Meetra::Search {
 
     void ShutdownThreads() {
         StopSearch();
-        for (auto &t: Globals::search_threads) {
-            t->Shutdown();
-        }
+        std::ranges::for_each(Globals::search_threads, [&](auto const &t) { t->Shutdown(); });
         Globals::search_threads.clear();
     }
 

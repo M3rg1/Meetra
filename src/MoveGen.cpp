@@ -287,8 +287,7 @@ namespace Meetra {
             return false;
         }
 
-        // castling validation, castling is a bit more complex because of chess960, we just generate the castling move
-        // and compare them
+        // castling is a bit more complex because of chess960, we just generate the castling move and compare them
         MoveType move_type = GetMoveType(m);
         if (move_type == CASTLING) {
             return my_color == WHITE ? ValidateCastling<WHITE>(m) : ValidateCastling<BLACK>(m);

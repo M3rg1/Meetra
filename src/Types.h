@@ -60,7 +60,7 @@ namespace Meetra {
     inline File FileFromChar(char c) { return static_cast<File>(c - 'a'); }
     inline char CharFromFile(File f) { return static_cast<char>(f + 'a'); }
 
-    constexpr std::string_view piece_char = "oPNBRQK  pnbrqk";
+    inline std::string_view piece_char = "oPNBRQK  pnbrqk";
 
     inline Piece CharToPiece(char c) {
         return static_cast<Piece>(piece_char.find(c));

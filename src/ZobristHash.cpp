@@ -17,9 +17,7 @@ namespace Meetra::Zobrist {
         std::mt19937_64 mt(seed);
         auto gen = [&] { return mt(); };
 
-        for (auto &piece_types: piece_keys) {
-            std::ranges::generate(piece_types, gen);
-        }
+        std::ranges::for_each(piece_keys, [&] (auto &pt_keys) { std::ranges::generate(pt_keys, gen); });
         std::ranges::generate(castling_keys, gen);
         std::ranges::generate(ep_keys, gen);
         std::ranges::generate(to_move_keys, gen);

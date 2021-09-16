@@ -152,9 +152,11 @@ namespace Meetra {
         }
 
         // https://www.chessprogramming.org/Reverse_Futility_Pruning
+        // TODO check if it ever can be tt==exact_score
         if (depth < 6 && tt_flag != EXACT_SCORE && !move_gen.IsKingInCheck() && !IsMateScore(beta) && !IsMateScore(alpha)) {
             Score static_score = board.GetEval();
             Score score_margin = 100 * depth;
+            // if tt==exact {print something}
             if (static_score - score_margin >= beta) {
                 return static_score - score_margin; // beta;
             }
