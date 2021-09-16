@@ -6,6 +6,7 @@
 #include "MoveGen.h"
 #include <algorithm>
 #include "Search.h"
+#include <regex>
 
 namespace Meetra {
 
@@ -366,6 +367,9 @@ namespace Meetra {
                 return false;
             }
         }
+        if (f != FILE_H + 1 || r != RANK_1) {
+            return false;
+        }
 
         // color to move
         if (iss >> token && (token == "w" || token == "b")) {
@@ -376,7 +380,7 @@ namespace Meetra {
 
         // castling rights
         if (iss >> token) {
-            if (Utils::ContainsOnlyChars(token, "KQkqABCDEFGHabcdefgh") && Utils::AllUniqueChars(token)) {
+            if (token.length() <= 4 && Utils::ContainsOnlyChars(token, "KQkqABCDEFGHabcdefgh") && Utils::AllUniqueChars(token)) {
 
                 for (char c : token) {
                     Color col = std::isupper(c) ? WHITE : BLACK;
