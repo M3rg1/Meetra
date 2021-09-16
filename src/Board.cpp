@@ -345,6 +345,10 @@ namespace Meetra {
         File f = FILE_A;
         Rank r = RANK_8;
         bool prev_is_digit = false;
+
+        //std::regex rgx(R"(\s*([rnbqkpRNBQKP1-8]{1,8}\/){7}([rnbqkpRNBQKP1-8]{1,8})\s[bw]\s(([a-hkqA-HKQ]{1,4})|(-))\s(([a-h][36])|(-))\s\d+\s\d+\s*)");
+        //Uci::Send("Regex: " + std::to_string(std::regex_match(fen, rgx)));
+
         for (char c: token) {
 
             if ((c != '/' && f == FILE_H + 1) || (c == '/' && f <= FILE_H) || (prev_is_digit && std::isdigit(c)) ||
@@ -415,7 +419,7 @@ namespace Meetra {
 
         // en passant square
         if (iss >> token) {
-            if (token.length() == 2 && token[0] >= 'a' && token[0] <= 'h' && token[1] >= '1' && token[1] <= '8') {
+            if (token.length() == 2 && token[0] >= 'a' && token[0] <= 'h' && (token[1] == '3' || token[1] == '6')) {
                 SetEpSquare(SqFromFiRa(FileFromChar(token[0]), RankFromChar(token[1])));
             } else if (token != "-") {
                 return false;
