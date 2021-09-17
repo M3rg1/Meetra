@@ -3,7 +3,7 @@
 
 #include "Types.h"
 
-namespace Meetra{
+namespace Meetra {
 
 #define POSITIVE_INF 32000
 #define NEGATIVE_INF (-32000)
@@ -13,24 +13,23 @@ namespace Meetra{
     class Board;
 
     namespace Evaluation {
+
         class Evaluator {
 
             int mg[COLOR_NR];
             int eg[COLOR_NR];
-            int gamePhase;
+            int phase;
 
-            int mgScore;
-            int egScore;
-            int mgPhase;
-            int egPhase;
+            int mg_score;
+            int eg_score;
+            int mg_phase;
+            int eg_phase;
 
         public:
             void SetBoard(const Board &board);
             void MakeMove(const Board &board, Move m);
-            void UndoMove(const Board &board, Move m);
             [[nodiscard]] Score GetMoveEval(const Board &board, Move m) const;
             [[nodiscard]] Score GetBoardEval() const;
-
         };
 
     }

@@ -175,7 +175,7 @@ namespace Meetra::EvalValues {
                     eg_king_table
             };
 
-    inline int gamephaseInc[7] = {0, 0, 1, 1, 2, 4, 0};
+    inline int phase_inc[7] = {0, 0, 1, 1, 2, 4, 0};
     inline Score mg_table[COLOR_NR][PIECE_TYPE_NR][SQUARE_NR];
     inline Score eg_table[COLOR_NR][PIECE_TYPE_NR][SQUARE_NR];
 

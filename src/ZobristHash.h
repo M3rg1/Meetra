@@ -20,7 +20,7 @@ namespace Meetra {
         void RemoveEp(Hash64 &h, Square s);
         void AddEp(Hash64 &h, Square s);
         void UpdateCr(Hash64 &h, Bitboard previous, Bitboard current);
-        void UpdateColor(Hash64 &h, Color to_move);
+        void UpdateColor(Hash64 &h);
 
     }
 }

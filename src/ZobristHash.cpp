@@ -6,10 +6,10 @@
 
 namespace Meetra::Zobrist {
 
-    uint64_t piece_keys[64][12];
-    uint64_t castling_keys[64];
-    uint64_t ep_keys[8];
-    uint64_t to_move_keys[2];
+    uint64_t piece_keys[SQUARE_NR][B_KING + 1];
+    uint64_t castling_keys[SQUARE_NR];
+    uint64_t ep_keys[RANK_NR];
+    uint64_t color_key;
 
     void Init() {
 
@@ -20,11 +20,11 @@ namespace Meetra::Zobrist {
         std::ranges::for_each(piece_keys, [&] (auto &pt_keys) { std::ranges::generate(pt_keys, gen); });
         std::ranges::generate(castling_keys, gen);
         std::ranges::generate(ep_keys, gen);
-        std::ranges::generate(to_move_keys, gen);
+        color_key = gen();
     }
 
     void PutPiece(Hash64 &h, Piece p, Square s) {
-        h ^= piece_keys[s][IdxFromPiece(p)];
+        h ^= piece_keys[s][p];
     }
 
     void RemovePiece(Hash64 &h, Piece p, Square s) {
@@ -46,29 +46,25 @@ namespace Meetra::Zobrist {
         }
     }
 
-    void UpdateColor(Hash64 &h, Color to_move) {
-        h ^= to_move_keys[OtherColor(to_move)] ^ to_move_keys[to_move];
+    void UpdateColor(Hash64 &h) {
+        h ^= color_key;
     }
 
     void MovePiece(Hash64 &h, Piece p, Square from, Square to) {
-        RemovePiece(h, p, from);
-        PutPiece(h, p, to);
+        h ^= piece_keys[from][p] ^ piece_keys[to][p];;
     }
 
     Hash64 GenHash64(const Board &board) {
 
         Hash64 hash = NEW_HASH;
 
-        for (PieceType pt = PAWN; pt <= KING; ++pt) {
-            Bitboard pieces = board.GetPieces(pt, WHITE);
-            while (pieces) {
-                Square s = Bitboards::PopLsb(pieces);
-                hash ^= piece_keys[s][IdxFromPieceType<WHITE>(pt)];
-            }
-            pieces = board.GetPieces(pt, BLACK);
-            while (pieces) {
-                Square s = Bitboards::PopLsb(pieces);
-                hash ^= piece_keys[s][IdxFromPieceType<BLACK>(pt)];
+        for (Color c = WHITE; c < COLOR_NR; ++c) {
+            for (PieceType pt = PAWN; pt < PIECE_TYPE_NR; ++pt) {
+                Bitboard pieces = board.GetPieces(pt, c);
+                while (pieces) {
+                    Square s = Bitboards::PopLsb(pieces);
+                    hash ^= piece_keys[s][NewPiece(pt, c)];
+                }
             }
         }
 
@@ -81,7 +77,9 @@ namespace Meetra::Zobrist {
             hash ^= castling_keys[Bitboards::PopLsb(cr)];
         }
 
-        hash ^= to_move_keys[board.ColorToMove()];
+        if (board.ColorToMove() == BLACK) {
+            hash ^= color_key;
+        }
 
         return hash;
     }

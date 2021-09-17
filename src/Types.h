@@ -126,7 +126,6 @@ namespace Meetra {
 
     template<Color C>
     inline int IdxFromPieceType(PieceType pt) { return C == WHITE ? pt - 1 : pt + 5; }
-    inline int IdxFromPiece(Piece p) { return ColorOfPiece(p) == WHITE ? p - 1 : p - 3; }
     inline PieceType PieceTypeFromFlag(MoveType mt) { return static_cast<PieceType>((mt >> 12) - 2); }
     inline Square FromSquare(Move m) { return static_cast<Square>(m & 0x3F); }
     inline Square ToSquare(Move m) { return static_cast<Square>(m >> 6 & 0x3F); }
@@ -154,6 +153,7 @@ inline T& operator--(T& d) { return d = T(int(d) - 1); }
     ENABLE_INCR_OPERATORS_ON(File)
     ENABLE_INCR_OPERATORS_ON(Rank)
     ENABLE_INCR_OPERATORS_ON(Direction)
+    ENABLE_INCR_OPERATORS_ON(Color)
 
     ENABLE_BASE_OPERATORS_ON(Square)
     ENABLE_BASE_OPERATORS_ON(File)

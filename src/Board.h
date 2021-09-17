@@ -20,8 +20,7 @@ namespace Meetra {
         bool MakeMove(Move m);
         void UnmakeMove(Move m);
         bool MakeUciMove(const std::string &move_string);
-        [[nodiscard]] inline Score GetEval() const { return state.evaluator.GetBoardEval(); };
-        [[nodiscard]] inline Score GetMoveEval(Move m) const { return state.evaluator.GetMoveEval(*this, m); };
+
         [[nodiscard]] bool IsMoveLegal(Move m) const;
         [[nodiscard]] bool IsBoardValid() const;
         [[nodiscard]] bool AllSquaresSafe(Bitboard squares, Color attacker, Bitboard occ) const ;
@@ -30,11 +29,13 @@ namespace Meetra {
         [[nodiscard]] Bitboard AttackedBy(Square s, Color attacked_by, Bitboard occ) const;
         [[nodiscard]] Bitboard PinnedToSquare(Square s, Color blockers_color) const;
         [[nodiscard]] std::string MoveToName(Move m) const;
-        [[nodiscard]] Move NewMoveFromName(std::string_view move_name) const;
+        [[nodiscard]] Move MoveFromName(std::string_view move_name) const;
         [[nodiscard]] std::string PPBoard() const;
 
 #pragma region ===== Getters =====
         [[nodiscard]] inline int HistorySize() const { return static_cast<int>(history_cnt); }
+        [[nodiscard]] inline Score GetEval() const { return state.evaluator.GetBoardEval(); };
+        [[nodiscard]] inline Score GetMoveEval(Move m) const { return state.evaluator.GetMoveEval(*this, m); };
         [[nodiscard]] inline Bitboard GetPieces(PieceType pt, Color c) const { return type_bbs[pt] & color_bbs[c]; }
         [[nodiscard]] inline Bitboard GetPieces(PieceType pt) const { return type_bbs[pt]; }
         [[nodiscard]] inline Bitboard GetPieces(Color c) const { return color_bbs[c]; }
@@ -86,7 +87,7 @@ namespace Meetra {
 #pragma region ===== Update inner structures =====
         bool ParseFen(const std::string &fen);
         void RemovePiece(Square s);
-        void PutPiece(Square s, Piece p);
+        void AddPiece(Square s, Piece p);
         void MovePiece(Square from, Square to);
 #pragma endregion
 

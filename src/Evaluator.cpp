@@ -10,149 +10,102 @@ namespace Meetra::Evaluation {
 
         std::ranges::fill(mg, 0);
         std::ranges::fill(eg, 0);
-        gamePhase = 0;
+        phase = 0;
 
-        for (PieceType pt = PAWN; pt <= KING; ++pt) {
-            Bitboard pieces = board.GetPieces(pt, WHITE);
-            while (pieces) {
-                Square s = Bitboards::PopLsb(pieces);
-                mg[WHITE] += EvalValues::mg_table[WHITE][pt][s];
-                eg[WHITE] += EvalValues::eg_table[WHITE][pt][s];
-                gamePhase += EvalValues::gamephaseInc[pt];
-            }
-            pieces = board.GetPieces(pt, BLACK);
-            while (pieces) {
-                Square s = Bitboards::PopLsb(pieces);
-                mg[BLACK] += EvalValues::mg_table[BLACK][pt][s];
-                eg[BLACK] += EvalValues::eg_table[BLACK][pt][s];
-                gamePhase += EvalValues::gamephaseInc[pt];
+        for (Color c = WHITE; c < COLOR_NR; ++c) {
+            for (PieceType pt = PAWN; pt < PIECE_TYPE_NR; ++pt) {
+                Bitboard pieces = board.GetPieces(pt, c);
+                while (pieces) {
+                    Square s = Bitboards::PopLsb(pieces);
+                    mg[c] += EvalValues::mg_table[c][pt][s];
+                    eg[c] += EvalValues::eg_table[c][pt][s];
+                    phase += EvalValues::phase_inc[pt];
+                }
             }
         }
 
         Color to_move = board.ColorToMove();
-
-        mgScore = mg[to_move] - mg[OtherColor(to_move)];
-        egScore = eg[to_move] - eg[OtherColor(to_move)];
-        mgPhase = std::min(gamePhase, 24);
-        egPhase = 24 - mgPhase;
+        mg_score = mg[to_move] - mg[OtherColor(to_move)];
+        eg_score = eg[to_move] - eg[OtherColor(to_move)];
+        mg_phase = std::min(phase, 24);
+        eg_phase = 24 - mg_phase;
     }
 
     void Evaluator::MakeMove(const Board &board, Move m) {
 
-        Color to_move = board.ColorToMove();
-        Color enemy_col = OtherColor(to_move);
+        Color col = board.ColorToMove();
+        Color enemy_col = OtherColor(col);
 
         Square to = ToSquare(m);
         Square from = FromSquare(m);
-        Square capture_s = GetMoveType(m) == EN_PASSANT ? (to_move == WHITE ? to + SOUTH : to + NORTH) : to;
+        Square capture_s = GetMoveType(m) == EN_PASSANT ? (col == WHITE ? to + SOUTH : to + NORTH) : to;
 
-        PieceType this_piece = board.GetPieceTypeOnSq(from);
-        PieceType taken_piece = board.GetPieceTypeOnSq(capture_s);
+        PieceType moved_pt = board.GetPieceTypeOnSq(from);
+        PieceType taken_pt = board.GetPieceTypeOnSq(capture_s);
 
-        mg[to_move] += EvalValues::mg_table[to_move][this_piece][to] - EvalValues::mg_table[to_move][this_piece][from];
-        eg[to_move] += EvalValues::eg_table[to_move][this_piece][to] - EvalValues::eg_table[to_move][this_piece][from];
+        mg[col] += EvalValues::mg_table[col][moved_pt][to] - EvalValues::mg_table[col][moved_pt][from];
+        eg[col] += EvalValues::eg_table[col][moved_pt][to] - EvalValues::eg_table[col][moved_pt][from];
 
-        mg[enemy_col] -= EvalValues::mg_table[enemy_col][taken_piece][capture_s];
-        eg[enemy_col] -= EvalValues::eg_table[enemy_col][taken_piece][capture_s];
-        gamePhase -= EvalValues::gamephaseInc[taken_piece];
+        if (taken_pt != NONE_PIECE_TYPE) {
+            mg[enemy_col] -= EvalValues::mg_table[enemy_col][taken_pt][capture_s];
+            eg[enemy_col] -= EvalValues::eg_table[enemy_col][taken_pt][capture_s];
+            phase -= EvalValues::phase_inc[taken_pt];
+        }
 
         if (IsPromotion(m)) {
             PieceType prom_to = PieceTypeFromFlag(GetMoveType(m));
-            mg[to_move] += EvalValues::mg_table[to_move][prom_to][to] - EvalValues::mg_table[to_move][PAWN][to];
-            eg[to_move] += EvalValues::eg_table[to_move][prom_to][to] - EvalValues::eg_table[to_move][PAWN][to];
-            gamePhase += EvalValues::gamephaseInc[prom_to];
-            gamePhase -= EvalValues::gamephaseInc[PAWN];
+            mg[col] += EvalValues::mg_table[col][prom_to][to] - EvalValues::mg_table[col][PAWN][to];
+            eg[col] += EvalValues::eg_table[col][prom_to][to] - EvalValues::eg_table[col][PAWN][to];
+            phase += EvalValues::phase_inc[prom_to] - EvalValues::phase_inc[PAWN];
         } else if (GetMoveType(m) == CASTLING) {
-            Move r_move = board.RookCastlingMove(to, to_move);
+            Move r_move = board.RookCastlingMove(to, col);
             Square r_to = ToSquare(r_move);
             Square r_from = FromSquare(r_move);
-            mg[to_move] += EvalValues::mg_table[to_move][ROOK][r_to] - EvalValues::mg_table[to_move][ROOK][r_from];
-            eg[to_move] += EvalValues::eg_table[to_move][ROOK][r_to] - EvalValues::eg_table[to_move][ROOK][r_from];
+            mg[col] += EvalValues::mg_table[col][ROOK][r_to] - EvalValues::mg_table[col][ROOK][r_from];
+            eg[col] += EvalValues::eg_table[col][ROOK][r_to] - EvalValues::eg_table[col][ROOK][r_from];
         }
 
-        mgScore = mg[enemy_col] - mg[to_move];
-        egScore = eg[enemy_col] - eg[to_move];
-        mgPhase = std::min(gamePhase, 24);
-        egPhase = 24 - mgPhase;
+        mg_score = mg[enemy_col] - mg[col];
+        eg_score = eg[enemy_col] - eg[col];
+        mg_phase = std::min(phase, 24);
+        eg_phase = 24 - mg_phase;
     }
 
     Score Evaluator::GetBoardEval() const {
-        return (mgScore * mgPhase + egScore * egPhase) / 24;
+        return (mg_score * mg_phase + eg_score * eg_phase) / 24;
     }
 
     Score Evaluator::GetMoveEval(const Board &board, Move m) const {
 
-        Color to_move = board.ColorToMove();
-        Square to = ToSquare(m);
-        Square from = FromSquare(m);
-        Square capture_s = GetMoveType(m) == EN_PASSANT ? (to_move == WHITE ? to + SOUTH : to + NORTH) : to;
-
-        PieceType this_piece = board.GetPieceTypeOnSq(from);
-        PieceType taken_piece = board.GetPieceTypeOnSq(capture_s);
-
-        Score mg_val = EvalValues::mg_table[to_move][this_piece][to] - EvalValues::mg_table[to_move][this_piece][from] +
-                       EvalValues::mg_table[OtherColor(to_move)][taken_piece][capture_s];
-
-        Score eg_val = EvalValues::eg_table[to_move][this_piece][to] - EvalValues::eg_table[to_move][this_piece][from] +
-                       EvalValues::eg_table[OtherColor(to_move)][taken_piece][capture_s];
-
-        if (IsPromotion(m)) {
-            PieceType prom_to = PieceTypeFromFlag(GetMoveType(m));
-            mg_val += EvalValues::mg_table[to_move][prom_to][to];
-            eg_val += EvalValues::eg_table[to_move][prom_to][to];
-            mg_val -= EvalValues::mg_table[to_move][PAWN][to];
-            eg_val -= EvalValues::eg_table[to_move][PAWN][to];
-        } else if (GetMoveType(m) == CASTLING) {
-            Move rook_move = board.RookCastlingMove(to, to_move);
-            Square rook_to = ToSquare(rook_move);
-            Square rook_from = FromSquare(rook_move);
-            mg_val += EvalValues::mg_table[to_move][ROOK][rook_to] - EvalValues::mg_table[to_move][ROOK][rook_from];
-            eg_val += EvalValues::eg_table[to_move][ROOK][rook_to] - EvalValues::eg_table[to_move][ROOK][rook_from];
-        }
-
-        return (mg_val * mgPhase + eg_val * egPhase) / 24;
-    }
-
-    void Evaluator::UndoMove(const Board &board, Move m) {
-
-        Color to_move = board.ColorToMove();
-        Color enemy_col = OtherColor(to_move);
+        Color col = board.ColorToMove();
 
         Square to = ToSquare(m);
         Square from = FromSquare(m);
-        Square capture_s = GetMoveType(m) == EN_PASSANT ? (to_move == WHITE ? to + SOUTH : to + NORTH) : to;
+        Square capture_s = GetMoveType(m) == EN_PASSANT ? (col == WHITE ? to + SOUTH : to + NORTH) : to;
 
-        PieceType this_piece = board.GetPieceTypeOnSq(from);
-        PieceType taken_piece = board.GetPieceTypeOnSq(capture_s);
+        PieceType moved_pt = board.GetPieceTypeOnSq(from);
+        PieceType taken_pt = board.GetPieceTypeOnSq(capture_s);
 
-        mg[to_move] -= EvalValues::mg_table[to_move][this_piece][to] - EvalValues::mg_table[to_move][this_piece][from];
-        eg[to_move] -= EvalValues::eg_table[to_move][this_piece][to] - EvalValues::eg_table[to_move][this_piece][from];
+        Score mg_val = EvalValues::mg_table[col][moved_pt][to] - EvalValues::mg_table[col][moved_pt][from];
+        Score eg_val = EvalValues::eg_table[col][moved_pt][to] - EvalValues::eg_table[col][moved_pt][from];
 
-        mg[enemy_col] += EvalValues::mg_table[enemy_col][taken_piece][capture_s];
-        eg[enemy_col] += EvalValues::eg_table[enemy_col][taken_piece][capture_s];
-        gamePhase += EvalValues::gamephaseInc[taken_piece];
+        if (taken_pt != NONE_PIECE_TYPE) {
+            mg_val += EvalValues::mg_table[OtherColor(col)][taken_pt][capture_s];
+            eg_val += EvalValues::eg_table[OtherColor(col)][taken_pt][capture_s];
+        }
 
         if (IsPromotion(m)) {
             PieceType prom_to = PieceTypeFromFlag(GetMoveType(m));
-            mg[to_move] -= EvalValues::mg_table[to_move][prom_to][to];
-            eg[to_move] -= EvalValues::eg_table[to_move][prom_to][to];
-            mg[to_move] += EvalValues::mg_table[to_move][PAWN][to];
-            eg[to_move] += EvalValues::eg_table[to_move][PAWN][to];
-            gamePhase -= EvalValues::gamephaseInc[prom_to];
-            gamePhase += EvalValues::gamephaseInc[PAWN];
+            mg_val += EvalValues::mg_table[col][prom_to][to] - EvalValues::mg_table[col][PAWN][to];
+            eg_val += EvalValues::eg_table[col][prom_to][to] - EvalValues::eg_table[col][PAWN][to];
         } else if (GetMoveType(m) == CASTLING) {
-            Move rook_move = board.RookCastlingMove(to, to_move);
-            Square rook_to = ToSquare(rook_move);
-            Square rook_from = FromSquare(rook_move);
-            mg[to_move] -=
-                    EvalValues::mg_table[to_move][ROOK][rook_to] - EvalValues::mg_table[to_move][ROOK][rook_from];
-            eg[to_move] -=
-                    EvalValues::eg_table[to_move][ROOK][rook_to] - EvalValues::eg_table[to_move][ROOK][rook_from];
+            Move r_move = board.RookCastlingMove(to, col);
+            Square r_to = ToSquare(r_move);
+            Square r_from = FromSquare(r_move);
+            mg_val += EvalValues::mg_table[col][ROOK][r_to] - EvalValues::mg_table[col][ROOK][r_from];
+            eg_val += EvalValues::eg_table[col][ROOK][r_to] - EvalValues::eg_table[col][ROOK][r_from];
         }
 
-        mgScore = mg[enemy_col] - mg[to_move];
-        egScore = eg[enemy_col] - eg[to_move];
-        mgPhase = std::min(gamePhase, 24);
-        egPhase = 24 - mgPhase;
+        return (mg_val * mg_phase + eg_val * eg_phase) / 24;
     }
 }

@@ -2,7 +2,6 @@
 #include "Uci.h"
 #include "Perft.h"
 #include "Search.h"
-#include "Utils.h"
 #include "TestSuite.h"
 #include <algorithm>
 #include <unistd.h>
@@ -15,13 +14,9 @@ namespace Meetra::Uci {
                "| |\\/| / -_) -_)  _| '_/ _` |\n"  \
                "|_|  |_\\___\\___|\\__|_| \\__,_|";
     }
-
     std::string GetName() { return "Meetra"; }
-
     std::string GetVersion() { return "0.0.1"; }
-
     std::string GetAuthor() { return "M3rg1"; }
-
     std::string GetOptions() {
         std::ostringstream oss;
         oss << "option name Clear Hash type button\n"
@@ -144,13 +139,9 @@ namespace Meetra::Uci {
     }
 
     void PerftCommand(std::istringstream &iss, Board &board) {
-        std::string token;
-        iss >> token;
-        if (!Utils::IsPositiveNumber(token)) {
-            SendInfo("Invalid perft depth");
-            return;
-        }
-        RunPerft(std::stoi(token), board);
+        Depth depth;
+        iss >> depth;
+        RunPerft(depth, board);
     }
 
     void IsReadyCommand() {
@@ -177,12 +168,10 @@ namespace Meetra::Uci {
             return;
         }
 
-        if (token == "moves") {
-            while (iss >> token) {
-                if (!board.MakeUciMove(token)) {
-                    SendInfo("Invalid move: " + token);
-                    return;
-                }
+        while (iss >> token) {
+            if (!board.MakeUciMove(token)) {
+                SendInfo("Invalid move: " + token);
+                return;
             }
         }
     }
@@ -210,7 +199,7 @@ namespace Meetra::Uci {
             option += token + " ";
         }
 
-        if(option.empty()) {
+        if (option.empty()) {
             SendInfo("Invalid option name");
             return;
         }
@@ -221,7 +210,8 @@ namespace Meetra::Uci {
         std::string value;
         iss >> value;
 
-        if (!value.empty() && value != "true" && value != "false" && !Utils::IsPositiveNumber(value)) {
+        if (!value.empty() && value != "true" && value != "false" &&
+            value.find_first_not_of("0123456789") == std::string_view::npos) {
             SendInfo("Invalid option value " + value);
             return;
         }
@@ -242,7 +232,7 @@ namespace Meetra::Uci {
             Search::ShowCurrMoveInfo(value == "true");
         } else if (option == "ownbook") {
             Search::SetUseBook(value == "true");
-        }else if (option == "uci_chess960"){
+        } else if (option == "uci_chess960") {
             Search::SetChess960(value == "true");
         } else {
             SendInfo("Unknown option: " + option);

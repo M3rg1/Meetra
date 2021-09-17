@@ -9,7 +9,7 @@
 
 namespace Meetra {
 
-#define MIN_HASH_SIZE 4 // this can't be set to 0
+#define MIN_HASH_SIZE 4 // this shouldn't be set to 0
 #define DEFAULT_HASH_SIZE 128
 #define MAX_HASH_SIZE 8192
 #define TT_ENTRIES_PER_BUCKET 4
@@ -39,7 +39,7 @@ namespace Meetra {
 
     private:
 
-        using Epoch = int;
+        using TTEpoch = int;
 
         // 10 bytes + 2 alignment
         class TTEntry {
@@ -55,14 +55,14 @@ namespace Meetra {
             [[nodiscard]] inline Depth GetDepth() const { return static_cast<Depth>(depth); }
             [[nodiscard]] inline Move GetMove() const { return static_cast<Move>(move); }
             [[nodiscard]] inline TTFlag GetFlag() const { return static_cast<TTFlag>(epoch_and_flag & 0x3); }
-            [[nodiscard]] inline Epoch GetEpoch() const { return static_cast<Epoch>(epoch_and_flag >> 2); }
+            [[nodiscard]] inline TTEpoch GetEpoch() const { return static_cast<TTEpoch>(epoch_and_flag >> 2); }
 
-            inline void SetEpoch(Epoch e) {
+            inline void SetEpoch(TTEpoch e) {
                 epoch_and_flag &= 0x3;
                 epoch_and_flag |= static_cast<uint8_t>(e) << 2;
             }
 
-            inline void SaveEntry(Hash32 h, Score s, Depth d, Move m, TTFlag f, Epoch e) {
+            inline void SaveEntry(Hash32 h, Score s, Depth d, Move m, TTFlag f, TTEpoch e) {
                 hash = static_cast<uint32_t>(h);
                 score = static_cast<int16_t>(s);
                 depth = static_cast<uint8_t>(d);
@@ -76,7 +76,7 @@ namespace Meetra {
             TTEntry bucket_entries[TT_ENTRIES_PER_BUCKET]{};
         };
 
-        Epoch current_epoch;
+        TTEpoch current_epoch;
         std::atomic<size_t> used_entries;
         size_t buckets_count;
         std::unique_ptr<TTBucket[]> table;
