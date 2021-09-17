@@ -74,8 +74,6 @@ namespace Meetra {
         inline void SetEpSquare(Square s) { state.ep_square = s; }
         inline void SetColorToMove(Color c) { state.to_move = c; }
         inline void SetCapturedPiece(Piece p) { state.captured_piece = p; }
-        inline void SetPly(int ply) { state.ply = ply; }
-        inline void SetMoveNumber(int move_num) { state.moves = move_num; }
 
         inline void ResetPly() { state.ply = 0; }
         inline void IncrementMoveNumber(Color col_to_move) { state.moves += col_to_move; }
@@ -86,7 +84,7 @@ namespace Meetra {
 #pragma endregion
 
 #pragma region ===== Update inner structures =====
-        bool ParseFenValidate(const std::string &fen);
+        bool ParseFen(const std::string &fen);
         void RemovePiece(Square s);
         void PutPiece(Square s, Piece p);
         void MovePiece(Square from, Square to);

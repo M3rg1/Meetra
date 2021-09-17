@@ -26,7 +26,7 @@ namespace Meetra {
         std::ranges::fill(orig_rooks[BLACK], EMPTY_BB);
         std::ranges::fill(orig_rooks[WHITE], EMPTY_BB);
 
-        if (!ParseFenValidate(fen) || !IsBoardValid()) {
+        if (!ParseFen(fen) || !IsBoardValid()) {
             *this = previous;
             return false;
         }
@@ -52,6 +52,10 @@ namespace Meetra {
         Color now_move = ColorToMove();
         Square enemy_king_square = now_move == WHITE ? Bitboards::Lsb(black_king) : Bitboards::Lsb(white_king);
         if (IsAttackedByAny(enemy_king_square, now_move, GetPieces(ALL_TYPES))) {
+            return false;
+        }
+
+        if ((state.cr & GetPieces(ROOK)) != state.cr) {
             return false;
         }
 
@@ -275,7 +279,7 @@ namespace Meetra {
 
         // ches960 castling, special case
         if (Search::Globals::chess960 && GetMoveType(m) == CASTLING) {
-            Move rook_move = RookCastlingMove(to,ColorToMove());
+            Move rook_move = RookCastlingMove(to, ColorToMove());
             RemovePiece(ToSquare(rook_move));
             MovePiece(to, from);
             PutPiece(FromSquare(rook_move), NewPiece(ROOK, ColorToMove()));
@@ -325,7 +329,7 @@ namespace Meetra {
                 if (IsPromotion(move) && move != uci_move) {
                     continue;
                 }
-                if(GetMoveType(uci_move) == CASTLING && GetMoveType(move) != CASTLING) {
+                if (GetMoveType(uci_move) == CASTLING && GetMoveType(move) != CASTLING) {
                     continue;
                 }
                 MakeMove(move);
@@ -335,114 +339,68 @@ namespace Meetra {
         return false;
     }
 
-    bool Board::ParseFenValidate(const std::string &fen) {
+    bool Board::ParseFen(const std::string &fen) {
+
+        static std::regex rgx(R"(\s*([rnbqkpRNBQKP1-8]{1,8}\/){7}([rnbqkpRNBQKP1-8]{1,8})\s[bw]\s?(([a-hkqA-HKQ]{1,4})|(-))?\s?(([a-h][36])|(-))?\s?\d*\s\d*\s*)");
+        if (!std::regex_match(fen, rgx)) {
+            return false;
+        }
 
         std::istringstream iss(fen);
         std::string token;
 
-        // board position
         iss >> token;
-        File f = FILE_A;
-        Rank r = RANK_8;
-        bool prev_is_digit = false;
-
-        //std::regex rgx(R"(\s*([rnbqkpRNBQKP1-8]{1,8}\/){7}([rnbqkpRNBQKP1-8]{1,8})\s[bw]\s(([a-hkqA-HKQ]{1,4})|(-))\s(([a-h][36])|(-))\s\d+\s\d+\s*)");
-        //Uci::Send("Regex: " + std::to_string(std::regex_match(fen, rgx)));
-
+        Square s = A8;
         for (char c: token) {
-
-            if ((c != '/' && f == FILE_H + 1) || (c == '/' && f <= FILE_H) || (prev_is_digit && std::isdigit(c)) ||
-                r < RANK_1 || f > FILE_H + 1) {
-                return false;
-            }
-
-            if (c == '/' && f == FILE_H + 1) {
-                prev_is_digit = false;
-                f = FILE_A;
-                --r;
-            } else if (c <= '8' && c >= '1') {
-                prev_is_digit = true;
-                f += c - '0';
-            } else if (CharToPiece(c) != NO_PIECE) {
-                prev_is_digit = false;
-                PutPiece(SqFromFiRa(f, r), CharToPiece(c));
-                ++f;
-            } else {
-                return false;
-            }
-        }
-        if (f != FILE_H + 1 || r != RANK_1) {
-            return false;
-        }
-
-        // color to move
-        if (iss >> token && (token == "w" || token == "b")) {
-            SetColorToMove(token == "w" ? WHITE : BLACK);
-        } else {
-            return false;
-        }
-
-        // castling rights
-        if (iss >> token) {
-            if (token.length() <= 4 && Utils::ContainsOnlyChars(token, "KQkqABCDEFGHabcdefgh") && Utils::AllUniqueChars(token)) {
-
-                for (char c : token) {
-                    Color col = std::isupper(c) ? WHITE : BLACK;
-                    Bitboard king = GetPieces(KING, col);
-                    Bitboard rooks = GetPieces(ROOK, col);
-                    rooks &= col == WHITE ? Bitboards::RankMask(RANK_1) : Bitboards::RankMask(RANK_8);
-                    c = std::tolower(c, std::locale());
-
-                    if (c == 'k') {
-                        Bitboard r_square = SquareToBB(Bitboards::Msb(rooks));
-                        state.cr |= r_square;
-                        orig_rooks[col][SHORT] = r_square;
-                    } else if (c == 'q') {
-                        Bitboard r_square = SquareToBB(Bitboards::Lsb(rooks));
-                        state.cr |= r_square;
-                        orig_rooks[col][LONG] = r_square;
-                    } else if ('a' <= c && c <= 'h') {
-                        Bitboard r_square = SquareToBB(SqFromFiRa(FileFromChar(c), col == WHITE ? RANK_1 : RANK_8));
-                        state.cr |= r_square;
-                        r_square > king ? orig_rooks[col][SHORT] = r_square : orig_rooks[col][LONG] = r_square;
-                    }
-                }
-
-                if ((state.cr & GetPieces(ROOK)) != state.cr) {
+            if (std::isdigit(c)) {
+                s += c - '0';
+            } else if (c == '/') {
+                if (FileFromSquare(s) != FILE_A) {
                     return false;
                 }
-
-            } else if (token != "-") {
-                return false;
-            }
-        }
-
-        // en passant square
-        if (iss >> token) {
-            if (token.length() == 2 && token[0] >= 'a' && token[0] <= 'h' && (token[1] == '3' || token[1] == '6')) {
-                SetEpSquare(SqFromFiRa(FileFromChar(token[0]), RankFromChar(token[1])));
-            } else if (token != "-") {
-                return false;
-            }
-        }
-
-        // ply
-        if (iss >> token) {
-            if (Utils::IsPositiveNumber(token) && std::stoi(token) <= 150) {
-                SetPly(std::stoi(token));
+                s -= 16;
             } else {
-                return false;
+                PutPiece(s, CharToPiece(c));
+                ++s;
+            }
+        }
+        if (s != H1 + 1) {
+            return false;
+        }
+
+        iss >> token;
+        SetColorToMove(token == "w" ? WHITE : BLACK);
+
+        if (iss >> token && token != "-") {
+            for (char c: token) {
+                Color col = std::isupper(c) ? WHITE : BLACK;
+                Bitboard king = GetPieces(KING, col);
+                Bitboard rooks = GetPieces(ROOK, col);
+                rooks &= col == WHITE ? Bitboards::RankMask(RANK_1) : Bitboards::RankMask(RANK_8);
+                c = std::tolower(c, std::locale());
+
+                if (c == 'k') {
+                    Bitboard r_square = SquareToBB(Bitboards::Msb(rooks));
+                    state.cr |= r_square;
+                    orig_rooks[col][SHORT] = r_square;
+                } else if (c == 'q') {
+                    Bitboard r_square = SquareToBB(Bitboards::Lsb(rooks));
+                    state.cr |= r_square;
+                    orig_rooks[col][LONG] = r_square;
+                } else if ('a' <= c && c <= 'h') {
+                    Bitboard r_square = SquareToBB(SqFromFiRa(FileFromChar(c), col == WHITE ? RANK_1 : RANK_8));
+                    state.cr |= r_square;
+                    r_square > king ? orig_rooks[col][SHORT] = r_square : orig_rooks[col][LONG] = r_square;
+                }
             }
         }
 
-        // move count
-        if (iss >> token) {
-            if (Utils::IsPositiveNumber(token) && std::stoi(token) < MAX_GAME_LENGTH && std::stoi(token) >= 1) {
-                SetMoveNumber(std::stoi(token));
-            } else {
-                return false;
-            }
+        if (iss >> token && token != "-") {
+            SetEpSquare(SqFromFiRa(FileFromChar(token[0]), RankFromChar(token[1])));
         }
+
+        iss >> state.ply;
+        iss >> state.moves;
 
         return true;
     }
@@ -456,7 +414,7 @@ namespace Meetra {
         std::string ret = SquareToName(FromSquare(m)) + SquareToName(ToSquare(m));
 
         // chess 960 castling is denoted by capturing own rook
-        if(Search::Globals::chess960 && GetMoveType(m) == CASTLING) {
+        if (Search::Globals::chess960 && GetMoveType(m) == CASTLING) {
             Rank r = RankFromSquare(FromSquare(m));
             Color c = r == RANK_1 ? WHITE : BLACK;
             Move r_move = RookCastlingMove(ToSquare(m), c);
