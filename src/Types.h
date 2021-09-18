@@ -108,7 +108,7 @@ namespace Meetra {
      * 0-5 from square
      * 6-11 to square
      * 12-15 MoveType flag
-     * if the 14th bit is 1, it's a promotion move -> prom bits  N = 0010, B = 1010, R = 0110, Q = 0111
+     * if the 14th bit is 1, it's a promotion move -> prom bits  N = 0010.., B = 1010.., R = 0110.., Q = 1110..
      */
     using Move = uint16_t;
 

@@ -13,12 +13,11 @@ namespace Meetra {
         uint64_t total_nodes = 0;
         Move m;
 
-        // bulk counting at leaves
         if (depth <= 1) {
             while ((m = move_gen.GetAnyMove())) {
                 if (board.IsMoveLegal(m)) {
                     total_nodes++;
-                    if (DIV) {
+                    if constexpr (DIV) {
                         Uci::Send(board.MoveToName(m) + ": " + std::to_string(1));
                     }
                 }
@@ -34,7 +33,7 @@ namespace Meetra {
             uint64_t nodes = Perft<false>(depth - 1, board);
             board.UnmakeMove(m);
             total_nodes += nodes;
-            if (DIV) {
+            if constexpr (DIV) {
                 Uci::Send(board.MoveToName(m) + ": " + std::to_string(nodes));
             }
         }

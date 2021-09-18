@@ -21,37 +21,33 @@ namespace Meetra::Book {
     std::vector<Move> BinarySearch(std::ifstream &stream, size_t end, Hash64 hash) {
 
         std::vector<Move> moves;
-        size_t right = end / sizeof(BookEntry);
-        size_t left = 0;
+        auto right = static_cast<std::streamoff>(end / sizeof(BookEntry));
+        auto left = 0LL;
         BookEntry book_entry;
 
         while (left <= right) {
 
-            auto mid = (right + left) / 2;
-            stream.seekg(mid * sizeof(BookEntry), std::ios::beg);
+            std::streamoff mid = (right + left) / 2;
+            stream.seekg(static_cast<std::streamoff>(mid * sizeof(BookEntry)), std::ios::beg);
             stream.read((char *) &book_entry, sizeof(BookEntry));
 
             if (book_entry.hash > hash) {
                 right = mid - 1;
-                continue;
-            }
-
-            if (book_entry.hash < hash) {
+            } else if (book_entry.hash < hash) {
                 left = mid + 1;
-                continue;
-            }
+            } else {
 
-            if (book_entry.hash == hash) {
                 do {
                     moves.emplace_back(book_entry.move);
                 } while (stream.read((char *) &book_entry, sizeof(BookEntry)) && book_entry.hash == hash);
 
-                size_t i = 1;
-                while (stream.seekg((mid - i) * sizeof(BookEntry), std::ios::beg) &&
+                int i = 1;
+                while (stream.seekg(static_cast<std::streamoff>((mid - i) * sizeof(BookEntry)), std::ios::beg) &&
                        stream.read((char *) &book_entry, sizeof(BookEntry)) && book_entry.hash == hash) {
                     moves.emplace_back(book_entry.move);
                     i++;
                 }
+
                 break;
             }
         }

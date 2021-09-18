@@ -51,7 +51,7 @@ namespace Meetra::Zobrist {
     }
 
     void MovePiece(Hash64 &h, Piece p, Square from, Square to) {
-        h ^= piece_keys[from][p] ^ piece_keys[to][p];;
+        h ^= piece_keys[from][p] ^ piece_keys[to][p];
     }
 
     Hash64 GenHash64(const Board &board) {

@@ -37,8 +37,8 @@ namespace Meetra {
             Move move;
             Score score;
 
-            bool operator<(const ScoredMove &other) const {
-                return score < other.score;
+            std::strong_ordering operator<=>(const ScoredMove &other) const {
+                return score <=> other.score;
             }
         };
 

@@ -3,7 +3,6 @@
 #include "ZobristHash.h"
 #include "Search.h"
 #include "EvalValues.h"
-#include "Book.h"
 
 int main() {
 
