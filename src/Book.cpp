@@ -18,18 +18,17 @@ namespace Meetra::Book {
         int count = 0;
     };
 
-    std::vector<Move> BinarySearch(std::ifstream &stream, size_t left, size_t right, Hash64 hash) {
+    std::vector<Move> BinarySearch(std::ifstream &stream, size_t end, Hash64 hash) {
 
         std::vector<Move> moves;
-        stream.seekg(0, std::ios::beg);
-        right /= sizeof(BookEntry);
+        size_t right = end / sizeof(BookEntry);
+        size_t left = 0;
         BookEntry book_entry;
 
         while (left <= right) {
 
             auto mid = (right + left) / 2;
             stream.seekg(mid * sizeof(BookEntry), std::ios::beg);
-
             stream.read((char *) &book_entry, sizeof(BookEntry));
 
             if (book_entry.hash > hash) {
@@ -61,15 +60,15 @@ namespace Meetra::Book {
     }
 
     std::vector<Move> ProbeBook(const Board &board) {
-        std::ifstream read_book;
-        read_book.open(FILE_NAME, std::ios::in | std::ios::binary);
-        if (!read_book.is_open()) {
+        std::ifstream book_stream;
+        book_stream.open(FILE_NAME, std::ios::in | std::ios::binary);
+        if (!book_stream.is_open()) {
             Uci::SendInfo("Could not open book.");
             return {};
         }
 
         size_t end = std::filesystem::file_size(FILE_NAME);
-        return BinarySearch(read_book, 0, end, board.GetHash());
+        return BinarySearch(book_stream, end, board.GetHash());
     }
 
 
