@@ -13,7 +13,7 @@ namespace Meetra::Book {
     };
 
     std::vector<Move> ProbeBook(const Board &board);
-    void CreateBook();
+    //void CreateBook();
 }
 
 #endif //MEETRA_BOOK_H
