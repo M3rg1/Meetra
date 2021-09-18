@@ -145,7 +145,7 @@ namespace Meetra::Uci {
 
         auto start = std::chrono::steady_clock::now();
 
-        auto nodes = RunPerft(depth, board, true);
+        auto nodes = Perft<true>(depth, board);
 
         auto end = std::chrono::steady_clock::now();
         auto time_elapsed_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count() + 1;

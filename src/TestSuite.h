@@ -34,7 +34,7 @@ namespace Meetra::TestSuite {
 
             auto start = std::chrono::steady_clock::now();
 
-            uint64_t result = RunPerft(depth, board);
+            uint64_t result = Perft<false>(depth, board);
 
             auto end = std::chrono::steady_clock::now();
             auto time_elapsed_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count() + 1;
