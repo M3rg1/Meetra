@@ -41,10 +41,6 @@ namespace Meetra {
         [[nodiscard]] inline Bitboard GetPieces(Color c) const { return color_bbs[c]; }
         [[nodiscard]] inline Piece GetPieceOnSquare(Square s) const { return board[s]; }
         [[nodiscard]] inline PieceType GetPieceTypeOnSq(Square s) const { return TypeOfPiece(GetPieceOnSquare(s)); }
-#pragma endregion
-
-#pragma region ===== Game State info getters =====
-        [[nodiscard]] Move RookCastlingMove(Square king_to, Color c) const;
         [[nodiscard]] inline Bitboard GetCr() const { return state.cr; }
         [[nodiscard]] inline Hash64 GetHash() const { return state.hash; }
         [[nodiscard]] inline bool CrAvailable(Color c, CastlingSide cs) const { return RookSqBB(c, cs); }
@@ -55,27 +51,16 @@ namespace Meetra {
         [[nodiscard]] inline int TotalMoves() const { return state.moves; }
         [[nodiscard]] inline bool Move50Rule() const { return Ply() >= 100; };
         [[nodiscard]] inline Bitboard RookSqBB(Color c, CastlingSide s) const { return state.cr & origin_rooks[c][s]; }
-        [[nodiscard]] inline bool IsRepetition() const {
-            // http://www.talkchess.com/forum3/viewtopic.php?f=7&t=51000&start=20
-            int rep = 0;
-            int stop = std::max(HistorySize() - Ply(), 0);
-            for (int i = HistorySize() - 2; i >= stop; i -= 2) {
-                if (history[i].hash == state.hash) {
-                    if (++rep > 1) {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        }
+        [[nodiscard]] Move RookCastlingMove(Square king_to, Color c) const;
+        [[nodiscard]] bool IsRepetition() const;
 #pragma endregion
 
     private:
+
 #pragma region ===== Game State modifications =====
         inline void SetEpSquare(Square s) { state.ep_square = s; }
         inline void SetColorToMove(Color c) { state.to_move = c; }
         inline void SetCapturedPiece(Piece p) { state.captured_piece = p; }
-
         inline void ResetPly() { state.ply = 0; }
         inline void IncrementMoveNumber(Color col_to_move) { state.moves += col_to_move; }
         inline void IncrementPly() { state.ply++; }
@@ -103,12 +88,12 @@ namespace Meetra {
             Evaluation::Evaluator evaluator;
         };
 
-        // original positions of rooks that are available for castling
-        Bitboard origin_rooks[COLOR_NR][CS_NR];
-
         BoardState state;
         BoardState history[MAX_GAME_LENGTH];
         size_t history_cnt;
+
+        // original positions of rooks that are available for castling
+        Bitboard origin_rooks[COLOR_NR][CS_NR];
 
         Piece board[SQUARE_NR];
         Bitboard color_bbs[COLOR_NR];
@@ -116,6 +101,5 @@ namespace Meetra {
 #pragma endregion
     };
 }
-
 
 #endif //MEETRA_BOARD_H

@@ -8,19 +8,17 @@ namespace Meetra::Bitboards {
 
     void Init();
 
-    [[nodiscard]] Bitboard GetUnboundRookMoves(Square s);
-    [[nodiscard]] Bitboard GetUnboundBishopMoves(Square s);
-    [[nodiscard]] Bitboard GetRayToBorders(Square s1, Square s2);
-    [[nodiscard]] Bitboard GetRayBetweenSquares(Square s1, Square s2);
-
     template<PieceType PT>
-    [[nodiscard]] Bitboard GetAttacks(Square s, Bitboard occ = EMPTY_BB, Color c = WHITE) ;
-    [[nodiscard]] std::string PPBitboard(Bitboard b);
+    [[nodiscard]] Bitboard GetAttacks(Square s, Bitboard occ = EMPTY_BB, Color c = WHITE);
+    [[nodiscard]] Bitboard GetRookRays(Square s);
+    [[nodiscard]] Bitboard GetBishopRays(Square s);
+    [[nodiscard]] Bitboard GetRayToBorders(Square s1, Square s2);
+    [[nodiscard]] Bitboard GetRayToSquares(Square s1, Square s2);
+    [[nodiscard]] Bitboard RankMask(Rank r);
+
     [[nodiscard]] inline bool MoreThanOne(Bitboard b) { return (b & (b - 1)); }
     [[nodiscard]] inline bool ExactlyOne(Bitboard b) { return b && !MoreThanOne(b); }
     [[nodiscard]] inline int PopCount(Bitboard b) { return std::__popcount(b); }
-
-    [[nodiscard]] Bitboard RankMask(Rank r);
     [[nodiscard]] inline Square Msb(Bitboard b) { return static_cast<Square>(63 ^ __builtin_clzll(b)); }
     [[nodiscard]] inline Square Lsb(Bitboard b) { return static_cast<Square>(__builtin_ctzll(b)); }
     inline Square PopLsb(Bitboard &b) {
@@ -28,6 +26,8 @@ namespace Meetra::Bitboards {
         b &= b - 1;
         return s;
     }
+
+    [[nodiscard]] std::string PPBitboard(Bitboard b);
 
     template<Direction D>
     constexpr Bitboard Shift(Bitboard b) {

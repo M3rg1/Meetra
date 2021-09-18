@@ -43,7 +43,7 @@ namespace Meetra {
             }
             Bitboard capture_mask = checkers;
             Square attacker_square = Bitboards::Lsb(capture_mask);
-            Bitboard block_mask = Bitboards::GetRayBetweenSquares(king_s, attacker_square);
+            Bitboard block_mask = Bitboards::GetRayToSquares(king_s, attacker_square);
             legal_moves = capture_mask | block_mask;
         }
 
@@ -244,8 +244,8 @@ namespace Meetra {
         Square r_dest = S == LONG ? C == WHITE ? D1 : D8 : C == WHITE ? F1 : F8;
         Square k_dest = S == LONG ? C == WHITE ? C1 : C8 : C == WHITE ? G1 : G8;
         Bitboard pieces = all_pieces ^ rook_bb ^ SquareToBB(king_s);
-        Bitboard walk_sq = Bitboards::GetRayBetweenSquares(Bitboards::Lsb(rook_bb), r_dest) |
-                           Bitboards::GetRayBetweenSquares(king_s, k_dest) |
+        Bitboard walk_sq = Bitboards::GetRayToSquares(Bitboards::Lsb(rook_bb), r_dest) |
+                           Bitboards::GetRayToSquares(king_s, k_dest) |
                            SquareToBB(r_dest) | SquareToBB(k_dest);
 
         return (pieces & walk_sq) == EMPTY_BB;

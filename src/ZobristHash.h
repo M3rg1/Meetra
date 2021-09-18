@@ -25,5 +25,4 @@ namespace Meetra {
     }
 }
 
-
 #endif //MEETRA_ZOBRISTHASH_H

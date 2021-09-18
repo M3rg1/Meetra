@@ -73,13 +73,13 @@ namespace Meetra {
         Bitboard bishops = GetPieces(BISHOP, blockers_color);
         Bitboard rooks = GetPieces(ROOK, blockers_color);
 
-        Bitboard attackers = ((bishops | queens) & Bitboards::GetUnboundBishopMoves(s)) |
-                             ((rooks | queens) & Bitboards::GetUnboundRookMoves(s));
+        Bitboard attackers = ((bishops | queens) & Bitboards::GetBishopRays(s)) |
+                             ((rooks | queens) & Bitboards::GetRookRays(s));
 
         Bitboard pinned_pieces = EMPTY_BB;
         while (attackers) {
             Square attacker_s = Bitboards::PopLsb(attackers);
-            Bitboard blocker = Bitboards::GetRayBetweenSquares(attacker_s, s) & all_pieces;
+            Bitboard blocker = Bitboards::GetRayToSquares(attacker_s, s) & all_pieces;
             if (Bitboards::ExactlyOne(blocker)) {
                 pinned_pieces |= blocker;
             }
@@ -98,7 +98,7 @@ namespace Meetra {
                 Move r_move = RookCastlingMove(to, ColorToMove());
                 // the xor is for chess960, when king doesn't move, but the rook moving could open an attack on the king
                 Bitboard occ = GetPieces(ALL_TYPES) ^ SquareToBB(FromSquare(r_move));
-                Bitboard king_walk = Bitboards::GetRayBetweenSquares(from, to) | SquareToBB(to);
+                Bitboard king_walk = Bitboards::GetRayToSquares(from, to) | SquareToBB(to);
                 return AllSquaresSafe(king_walk, OtherColor(ColorToMove()), occ);
             }
             Bitboard occ = GetPieces(ALL_TYPES) ^ SquareToBB(FromSquare(m));
@@ -256,7 +256,7 @@ namespace Meetra {
                 // put back the rook that we took out earlier in chess 960 castling
                 Search::Globals::chess960 ? AddPiece(r_to, NewPiece(ROOK, this_col)) : MovePiece(r_from, r_to);
                 Zobrist::MovePiece(state.hash, NewPiece(ROOK, this_col), r_from, r_to);
-                Bitboard king_walk = Bitboards::GetRayBetweenSquares(from, to) | SquareToBB(to);
+                Bitboard king_walk = Bitboards::GetRayToSquares(from, to) | SquareToBB(to);
                 return AllSquaresSafe(king_walk, next_col, GetPieces(ALL_TYPES));
             }
 
@@ -307,6 +307,20 @@ namespace Meetra {
             }
         }
         return true;
+    }
+
+    bool Board::IsRepetition() const {
+        // http://www.talkchess.com/forum3/viewtopic.php?f=7&t=51000&start=20
+        int rep = 0;
+        int stop = std::max(HistorySize() - Ply(), 0);
+        for (int i = HistorySize() - 2; i >= stop; i -= 2) {
+            if (history[i].hash == state.hash) {
+                if (++rep > 1) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     Move Board::RookCastlingMove(Square king_to, Color c) const {

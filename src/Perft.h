@@ -8,7 +8,7 @@
 
 namespace Meetra {
 
-    inline uint64_t Perft(Depth depth, Board &board) noexcept {
+    inline uint64_t Perft(Depth depth, Board &board) {
 
         MoveGen move_gen(board);
         uint64_t nodes = 0;
@@ -36,7 +36,7 @@ namespace Meetra {
         return nodes;
     }
 
-    inline void RunPerft(Depth depth, Board &board) noexcept {
+    inline void RunPerft(Depth depth, Board &board) {
 
         auto start = std::chrono::steady_clock::now();
 
@@ -69,6 +69,5 @@ namespace Meetra {
     }
 
 }
-
 
 #endif //MEETRA_PERFT_H
