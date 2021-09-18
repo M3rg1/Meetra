@@ -111,7 +111,6 @@ namespace Meetra::Bitboards {
 
 #pragma endregion
 
-
 #pragma region ===== "Fancy" Magic Bitboards initialization =====
 
     void SetBlockersRecursive(Magic &m, Square origin, Bitboard blockers, Bitboard explore_occ,
@@ -153,7 +152,6 @@ namespace Meetra::Bitboards {
             r_magics[s].magic_num = rook_magic_num[s];
             r_magics[s].attacks = s == A1 ? r_table : r_magics[s - 1].attacks + (1 << r_magic_shift[s - 1]);
 
-
             inner = GenBishopMoves(s, EMPTY_BB) & ~file_masks[FILE_A] & ~rank_masks[RANK_1] & ~file_masks[FILE_H] &
                     ~rank_masks[RANK_8];
 
@@ -165,7 +163,6 @@ namespace Meetra::Bitboards {
     }
 
 #pragma endregion
-
 
 #pragma region ===== Precomputing king moves, knight moves, pawn attacks =====
 
@@ -207,10 +204,9 @@ namespace Meetra::Bitboards {
         return EMPTY_BB;
     }
 
-
     Bitboard GenRay(Square s1, Square s2) {
 
-        if(s1 == s2) {
+        if (s1 == s2) {
             return EMPTY_BB;
         }
 

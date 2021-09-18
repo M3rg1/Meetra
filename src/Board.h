@@ -23,7 +23,7 @@ namespace Meetra {
 
         [[nodiscard]] bool IsMoveLegal(Move m) const;
         [[nodiscard]] bool IsBoardValid() const;
-        [[nodiscard]] bool AllSquaresSafe(Bitboard squares, Color attacker, Bitboard occ) const ;
+        [[nodiscard]] bool AllSquaresSafe(Bitboard squares, Color attacker, Bitboard occ) const;
         [[nodiscard]] bool IsAttackedByAny(Square s, Color attacked_by, Bitboard occ) const;
         [[nodiscard]] bool IsAttackedBySliders(Square s, Color attacked_by, Bitboard occ) const;
         [[nodiscard]] Bitboard AttackedBy(Square s, Color attacked_by, Bitboard occ) const;

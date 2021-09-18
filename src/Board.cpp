@@ -403,7 +403,7 @@ namespace Meetra {
         while ((move = move_gen.GetAnyMove())) {
             if (FromSquare(move) == FromSquare(uci_move) && ToSquare(move) == ToSquare(uci_move)) {
                 if ((IsPromotion(move) && move != uci_move) ||
-                        (GetMoveType(uci_move) == CASTLING && GetMoveType(move) != CASTLING)) {
+                    (GetMoveType(uci_move) == CASTLING && GetMoveType(move) != CASTLING)) {
                     continue;
                 }
                 MakeMove(move);
@@ -456,7 +456,7 @@ namespace Meetra {
         if (Search::Globals::chess960) {
             Piece p = GetPieceOnSquare(s_to);
             if (ColorOfPiece(p) == ColorToMove() && TypeOfPiece(p) == ROOK) {
-                s_to = s_to > s_from ? ColorToMove() == WHITE ? G1 : G8 :ColorToMove() == WHITE ? C1 : C8;
+                s_to = s_to > s_from ? ColorToMove() == WHITE ? G1 : G8 : ColorToMove() == WHITE ? C1 : C8;
                 flag = CASTLING;
             }
         }

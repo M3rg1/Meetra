@@ -17,7 +17,7 @@ namespace Meetra::Zobrist {
         std::mt19937_64 mt(seed);
         auto gen = [&] { return mt(); };
 
-        std::ranges::for_each(piece_keys, [&] (auto &pt_keys) { std::ranges::generate(pt_keys, gen); });
+        std::ranges::for_each(piece_keys, [&](auto &pt_keys) { std::ranges::generate(pt_keys, gen); });
         std::ranges::generate(castling_keys, gen);
         std::ranges::generate(ep_keys, gen);
         color_key = gen();
@@ -73,7 +73,7 @@ namespace Meetra::Zobrist {
         }
 
         Bitboard cr = board.GetCr();
-        while(cr) {
+        while (cr) {
             hash ^= castling_keys[Bitboards::PopLsb(cr)];
         }
 
@@ -83,6 +83,5 @@ namespace Meetra::Zobrist {
 
         return hash;
     }
-
 
 }

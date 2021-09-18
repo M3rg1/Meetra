@@ -251,7 +251,6 @@ namespace Meetra {
         return (pieces & walk_sq) == EMPTY_BB;
     }
 
-
     // this function does not guarantee the move is actually pseudo legal, it only guarantees that when the move is made
     // and unmade, it won't crash the program. It does a lot of general validations that should catch most corrupted moves.
     // It should be used to validate potentially corrupted moves, for example moves from TT.

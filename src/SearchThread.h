@@ -45,7 +45,6 @@ namespace Meetra {
 
         void Shutdown();
 
-
         inline static int next_id = 0;
         int id;
 
@@ -63,6 +62,5 @@ namespace Meetra {
         std::mutex mtx;
     };
 }
-
 
 #endif //MEETRA_SEARCHTHREAD_H

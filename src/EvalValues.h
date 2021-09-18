@@ -191,7 +191,6 @@ namespace Meetra::EvalValues {
         }
     }
 
-
 }
 
 #endif //MEETRA_EVALVALUES_H

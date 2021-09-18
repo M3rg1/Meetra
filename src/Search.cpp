@@ -5,7 +5,6 @@
 #include "Book.h"
 #include <algorithm>
 
-
 namespace Meetra::Search {
 
     long ElapsedTimeMs() {
@@ -139,7 +138,7 @@ namespace Meetra::Search {
         Globals::tt.Init();
         Globals::run = false;
         Globals::finished = true;
-        Globals::chess960 =  false;
+        Globals::chess960 = false;
         Globals::use_book = false;
         Globals::show_currline = false;
         Globals::multi_pv = 1;

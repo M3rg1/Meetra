@@ -94,8 +94,8 @@ namespace Meetra {
                 // performing fixed time/depth/infinite or multipv search
                 if (!Search::Run() || !Search::EnoughTimeLeft() ||
                     (IsMateScore(root_moves[0].score) && Search::Globals::multi_pv == 1 &&
-                    !Search::Globals::settings.infinite && !Search::Globals::settings.fixed_time &&
-                    !Search::Globals::settings.fixed_depth)) {
+                     !Search::Globals::settings.infinite && !Search::Globals::settings.fixed_time &&
+                     !Search::Globals::settings.fixed_depth)) {
                     break;
                 }
 
@@ -117,7 +117,6 @@ namespace Meetra {
         if (IsMainThread()) {
             CheckTimers();
         }
-
 
         if (board.Move50Rule()) {
             // it could be a checkmate on the 50th move
@@ -370,7 +369,8 @@ namespace Meetra {
     }
 
     std::string SearchThread::GetCurrMoveInfo() const {
-        return "info currmove " + board.MoveToName(curr_rm->move) + " currmovenumber " + std::to_string(curr_rm_num + 1);
+        return "info currmove " + board.MoveToName(curr_rm->move) + " currmovenumber " +
+               std::to_string(curr_rm_num + 1);
     }
 
     std::string SearchThread::GetCurrLineInfo() const {

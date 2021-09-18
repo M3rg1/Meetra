@@ -31,7 +31,7 @@ namespace Meetra {
         ALL_TYPES = 7
     };
 
-    enum Piece  {
+    enum Piece {
         NO_PIECE = 0,
         W_PAWN = 1, W_KNIGHT = 2, W_BISHOP = 3, W_ROOK = 4, W_QUEEN = 5, W_KING = 6,
         B_PAWN = 9, B_KNIGHT = 10, B_BISHOP = 11, B_ROOK = 12, B_QUEEN = 13, B_KING = 14,
@@ -91,7 +91,7 @@ namespace Meetra {
     inline Square SqFromFiRa(File f, Rank r) { return static_cast<Square>((r << 3) | f); }
     inline File FileFromSquare(Square s) { return static_cast<File>(s & 7); }
     inline Rank RankFromSquare(Square s) { return static_cast<Rank>(s >> 3); }
-    inline Square NameToSquare(const std::string& name) {
+    inline Square NameToSquare(const std::string &name) {
         return SqFromFiRa(FileFromChar(name[0]), RankFromChar(name[1]));
     }
     inline std::string SquareToName(Square s) {
@@ -128,7 +128,6 @@ namespace Meetra {
 
 #pragma endregion
 
-
 #pragma region ===== Operator overloading settings =====
 
 #define ENABLE_BASE_OPERATORS_ON(T)                                \
@@ -155,8 +154,8 @@ inline T& operator--(T& d) { return d = T(int(d) - 1); }
 
     ENABLE_BASE_OPERATORS_ON(Direction)
 
-inline Direction operator*(int i, Direction d) { return Direction(i * int(d)); }        \
-inline Direction operator*(Direction d, int i) { return Direction(int(d) * i); }        \
+    inline Direction operator*(int i, Direction d) { return Direction(i * int(d)); }
+    inline Direction operator*(Direction d, int i) { return Direction(int(d) * i); }
 
 #undef ENABLE_INCR_OPERATORS_ON
 #undef ENABLE_BASE_OPERATORS_ON

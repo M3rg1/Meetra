@@ -15,7 +15,6 @@ namespace Meetra::TestSuite {
 
 #define TEST_FILE_PATH "tools/PerftTests.txt"
 
-
     class Test {
 
     private :
@@ -111,7 +110,7 @@ namespace Meetra::TestSuite {
     inline void RunTests() {
 
         auto tests = LoadTests();
-        if(tests.empty()) {
+        if (tests.empty()) {
             return;
         }
 
