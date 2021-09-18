@@ -9,6 +9,11 @@
 
 namespace Meetra {
 
+    Bitboard castling_mask[COLOR_NR]{
+            0x00000000000000FFUL,
+            0xFF00000000000000UL
+    };
+
     Board::Board() {
         NewPosition(STARTPOS_FEN);
     }
@@ -22,8 +27,8 @@ namespace Meetra {
         std::ranges::fill(board, NO_PIECE);
         std::ranges::fill(color_bbs, EMPTY_BB);
         std::ranges::fill(type_bbs, EMPTY_BB);
-        std::ranges::fill(orig_rooks[BLACK], EMPTY_BB);
-        std::ranges::fill(orig_rooks[WHITE], EMPTY_BB);
+        std::ranges::fill(origin_rooks[BLACK], EMPTY_BB);
+        std::ranges::fill(origin_rooks[WHITE], EMPTY_BB);
 
         if (!ParseFen(fen) || !IsBoardValid()) {
             *this = previous;
@@ -88,12 +93,11 @@ namespace Meetra {
 
         if (GetPieceTypeOnSq(FromSquare(m)) == KING) {
             if (GetMoveType(m) == CASTLING) {
-                Square to = ToSquare(m);
                 Square from = FromSquare(m);
+                Square to = ToSquare(m);
                 Move r_move = RookCastlingMove(to, ColorToMove());
-                Square r_from = FromSquare(r_move);
                 // the xor is for chess960, when king doesn't move, but the rook moving could open an attack on the king
-                Bitboard occ = GetPieces(ALL_TYPES) ^ SquareToBB(r_from);
+                Bitboard occ = GetPieces(ALL_TYPES) ^ SquareToBB(FromSquare(r_move));
                 Bitboard king_walk = Bitboards::GetRayBetweenSquares(from, to) | SquareToBB(to);
                 return AllSquaresSafe(king_walk, OtherColor(ColorToMove()), occ);
             }
@@ -102,14 +106,14 @@ namespace Meetra {
         }
 
         if (GetMoveType(m) == EN_PASSANT) {
-            Color my_color = ColorToMove();
+            Color my_col = ColorToMove();
             Square from = FromSquare(m);
             Square to = ToSquare(m);
-            Square capture_square = my_color == WHITE ? to + SOUTH : to + NORTH;
-            Square king_s = Bitboards::Lsb(GetPieces(KING, my_color));
-            Bitboard occ = GetPieces(ALL_TYPES) ^ SquareToBB(capture_square) ^ (SquareToBB(from) | SquareToBB(to));
+            Square capture_s = my_col == WHITE ? to + SOUTH : to + NORTH;
+            Square king_s = Bitboards::Lsb(GetPieces(KING, my_col));
+            Bitboard occ = GetPieces(ALL_TYPES) ^ SquareToBB(capture_s) ^ (SquareToBB(from) | SquareToBB(to));
             // ep move can't open us to attacks by anything other than slider pieces
-            return !IsAttackedBySliders(king_s, OtherColor(my_color), occ);
+            return !IsAttackedBySliders(king_s, OtherColor(my_col), occ);
         }
 
         return true;
@@ -226,14 +230,12 @@ namespace Meetra {
             if (move_type == TWO_FORWARD) {
                 SetEpSquare(this_col == WHITE ? to + SOUTH : to + NORTH);
                 Zobrist::AddEp(state.hash, EpSquare());
-                return true;
             } else if (IsPromotion(m)) {
                 Piece promoted_to = NewPiece(PieceTypeFromFlag(move_type), this_col);
                 RemovePiece(to);
                 Zobrist::RemovePiece(state.hash, moved_piece, to);
                 AddPiece(to, promoted_to);
                 Zobrist::PutPiece(state.hash, promoted_to, to);
-                return true;
             } else if (move_type == EN_PASSANT) {
                 return !IsAttackedBySliders(Bitboards::Lsb(GetPieces(KING, this_col)), next_col,
                                             GetPieces(ALL_TYPES));
@@ -244,7 +246,7 @@ namespace Meetra {
 
         if (TypeOfPiece(moved_piece) == KING) {
 
-            state.cr &= this_col == WHITE ? Bitboards::RankMask(RANK_8) : Bitboards::RankMask(RANK_1);
+            state.cr &= castling_mask[next_col];
             Zobrist::UpdateCr(state.hash, previous_cr, GetCr());
 
             if (move_type == CASTLING) {
@@ -254,7 +256,6 @@ namespace Meetra {
                 // put back the rook that we took out earlier in chess 960 castling
                 Search::Globals::chess960 ? AddPiece(r_to, NewPiece(ROOK, this_col)) : MovePiece(r_from, r_to);
                 Zobrist::MovePiece(state.hash, NewPiece(ROOK, this_col), r_from, r_to);
-
                 Bitboard king_walk = Bitboards::GetRayBetweenSquares(from, to) | SquareToBB(to);
                 return AllSquaresSafe(king_walk, next_col, GetPieces(ALL_TYPES));
             }
@@ -310,13 +311,13 @@ namespace Meetra {
 
     Move Board::RookCastlingMove(Square king_to, Color c) const {
         Square to = FileFromSquare(king_to) == FILE_G ? king_to - 1 : king_to + 1;
-        Bitboard rook_pos = FileFromSquare(to) == FILE_F ? orig_rooks[c][SHORT] : orig_rooks[c][LONG];
+        Bitboard rook_pos = FileFromSquare(to) == FILE_F ? origin_rooks[c][SHORT] : origin_rooks[c][LONG];
         return NewMove(Bitboards::Lsb(rook_pos), to);
     }
 
     bool Board::ParseFen(const std::string &fen) {
 
-        static std::regex rgx(R"(\s*([rnbqkpRNBQKP1-8]{1,8}\/){7}([rnbqkpRNBQKP1-8]{1,8})\s[bw]\s?(([a-hkqA-HKQ]{1,4})|(-))?\s?(([a-h][36])|(-))?\s?\d*\s\d*\s*)");
+        static std::regex rgx(R"(\s*([rnbqkpRNBQKP1-8]{1,8}\/){7}([rnbqkpRNBQKP1-8]{1,8})\s*[bw]\s*(([a-hkqA-HKQ]{1,4})|(-))?\s*(([a-h][36])|(-))?\s*\d*\s*\d*\s*)");
         if (!std::regex_match(fen, rgx)) {
             return false;
         }
@@ -356,15 +357,15 @@ namespace Meetra {
                 if (c == 'k') {
                     Bitboard r_bb = SquareToBB(Bitboards::Msb(rooks));
                     state.cr |= r_bb;
-                    orig_rooks[col][SHORT] = r_bb;
+                    origin_rooks[col][SHORT] = r_bb;
                 } else if (c == 'q') {
                     Bitboard r_bb = SquareToBB(Bitboards::Lsb(rooks));
                     state.cr |= r_bb;
-                    orig_rooks[col][LONG] = r_bb;
+                    origin_rooks[col][LONG] = r_bb;
                 } else if ('a' <= c && c <= 'h') {
                     Bitboard r_bb = SquareToBB(SqFromFiRa(FileFromChar(c), col == WHITE ? RANK_1 : RANK_8));
                     state.cr |= r_bb;
-                    r_bb > GetPieces(KING, col) ? orig_rooks[col][SHORT] = r_bb : orig_rooks[col][LONG] = r_bb;
+                    r_bb > GetPieces(KING, col) ? origin_rooks[col][SHORT] = r_bb : origin_rooks[col][LONG] = r_bb;
                 }
             }
         }
@@ -388,7 +389,7 @@ namespace Meetra {
         while ((move = move_gen.GetAnyMove())) {
             if (FromSquare(move) == FromSquare(uci_move) && ToSquare(move) == ToSquare(uci_move)) {
                 if ((IsPromotion(move) && move != uci_move) ||
-                    GetMoveType(uci_move) == CASTLING && GetMoveType(move) != CASTLING) {
+                        (GetMoveType(uci_move) == CASTLING && GetMoveType(move) != CASTLING)) {
                     continue;
                 }
                 MakeMove(move);

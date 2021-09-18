@@ -54,7 +54,7 @@ namespace Meetra {
         [[nodiscard]] inline int Ply() const { return state.ply; }
         [[nodiscard]] inline int TotalMoves() const { return state.moves; }
         [[nodiscard]] inline bool Move50Rule() const { return Ply() >= 100; };
-        [[nodiscard]] inline Bitboard RookSqBB(Color c, CastlingSide s) const { return state.cr & orig_rooks[c][s]; }
+        [[nodiscard]] inline Bitboard RookSqBB(Color c, CastlingSide s) const { return state.cr & origin_rooks[c][s]; }
         [[nodiscard]] inline bool IsRepetition() const {
             // http://www.talkchess.com/forum3/viewtopic.php?f=7&t=51000&start=20
             int rep = 0;
@@ -104,7 +104,7 @@ namespace Meetra {
         };
 
         // original positions of rooks that are available for castling
-        Bitboard orig_rooks[COLOR_NR][CS_NR];
+        Bitboard origin_rooks[COLOR_NR][CS_NR];
 
         BoardState state;
         BoardState history[MAX_GAME_LENGTH];

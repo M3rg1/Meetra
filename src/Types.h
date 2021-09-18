@@ -16,10 +16,6 @@ namespace Meetra {
     using Bitboard = uint64_t;
 #define EMPTY_BB 0
 
-    enum GenPhase {
-        CAPTURE, QUIET, END, DOUBLE_CHECK
-    };
-
     enum Color {
         WHITE, BLACK,
         COLOR_NR
@@ -71,7 +67,7 @@ namespace Meetra {
     }
 
     enum PawnMoveDir {
-        LEFT, RIGHT, ONE_FWD, TWO_FWD
+        LEFT, RIGHT, FORWARD,
     };
 
     enum Direction {
@@ -124,8 +120,6 @@ namespace Meetra {
     inline Move NewMove(Square from, Square to) { return static_cast<Move>(from | to << 6); }
     inline Move NewMove(Square from, Square to, MoveType flag) { return static_cast<Move>(NewMove(from, to) | flag); }
 
-    template<Color C>
-    inline int IdxFromPieceType(PieceType pt) { return C == WHITE ? pt - 1 : pt + 5; }
     inline PieceType PieceTypeFromFlag(MoveType mt) { return static_cast<PieceType>((mt >> 12) - 2); }
     inline Square FromSquare(Move m) { return static_cast<Square>(m & 0x3F); }
     inline Square ToSquare(Move m) { return static_cast<Square>(m >> 6 & 0x3F); }

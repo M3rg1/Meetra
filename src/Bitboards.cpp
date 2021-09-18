@@ -53,7 +53,7 @@ namespace Meetra::Bitboards {
     Bitboard pawn_attacks[COLOR_NR][SQUARE_NR];
 
     Bitboard rays_between_squares[SQUARE_NR][SQUARE_NR];
-    Bitboard rays_between_board_edges[SQUARE_NR][SQUARE_NR];
+    Bitboard rays_to_borders[SQUARE_NR][SQUARE_NR];
 
     Bitboard r_table[88064];
     Bitboard b_table[4800];
@@ -134,21 +134,21 @@ namespace Meetra::Bitboards {
     }
 
     void GenMagics() {
-        for (Square s = A1; s <= H8; ++s) {
+        for (Square s = A1; s < SQUARE_NR; ++s) {
             SetBlockersRecursive(r_magics[s], s, EMPTY_BB, GetUnboundRookMoves(s), GenRookMoves);
             SetBlockersRecursive(b_magics[s], s, EMPTY_BB, GetUnboundBishopMoves(s), GenBishopMoves);
         }
     }
 
     void InitMagic() {
-        for (Square s = A1; s <= H8; ++s) {
+        for (Square s = A1; s < SQUARE_NR; ++s) {
 
             Bitboard inner;
 
             inner = (GenHorizontalMoves(s, EMPTY_BB) & ~file_masks[FILE_A] & ~file_masks[FILE_H]) |
                     (GenVerticalMoves(s, EMPTY_BB) & ~rank_masks[RANK_1] & ~rank_masks[RANK_8]);
 
-            r_magics[s].shift = static_cast<uint8_t>(64 - r_magic_shift[s]);
+            r_magics[s].shift = 64 - r_magic_shift[s];
             r_magics[s].inner_mask = inner;
             r_magics[s].magic_num = rook_magic_num[s];
             r_magics[s].attacks = s == A1 ? r_table : r_magics[s - 1].attacks + (1 << r_magic_shift[s - 1]);
@@ -157,7 +157,7 @@ namespace Meetra::Bitboards {
             inner = GenBishopMoves(s, EMPTY_BB) & ~file_masks[FILE_A] & ~rank_masks[RANK_1] & ~file_masks[FILE_H] &
                     ~rank_masks[RANK_8];
 
-            b_magics[s].shift = static_cast<uint8_t>(64 - b_magic_shift[s]);
+            b_magics[s].shift = 64 - b_magic_shift[s];
             b_magics[s].inner_mask = inner;
             b_magics[s].magic_num = bishop_magic_num[s];
             b_magics[s].attacks = s == A1 ? b_table : b_magics[s - 1].attacks + (1 << b_magic_shift[s - 1]);
@@ -170,10 +170,10 @@ namespace Meetra::Bitboards {
 #pragma region ===== Precomputing king moves, knight moves, pawn attacks =====
 
     void GenPieceMoves(std::initializer_list<Direction> dirs, Bitboard output[SQUARE_NR]) {
-        for (Square s = A1; s <= H8; ++s) {
+        for (Square s = A1; s < SQUARE_NR; ++s) {
             Bitboard moves = EMPTY_BB;
             for (auto d: dirs) {
-                if (s + d <= H8 && s + d >= A1) {
+                if (s + d < SQUARE_NR && s + d >= A1) {
                     moves |= SquareToBB(s + d);
                 }
             }
@@ -239,10 +239,10 @@ namespace Meetra::Bitboards {
     }
 
     void GenRaysBetweenSquares() {
-        for (Square origin = A1; origin <= H8; ++origin) {
-            for (Square destination = A1; destination <= H8; ++destination) {
+        for (Square origin = A1; origin < SQUARE_NR; ++origin) {
+            for (Square destination = A1; destination < SQUARE_NR; ++destination) {
                 rays_between_squares[origin][destination] = GenRay(origin, destination);
-                rays_between_board_edges[origin][destination] = GenRayToEdge(origin, destination);
+                rays_to_borders[origin][destination] = GenRayToEdge(origin, destination);
             }
         }
     }
@@ -259,7 +259,7 @@ namespace Meetra::Bitboards {
         return diag_masks[f + r] | anti_diag_masks[r + 7 - f];
     }
 
-    Bitboard GetRayToBorders(Square s1, Square s2) { return rays_between_board_edges[s1][s2]; }
+    Bitboard GetRayToBorders(Square s1, Square s2) { return rays_to_borders[s1][s2]; }
 
     Bitboard GetRayBetweenSquares(Square s1, Square s2) { return rays_between_squares[s1][s2]; }
 

@@ -6,8 +6,12 @@
 
 namespace Meetra {
 
-    enum GenType : bool {
-        QSEARCH = true, NORMAL = false
+    enum GenPhase {
+        CAPTURE, QUIET, END, DOUBLE_CHECK
+    };
+
+    enum GenType {
+        QSEARCH, NORMAL
     };
 
     class MoveGen {
@@ -25,24 +29,15 @@ namespace Meetra {
         [[nodiscard]] Move GetBestMove();
         [[nodiscard]] Move GetAnyMove();
         [[nodiscard]] bool IsPseudoLegal(Move m) const;
-        [[nodiscard]] inline bool IsKingInCheck() const { return checkers; }
+        [[nodiscard]] inline bool IsInCheck() const { return checkers; }
 
     private:
 
-        template<Color C>
-        [[nodiscard]] bool ValidateCastling(Move m) const;
-        template<PieceType PT>
-        [[nodiscard]] bool ValidateMoveForPiece(Move m) const;
-        template<Color C>
-        [[nodiscard]] bool ValidatePawnMove(Move m) const;
-        template<Color C, PawnMoveDir D, bool P>
-        [[nodiscard]] bool HelperValidatePawnMove(Move m) const;
-
-        struct p_MoveScore {
+        struct ScoredMove {
             Move move;
             Score score;
 
-            bool operator<(const p_MoveScore &other) const {
+            bool operator<(const ScoredMove &other) const {
                 return score < other.score;
             }
         };
@@ -51,7 +46,7 @@ namespace Meetra {
 
         GenPhase gen_phase;
 
-        p_MoveScore move_eval[MAX_LEGAL_MOVES];
+        ScoredMove move_eval[MAX_LEGAL_MOVES];
         size_t moves_cnt;
 
         Bitboard checkers;
@@ -61,7 +56,7 @@ namespace Meetra {
         Bitboard enemy_pieces;
         Bitboard all_pieces;
         Bitboard empty_squares;
-        Square king_square;
+        Square king_s;
         Square ep_s;
 
         Color my_color;
@@ -70,7 +65,7 @@ namespace Meetra {
 
         [[nodiscard]] inline bool Empty() const { return moves_cnt == 0; }
         inline Move PopMove() { return move_eval[--moves_cnt].move; }
-        inline Move PopRef(p_MoveScore &it) {
+        inline Move PopRef(ScoredMove &it) {
             std::swap(it, move_eval[--moves_cnt]);
             return move_eval[moves_cnt].move;
         }
@@ -95,19 +90,22 @@ namespace Meetra {
         void GenMovesForPieceType(Bitboard legality_mask);
 
         template<Color C>
-        void GenEnPassantMoves();
+        void GenEpMoves();
 
         template<Color C, PawnMoveDir D>
         void GenPawnCaptures();
 
         template<Color C>
-        void GenPawnForwardMoves();
+        void GenPawnQuiets();
 
         template<Color C>
         void GenCastlingMoves();
 
         template<Color C, CastlingSide S>
         [[nodiscard]] bool CanCastle() const;
+
+        template<Color C>
+        [[nodiscard]] bool ValidateCastling(Move m) const;
 
         [[nodiscard]] bool DiscoveryCheck(Square origin, Square destination) const;
     };

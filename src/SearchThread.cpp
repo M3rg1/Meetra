@@ -4,7 +4,7 @@
 #include "MoveGen.h"
 #include "Search.h"
 #include <algorithm>
-#include <random>
+#include <numeric>
 
 namespace Meetra {
 
@@ -151,7 +151,7 @@ namespace Meetra {
         }
 
         // https://www.chessprogramming.org/Reverse_Futility_Pruning
-        if (depth < 6 && tt_flag != EXACT_SCORE && !move_gen.IsKingInCheck() && !IsMateScore(beta) &&
+        if (depth < 6 && tt_flag != EXACT_SCORE && !move_gen.IsInCheck() && !IsMateScore(beta) &&
             !IsMateScore(alpha)) {
             Score static_score = board.GetEval();
             Score score_margin = 100 * depth;
@@ -228,7 +228,7 @@ namespace Meetra {
         }
 
         if (no_moves) {
-            return move_gen.IsKingInCheck() ? -MATE_SCORE + ply : -DRAW_SCORE;
+            return move_gen.IsInCheck() ? -MATE_SCORE + ply : -DRAW_SCORE;
         }
 
         Search::Globals::tt.Save(board.GetHash(), alpha, depth, best_move, tt_flag, ply);
@@ -252,7 +252,7 @@ namespace Meetra {
 
         MoveGen move_gen(board);
 
-        /*if (ply > max_qsearch_ply && !move_gen.IsKingInCheck()) {
+        /*if (ply > max_qsearch_ply && !move_gen.IsInCheck()) {
             return score;
         }*/
 

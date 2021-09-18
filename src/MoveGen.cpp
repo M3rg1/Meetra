@@ -25,16 +25,16 @@ namespace Meetra {
         my_color = board.ColorToMove();
         enemy_color = OtherColor(my_color);
         all_pieces = board.GetPieces(ALL_TYPES);
-        king_square = Bitboards::Lsb(board.GetPieces(KING, my_color));
-        checkers = board.AttackedBy(king_square, enemy_color, all_pieces);
-        blockers = board.PinnedToSquare(king_square, enemy_color);
+        king_s = Bitboards::Lsb(board.GetPieces(KING, my_color));
+        checkers = board.AttackedBy(king_s, enemy_color, all_pieces);
+        blockers = board.PinnedToSquare(king_s, enemy_color);
         enemy_pieces = board.GetPieces(enemy_color);
         empty_squares = ~all_pieces;
         ep_s = board.EpSquare();
         moves_cnt = 0;
         legal_moves = 0xFFFFFFFFFFFFFFFFUL;
 
-        if (IsKingInCheck()) {
+        if (IsInCheck()) {
             if (Bitboards::MoreThanOne(checkers)) {
                 legal_moves = 0UL;
                 gen_phase = DOUBLE_CHECK;
@@ -43,7 +43,7 @@ namespace Meetra {
             }
             Bitboard capture_mask = checkers;
             Square attacker_square = Bitboards::Lsb(capture_mask);
-            Bitboard block_mask = Bitboards::GetRayBetweenSquares(king_square, attacker_square);
+            Bitboard block_mask = Bitboards::GetRayBetweenSquares(king_s, attacker_square);
             legal_moves = capture_mask | block_mask;
         }
 
@@ -112,13 +112,13 @@ namespace Meetra {
         } else if constexpr (phase == QUIET) {
             phase_mask = legal_moves & empty_squares;
             GenCastlingMoves<C>();
-            GenPawnForwardMoves<C>();
+            GenPawnQuiets<C>();
             GenMovesForPieceType<KING, C>(empty_squares);
         } else if constexpr (phase == CAPTURE) {
             phase_mask = legal_moves & enemy_pieces;
             GenPawnCaptures<C, LEFT>();
             GenPawnCaptures<C, RIGHT>();
-            GenEnPassantMoves<C>();
+            GenEpMoves<C>();
             GenMovesForPieceType<KING, C>(enemy_pieces);
         }
 
@@ -135,7 +135,7 @@ namespace Meetra {
             Square origin_s = Bitboards::PopLsb(pieces);
             Bitboard possible_moves = Bitboards::GetAttacks<PT>(origin_s, all_pieces) & legality_mask;
             if (blockers & SquareToBB(origin_s)) {
-                possible_moves &= Bitboards::GetRayToBorders(king_square, origin_s);
+                possible_moves &= Bitboards::GetRayToBorders(king_s, origin_s);
             }
             while (possible_moves) {
                 Square destination_s = Bitboards::PopLsb(possible_moves);
@@ -145,9 +145,9 @@ namespace Meetra {
     }
 
     template<Color C>
-    void MoveGen::GenPawnForwardMoves() {
+    void MoveGen::GenPawnQuiets() {
 
-        constexpr Direction push_dir = PawnMove<C, ONE_FWD>();
+        constexpr Direction push_dir = PawnMove<C, FORWARD>();
         Bitboard pawns = board.GetPieces(PAWN, C);
         Bitboard one_fwd = Bitboards::Shift<push_dir>(pawns) & empty_squares;
         Bitboard two_fwd = Bitboards::Shift<push_dir>(one_fwd) & empty_squares & TwoFwdRank<C>() & phase_mask;
@@ -205,11 +205,11 @@ namespace Meetra {
 
     // allow movement only on a line between piece and king, if piece is a blocker
     bool MoveGen::DiscoveryCheck(Square orig, Square dest) const {
-        return (blockers & SquareToBB(orig)) && !(Bitboards::GetRayToBorders(king_square, orig) & SquareToBB(dest));
+        return (blockers & SquareToBB(orig)) && !(Bitboards::GetRayToBorders(king_s, orig) & SquareToBB(dest));
     }
 
     template<Color C>
-    void MoveGen::GenEnPassantMoves() {
+    void MoveGen::GenEpMoves() {
         if (ep_s) {
             Bitboard attackers = Bitboards::GetAttacks<PAWN>(ep_s, EMPTY_BB, OtherColor(C)) & board.GetPieces(PAWN, C);
             while (attackers) {
@@ -221,14 +221,14 @@ namespace Meetra {
 
     template<Color C>
     void MoveGen::GenCastlingMoves() {
-        if (IsKingInCheck()) {
+        if (IsInCheck()) {
             return;
         }
         if (CanCastle<C, SHORT>()) {
-            PutMove(NewMove(king_square, C == WHITE ? G1 : G8, CASTLING));
+            PutMove(NewMove(king_s, C == WHITE ? G1 : G8, CASTLING));
         }
         if (CanCastle<C, LONG>()) {
-            PutMove(NewMove(king_square, C == WHITE ? C1 : C8, CASTLING));
+            PutMove(NewMove(king_s, C == WHITE ? C1 : C8, CASTLING));
         }
     }
 
@@ -243,9 +243,9 @@ namespace Meetra {
         // (for chess 960) we need to calculate all the squares that we travel through and make sure they are empty
         Square r_dest = S == LONG ? C == WHITE ? D1 : D8 : C == WHITE ? F1 : F8;
         Square k_dest = S == LONG ? C == WHITE ? C1 : C8 : C == WHITE ? G1 : G8;
-        Bitboard pieces = all_pieces ^ rook_bb ^ SquareToBB(king_square);
+        Bitboard pieces = all_pieces ^ rook_bb ^ SquareToBB(king_s);
         Bitboard walk_sq = Bitboards::GetRayBetweenSquares(Bitboards::Lsb(rook_bb), r_dest) |
-                           Bitboards::GetRayBetweenSquares(king_square, k_dest) |
+                           Bitboards::GetRayBetweenSquares(king_s, k_dest) |
                            SquareToBB(r_dest) | SquareToBB(k_dest);
 
         return (pieces & walk_sq) == EMPTY_BB;
@@ -329,16 +329,16 @@ namespace Meetra {
 
     template<Color C>
     bool MoveGen::ValidateCastling(Move m) const {
-        if (IsKingInCheck()) {
+        if (IsInCheck()) {
             return false;
         }
         if (CanCastle<C, SHORT>()) {
-            if (m == NewMove(king_square, C == WHITE ? G1 : G8, CASTLING)) {
+            if (m == NewMove(king_s, C == WHITE ? G1 : G8, CASTLING)) {
                 return true;
             }
         }
         if (CanCastle<C, LONG>()) {
-            if (m == NewMove(king_square, C == WHITE ? C1 : C8, CASTLING)) {
+            if (m == NewMove(king_s, C == WHITE ? C1 : C8, CASTLING)) {
                 return true;
             }
         }
