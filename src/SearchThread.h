@@ -41,7 +41,6 @@ namespace Meetra {
         [[nodiscard]] std::string GetCurrLineInfo() const;
         [[nodiscard]] std::string GetCurrMoveInfo() const;
         [[nodiscard]] std::string GetUpdateSearchInfo() const;
-        [[nodiscard]] bool MateFound() const;
         [[nodiscard]] bool MateInHorizon() const;
         [[nodiscard]] inline bool IsMainThread() const { return id == 0; }
 
@@ -56,7 +55,6 @@ namespace Meetra {
         Depth depth_reached;
         Depth seldepth_reached;
         std::atomic<uint64_t> nodes_explored;
-        Depth max_qsearch_ply;
 
         std::atomic<bool> active;
         std::jthread thread;

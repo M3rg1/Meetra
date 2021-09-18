@@ -29,8 +29,6 @@ namespace Meetra {
                 depth_reached = Search::Globals::mt_depth.load(std::memory_order_acquire) + id;
             }
 
-            max_qsearch_ply = depth_reached * 2;
-
             Score alpha = NEGATIVE_INF;
             Score beta = POSITIVE_INF;
             bool search_pv = true;
@@ -55,11 +53,11 @@ namespace Meetra {
                 board.MakeMove(curr_rm->move);
 
                 Score score;
-                if(search_pv) {
+                if (search_pv) {
                     score = -NegaMax(-beta, -alpha, depth_reached - 1, 2, curr_rm->pv);
                 } else {
                     score = -NegaMax(-alpha - 1, -alpha, depth_reached - 1, 2, curr_rm->pv);
-                    if(score > alpha) {
+                    if (score > alpha) {
                         score = -NegaMax(-beta, -alpha, depth_reached - 1, 2, curr_rm->pv);
                     }
                 }
@@ -95,8 +93,9 @@ namespace Meetra {
                 // finish if we don't have enough time left for a deeper search or mate has been found, and we are not
                 // performing fixed time/depth/infinite or multipv search
                 if (!Search::Run() || !Search::EnoughTimeLeft() ||
-                    (MateFound() && Search::Globals::multi_pv == 1 && !Search::Globals::settings.infinite &&
-                     !Search::Globals::settings.fixed_time && !Search::Globals::settings.fixed_depth)) {
+                    (IsMateScore(root_moves[0].score) && Search::Globals::multi_pv == 1 &&
+                    !Search::Globals::settings.infinite && !Search::Globals::settings.fixed_time &&
+                    !Search::Globals::settings.fixed_depth)) {
                     break;
                 }
 
@@ -152,13 +151,12 @@ namespace Meetra {
         }
 
         // https://www.chessprogramming.org/Reverse_Futility_Pruning
-        // TODO check if it ever can be tt==exact_score
-        if (depth < 6 && tt_flag != EXACT_SCORE && !move_gen.IsKingInCheck() && !IsMateScore(beta) && !IsMateScore(alpha)) {
+        if (depth < 6 && tt_flag != EXACT_SCORE && !move_gen.IsKingInCheck() && !IsMateScore(beta) &&
+            !IsMateScore(alpha)) {
             Score static_score = board.GetEval();
             Score score_margin = 100 * depth;
-            // if tt==exact {print something}
             if (static_score - score_margin >= beta) {
-                return static_score - score_margin; // beta;
+                return beta; //static_score - score_margin;
             }
         }
 
@@ -191,11 +189,11 @@ namespace Meetra {
             no_moves = false;
             nodes_explored.fetch_add(1, std::memory_order_relaxed);
             curr_rm->nodes++;
-            if(search_pv) {
+            if (search_pv) {
                 score = -NegaMax(-beta, -alpha, depth - 1, ply + 1, line);
             } else {
                 score = -NegaMax(-alpha - 1, -alpha, depth - 1, ply + 1, line);
-                if(score > alpha && score < beta) {
+                if (score > alpha && score < beta) {
                     score = -NegaMax(-beta, -alpha, depth - 1, ply + 1, line);
                 }
             }
@@ -289,10 +287,6 @@ namespace Meetra {
             }
         }
         return false;
-    }
-
-    bool SearchThread::MateFound() const {
-        return root_moves[0].score != NEGATIVE_INF && std::abs(root_moves[0].score) > MIN_MATE_EVAL;
     }
 
     Search::RootMove SearchThread::GetBestRootMove() const {

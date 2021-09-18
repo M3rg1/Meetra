@@ -211,7 +211,7 @@ namespace Meetra::Uci {
         iss >> value;
 
         if (!value.empty() && value != "true" && value != "false" &&
-            value.find_first_not_of("0123456789") == std::string_view::npos) {
+            value.find_first_not_of("0123456789") != std::string_view::npos) {
             SendInfo("Invalid option value " + value);
             return;
         }
