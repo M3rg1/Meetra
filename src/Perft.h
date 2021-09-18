@@ -36,9 +36,7 @@ namespace Meetra {
         return nodes;
     }
 
-    inline void RunPerft(Depth depth, Board &board) {
-
-        auto start = std::chrono::steady_clock::now();
+    uint64_t RunPerft(Depth depth, Board &board, bool div = false) {
 
         MoveGen move_gen(board);
         Move m;
@@ -52,20 +50,12 @@ namespace Meetra {
             uint64_t nodes = depth > 1 ? Perft(depth - 1, board) : 1;
             board.UnmakeMove(m);
             total_nodes += nodes;
-            Uci::Send(board.MoveToName(m) + ": " + std::to_string(nodes));
+            if (div) {
+                Uci::Send(board.MoveToName(m) + ": " + std::to_string(nodes));
+            }
         }
 
-        auto end = std::chrono::steady_clock::now();
-        auto time_elapsed_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count() + 1;
-        auto nps = static_cast<uint64_t> (static_cast<double>(total_nodes) /
-                                          (static_cast<double>(time_elapsed_ns) / 1000000000.0));
-
-        std::ostringstream oss;
-        oss << "\nTime elapsed: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms"
-            << " | Nodes explored: " << total_nodes
-            << " | NPS: " << nps;
-
-        Uci::Send(oss.str());
+        return total_nodes;
     }
 
 }

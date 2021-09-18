@@ -17,8 +17,14 @@ namespace Meetra::TestSuite {
 
 
     class Test {
+
+    private :
+        std::string fen;
+        Depth depth = 0;
+        uint64_t expected = 0;
+
     public:
-        inline bool RunTest() {
+        inline bool Run() {
 
             Board board;
             if (!board.NewPosition(fen)) {
@@ -28,7 +34,7 @@ namespace Meetra::TestSuite {
 
             auto start = std::chrono::steady_clock::now();
 
-            Perft(depth, board);
+            uint64_t result = RunPerft(depth, board);
 
             auto end = std::chrono::steady_clock::now();
             auto time_elapsed_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count() + 1;
@@ -78,36 +84,6 @@ namespace Meetra::TestSuite {
             }
             return is;
         }
-
-    private:
-        std::string fen;
-        Depth depth = 0;
-        uint64_t expected = 0;
-        uint64_t result = 0;
-
-        void Perft(Depth d, Board &board) {
-
-            MoveGen move_gen(board);
-            Move m;
-
-            if (d == 1) {
-                while ((m = move_gen.GetAnyMove())) {
-                    if (board.IsMoveLegal(m)) {
-                        result++;
-                    }
-                }
-                return;
-            }
-
-            while ((m = move_gen.GetAnyMove())) {
-                if (!board.MakeMove(m)) {
-                    board.UnmakeMove(m);
-                    continue;
-                }
-                Perft(d - 1, board);
-                board.UnmakeMove(m);
-            }
-        }
     };
 
     inline std::vector<Test> LoadTests() {
@@ -132,7 +108,7 @@ namespace Meetra::TestSuite {
         return tests;
     }
 
-    inline void RunPerftTests() {
+    inline void RunTests() {
 
         auto tests = LoadTests();
         if(tests.empty()) {
@@ -144,7 +120,7 @@ namespace Meetra::TestSuite {
         int errors = 0;
         for (size_t i = 0; i < tests.size(); i++) {
             Uci::Send("Running test " + std::to_string(i + 1));
-            if (!tests[i].RunTest()) {
+            if (!tests[i].Run()) {
                 errors++;
             }
         }

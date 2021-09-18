@@ -97,7 +97,7 @@ namespace Meetra::Uci {
     }
 
     void TestCommand() {
-        TestSuite::RunPerftTests();
+        TestSuite::RunTests();
     }
 
     void QuitCommand() {
@@ -139,9 +139,25 @@ namespace Meetra::Uci {
     }
 
     void PerftCommand(std::istringstream &iss, Board &board) {
-        Depth depth;
+
+        Depth depth = 0;
         iss >> depth;
-        RunPerft(depth, board);
+
+        auto start = std::chrono::steady_clock::now();
+
+        auto nodes = RunPerft(depth, board, true);
+
+        auto end = std::chrono::steady_clock::now();
+        auto time_elapsed_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count() + 1;
+        auto nps = static_cast<uint64_t> (static_cast<double>(nodes) /
+                                          (static_cast<double>(time_elapsed_ns) / 1000000000.0));
+
+        std::ostringstream oss;
+        oss << "\nTime elapsed: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms"
+            << " | Nodes explored: " << nodes
+            << " | NPS: " << nps;
+
+        Send(oss.str());
     }
 
     void IsReadyCommand() {
