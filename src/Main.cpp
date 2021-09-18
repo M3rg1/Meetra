@@ -12,7 +12,7 @@ int main() {
     Meetra::Zobrist::Init();
     Meetra::Search::Init();
     Meetra::EvalValues::Init();
-    Meetra::Book::CreateBook();
+    //Meetra::Book::CreateBook();
 
     Meetra::Uci::Listen();
 

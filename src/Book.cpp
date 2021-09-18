@@ -7,9 +7,10 @@
 
 namespace Meetra::Book {
 
-#define POS_REPEATED 10
-#define FILE_NAME "tools/bestmove_r10d30_a5000.mtr.bin"
-#define MAX_DEPTH 30
+#define POS_REPEATED 20
+#define FILE_NAME "tools/bestmove_r20d20_a5000.mtr.bin"
+#define MAX_DEPTH 20
+#define COUNT_PASS 5000
 #define INPUT_FILE "all.pgn"
 
     struct BookEntry_count {
@@ -114,7 +115,7 @@ namespace Meetra::Book {
             BookEntry_count best = out[i];
             while (i < out.size() - 1 && out[i].hash == out[i + 1].hash) {
                 if (best.count <= out[i + 1].count) {
-                    if (best.count > 5000) {
+                    if (best.count > COUNT_PASS) {
                         final.emplace_back(BookEntry{best.hash, best.move});
                     }
                     best = out[i + 1];
