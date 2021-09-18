@@ -3,7 +3,6 @@
 #include "ZobristHash.h"
 #include "Search.h"
 #include "EvalValues.h"
-#include "Book.h"
 
 int main() {
 
@@ -12,7 +11,6 @@ int main() {
     Meetra::Zobrist::Init();
     Meetra::Search::Init();
     Meetra::EvalValues::Init();
-    Meetra::Book::CreateBook();
 
     Meetra::Uci::Listen();
 

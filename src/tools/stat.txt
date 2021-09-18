@@ -1,13 +1,13 @@
 tot 95004710
 
-r5d30a5000
+r5d30a5000 - unsafe + more opening var
 639819
 
-r5d30a10000
+r5d30a10000 - unsafe + less opening var
 639739
 
-r10d30a10000
+r10d30a10000 - safe + less opening var
 320215
 
-r10d30a5000
+r10d30a5000 - safe + more opening var
 320295
