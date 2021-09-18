@@ -8,7 +8,8 @@
 #include <fstream>
 #include "Uci.h"
 
-#define BOOK_PATH "tools/bestmove_r10d30_a5000.mtr.bin"
+#define BOOK_PATH "tools/bestmove_r20d20_a5000.mtr.bin"
+#define BOOK_DEPTH 20
 
 namespace Meetra::Book {
 

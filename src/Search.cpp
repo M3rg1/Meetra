@@ -102,7 +102,7 @@ namespace Meetra::Search {
         InitSearch(s, board);
 
         if (Globals::use_book && !Globals::settings.fixed_depth && !Globals::settings.infinite &&
-            !Globals::settings.fixed_time && !Globals::chess960 && board.HistorySize() <= 30) {
+            !Globals::settings.fixed_time && !Globals::chess960 && board.HistorySize() <= BOOK_DEPTH) {
             auto moves = Book::Probe(board);
             if (!moves.empty()) {
                 StopSearch();
