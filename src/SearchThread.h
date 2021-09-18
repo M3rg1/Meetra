@@ -21,7 +21,6 @@ namespace Meetra {
         SearchThread();
         ~SearchThread();
         void InitNewSearch(const Board &b, const std::vector<Search::RootMove> &moves);
-        void Shutdown();
         void StartThread();
         void Search();
 
@@ -43,6 +42,8 @@ namespace Meetra {
         [[nodiscard]] std::string GetUpdateSearchInfo() const;
         [[nodiscard]] bool MateInHorizon() const;
         [[nodiscard]] inline bool IsMainThread() const { return id == 0; }
+
+        void Shutdown();
 
 
         inline static int next_id = 0;
