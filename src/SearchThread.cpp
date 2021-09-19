@@ -143,8 +143,6 @@ namespace Meetra {
             if (tt_move != ZERO_MOVE) {
                 move_gen.PutTTMove(tt_move);
             }
-        } else {
-            Uci::Send("\n\nCollision!\n");
         }
 
         // https://www.chessprogramming.org/Reverse_Futility_Pruning
