@@ -112,6 +112,7 @@ namespace Meetra::Search {
                         std::mt19937{std::random_device{}()}
                 );
                 Uci::Send("bestmove " + board.MoveToName(moves.back()));
+                Search::Globals::finished = true;
                 return;
             }
         }
