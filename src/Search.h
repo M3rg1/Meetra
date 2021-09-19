@@ -14,6 +14,7 @@ namespace Meetra::Search {
 #define UPDATE_INFO_INTERVAL 1000
 #define MAX_SEARCH_THREADS 32
 #define MIN_MATE_EVAL (MATE_SCORE - MAX_SEARCH_DEPTH)
+#define TIME_SAFETY_MARGIN_MS 5
 
     struct SearchSettings {
         bool infinite = false;
@@ -81,6 +82,7 @@ namespace Meetra::Search {
         bool operator==(const RootMove &other) const {
             return move == other.move;
         }
+
         bool operator!=(const RootMove &other) const {
             return !(*this == other);
         }

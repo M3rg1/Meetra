@@ -35,6 +35,7 @@ namespace Meetra::Search {
             double target = static_cast<double>(time_left) / 50.0 - static_cast<double>(moves_made);
             settings.allowed_time = static_cast<long>(factor * target);
             settings.allowed_time += board.ColorToMove() == WHITE ? settings.white_increment : settings.black_increment;
+            settings.allowed_time -= TIME_SAFETY_MARGIN_MS;
         }
     }
 

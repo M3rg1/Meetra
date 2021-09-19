@@ -1,5 +1,6 @@
 #include "TranspositionTable.h"
 #include "Search.h"
+#include "Uci.h"
 
 namespace Meetra {
 
@@ -42,16 +43,16 @@ namespace Meetra {
 
         TTBucket &bucket = table[key % buckets_count];
         TTEntry *entry_to_write;
-        Hash32 key_32 = Zobrist::MakeHash32(key);
+        Hash16 hash16 = Zobrist::MakeHash16(key);
         int worst_entry_score = INT_MAX;
 
         for (auto &entry: bucket.bucket_entries) {
 
-            if (entry.GetHash32() == key_32) {
+            if (entry.GetHash16() == hash16) {
                 if (entry.GetEpoch() != current_epoch || entry.GetDepth() <= depth) {
                     entry_to_write = &entry;
                 } else {
-                    entry_to_write = nullptr;
+                    return;
                 }
                 break;
             }
@@ -68,12 +69,10 @@ namespace Meetra {
             }
         }
 
-        if (entry_to_write) {
-            if (entry_to_write->GetEpoch() != current_epoch) {
-                used_entries.fetch_add(1, std::memory_order::relaxed);
-            }
-            entry_to_write->SaveEntry(key_32, RemoveMatePly(score, ply), depth, move, flag, current_epoch);
+        if (entry_to_write->GetEpoch() != current_epoch) {
+            used_entries.fetch_add(1, std::memory_order::relaxed);
         }
+        entry_to_write->SaveEntry(hash16, RemoveMatePly(score, ply), depth, move, flag, current_epoch);
     }
 
     void TranspositionTable::Probe(Hash64 key, Score alpha, Score beta,
@@ -82,11 +81,11 @@ namespace Meetra {
         flag = NOT_FOUND;
         move = ZERO_MOVE;
 
-        Hash32 key_32 = Zobrist::MakeHash32(key);
+        Hash16 hash16 = Zobrist::MakeHash16(key);
         TTBucket &bucket = table[key % buckets_count];
 
         for (auto &entry: bucket.bucket_entries) {
-            if (entry.GetHash32() == key_32) {
+            if (entry.GetHash16() == hash16) {
                 move = entry.GetMove();
                 if (entry.GetDepth() >= depth) {
                     score = AddMatePly(entry.GetScore(), ply);

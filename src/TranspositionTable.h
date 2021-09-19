@@ -5,11 +5,10 @@
 #include <atomic>
 #include "Board.h"
 #include "ZobristHash.h"
-#include "Uci.h"
 
 namespace Meetra {
 
-#define MIN_HASH_SIZE 4 // this should never be 0
+#define MIN_HASH_SIZE 8 // this should never be 0
 #define DEFAULT_HASH_SIZE 128
 #define MAX_HASH_SIZE 8192
 #define TT_ENTRIES_PER_BUCKET 4
@@ -38,17 +37,16 @@ namespace Meetra {
     private:
 
         using TTEpoch = int;
-
-        // 10 bytes + 2 alignment
+        // 8 bytes
         class TTEntry {
-            uint32_t hash = 0;
+            uint16_t hash = 0;
             int16_t score = 0;
             uint16_t move = 0;
             uint8_t depth = 0;
             uint8_t epoch_and_flag = 0; // 2 low bits for flag, rest for epoch.
             // epoch would be fine with 3 bits, leaving another 3 for whatever else is needed
         public:
-            [[nodiscard]] inline Hash32 GetHash32() const { return static_cast<Hash32>(hash); }
+            [[nodiscard]] inline Hash16 GetHash16() const { return static_cast<Hash16>(hash); }
             [[nodiscard]] inline Score GetScore() const { return static_cast<Score>(score); }
             [[nodiscard]] inline Depth GetDepth() const { return static_cast<Depth>(depth); }
             [[nodiscard]] inline Move GetMove() const { return static_cast<Move>(move); }
@@ -60,8 +58,8 @@ namespace Meetra {
                 epoch_and_flag |= static_cast<uint8_t>(e) << 2;
             }
 
-            inline void SaveEntry(Hash32 h, Score s, Depth d, Move m, TTFlag f, TTEpoch e) {
-                hash = static_cast<uint32_t>(h);
+            inline void SaveEntry(Hash16 h, Score s, Depth d, Move m, TTFlag f, TTEpoch e) {
+                hash = static_cast<uint16_t>(h);
                 score = static_cast<int16_t>(s);
                 depth = static_cast<uint8_t>(d);
                 move = static_cast<uint16_t>(m);

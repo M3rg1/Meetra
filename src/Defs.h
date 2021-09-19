@@ -10,7 +10,7 @@ namespace Meetra {
     using Score = int;
 
     using Hash64 = uint64_t;
-    using Hash32 = uint32_t;
+    using Hash16 = uint16_t;
 #define NEW_HASH 0
 
     using Bitboard = uint64_t;
