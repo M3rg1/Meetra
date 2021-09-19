@@ -129,9 +129,9 @@ namespace Meetra::Uci {
 
     void GoCommand(std::istringstream &iss, const Board &board) {
         if (Search::Run()) {
+            SendInfo("Search is already in progress!");
             return;
         }
-
         Search::SearchSettings settings = ParseSearchOptions(iss);
         Search::StartSearch(settings, board);
     }
