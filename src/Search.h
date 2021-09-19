@@ -12,7 +12,7 @@ namespace Meetra::Search {
 #define DEFAULT_SEARCH_TIME 1000
 #define DEFAULT_SEARCH_THREADS 1
 #define UPDATE_INFO_INTERVAL 1000
-#define MAX_SEARCH_THREADS 16
+#define MAX_SEARCH_THREADS 32
 #define MIN_MATE_EVAL (MATE_SCORE - MAX_SEARCH_DEPTH)
 
     struct SearchSettings {
@@ -30,23 +30,21 @@ namespace Meetra::Search {
         long long black_increment = 0;
     };
 
-    namespace Globals {
-        inline std::atomic<bool> run;
-        inline std::atomic<bool> finished;
-        inline std::atomic<Depth> mt_depth;
-        inline TranspositionTable tt;
-        inline SearchSettings settings;
-        inline bool chess960;
-        inline bool use_book;
-        inline bool show_currline;
-        inline bool show_currmove;
-        inline int plies_muted;
-        inline int multi_pv;
-        inline int num_threads;
-        inline long long start_time;
-        inline long long last_update_time;
-        inline std::vector<std::unique_ptr<SearchThread>> search_threads;
-    }
+    inline SearchSettings settings;
+    inline std::atomic<bool> run;
+    inline std::atomic<bool> finished;
+    inline std::atomic<Depth> mt_depth;
+    inline bool chess960;
+    inline bool use_book;
+    inline bool show_currline;
+    inline bool show_currmove;
+    inline int plies_muted;
+    inline int multi_pv;
+    inline int num_threads;
+    inline long long start_time;
+    inline long long last_update_time;
+    inline TranspositionTable tt;
+    inline std::vector<std::unique_ptr<SearchThread>> threads;
 
     struct PVMoveLine {
     private:
@@ -94,20 +92,19 @@ namespace Meetra::Search {
     void Shutdown();
     std::string GetUpdateSearchInfo();
 
-    void RequestTime(long long time_ms);
     [[nodiscard]] long long int ElapsedTimeMs();
     [[nodiscard]] bool EnoughTimeLeft();
-    [[nodiscard]] inline bool Run() { return Globals::run.load(std::memory_order_acquire); }
-    [[nodiscard]] inline bool Finished() { return Globals::finished.load(std::memory_order_acquire); }
-    inline void SetUseBook(bool use) { Globals::use_book = use; }
-    inline void ShowShowCurrLine(bool show) { Globals::show_currline = show; }
-    inline void SetPliesMuted(int ply_muted) { Globals::plies_muted = std::max(1, ply_muted); }
-    inline void ShowCurrMoveInfo(bool show) { Globals::show_currmove = show; }
-    inline void StopSearch() { Globals::run = false; }
-    inline void SetMultiPv(int pv_num) { Globals::multi_pv = std::max(1, pv_num); }
-    inline void ClearTT() { Globals::tt.Clear(); }
-    inline void SetTTSize(int size_mb) { Globals::tt.Init(size_mb); }
-    inline void SetChess960(bool set) { Globals::chess960 = set; }
+    [[nodiscard]] inline bool Run() { return run.load(std::memory_order_acquire); }
+    [[nodiscard]] inline bool Finished() { return finished.load(std::memory_order_acquire); }
+    inline void SetUseBook(bool use) { use_book = use; }
+    inline void ShowShowCurrLine(bool show) { show_currline = show; }
+    inline void SetPliesMuted(int ply_muted) { plies_muted = std::max(1, ply_muted); }
+    inline void ShowCurrMoveInfo(bool show) { show_currmove = show; }
+    inline void StopSearch() { run = false; }
+    inline void SetMultiPv(int pv_num) { multi_pv = std::max(1, pv_num); }
+    inline void ClearTT() { tt.Clear(); }
+    inline void SetTTSize(int size_mb) { tt.Init(size_mb); }
+    inline void SetChess960(bool set) { chess960 = set; }
     void SetNumThreads(int num);
 
 }

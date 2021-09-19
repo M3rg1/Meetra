@@ -9,7 +9,7 @@
 namespace Meetra {
 
     bool IsMateScore(Score s) {
-        return s != NEGATIVE_INF && std::abs(s) > MIN_MATE_EVAL;
+        return std::abs(s) <= MATE_SCORE && std::abs(s) >= MIN_MATE_EVAL;
     }
 
     // the main search function, iterative deepening framework
@@ -18,15 +18,14 @@ namespace Meetra {
         active = true;
 
         // iterative deepening
-        for (depth_reached = 2;
-             depth_reached <= Search::Globals::settings.max_allowed_depth && Search::Run(); depth_reached++) {
+        for (depth_reached = 2; depth_reached <= Search::settings.max_allowed_depth && Search::Run(); depth_reached++) {
 
             // seldepth_reached is always at least the current depth being searched
             seldepth_reached = depth_reached;
 
             // if helper thread falls behind main thread, skip depth and go deeper
-            if (!IsMainThread() && depth_reached <= Search::Globals::mt_depth.load(std::memory_order_acquire)) {
-                depth_reached = Search::Globals::mt_depth.load(std::memory_order_acquire) + id;
+            if (!IsMainThread() && depth_reached <= Search::mt_depth.load(std::memory_order_acquire)) {
+                depth_reached = Search::mt_depth.load(std::memory_order_acquire) + id;
             }
 
             Score alpha = NEGATIVE_INF;
@@ -39,12 +38,12 @@ namespace Meetra {
                 curr_rm = &root_moves[curr_rm_num];
                 curr_rm->seldepth = depth_reached;
 
-                if (IsMainThread() && Search::Globals::show_currmove && Search::ElapsedTimeMs() > 1000) {
+                if (IsMainThread() && Search::show_currmove && Search::ElapsedTimeMs() > 1000) {
                     Uci::Send(GetCurrMoveInfo());
                 }
 
                 // if main thread already finished this depth, there's no reason for helper thread to remain
-                if (!IsMainThread() && depth_reached < Search::Globals::mt_depth.load(std::memory_order_acquire)) {
+                if (!IsMainThread() && depth_reached < Search::mt_depth.load(std::memory_order_acquire)) {
                     break;
                 }
 
@@ -71,7 +70,7 @@ namespace Meetra {
                 curr_rm->previous_score = curr_rm->score;
                 curr_rm->depth = depth_reached;
 
-                if (Search::Globals::multi_pv > 1) {
+                if (Search::multi_pv > 1) {
                     curr_rm->score = score;
                 } else if (score > alpha) {
                     search_pv = false;
@@ -88,19 +87,18 @@ namespace Meetra {
             // checking time and updating GUI when main thread finishes depth
             if (IsMainThread()) {
 
-                Search::Globals::mt_depth.store(depth_reached, std::memory_order_relaxed);
+                Search::mt_depth.store(depth_reached, std::memory_order_relaxed);
 
                 // finish if we don't have enough time left for a deeper search or mate has been found, and we are not
                 // performing fixed time/depth/infinite or multipv search
                 if (!Search::Run() || !Search::EnoughTimeLeft() ||
-                    (IsMateScore(root_moves[0].score) && Search::Globals::multi_pv == 1 &&
-                     !Search::Globals::settings.infinite && !Search::Globals::settings.fixed_time &&
-                     !Search::Globals::settings.fixed_depth)) {
+                    (IsMateScore(root_moves[0].score) && Search::multi_pv == 1 && !Search::settings.infinite &&
+                     !Search::settings.fixed_time && !Search::settings.fixed_depth)) {
                     break;
                 }
 
                 // update GUI with info about currently finished depth we searched
-                if (depth_reached > Search::Globals::plies_muted) {
+                if (depth_reached > Search::plies_muted) {
                     Uci::Send(GetSearchInfo());
                 }
             }
@@ -135,7 +133,7 @@ namespace Meetra {
         Move tt_move;
         Score score;
         MoveGen move_gen(board);
-        Search::Globals::tt.Probe(board.GetHash(), alpha, beta, depth, ply, score, tt_flag, tt_move);
+        Search::tt.Probe(board.GetHash(), alpha, beta, depth, ply, score, tt_flag, tt_move);
 
         // checking for data race corruption or hash collision
         if (move_gen.IsPseudoLegal(tt_move)) {
@@ -213,7 +211,7 @@ namespace Meetra {
                     pv_line.PutLine(line);
 
                     if (score >= beta) {
-                        Search::Globals::tt.Save(board.GetHash(), beta, depth, move, BETA, ply);
+                        Search::tt.Save(board.GetHash(), beta, depth, move, BETA, ply);
                         return beta;
                     }
 
@@ -228,7 +226,7 @@ namespace Meetra {
             return move_gen.IsInCheck() ? -MATE_SCORE + ply : -DRAW_SCORE;
         }
 
-        Search::Globals::tt.Save(board.GetHash(), alpha, depth, best_move, tt_flag, ply);
+        Search::tt.Save(board.GetHash(), alpha, depth, best_move, tt_flag, ply);
 
         return alpha;
     }
@@ -276,15 +274,6 @@ namespace Meetra {
         return alpha;
     }
 
-    bool SearchThread::MateInHorizon() const {
-        if (root_moves[0].score != NEGATIVE_INF && std::abs(root_moves[0].score) > MIN_MATE_EVAL) {
-            int distance_to_mate = MATE_SCORE - std::abs(root_moves[0].score);
-            if (depth_reached > distance_to_mate) {
-                return true;
-            }
-        }
-        return false;
-    }
     bool SearchThread::DidBeatMove(const Search::RootMove &other) const {
         auto rm = std::ranges::find(root_moves, other);
         if (rm->depth < other.depth) {
@@ -311,8 +300,8 @@ namespace Meetra {
 
     std::string SearchThread::GetUpdateSearchInfo() const {
 
-        auto nodes = std::accumulate(Search::Globals::search_threads.begin(),
-                                     Search::Globals::search_threads.end(),
+        auto nodes = std::accumulate(Search::threads.begin(),
+                                     Search::threads.end(),
                                      0ULL,
                                      [&](auto sum, auto const &t) { return sum + t->NodesExplored(); });
 
@@ -327,21 +316,21 @@ namespace Meetra {
             << " nodes " << nodes
             << " time " << elapsed_ms
             << " nps " << nps
-            << " hashfull " << static_cast<int>(Search::Globals::tt.Usage() * 1000.0);
+            << " hashfull " << static_cast<int>(Search::tt.Usage() * 1000.0);
 
         return oss.str();
     }
 
     std::string SearchThread::GetSearchInfo() const {
 
-        auto nodes = std::accumulate(Search::Globals::search_threads.begin(),
-                                     Search::Globals::search_threads.end(),
+        auto nodes = std::accumulate(Search::threads.begin(),
+                                     Search::threads.end(),
                                      0ULL,
                                      [&](auto sum, auto const &t) { return sum + t->NodesExplored(); });
 
         auto elapsed_ms = Search::ElapsedTimeMs();
         auto nps = static_cast<uint64_t>(((static_cast<double>(nodes) / static_cast<double>(elapsed_ms))) * 1000.0);
-        auto pvs_to_send = std::min(static_cast<size_t>(Search::Globals::multi_pv), root_moves.size());
+        auto pvs_to_send = std::min(static_cast<size_t>(Search::multi_pv), root_moves.size());
 
         std::ostringstream oss;
 
@@ -353,7 +342,7 @@ namespace Meetra {
                 << " nodes " << nodes
                 << " time " << elapsed_ms
                 << " nps " << nps
-                << " hashfull " << static_cast<int>(Search::Globals::tt.Usage() * 1000)
+                << " hashfull " << static_cast<int>(Search::tt.Usage() * 1000)
                 << " score ";
 
             Score score = root_moves[i].score;
@@ -399,17 +388,15 @@ namespace Meetra {
             return;
         }
 
-        using namespace Search;
+        auto elapsed_time = Search::ElapsedTimeMs();
 
-        auto elapsed_time = ElapsedTimeMs();
-
-        if (!Globals::settings.infinite && !Globals::settings.fixed_depth &&
-            Globals::settings.allowed_time < elapsed_time) {
-            StopSearch();
-        } else if (Globals::last_update_time + UPDATE_INFO_INTERVAL < elapsed_time) {
-            Globals::last_update_time = elapsed_time;
+        if (!Search::settings.infinite && !Search::settings.fixed_depth &&
+            Search::settings.allowed_time < elapsed_time) {
+            Search::StopSearch();
+        } else if (Search::last_update_time + UPDATE_INFO_INTERVAL < elapsed_time) {
+            Search::last_update_time = elapsed_time;
             Uci::Send(GetUpdateSearchInfo());
-            if (Globals::show_currline) {
+            if (Search::show_currline) {
                 Uci::Send(GetCurrLineInfo());
             }
         }

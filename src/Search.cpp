@@ -10,52 +10,48 @@ namespace Meetra::Search {
     long long int ElapsedTimeMs() {
         auto now = time_point_cast<std::chrono::milliseconds>(
                 std::chrono::steady_clock::now()).time_since_epoch().count();
-        auto elapsed_ms = now - Globals::start_time;
+        auto elapsed_ms = now - start_time;
         return elapsed_ms + 1;
     }
 
     bool EnoughTimeLeft() {
-        if (Globals::settings.infinite || Globals::settings.fixed_time || Globals::settings.fixed_depth ||
-            Globals::settings.allowed_time > ElapsedTimeMs() * 2) {
+        if (settings.infinite || settings.fixed_time || settings.fixed_depth ||
+            settings.allowed_time > ElapsedTimeMs() * 2) {
             return true;
         }
         return false;
     }
 
-    void RequestTime(long long time_ms) {
-        Globals::settings.allowed_time = ElapsedTimeMs() + time_ms;
-    }
-
     void InitSearchTimer(Board &board) {
 
-        if (Globals::settings.infinite || Globals::settings.fixed_time || Globals::settings.fixed_depth) {
+        if (settings.infinite || settings.fixed_time || settings.fixed_depth) {
             return;
         }
 
-        auto time_left = board.ColorToMove() == WHITE ? Globals::settings.white_time : Globals::settings.black_time;
+        auto time_left = board.ColorToMove() == WHITE ? settings.white_time : settings.black_time;
         if (time_left) {
             int moves_made = std::min((board.HistorySize() + 1), 10);
             double factor = 2.0 - static_cast<double>(moves_made) / 10.0;
             double target = static_cast<double>(time_left) / 50.0 - static_cast<double>(moves_made);
-            Globals::settings.allowed_time = static_cast<long>(factor * target);
-            Globals::settings.allowed_time += board.ColorToMove() == WHITE ? Globals::settings.white_increment
-                                                                           : Globals::settings.black_increment;
+            settings.allowed_time = static_cast<long>(factor * target);
+            settings.allowed_time += board.ColorToMove() == WHITE ? settings.white_increment : settings.black_increment;
         }
     }
 
     void InitSearch(SearchSettings &s, Board &board) {
 
-        Globals::finished = false;
+        finished = false;
 
-        Globals::last_update_time = 0;
-        Globals::start_time = time_point_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()).time_since_epoch().count();
+        last_update_time = 0;
+        start_time = time_point_cast<std::chrono::milliseconds>(
+                std::chrono::steady_clock::now()).time_since_epoch().count();
 
-        Globals::settings = s;
+        settings = s;
 
-        Globals::tt.NewSearch();
-        Globals::mt_depth.store(0, std::memory_order_relaxed);
+        tt.NewSearch();
+        mt_depth.store(0, std::memory_order_relaxed);
 
-        Globals::settings.max_allowed_depth = std::min(s.max_allowed_depth, static_cast<Depth>(MAX_SEARCH_DEPTH));
+        settings.max_allowed_depth = std::min(s.max_allowed_depth, static_cast<Depth>(MAX_SEARCH_DEPTH));
 
         InitSearchTimer(board);
     }
@@ -80,28 +76,28 @@ namespace Meetra::Search {
         // for multipv, because helper threads might skip some depths and not have the full pv, we can't safely use
         // their results without risking their pv for other than the top move will be very old from low depth or even
         // missing entirely
-        SearchThread *best_thread = Globals::search_threads[0].get();
-        if (Globals::multi_pv == 1) {
-            for (size_t i = 1; i < Globals::search_threads.size(); i++) {
-                while (Globals::search_threads[i]->IsThreadSearching()); // wait until thread finishes searching
-                if (Globals::search_threads[i]->DidBeatMove(best_thread->GetBestRootMove())) {
-                    best_thread = Globals::search_threads[i].get();
+        SearchThread *best_thread = threads[0].get();
+        if (multi_pv == 1) {
+            for (size_t i = 1; i < threads.size(); i++) {
+                while (threads[i]->IsThreadSearching()); // wait until thread finishes searching
+                if (threads[i]->DidBeatMove(best_thread->GetBestRootMove())) {
+                    best_thread = threads[i].get();
                 }
             }
         }
 
         Uci::Send(best_thread->GetSearchInfo());
         Uci::Send("bestmove " + best_thread->GetBestRmName());
-        Globals::finished = true;
+        finished = true;
     }
 
     void StartSearch(SearchSettings s, Board board) {
 
-        Globals::run = true;
+        run = true;
         InitSearch(s, board);
 
-        if (Globals::use_book && !Globals::settings.fixed_depth && !Globals::settings.infinite &&
-            !Globals::settings.fixed_time && !Globals::chess960 && board.HistorySize() <= BOOK_DEPTH) {
+        if (use_book && !settings.fixed_depth && !settings.infinite && !settings.fixed_time && !chess960 &&
+            board.HistorySize() <= BOOK_DEPTH) {
             auto moves = Book::Probe(board);
             if (!moves.empty()) {
                 StopSearch();
@@ -112,7 +108,7 @@ namespace Meetra::Search {
                         std::mt19937{std::random_device{}()}
                 );
                 Uci::Send("bestmove " + board.MoveToName(moves.back()));
-                Search::Globals::finished = true;
+                Search::finished = true;
                 return;
             }
         }
@@ -121,37 +117,36 @@ namespace Meetra::Search {
 
         // if there's only one root move, and we are not in infinite or fixed depth/time search, return it immediately
         if (root_moves.empty() ||
-            (root_moves.size() == 1 && !Globals::settings.infinite && !Globals::settings.fixed_depth &&
-             !Globals::settings.fixed_time)) {
+            (root_moves.size() == 1 && !settings.infinite && !settings.fixed_depth && !settings.fixed_time)) {
             StopSearch();
             Uci::Send("bestmove " + board.MoveToName(root_moves.empty() ? ZERO_MOVE : root_moves.front().move));
-            Search::Globals::finished = true;
+            Search::finished = true;
             return;
         }
 
         // it's important to first initialize all threads and only then start them
-        std::ranges::for_each(Globals::search_threads, [&](auto &t) { t->InitNewSearch(board, root_moves); });
-        std::ranges::for_each(Globals::search_threads, [&](auto &t) { t->StartThread(); });
+        std::ranges::for_each(threads, [&](auto &t) { t->InitNewSearch(board, root_moves); });
+        std::ranges::for_each(threads, [&](auto &t) { t->StartThread(); });
     }
 
     void Init() {
-        Globals::tt.Init();
-        Globals::run = false;
-        Globals::finished = true;
-        Globals::chess960 = false;
-        Globals::use_book = false;
-        Globals::show_currline = false;
-        Globals::multi_pv = 1;
-        Globals::show_currmove = true;
-        Globals::plies_muted = 1;
-        Globals::last_update_time = 0;
-        Globals::num_threads = DEFAULT_SEARCH_THREADS;
+        tt.Init();
+        run = false;
+        finished = true;
+        chess960 = false;
+        use_book = false;
+        show_currline = false;
+        multi_pv = 1;
+        show_currmove = true;
+        plies_muted = 1;
+        last_update_time = 0;
+        num_threads = DEFAULT_SEARCH_THREADS;
         SetNumThreads(DEFAULT_SEARCH_THREADS);
     }
 
     void Shutdown() {
         StopSearch();
-        Globals::search_threads.clear();
+        threads.clear();
     }
 
     void SetNumThreads(int num) {
@@ -163,9 +158,9 @@ namespace Meetra::Search {
 
         Shutdown();
 
-        Globals::num_threads = num;
-        for (auto i = 0; i < Globals::num_threads; i++) {
-            Globals::search_threads.emplace_back(new SearchThread());
+        num_threads = num;
+        for (auto i = 0; i < num_threads; i++) {
+            threads.emplace_back(new SearchThread());
         }
     }
 }

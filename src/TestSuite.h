@@ -13,7 +13,8 @@
 
 namespace Meetra::TestSuite {
 
-#define TEST_FILE_PATH "tools/PerftTests.txt"
+#define TEST_FILE_PATH "tools/PerftTests.txt" // perft960.txt
+#define ETHEREAL_SUITE false
 
     class Test {
 
@@ -61,19 +62,21 @@ namespace Meetra::TestSuite {
 
             std::string token;
             // for parsing Ethereal's chess 960 perft suite
-/*            while(is >> token && token != ";D1") {
-                t.fen += token + ' ';
-            }
-            t.fen.pop_back();
-            while(is >> token && token != ";D5");
-            t.depth = 5;
-            is >> t.expected;*/
-
-            is >> token >> t.depth;
-            is >> token >> t.expected;
-            is >> token >> t.fen;
-            while (is >> token && token != "#") {
-                t.fen += ' ' + token;
+            if (ETHEREAL_SUITE) {
+                is >> t.fen;
+                while (is >> token && token != ";D1") {
+                    t.fen += ' ' + token;
+                }
+                while (is >> token && token != ";D5");
+                t.depth = 5;
+                is >> t.expected;
+            } else {
+                is >> token >> t.depth;
+                is >> token >> t.expected;
+                is >> token >> t.fen;
+                while (is >> token && token != "#") {
+                    t.fen += ' ' + token;
+                }
             }
             return is;
         }

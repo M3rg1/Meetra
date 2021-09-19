@@ -40,7 +40,6 @@ namespace Meetra {
         [[nodiscard]] std::string GetCurrLineInfo() const;
         [[nodiscard]] std::string GetCurrMoveInfo() const;
         [[nodiscard]] std::string GetUpdateSearchInfo() const;
-        [[nodiscard]] bool MateInHorizon() const;
         [[nodiscard]] inline bool IsMainThread() const { return id == 0; }
 
         void Shutdown();

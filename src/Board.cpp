@@ -200,7 +200,7 @@ namespace Meetra {
 
         // in chess960, when castling, we remove the rook from its square before moving, and put it back later
         // we also need to set captured piece to none, in case the king tries to capture itself
-        if (Search::Globals::chess960 && move_type == CASTLING) {
+        if (Search::chess960 && move_type == CASTLING) {
             captured_piece = NO_PIECE;
             Move rook_move = RookCastlingMove(to, this_col);
             Square rook_from = FromSquare(rook_move);
@@ -254,7 +254,7 @@ namespace Meetra {
                 Square r_to = ToSquare(r_move);
                 Square r_from = FromSquare(r_move);
                 // put back the rook that we took out earlier in chess 960 castling
-                Search::Globals::chess960 ? AddPiece(r_to, NewPiece(ROOK, this_col)) : MovePiece(r_from, r_to);
+                Search::chess960 ? AddPiece(r_to, NewPiece(ROOK, this_col)) : MovePiece(r_from, r_to);
                 Zobrist::MovePiece(state.hash, NewPiece(ROOK, this_col), r_from, r_to);
                 Bitboard king_walk = Bitboards::GetRayToSquares(from, to) | SquareToBB(to);
                 return AllSquaresSafe(king_walk, next_col, GetPieces(ALL_TYPES));
@@ -275,7 +275,7 @@ namespace Meetra {
         state = history[--history_cnt];
 
         // ches960 castling, special case
-        if (Search::Globals::chess960 && GetMoveType(m) == CASTLING) {
+        if (Search::chess960 && GetMoveType(m) == CASTLING) {
             Move rook_move = RookCastlingMove(to, ColorToMove());
             RemovePiece(ToSquare(rook_move));
             MovePiece(to, from);
@@ -422,7 +422,7 @@ namespace Meetra {
         std::string ret = SquareToName(FromSquare(m)) + SquareToName(ToSquare(m));
 
         // chess 960 castling is denoted by capturing own rook
-        if (Search::Globals::chess960 && GetMoveType(m) == CASTLING) {
+        if (Search::chess960 && GetMoveType(m) == CASTLING) {
             Rank r = RankFromSquare(FromSquare(m));
             Color c = r == RANK_1 ? WHITE : BLACK;
             Move r_move = RookCastlingMove(ToSquare(m), c);
@@ -453,7 +453,7 @@ namespace Meetra {
                    PROMOTE_KNIGHT;
         }
 
-        if (Search::Globals::chess960) {
+        if (Search::chess960) {
             Piece p = GetPieceOnSquare(s_to);
             if (ColorOfPiece(p) == ColorToMove() && TypeOfPiece(p) == ROOK) {
                 s_to = s_to > s_from ? ColorToMove() == WHITE ? G1 : G8 : ColorToMove() == WHITE ? C1 : C8;
