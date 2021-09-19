@@ -45,7 +45,6 @@ namespace Meetra::Uci {
     void TestCommand();
     void QuitCommand();
     void UnknownCommand();
-
     Search::SearchSettings ParseSearchOptions(std::istringstream &iss);
 
     void Init() {
@@ -166,7 +165,6 @@ namespace Meetra::Uci {
     void PositionCommand(std::istringstream &iss, Board &board) {
 
         std::string token, fen;
-
         iss >> token;
         if (token == "startpos") {
             fen = STARTPOS_FEN;
@@ -178,7 +176,7 @@ namespace Meetra::Uci {
         }
 
         if (!board.NewPosition(fen)) {
-            SendInfo("Invalid fen string!");
+            SendInfo("Invalid fen: " + fen);
             return;
         }
 
