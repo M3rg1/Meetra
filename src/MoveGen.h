@@ -1,7 +1,7 @@
 #ifndef MEETRA_MOVEGEN_H
 #define MEETRA_MOVEGEN_H
 
-#include "Types.h"
+#include "Defs.h"
 #include "Board.h"
 
 namespace Meetra {

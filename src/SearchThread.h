@@ -28,7 +28,7 @@ namespace Meetra {
         [[nodiscard]] Search::RootMove GetBestRootMove() const;
         [[nodiscard]] std::string GetBestRmName() const;
         [[nodiscard]] inline bool IsThreadSearching() const { return active.load(std::memory_order_acquire); };
-        [[nodiscard]] inline uint64_t NodesExplored() const { return nodes_explored.load(std::memory_order_relaxed); }
+        [[nodiscard]] inline uint64_t NodesExplored() const { return nodes_explored.load(std::memory_order_acquire); }
         [[nodiscard]] std::string GetSearchInfo() const;
 
     private:

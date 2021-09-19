@@ -1,5 +1,5 @@
-#ifndef MEETRA_TYPES_H
-#define MEETRA_TYPES_H
+#ifndef MEETRA_DEFS_H
+#define MEETRA_DEFS_H
 
 #include <string>
 
@@ -84,7 +84,7 @@ namespace Meetra {
         A7, B7, C7, D7, E7, F7, G7, H7,
         A8, B8, C8, D8, E8, F8, G8, H8,
         SQUARE_NR,
-        ZERO_SQ = 0
+        NO_SQ = 0
     };
 
     inline Bitboard SquareToBB(Square s) { return static_cast<Bitboard>(0x1) << s; }
@@ -164,4 +164,4 @@ inline T& operator--(T& d) { return d = T(int(d) - 1); }
 
 }
 
-#endif //MEETRA_TYPES_H
+#endif //MEETRA_DEFS_H

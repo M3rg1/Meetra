@@ -1,14 +1,12 @@
 #ifndef MEETRA_EVALVALUES_H
 #define MEETRA_EVALVALUES_H
 
-#include "Types.h"
+#include "Defs.h"
 
 namespace Meetra::EvalValues {
 
     constexpr Score mg_value[PIECE_TYPE_NR] = {0, 82, 337, 365, 477, 1025, 0};
     constexpr Score eg_value[PIECE_TYPE_NR] = {0, 94, 281, 297, 512, 936, 0};
-
-#define FLIP(sq) ((sq)^56)
 
     constexpr Score mg_pawn_table[SQUARE_NR] = {
             0, 0, 0, 0, 0, 0, 0, 0,
@@ -182,8 +180,8 @@ namespace Meetra::EvalValues {
     inline void Init() {
         for (PieceType piece_type = NONE_PIECE_TYPE; piece_type < PIECE_TYPE_NR; ++piece_type) {
             for (Square s = A1; s < SQUARE_NR; ++s) {
-                mg_table[WHITE][piece_type][s] = mg_value[piece_type] + mg_pesto_table[piece_type][FLIP(s)];
-                eg_table[WHITE][piece_type][s] = eg_value[piece_type] + eg_pesto_table[piece_type][FLIP(s)];
+                mg_table[WHITE][piece_type][s] = mg_value[piece_type] + mg_pesto_table[piece_type][s ^ 56];
+                eg_table[WHITE][piece_type][s] = eg_value[piece_type] + eg_pesto_table[piece_type][s ^ 56];
 
                 mg_table[BLACK][piece_type][s] = mg_value[piece_type] + mg_pesto_table[piece_type][s];
                 eg_table[BLACK][piece_type][s] = eg_value[piece_type] + eg_pesto_table[piece_type][s];

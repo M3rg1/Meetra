@@ -137,13 +137,11 @@ namespace Meetra {
         MoveGen move_gen(board);
         Search::Globals::tt.Probe(board.GetHash(), alpha, beta, depth, ply, score, tt_flag, tt_move);
 
-        // do a check of the retrieved move, if it's legal to play in the current position and not corrupted,
-        // chances are, the score is correct as well
+        // checking for data race corruption or hash collision
         if (move_gen.IsPseudoLegal(tt_move)) {
             if (tt_flag == ALPHA || tt_flag == BETA) {
                 return score;
             }
-            // no cutoff, but we got some move from TT, we will play it as the first move in the main negamax loop
             if (tt_move != ZERO_MOVE) {
                 move_gen.PutTTMove(tt_move);
             }
@@ -287,6 +285,21 @@ namespace Meetra {
         }
         return false;
     }
+    bool SearchThread::DidBeatMove(const Search::RootMove &other) const {
+        auto rm = std::ranges::find(root_moves, other);
+        if (rm->depth < other.depth) {
+            return false;
+        }
+        if (rm->depth > other.depth) {
+            return true;
+        }
+        if (rm->depth == other.depth) {
+            if (GetBestRootMove().move != other.move) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     Search::RootMove SearchThread::GetBestRootMove() const {
         return root_moves[0];
@@ -298,20 +311,20 @@ namespace Meetra {
 
     std::string SearchThread::GetUpdateSearchInfo() const {
 
-        uint64_t total_nodes = std::accumulate(Search::Globals::search_threads.begin(),
-                                               Search::Globals::search_threads.end(),
-                                               0ULL,
-                                               [&](auto sum, auto const &t) { return sum + t->NodesExplored(); });
+        auto nodes = std::accumulate(Search::Globals::search_threads.begin(),
+                                     Search::Globals::search_threads.end(),
+                                     0ULL,
+                                     [&](auto sum, auto const &t) { return sum + t->NodesExplored(); });
 
         auto elapsed_ms = Search::ElapsedTimeMs();
         auto nps = static_cast<uint64_t>(
-                ((static_cast<double>(total_nodes) / static_cast<double>(elapsed_ms))) * 1000.0);
+                ((static_cast<double>(nodes) / static_cast<double>(elapsed_ms))) * 1000.0);
 
         std::ostringstream oss;
 
         oss << "info depth " << static_cast<int>(depth_reached)
             << " seldepth " << static_cast<int>(seldepth_reached)
-            << " nodes " << total_nodes
+            << " nodes " << nodes
             << " time " << elapsed_ms
             << " nps " << nps
             << " hashfull " << static_cast<int>(Search::Globals::tt.Usage() * 1000.0);
@@ -321,14 +334,13 @@ namespace Meetra {
 
     std::string SearchThread::GetSearchInfo() const {
 
-        uint64_t total_nodes = std::accumulate(Search::Globals::search_threads.begin(),
-                                               Search::Globals::search_threads.end(),
-                                               0ULL,
-                                               [&](auto sum, auto const &t) { return sum + t->NodesExplored(); });
+        auto nodes = std::accumulate(Search::Globals::search_threads.begin(),
+                                     Search::Globals::search_threads.end(),
+                                     0ULL,
+                                     [&](auto sum, auto const &t) { return sum + t->NodesExplored(); });
 
         auto elapsed_ms = Search::ElapsedTimeMs();
-        auto nps = static_cast<uint64_t>(
-                ((static_cast<double>(total_nodes) / static_cast<double>(elapsed_ms))) * 1000.0);
+        auto nps = static_cast<uint64_t>(((static_cast<double>(nodes) / static_cast<double>(elapsed_ms))) * 1000.0);
         auto pvs_to_send = std::min(static_cast<size_t>(Search::Globals::multi_pv), root_moves.size());
 
         std::ostringstream oss;
@@ -338,7 +350,7 @@ namespace Meetra {
             if (pvs_to_send > 1) oss << " multipv " << i + 1;
             oss << " depth " << static_cast<int>(root_moves[i].depth)
                 << " seldepth " << static_cast<int>(root_moves[i].seldepth)
-                << " nodes " << total_nodes
+                << " nodes " << nodes
                 << " time " << elapsed_ms
                 << " nps " << nps
                 << " hashfull " << static_cast<int>(Search::Globals::tt.Usage() * 1000)
@@ -409,7 +421,7 @@ namespace Meetra {
             while (true) {
                 {
                     std::unique_lock lock(mtx);
-                    cond_var.wait(lock, stop_token, [&] { return IsThreadSearching(); });
+                    cond_var.wait(lock, stop_token, [&] { return active.load(); });
                 }
                 if (stop_token.stop_requested()) { return; }
                 Search();
@@ -451,21 +463,5 @@ namespace Meetra {
             active = true;
         }
         cond_var.notify_one();
-    }
-
-    bool SearchThread::DidBeatMove(const Search::RootMove &other) const {
-        auto rm = std::ranges::find(root_moves, other);
-        if (rm->depth < other.depth) {
-            return false;
-        }
-        if (rm->depth > other.depth) {
-            return true;
-        }
-        if (rm->depth == other.depth) {
-            if (GetBestRootMove().move != other.move) {
-                return true;
-            }
-        }
-        return false;
     }
 }

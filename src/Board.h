@@ -1,7 +1,7 @@
 #ifndef MEETRA_BOARD_H
 #define MEETRA_BOARD_H
 
-#include "Types.h"
+#include "Defs.h"
 #include "ZobristHash.h"
 #include "Evaluator.h"
 
@@ -66,7 +66,7 @@ namespace Meetra {
         inline void IncrementPly() { state.ply++; }
         inline void ClearCapturedPiece() { state.captured_piece = NO_PIECE; }
         inline void ChangeColorToMove() { state.to_move = static_cast<Color>(state.to_move ^ 1); }
-        inline void ClearEpSquare() { state.ep_square = ZERO_SQ; }
+        inline void ClearEpSquare() { state.ep_square = NO_SQ; }
 #pragma endregion
 
 #pragma region ===== Update inner structures =====
@@ -83,7 +83,7 @@ namespace Meetra {
             int moves = 1;
             Color to_move = WHITE;
             Piece captured_piece = NO_PIECE;
-            Square ep_square = ZERO_SQ;
+            Square ep_square = NO_SQ;
             Bitboard cr = EMPTY_BB;
             Evaluation::Evaluator evaluator;
         };

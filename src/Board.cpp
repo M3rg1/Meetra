@@ -379,7 +379,7 @@ namespace Meetra {
                 } else if ('a' <= c && c <= 'h') {
                     Bitboard r_bb = SquareToBB(SqFromFiRa(FileFromChar(c), col == WHITE ? RANK_1 : RANK_8));
                     state.cr |= r_bb;
-                    r_bb > GetPieces(KING, col) ? origin_rooks[col][SHORT] = r_bb : origin_rooks[col][LONG] = r_bb;
+                    origin_rooks[col][r_bb > GetPieces(KING, col) ? SHORT : LONG] = r_bb;
                 }
             }
         }

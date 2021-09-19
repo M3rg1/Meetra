@@ -1,7 +1,7 @@
 #ifndef MEETRA_MAGICNUMBERS_H
 #define MEETRA_MAGICNUMBERS_H
 
-#include "Types.h"
+#include "Defs.h"
 
 namespace Meetra {
 

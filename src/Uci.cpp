@@ -64,8 +64,7 @@ namespace Meetra::Uci {
                  + board.PPBoard());
         }
 
-        std::string token;
-        std::string input;
+        std::string token, input;
 
         do {
 
@@ -166,8 +165,7 @@ namespace Meetra::Uci {
 
     void PositionCommand(std::istringstream &iss, Board &board) {
 
-        std::string token;
-        std::string fen;
+        std::string token, fen;
 
         iss >> token;
         if (token == "startpos") {
@@ -201,57 +199,51 @@ namespace Meetra::Uci {
         Search::ClearTT();
     }
 
+    bool IsNumerical(const std::string &str) {
+        return !str.empty() && str.find_first_not_of("0123456789") == std::string::npos;
+    }
+
+    bool IsBoolean(const std::string &str) {
+        return str == "true" || str == "false";
+    }
+
     void SetOptionCommand(std::istringstream &iss) {
 
         if (!Search::Finished()) {
             SendInfo("Cannot change settings while search is ongoing!");
         }
 
-        std::string token;
-        iss >> token; // name
-
-        std::string option;
+        std::string token, option;
+        iss >> token >> option;
         while (iss >> token && token != "value") {
-            option += token + " ";
+            option += ' ' + token;
         }
 
-        if (option.empty()) {
-            SendInfo("Invalid option name");
-            return;
-        }
-
-        option.pop_back();
         std::ranges::transform(option, option.begin(), tolower);
 
         std::string value;
         iss >> value;
 
-        if (!value.empty() && value != "true" && value != "false" &&
-            value.find_first_not_of("0123456789") != std::string_view::npos) {
-            SendInfo("Invalid option value " + value);
-            return;
-        }
-
-        if (option == "hash") {
-            Search::SetTTSize(std::stoi(value));
-        } else if (option == "clear hash") {
+        if (option == "clear hash") {
             Search::ClearTT();
-        } else if (option == "multipv") {
-            Search::SetMultiPv(std::stoi(value));
-        } else if (option == "uci_showcurrline") {
-            Search::ShowShowCurrLine(value == "true");
-        } else if (option == "mute plies") {
+        } else if (option == "hash" && IsNumerical(value)) {
+            Search::SetTTSize(std::stoi(value));
+        } else if (option == "mute plies" && IsNumerical(value)) {
             Search::SetPliesMuted(std::stoi(value));
-        } else if (option == "threads") {
+        } else if (option == "threads" && IsNumerical(value)) {
             Search::SetNumThreads(std::stoi(value));
-        } else if (option == "show current move") {
+        } else if (option == "multipv" && IsNumerical(value)) {
+            Search::SetMultiPv(std::stoi(value));
+        } else if (option == "uci_showcurrline" && IsBoolean(value)) {
+            Search::ShowShowCurrLine(value == "true");
+        } else if (option == "show current move" && IsBoolean(value)) {
             Search::ShowCurrMoveInfo(value == "true");
-        } else if (option == "ownbook") {
+        } else if (option == "ownbook" && IsBoolean(value)) {
             Search::SetUseBook(value == "true");
-        } else if (option == "uci_chess960") {
+        } else if (option == "uci_chess960" && IsBoolean(value)) {
             Search::SetChess960(value == "true");
         } else {
-            SendInfo("Unknown option: " + option);
+            SendInfo("Unknown option or invalid value: " + option + ' ' + value);
         }
     }
 

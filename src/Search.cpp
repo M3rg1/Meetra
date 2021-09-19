@@ -7,10 +7,10 @@
 
 namespace Meetra::Search {
 
-    long ElapsedTimeMs() {
-        long now = time_point_cast<std::chrono::milliseconds>(
+    long long int ElapsedTimeMs() {
+        auto now = time_point_cast<std::chrono::milliseconds>(
                 std::chrono::steady_clock::now()).time_since_epoch().count();
-        long elapsed_ms = now - Globals::start_time;
+        auto elapsed_ms = now - Globals::start_time;
         return elapsed_ms + 1;
     }
 
@@ -22,7 +22,7 @@ namespace Meetra::Search {
         return false;
     }
 
-    void RequestTime(long time_ms) {
+    void RequestTime(long long time_ms) {
         Globals::settings.allowed_time = ElapsedTimeMs() + time_ms;
     }
 
@@ -48,8 +48,7 @@ namespace Meetra::Search {
         Globals::finished = false;
 
         Globals::last_update_time = 0;
-        Globals::start_time = time_point_cast<std::chrono::milliseconds>(
-                std::chrono::steady_clock::now()).time_since_epoch().count();
+        Globals::start_time = time_point_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()).time_since_epoch().count();
 
         Globals::settings = s;
 
@@ -128,10 +127,9 @@ namespace Meetra::Search {
             return;
         }
 
-        // we have to first initialize them all, in case of very fast time control and main thread finishes before
-        // initialization of helper threads is done
-        std::ranges::for_each(Globals::search_threads, [&](auto &e) { e->InitNewSearch(board, root_moves); });
-        std::ranges::for_each(Globals::search_threads, [&](auto &e) { e->StartThread(); });
+        // it's important to first initialize all threads and only then start them
+        std::ranges::for_each(Globals::search_threads, [&](auto &t) { t->InitNewSearch(board, root_moves); });
+        std::ranges::for_each(Globals::search_threads, [&](auto &t) { t->StartThread(); });
     }
 
     void Init() {

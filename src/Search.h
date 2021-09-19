@@ -20,14 +20,14 @@ namespace Meetra::Search {
         bool fixed_time = false;
         bool fixed_depth = false;
 
-        long allowed_time = DEFAULT_SEARCH_TIME;
+        long long allowed_time = DEFAULT_SEARCH_TIME;
         Depth max_allowed_depth = MAX_SEARCH_DEPTH;
 
-        long moves_to_go = 0;
-        long white_time = 0;
-        long black_time = 0;
-        long white_increment = 0;
-        long black_increment = 0;
+        size_t moves_to_go = 0;
+        long long white_time = 0;
+        long long black_time = 0;
+        long long white_increment = 0;
+        long long black_increment = 0;
     };
 
     namespace Globals {
@@ -43,8 +43,8 @@ namespace Meetra::Search {
         inline int plies_muted;
         inline int multi_pv;
         inline int num_threads;
-        inline long start_time;
-        inline long last_update_time;
+        inline long long start_time;
+        inline long long last_update_time;
         inline std::vector<std::unique_ptr<SearchThread>> search_threads;
     }
 
@@ -94,8 +94,8 @@ namespace Meetra::Search {
     void Shutdown();
     std::string GetUpdateSearchInfo();
 
-    void RequestTime(long time_ms);
-    [[nodiscard]] long ElapsedTimeMs();
+    void RequestTime(long long time_ms);
+    [[nodiscard]] long long int ElapsedTimeMs();
     [[nodiscard]] bool EnoughTimeLeft();
     [[nodiscard]] inline bool Run() { return Globals::run.load(std::memory_order_acquire); }
     [[nodiscard]] inline bool Finished() { return Globals::finished.load(std::memory_order_acquire); }

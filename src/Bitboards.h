@@ -1,7 +1,7 @@
 #ifndef MEETRA_BITBOARDS_H
 #define MEETRA_BITBOARDS_H
 
-#include "Types.h"
+#include "Defs.h"
 #include <bit>
 
 namespace Meetra::Bitboards {

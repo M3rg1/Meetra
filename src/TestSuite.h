@@ -3,7 +3,7 @@
 
 #include <string>
 #include <vector>
-#include "Types.h"
+#include "Defs.h"
 #include "Board.h"
 #include "MoveGen.h"
 #include "Uci.h"
@@ -19,8 +19,8 @@ namespace Meetra::TestSuite {
 
     private :
         std::string fen;
-        Depth depth = 0;
-        uint64_t expected = 0;
+        Depth depth;
+        uint64_t expected;
 
     public:
         inline bool Run() {
@@ -62,24 +62,18 @@ namespace Meetra::TestSuite {
             std::string token;
             // for parsing Ethereal's chess 960 perft suite
 /*            while(is >> token && token != ";D1") {
-                t.fen += token + " ";
+                t.fen += token + ' ';
             }
             t.fen.pop_back();
             while(is >> token && token != ";D5");
             t.depth = 5;
             is >> t.expected;*/
 
-            if (is >> token && token == "depth") {
-                is >> t.depth;
-            }
-            if (is >> token && token == "result") {
-                is >> t.expected;
-            }
-            if (is >> token && token == "fen") {
-                while (is >> token && token != "#") {
-                    t.fen += token + " ";
-                }
-                t.fen.pop_back();
+            is >> token >> t.depth;
+            is >> token >> t.expected;
+            is >> token >> t.fen;
+            while (is >> token && token != "#") {
+                t.fen += ' ' + token;
             }
             return is;
         }
