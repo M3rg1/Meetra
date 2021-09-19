@@ -125,6 +125,7 @@ namespace Meetra::Search {
              !Globals::settings.fixed_time)) {
             StopSearch();
             Uci::Send("bestmove " + board.MoveToName(root_moves.empty() ? ZERO_MOVE : root_moves.front().move));
+            Search::Globals::finished = true;
             return;
         }
 
