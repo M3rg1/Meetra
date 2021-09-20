@@ -184,6 +184,7 @@ namespace Meetra {
             no_moves = false;
             nodes_explored.fetch_add(1, std::memory_order_relaxed);
             curr_rm->nodes++;
+            line.Clear();
             if (search_pv) {
                 score = -NegaMax(-beta, -alpha, depth - 1, ply + 1, line);
             } else {
