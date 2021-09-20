@@ -29,6 +29,8 @@ namespace Meetra::Uci {
             << "option name OwnBook type check default false\n"
             << "option name Threads type spin default " << DEFAULT_SEARCH_THREADS << " min 1 max " << MAX_SEARCH_THREADS
             << "\n"
+            << "option name Move overhead type spin default " << DEFAULT_OVERHEAD << " min " << MIN_OVERHEAD << " max "
+                << MAX_OVERHEAD << "\n"
             << "option name UCI_Chess960 type check default false";
         return oss.str();
     }
@@ -232,6 +234,8 @@ namespace Meetra::Uci {
             Search::SetNumThreads(std::stoi(value));
         } else if (option == "multipv" && IsNumerical(value)) {
             Search::SetMultiPv(std::stoi(value));
+        } else if (option == "move overhead" && IsNumerical(value)) {
+            Search::SetMoveOverhead(std::stoll(value));
         } else if (option == "uci_showcurrline" && IsBoolean(value)) {
             Search::ShowShowCurrLine(value == "true");
         } else if (option == "show current move" && IsBoolean(value)) {

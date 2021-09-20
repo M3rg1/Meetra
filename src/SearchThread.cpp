@@ -238,7 +238,6 @@ namespace Meetra {
         seldepth_reached = std::max(ply, seldepth_reached);
 
         auto score = board.GetEval();
-
         if (score > alpha) {
             if (score >= beta) {
                 return beta;
@@ -247,11 +246,6 @@ namespace Meetra {
         }
 
         MoveGen move_gen(board);
-
-        /*if (ply > max_qsearch_ply && !move_gen.IsInCheck()) {
-            return score;
-        }*/
-
         Move move;
         while ((move = move_gen.GetBestMove<QSEARCH>())) {
             if (!board.MakeMove(move)) {

@@ -99,7 +99,7 @@ namespace Meetra::TestSuite {
             }
             test_file.close();
         } else {
-            Uci::SendInfo("Could not open the 'PerftTests.txt' file!");
+            Uci::SendInfo("Could not open 'PerftTests.txt' file!");
         }
         return tests;
     }

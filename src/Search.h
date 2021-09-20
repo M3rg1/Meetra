@@ -8,13 +8,15 @@
 
 namespace Meetra::Search {
 
-#define MAX_SEARCH_DEPTH 128
-#define DEFAULT_SEARCH_TIME 1000
+#define MAX_SEARCH_DEPTH static_cast<Depth>(128)
+#define DEFAULT_SEARCH_TIME static_cast<long long>(1000)
 #define DEFAULT_SEARCH_THREADS 1
-#define UPDATE_INFO_INTERVAL 1000
+#define UPDATE_INFO_INTERVAL static_cast<long long>(1000)
 #define MAX_SEARCH_THREADS 32
 #define MIN_MATE_EVAL (MATE_SCORE - MAX_SEARCH_DEPTH)
-#define TIME_SAFETY_MARGIN_MS 5
+#define MIN_OVERHEAD static_cast<long long>(5)
+#define MAX_OVERHEAD static_cast<long long>(1000)
+#define DEFAULT_OVERHEAD static_cast<long long>(5)
 
     struct SearchSettings {
         bool infinite = false;
@@ -42,6 +44,7 @@ namespace Meetra::Search {
     inline int plies_muted;
     inline int multi_pv;
     inline int num_threads;
+    inline long long move_overhead;
     inline long long start_time;
     inline long long last_update_time;
     inline TranspositionTable tt;
@@ -107,6 +110,7 @@ namespace Meetra::Search {
     inline void ClearTT() { tt.Clear(); }
     inline void SetTTSize(int size_mb) { tt.Init(size_mb); }
     inline void SetChess960(bool set) { chess960 = set; }
+    inline void SetMoveOverhead(long long overhead) { move_overhead = std::clamp(overhead, MIN_OVERHEAD, MAX_OVERHEAD); }
     void SetNumThreads(int num);
 
 }

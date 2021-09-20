@@ -18,11 +18,11 @@ namespace Meetra::Book {
         Move move;
     };
 
-    inline std::vector<Move> BinarySearch(std::ifstream &stream, size_t end, Hash64 hash) {
+    inline std::vector<Move> BinarySearch(std::ifstream &stream, size_t size_bytes, Hash64 hash) {
 
         std::vector<Move> moves;
-        auto right = static_cast<std::streamoff>(end / sizeof(BookEntry));
-        auto left = 0LL;
+        auto right = static_cast<std::streamoff>(size_bytes / sizeof(BookEntry));
+        auto left = static_cast<std::streamoff>(0);
         BookEntry book_entry;
 
         while (left <= right) {

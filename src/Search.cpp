@@ -35,7 +35,7 @@ namespace Meetra::Search {
             double target = static_cast<double>(time_left) / 50.0 - static_cast<double>(moves_made);
             settings.allowed_time = static_cast<long>(factor * target);
             settings.allowed_time += board.ColorToMove() == WHITE ? settings.white_increment : settings.black_increment;
-            settings.allowed_time -= TIME_SAFETY_MARGIN_MS;
+            settings.allowed_time -= move_overhead;
         }
     }
 
@@ -141,6 +141,7 @@ namespace Meetra::Search {
         show_currmove = true;
         plies_muted = 1;
         last_update_time = 0;
+        move_overhead = DEFAULT_OVERHEAD;
         num_threads = DEFAULT_SEARCH_THREADS;
         SetNumThreads(DEFAULT_SEARCH_THREADS);
     }
