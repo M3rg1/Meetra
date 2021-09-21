@@ -102,7 +102,7 @@ namespace Meetra::Search {
         InitSearch(s, board);
 
         if (use_book && !settings.fixed_depth && !settings.infinite && !settings.fixed_time && !chess960 &&
-            board.Ply() <= BOOK_DEPTH) {
+            board.FullMoveClock() <= BOOK_DEPTH / 2) {
             auto moves = Book::Probe(board);
             if (!moves.empty()) {
                 StopSearch();
