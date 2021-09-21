@@ -256,17 +256,17 @@ namespace Meetra::Uci {
 
         while (iss >> option) {
 
-            if (option == "wtime") iss >> settings.white_time;
-            else if (option == "btime") iss >> settings.black_time;
-            else if (option == "winc") iss >> settings.white_increment;
-            else if (option == "binc") iss >> settings.black_increment;
+            if (option == "wtime") iss >> settings.wtime;
+            else if (option == "btime") iss >> settings.btime;
+            else if (option == "winc") iss >> settings.winc;
+            else if (option == "binc") iss >> settings.binc;
             else if (option == "movetime") {
                 settings.fixed_time = true;
                 iss >> settings.allowed_time;
             } else if (option == "infinite") {
                 settings.infinite = true;
             } else if (option == "depth") {
-                iss >> settings.max_allowed_depth;
+                iss >> settings.allowed_depth;
                 settings.fixed_depth = true;
             } else if (option == "movestogo") {
                 iss >> settings.moves_to_go;

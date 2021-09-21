@@ -18,7 +18,7 @@ namespace Meetra {
         active = true;
 
         // iterative deepening
-        for (depth_reached = 2; depth_reached <= Search::settings.max_allowed_depth && Search::Run(); depth_reached++) {
+        for (depth_reached = 2; depth_reached <= Search::settings.allowed_depth && Search::Run(); depth_reached++) {
 
             // seldepth_reached is always at least the current depth being searched
             seldepth_reached = depth_reached;

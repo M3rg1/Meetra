@@ -24,13 +24,13 @@ namespace Meetra::Search {
         bool fixed_depth = false;
 
         long long allowed_time = 0;
-        Depth max_allowed_depth = MAX_SEARCH_DEPTH;
+        Depth allowed_depth = MAX_SEARCH_DEPTH;
 
         int moves_to_go = 0;
-        long long white_time = DEFAULT_SEARCH_TIME;
-        long long black_time = DEFAULT_SEARCH_TIME;
-        long long white_increment = 0;
-        long long black_increment = 0;
+        long long wtime = DEFAULT_SEARCH_TIME;
+        long long btime = DEFAULT_SEARCH_TIME;
+        long long winc = 0;
+        long long binc = 0;
     };
 
     inline SearchSettings settings;

@@ -34,10 +34,10 @@ namespace Meetra::Search {
     void InitSearchTimer(Board &board) {
 
         if (!settings.infinite && !settings.fixed_time && !settings.fixed_depth) {
-            auto time_left = board.ColorToMove() == WHITE ? settings.white_time : settings.black_time;
+            auto time_left = board.ColorToMove() == WHITE ? settings.wtime : settings.btime;
             int reduction = TimeReduction(board);
             settings.allowed_time = time_left / reduction;
-            settings.allowed_time += board.ColorToMove() == WHITE ? settings.white_increment : settings.black_increment;
+            settings.allowed_time += board.ColorToMove() == WHITE ? settings.winc : settings.binc;
         }
 
         settings.allowed_time -= move_overhead;
@@ -56,7 +56,7 @@ namespace Meetra::Search {
         tt.NewSearch();
         mt_depth.store(0, std::memory_order_relaxed);
 
-        settings.max_allowed_depth = std::min(s.max_allowed_depth, static_cast<Depth>(MAX_SEARCH_DEPTH));
+        settings.allowed_depth = std::min(s.allowed_depth, static_cast<Depth>(MAX_SEARCH_DEPTH));
 
         InitSearchTimer(board);
     }
