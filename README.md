@@ -65,3 +65,7 @@ board and game state reprensentation:
 search improvements:
 
 additional features:
+
+
+
+If you are insterested in compiling the sources yourself, you might need to upgrade your compiler. This project is developed under the C++ 23 standard. There's some features that only the newest GCC compiler currently supports.
