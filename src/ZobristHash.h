@@ -14,7 +14,7 @@ namespace Meetra {
         [[nodiscard]] Hash64 GenHash64(const Board &board);
         [[nodiscard]] inline Hash16 MakeHash16(Hash64 hash64) { return hash64 >> 48; }
 
-        void PutPiece(Hash64 &h, Piece p, Square s);
+        void AddPiece(Hash64 &h, Piece p, Square s);
         void RemovePiece(Hash64 &h, Piece p, Square s);
         void MovePiece(Hash64 &h, Piece p, Square from, Square to);
         void RemoveEp(Hash64 &h, Square s);

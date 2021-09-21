@@ -23,12 +23,12 @@ namespace Meetra::Zobrist {
         color_key = gen();
     }
 
-    void PutPiece(Hash64 &h, Piece p, Square s) {
+    void AddPiece(Hash64 &h, Piece p, Square s) {
         h ^= piece_keys[s][p];
     }
 
     void RemovePiece(Hash64 &h, Piece p, Square s) {
-        PutPiece(h, p, s);
+        AddPiece(h, p, s);
     }
 
     void AddEp(Hash64 &h, Square s) {

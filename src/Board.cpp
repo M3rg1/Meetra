@@ -53,9 +53,8 @@ namespace Meetra {
             return false;
         }
 
-        Color now_move = ColorToMove();
-        Square enemy_king_square = now_move == WHITE ? Bitboards::Lsb(black_king) : Bitboards::Lsb(white_king);
-        if (IsAttackedByAny(enemy_king_square, now_move, GetPieces(ALL_TYPES))) {
+        Square enemy_king_square = ColorToMove() == WHITE ? Bitboards::Lsb(black_king) : Bitboards::Lsb(white_king);
+        if (IsAttackedByAny(enemy_king_square, ColorToMove(), GetPieces(ALL_TYPES))) {
             return false;
         }
 
@@ -235,7 +234,7 @@ namespace Meetra {
                 RemovePiece(to);
                 Zobrist::RemovePiece(state.hash, moved_piece, to);
                 AddPiece(to, promoted_to);
-                Zobrist::PutPiece(state.hash, promoted_to, to);
+                Zobrist::AddPiece(state.hash, promoted_to, to);
             } else if (move_type == EN_PASSANT) {
                 return !IsAttackedBySliders(Bitboards::Lsb(GetPieces(KING, this_col)), next_col,
                                             GetPieces(ALL_TYPES));

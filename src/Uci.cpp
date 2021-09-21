@@ -30,7 +30,7 @@ namespace Meetra::Uci {
             << "option name Threads type spin default " << DEFAULT_SEARCH_THREADS << " min 1 max " << MAX_SEARCH_THREADS
             << "\n"
             << "option name Move overhead type spin default " << DEFAULT_OVERHEAD << " min " << MIN_OVERHEAD << " max "
-                << MAX_OVERHEAD << "\n"
+            << MAX_OVERHEAD << "\n"
             << "option name UCI_Chess960 type check default false";
         return oss.str();
     }
