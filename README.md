@@ -7,7 +7,7 @@ with an integrated, custom engine in Java and another engine in C#. However this
 the way to the top (whatever that means :D ).
 
 The main philosophy behind this project is to make as bug-free engine as possible and to maximize the ELO gain from every single feature that gets implemented, in as little
-lines of code as possible, while still maintaining readable, expressive and easy to understend codebase. I'm in no rush to clutter the code with dozens of features and half of
+lines of code as possible, while still maintaining readable, expressive and easy to understand codebase. I'm in no rush to clutter the code with dozens of features and half of
 them only barely working.
 
 Because i'm a negative ELO player in real life (randomly moving player would probably beat me), i've decided not to attempt to make any custom evaluation for now. I will
