@@ -48,9 +48,10 @@ namespace Meetra {
         [[nodiscard]] inline Color ColorToMove() const { return state.to_move; }
         [[nodiscard]] inline Piece CapturedPiece() const { return state.captured_piece; }
         [[nodiscard]] inline int Ply() const { return state.ply; }
-        [[nodiscard]] inline int TotalMoves() const { return state.moves; }
+        [[nodiscard]] inline int FullMoveClock() const { return state.moves; }
         [[nodiscard]] inline bool Move50Rule() const { return Ply() >= 100; };
         [[nodiscard]] inline Bitboard RookSqBB(Color c, CastlingSide s) const { return state.cr & origin_rooks[c][s]; }
+        [[nodiscard]] inline int GetPhase() const { return state.evaluator.GetPhase(); }
         [[nodiscard]] Move RookCastlingMove(Square king_to, Color c) const;
         [[nodiscard]] bool IsRepetition() const;
 #pragma endregion

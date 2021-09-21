@@ -30,6 +30,7 @@ namespace Meetra {
             void MakeMove(const Board &board, Move m);
             [[nodiscard]] Score GetMoveEval(const Board &board, Move m) const;
             [[nodiscard]] Score GetBoardEval() const;
+            [[nodiscard]] inline int GetPhase() const { return phase; }
         };
 
     }

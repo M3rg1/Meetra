@@ -22,21 +22,25 @@ namespace Meetra::Search {
         return false;
     }
 
+    int TimeReduction(const Board &b) {
+        if (settings.moves_to_go) {
+            return settings.moves_to_go + 2;
+        }
+        int reduction = 45 + std::min(b.GetPhase(), 20) - b.FullMoveClock();
+        reduction = std::max(reduction, 20);
+        return reduction;
+    }
+
     void InitSearchTimer(Board &board) {
 
-        if (settings.infinite || settings.fixed_time || settings.fixed_depth) {
-            return;
+        if (!settings.infinite && !settings.fixed_time && !settings.fixed_depth) {
+            auto time_left = board.ColorToMove() == WHITE ? settings.white_time : settings.black_time;
+            int reduction = TimeReduction(board);
+            settings.allowed_time = time_left / reduction;
+            settings.allowed_time += board.ColorToMove() == WHITE ? settings.white_increment : settings.black_increment;
         }
 
-        auto time_left = board.ColorToMove() == WHITE ? settings.white_time : settings.black_time;
-        if (time_left) {
-            int moves_made = std::min((board.HistorySize() + 1), 10);
-            double factor = 2.0 - static_cast<double>(moves_made) / 10.0;
-            double target = static_cast<double>(time_left) / 50.0 - static_cast<double>(moves_made);
-            settings.allowed_time = static_cast<long>(factor * target);
-            settings.allowed_time += board.ColorToMove() == WHITE ? settings.white_increment : settings.black_increment;
-            settings.allowed_time -= move_overhead;
-        }
+        settings.allowed_time -= move_overhead;
     }
 
     void InitSearch(SearchSettings &s, Board &board) {

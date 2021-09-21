@@ -14,7 +14,7 @@ namespace Meetra::Search {
 #define UPDATE_INFO_INTERVAL static_cast<long long>(1000)
 #define MAX_SEARCH_THREADS 32
 #define MIN_MATE_EVAL (MATE_SCORE - MAX_SEARCH_DEPTH)
-#define MIN_OVERHEAD static_cast<long long>(5)
+#define MIN_OVERHEAD static_cast<long long>(0)
 #define MAX_OVERHEAD static_cast<long long>(1000)
 #define DEFAULT_OVERHEAD static_cast<long long>(5)
 
@@ -23,12 +23,12 @@ namespace Meetra::Search {
         bool fixed_time = false;
         bool fixed_depth = false;
 
-        long long allowed_time = DEFAULT_SEARCH_TIME;
+        long long allowed_time = 0;
         Depth max_allowed_depth = MAX_SEARCH_DEPTH;
 
-        size_t moves_to_go = 0;
-        long long white_time = 0;
-        long long black_time = 0;
+        int moves_to_go = 0;
+        long long white_time = DEFAULT_SEARCH_TIME;
+        long long black_time = DEFAULT_SEARCH_TIME;
         long long white_increment = 0;
         long long black_increment = 0;
     };

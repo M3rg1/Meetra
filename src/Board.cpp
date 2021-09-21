@@ -488,7 +488,7 @@ namespace Meetra {
             if (CrAvailable(BLACK, LONG)) oss << 'q';
         }
         oss << " | EP square: " << (EpSquare() ? SquareToName(EpSquare()) : "-") << '\n'
-            << "Full-move clock: " << TotalMoves() << " | Half-move clock: " << Ply();
+            << "Full-move clock: " << FullMoveClock() << " | Half-move clock: " << Ply();
 
         return oss.str();
     }
