@@ -57,8 +57,8 @@ namespace Meetra {
                 break;
             }
 
-            int entry_score = static_cast<int>(entry.GetDepth());
-            entry_score -= (static_cast<int>(current_epoch) - static_cast<int>(entry.GetEpoch())) * 2;
+            int entry_score = entry.GetDepth();
+            entry_score -= (current_epoch - entry.GetEpoch()) * 2;
             if (entry.GetFlag() == EXACT_SCORE) {
                 entry_score += 2;
             }

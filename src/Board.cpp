@@ -54,11 +54,11 @@ namespace Meetra {
         }
 
         Square enemy_king_square = ColorToMove() == WHITE ? Bitboards::Lsb(black_king) : Bitboards::Lsb(white_king);
-        if (IsAttackedByAny(enemy_king_square, ColorToMove(), GetPieces(ALL_TYPES))) {
+        if (IsAttackedByAny(enemy_king_square, ColorToMove(), GetPieces_pt(ALL_TYPES))) {
             return false;
         }
 
-        if ((state.cr & GetPieces(ROOK)) != state.cr) {
+        if ((state.cr & GetPieces_pt(ROOK)) != state.cr) {
             return false;
         }
 
@@ -67,7 +67,7 @@ namespace Meetra {
 
     Bitboard Board::PinnedToSquare(Square s, Color blockers_color) const {
 
-        Bitboard all_pieces = GetPieces(ALL_TYPES);
+        Bitboard all_pieces = GetPieces_pt(ALL_TYPES);
         Bitboard queens = GetPieces(QUEEN, blockers_color);
         Bitboard bishops = GetPieces(BISHOP, blockers_color);
         Bitboard rooks = GetPieces(ROOK, blockers_color);
@@ -96,11 +96,11 @@ namespace Meetra {
                 Square to = ToSquare(m);
                 Move r_move = RookCastlingMove(to, ColorToMove());
                 // the xor is for chess960, when king doesn't move, but the rook moving could open an attack on the king
-                Bitboard occ = GetPieces(ALL_TYPES) ^ SquareToBB(FromSquare(r_move));
+                Bitboard occ = GetPieces_pt(ALL_TYPES) ^ SquareToBB(FromSquare(r_move));
                 Bitboard king_walk = Bitboards::GetRayToSquares(from, to) | SquareToBB(to);
                 return AllSquaresSafe(king_walk, OtherColor(ColorToMove()), occ);
             }
-            Bitboard occ = GetPieces(ALL_TYPES) ^ SquareToBB(FromSquare(m));
+            Bitboard occ = GetPieces_pt(ALL_TYPES) ^ SquareToBB(FromSquare(m));
             return !IsAttackedByAny(ToSquare(m), OtherColor(ColorToMove()), occ);
         }
 
@@ -110,7 +110,7 @@ namespace Meetra {
             Square to = ToSquare(m);
             Square capture_s = my_col == WHITE ? to + SOUTH : to + NORTH;
             Square king_s = Bitboards::Lsb(GetPieces(KING, my_col));
-            Bitboard occ = GetPieces(ALL_TYPES) ^ SquareToBB(capture_s) ^ (SquareToBB(from) | SquareToBB(to));
+            Bitboard occ = GetPieces_pt(ALL_TYPES) ^ SquareToBB(capture_s) ^ (SquareToBB(from) | SquareToBB(to));
             // ep move can't open us to attacks by anything other than slider pieces
             return !IsAttackedBySliders(king_s, OtherColor(my_col), occ);
         }
@@ -237,7 +237,7 @@ namespace Meetra {
                 Zobrist::AddPiece(state.hash, promoted_to, to);
             } else if (move_type == EN_PASSANT) {
                 return !IsAttackedBySliders(Bitboards::Lsb(GetPieces(KING, this_col)), next_col,
-                                            GetPieces(ALL_TYPES));
+                                            GetPieces_pt(ALL_TYPES));
             }
 
             return true;
@@ -256,10 +256,10 @@ namespace Meetra {
                 Search::chess960 ? AddPiece(r_to, NewPiece(ROOK, this_col)) : MovePiece(r_from, r_to);
                 Zobrist::MovePiece(state.hash, NewPiece(ROOK, this_col), r_from, r_to);
                 Bitboard king_walk = Bitboards::GetRayToSquares(from, to) | SquareToBB(to);
-                return AllSquaresSafe(king_walk, next_col, GetPieces(ALL_TYPES));
+                return AllSquaresSafe(king_walk, next_col, GetPieces_pt(ALL_TYPES));
             }
 
-            return !IsAttackedByAny(to, next_col, GetPieces(ALL_TYPES));
+            return !IsAttackedByAny(to, next_col, GetPieces_pt(ALL_TYPES));
         }
 
         return true;
@@ -350,7 +350,7 @@ namespace Meetra {
                 s -= 16;
             } else {
                 AddPiece(s, CharToPiece(c));
-                ++s;
+                s++;
             }
         }
         if (s != H1 + 1) {
@@ -467,9 +467,9 @@ namespace Meetra {
 
         std::ostringstream oss;
 
-        for (Rank r = RANK_8; r >= RANK_1; --r) {
+        for (Rank r = RANK_8; r >= RANK_1; r--) {
             oss << r + 1 << " |";
-            for (File f = FILE_A; f <= FILE_H; ++f) {
+            for (File f = FILE_A; f <= FILE_H; f++) {
                 oss << ' ' << PieceToChar(GetPieceOnSquare(SqFromFiRa(f, r))) << ' ';
             }
             oss << '\n';

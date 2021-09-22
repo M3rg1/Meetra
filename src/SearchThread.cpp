@@ -306,8 +306,8 @@ namespace Meetra {
 
         std::ostringstream oss;
 
-        oss << "info depth " << static_cast<int>(depth_reached)
-            << " seldepth " << static_cast<int>(seldepth_reached)
+        oss << "info depth " << depth_reached
+            << " seldepth " << seldepth_reached
             << " nodes " << nodes
             << " time " << elapsed_ms
             << " nps " << nps
@@ -325,15 +325,15 @@ namespace Meetra {
 
         auto elapsed_ms = Search::ElapsedTimeMs();
         auto nps = static_cast<uint64_t>(((static_cast<double>(nodes) / static_cast<double>(elapsed_ms))) * 1000.0);
-        auto pvs_to_send = std::min(static_cast<size_t>(Search::multi_pv), root_moves.size());
+        auto pvs_to_send = std::min(Search::multi_pv, static_cast<int>(root_moves.size()));
 
         std::ostringstream oss;
 
-        for (size_t i = 0; i < pvs_to_send; i++) {
+        for (int i = 0; i < pvs_to_send; i++) {
             oss << "info";
             if (pvs_to_send > 1) oss << " multipv " << i + 1;
-            oss << " depth " << static_cast<int>(root_moves[i].depth)
-                << " seldepth " << static_cast<int>(root_moves[i].seldepth)
+            oss << " depth " << root_moves[i].depth
+                << " seldepth " <<root_moves[i].seldepth
                 << " nodes " << nodes
                 << " time " << elapsed_ms
                 << " nps " << nps
@@ -343,10 +343,10 @@ namespace Meetra {
             Score score = root_moves[i].score;
             Move move = root_moves[i].move;
             if (score > MIN_MATE_EVAL) {
-                int distance_to_mate = static_cast<int>(MATE_SCORE - score);
+                int distance_to_mate = MATE_SCORE - score;
                 oss << "mate " << (distance_to_mate) / 2;
             } else if (score < -MIN_MATE_EVAL) {
-                int distance_to_mate = static_cast<int>(MATE_SCORE + score);
+                int distance_to_mate = MATE_SCORE + score;
                 oss << "mate " << -(distance_to_mate) / 2;
             } else {
                 oss << "cp " << score;

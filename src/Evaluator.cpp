@@ -12,8 +12,8 @@ namespace Meetra::Evaluation {
         std::ranges::fill(eg, 0);
         phase = 0;
 
-        for (Color c = WHITE; c < COLOR_NR; ++c) {
-            for (PieceType pt = PAWN; pt < PIECE_TYPE_NR; ++pt) {
+        for (Color c = WHITE; c < COLOR_NR; c++) {
+            for (PieceType pt = PAWN; pt < PIECE_TYPE_NR; pt++) {
                 Bitboard pieces = board.GetPieces(pt, c);
                 while (pieces) {
                     Square s = Bitboards::PopLsb(pieces);

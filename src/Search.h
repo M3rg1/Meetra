@@ -8,8 +8,8 @@
 
 namespace Meetra::Search {
 
-#define MAX_SEARCH_DEPTH static_cast<Depth>(128)
-#define DEFAULT_SEARCH_TIME static_cast<long long>(1000)
+#define MAX_SEARCH_DEPTH 128
+#define DEFAULT_SEARCH_TIME static_cast<long long>(60000)
 #define DEFAULT_SEARCH_THREADS 1
 #define UPDATE_INFO_INTERVAL static_cast<long long>(1000)
 #define MAX_SEARCH_THREADS 32

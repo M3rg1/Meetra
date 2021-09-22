@@ -19,8 +19,8 @@ namespace Meetra::Bitboards {
     [[nodiscard]] inline bool MoreThanOne(Bitboard b) { return (b & (b - 1)); }
     [[nodiscard]] inline bool ExactlyOne(Bitboard b) { return b && !MoreThanOne(b); }
     [[nodiscard]] inline int PopCount(Bitboard b) { return std::__popcount(b); }
-    [[nodiscard]] inline Square Msb(Bitboard b) { return static_cast<Square>(63 ^ __builtin_clzll(b)); }
-    [[nodiscard]] inline Square Lsb(Bitboard b) { return static_cast<Square>(__builtin_ctzll(b)); }
+    [[nodiscard]] inline Square Msb(Bitboard b) { return 63 ^ __builtin_clzll(b); }
+    [[nodiscard]] inline Square Lsb(Bitboard b) { return __builtin_ctzll(b); }
     inline Square PopLsb(Bitboard &b) {
         Square s = Lsb(b);
         b &= b - 1;

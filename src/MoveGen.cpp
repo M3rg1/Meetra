@@ -24,11 +24,11 @@ namespace Meetra {
 
         my_color = board.ColorToMove();
         enemy_color = OtherColor(my_color);
-        all_pieces = board.GetPieces(ALL_TYPES);
+        all_pieces = board.GetPieces_pt(ALL_TYPES);
         king_s = Bitboards::Lsb(board.GetPieces(KING, my_color));
         checkers = board.AttackedBy(king_s, enemy_color, all_pieces);
         blockers = board.PinnedToSquare(king_s, enemy_color);
-        enemy_pieces = board.GetPieces(enemy_color);
+        enemy_pieces = board.GetPieces_c(enemy_color);
         empty_squares = ~all_pieces;
         ep_s = board.EpSquare();
         moves_cnt = 0;
@@ -52,7 +52,7 @@ namespace Meetra {
     }
 
     void MoveGen::EvalMoves() {
-        for (size_t i = 0; i < moves_cnt; i++) {
+        for (int i = 0; i < moves_cnt; i++) {
             move_eval[i].score = move_eval[i].move != ZERO_MOVE ? board.GetMoveEval(move_eval[i].move) : NEGATIVE_INF;
         }
     }

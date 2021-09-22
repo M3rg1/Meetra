@@ -33,12 +33,12 @@ namespace Meetra {
         [[nodiscard]] std::string PPBoard() const;
 
 #pragma region ===== Getters =====
-        [[nodiscard]] inline int HistorySize() const { return static_cast<int>(history_cnt); }
+        [[nodiscard]] inline int HistorySize() const { return history_cnt; }
         [[nodiscard]] inline Score GetEval() const { return state.evaluator.GetBoardEval(); };
         [[nodiscard]] inline Score GetMoveEval(Move m) const { return state.evaluator.GetMoveEval(*this, m); };
         [[nodiscard]] inline Bitboard GetPieces(PieceType pt, Color c) const { return type_bbs[pt] & color_bbs[c]; }
-        [[nodiscard]] inline Bitboard GetPieces(PieceType pt) const { return type_bbs[pt]; }
-        [[nodiscard]] inline Bitboard GetPieces(Color c) const { return color_bbs[c]; }
+        [[nodiscard]] inline Bitboard GetPieces_pt(PieceType pt) const { return type_bbs[pt]; }
+        [[nodiscard]] inline Bitboard GetPieces_c(Color c) const { return color_bbs[c]; }
         [[nodiscard]] inline Piece GetPieceOnSquare(Square s) const { return board[s]; }
         [[nodiscard]] inline PieceType GetPieceTypeOnSq(Square s) const { return TypeOfPiece(GetPieceOnSquare(s)); }
         [[nodiscard]] inline Bitboard GetCr() const { return state.cr; }
@@ -66,7 +66,7 @@ namespace Meetra {
         inline void IncrementMoveNumber(Color col_to_move) { state.moves += col_to_move; }
         inline void IncrementPly() { state.ply++; }
         inline void ClearCapturedPiece() { state.captured_piece = NO_PIECE; }
-        inline void ChangeColorToMove() { state.to_move = static_cast<Color>(state.to_move ^ 1); }
+        inline void ChangeColorToMove() { state.to_move = OtherColor(state.to_move); }
         inline void ClearEpSquare() { state.ep_square = NO_SQ; }
 #pragma endregion
 
@@ -91,7 +91,7 @@ namespace Meetra {
 
         BoardState state;
         BoardState history[MAX_GAME_LENGTH];
-        size_t history_cnt;
+        int history_cnt;
 
         // original positions of rooks that are available for castling
         Bitboard origin_rooks[COLOR_NR][CS_NR];

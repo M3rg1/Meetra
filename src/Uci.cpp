@@ -148,9 +148,8 @@ namespace Meetra::Uci {
         auto nodes = Perft<true>(depth, board);
 
         auto end = std::chrono::steady_clock::now();
-        auto time_elapsed_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count() + 1;
-        auto nps = static_cast<uint64_t> (static_cast<double>(nodes) /
-                                          (static_cast<double>(time_elapsed_ns) / 1000000000.0));
+        auto elapsed_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count() + 1;
+        auto nps = static_cast<uint64_t>(static_cast<double>(nodes) / (static_cast<double>(elapsed_ns) / 1000000000.0));
 
         std::ostringstream oss;
         oss << "\nTime elapsed: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms"
@@ -219,7 +218,7 @@ namespace Meetra::Uci {
             option += ' ' + token;
         }
 
-        std::ranges::transform(option, option.begin(), tolower);
+        std::ranges::transform(option, option.begin(), ::tolower);
 
         std::string value;
         iss >> value;
@@ -260,16 +259,14 @@ namespace Meetra::Uci {
             else if (option == "btime") iss >> settings.btime;
             else if (option == "winc") iss >> settings.winc;
             else if (option == "binc") iss >> settings.binc;
+            else if (option == "movestogo") iss >> settings.moves_to_go;
+            else if (option == "infinite") settings.infinite = true;
             else if (option == "movetime") {
                 settings.fixed_time = true;
                 iss >> settings.allowed_time;
-            } else if (option == "infinite") {
-                settings.infinite = true;
             } else if (option == "depth") {
                 iss >> settings.allowed_depth;
                 settings.fixed_depth = true;
-            } else if (option == "movestogo") {
-                iss >> settings.moves_to_go;
             } else {
                 SendInfo("Unknown search option: " + option);
             }

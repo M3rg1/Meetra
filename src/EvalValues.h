@@ -179,7 +179,7 @@ namespace Meetra::EvalValues {
 
     inline void Init() {
         for (PieceType piece_type = NONE_PIECE_TYPE; piece_type < PIECE_TYPE_NR; ++piece_type) {
-            for (Square s = A1; s < SQUARE_NR; ++s) {
+            for (Square s = A1; s < SQUARE_NR; s++) {
                 mg_table[WHITE][piece_type][s] = mg_value[piece_type] + mg_pesto_table[piece_type][s ^ 56];
                 eg_table[WHITE][piece_type][s] = eg_value[piece_type] + eg_pesto_table[piece_type][s ^ 56];
 

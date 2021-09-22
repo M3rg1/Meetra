@@ -56,7 +56,7 @@ namespace Meetra::Search {
         tt.NewSearch();
         mt_depth.store(0, std::memory_order_relaxed);
 
-        settings.allowed_depth = std::min(s.allowed_depth, static_cast<Depth>(MAX_SEARCH_DEPTH));
+        settings.allowed_depth = std::min(s.allowed_depth, MAX_SEARCH_DEPTH);
 
         InitSearchTimer(board);
     }
@@ -163,7 +163,7 @@ namespace Meetra::Search {
 
         Shutdown();
 
-        for (auto i = 0; i < num_threads; i++) {
+        for (int i = 0; i < num_threads; i++) {
             threads.emplace_back(new SearchThread());
         }
     }

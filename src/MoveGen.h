@@ -47,7 +47,7 @@ namespace Meetra {
         GenPhase gen_phase;
 
         ScoredMove move_eval[MAX_LEGAL_MOVES];
-        size_t moves_cnt;
+        int moves_cnt;
 
         Bitboard checkers;
         Bitboard blockers;
