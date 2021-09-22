@@ -94,7 +94,6 @@ namespace Meetra::Search {
     void StartSearch(SearchSettings settings, Board board);
     void FinishSearch();
     void Shutdown();
-    std::string GetUpdateSearchInfo();
 
     [[nodiscard]] long long int ElapsedTimeMs();
     [[nodiscard]] bool EnoughTimeLeft();
