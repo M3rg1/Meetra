@@ -146,7 +146,6 @@ namespace Meetra::Search {
         plies_muted = 1;
         last_update_time = 0;
         move_overhead = DEFAULT_OVERHEAD;
-        num_threads = DEFAULT_SEARCH_THREADS;
         SetNumThreads(DEFAULT_SEARCH_THREADS);
     }
 
@@ -155,16 +154,15 @@ namespace Meetra::Search {
         threads.clear();
     }
 
-    void SetNumThreads(int num) {
+    void SetNumThreads(int num_threads) {
 
-        if (num > MAX_SEARCH_THREADS || num < 1) {
-            num = std::clamp(num, 1, MAX_SEARCH_THREADS);
-            Uci::SendInfo("Invalid threads count! Initializing to: " + std::to_string(num) + " threads");
+        if (num_threads > MAX_SEARCH_THREADS || num_threads < 1) {
+            num_threads = std::clamp(num_threads, 1, MAX_SEARCH_THREADS);
+            Uci::SendInfo("Invalid threads count! Initializing to: " + std::to_string(num_threads) + " threads");
         }
 
         Shutdown();
 
-        num_threads = num;
         for (auto i = 0; i < num_threads; i++) {
             threads.emplace_back(new SearchThread());
         }

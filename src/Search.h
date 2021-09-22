@@ -43,7 +43,6 @@ namespace Meetra::Search {
     inline bool show_currmove;
     inline int plies_muted;
     inline int multi_pv;
-    inline int num_threads;
     inline long long move_overhead;
     inline long long start_time;
     inline long long last_update_time;
@@ -111,7 +110,7 @@ namespace Meetra::Search {
     inline void SetTTSize(int size_mb) { tt.Init(size_mb); }
     inline void SetChess960(bool set) { chess960 = set; }
     inline void SetMoveOverhead(long long overhead) { move_overhead = std::clamp(overhead, MIN_OVERHEAD, MAX_OVERHEAD); }
-    void SetNumThreads(int num);
+    void SetNumThreads(int num_threads);
 
 }
 
