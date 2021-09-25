@@ -14,7 +14,7 @@ namespace Meetra {
 #define TT_ENTRIES_PER_BUCKET 4
 
     enum TTFlag {
-        EXACT_SCORE, ALPHA, BETA, MOVE_ONLY, NOT_FOUND
+        EXACT, ALPHA, BETA, MOVE_ONLY, NOT_FOUND
     };
 
     class TranspositionTable {
@@ -25,8 +25,7 @@ namespace Meetra {
         void Save(Hash64 key, Score score, Depth depth, Move move, TTFlag flag, Depth ply);
         void NewSearch();
         void Clear();
-        void Probe(Hash64 key, Score alpha, Score beta, Depth depth, Depth ply, Score &score,
-                   TTFlag &flag, Move &move) const;
+        TTFlag Probe(Hash64 key, Score alpha, Score beta, Depth depth, Depth ply, Score &score, Move &move) const;
         [[nodiscard]] inline double Usage() const {
             if (buckets_count == 0) return 0.0;
             double usage = static_cast<double>(used_entries.load(std::memory_order_relaxed))

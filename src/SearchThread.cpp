@@ -134,12 +134,11 @@ namespace Meetra {
             return QSearch(alpha, beta, ply);
         }
 
-        TTFlag tt_flag;
         Move tt_move;
         Score tt_score;
-        Score eval;
+        Score eval = board.GetEval();
         MoveGen move_gen(board);
-        Search::tt.Probe(board.GetHash(), alpha, beta, depth, ply, tt_score, tt_flag, tt_move);
+        TTFlag tt_flag = Search::tt.Probe(board.GetHash(), alpha, beta, depth, ply, tt_score, tt_move);
 
         if (tt_flag != NOT_FOUND && move_gen.IsPseudoLegal(tt_move)) {
 
@@ -152,16 +151,15 @@ namespace Meetra {
             move_gen.PutTTMove(tt_move);
 
             // best eval available for this position - either hash score or static eval
-            if (tt_flag == EXACT_SCORE || (tt_score >= eval && tt_flag == ALPHA) || (tt_score <= eval && tt_flag == BETA)) {
+            // we make further pruning based on this eval, before entering the move loop, therefore it is desirable
+            // for the eval to be as accurate as possible
+            if (tt_flag == EXACT || (tt_score >= eval && tt_flag == ALPHA) || (tt_score <= eval && tt_flag == BETA)) {
                 eval = tt_score;
-            } else {
-                eval = board.GetEval();
             }
 
         } else {
             // the move we got was corrupted
-            tt_flag = NOT_FOUND;
-            eval = board.GetEval();
+            // tt_flag = NOT_FOUND;
         }
 
         // reverse futility pruning
@@ -248,7 +246,7 @@ namespace Meetra {
                     pv_line.PutMove(move);
                     pv_line.PutLine(line);
 
-                    tt_flag = EXACT_SCORE;
+                    tt_flag = EXACT;
                     alpha = score;
                 }
             }

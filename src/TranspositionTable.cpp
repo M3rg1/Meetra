@@ -59,7 +59,7 @@ namespace Meetra {
 
             int entry_score = entry.GetDepth();
             entry_score -= (current_epoch - entry.GetEpoch()) * 2;
-            if (entry.GetFlag() == EXACT_SCORE) {
+            if (entry.GetFlag() == EXACT) {
                 entry_score += 2;
             }
 
@@ -75,10 +75,10 @@ namespace Meetra {
         entry_to_write->SaveEntry(hash16, RemoveMatePly(score, ply), depth, move, flag, current_epoch);
     }
 
-    void TranspositionTable::Probe(Hash64 key, Score alpha, Score beta,
-                                   Depth depth, Depth ply, Score &score, TTFlag &flag, Move &move) const {
+    TTFlag TranspositionTable::Probe(Hash64 key, Score alpha, Score beta, Depth depth, Depth ply, Score &score,
+                                     Move &move) const {
 
-        flag = NOT_FOUND;
+        TTFlag flag = NOT_FOUND;
         Hash16 hash16 = Zobrist::MakeHash16(key);
         TTBucket &bucket = table[key % buckets_count];
 
@@ -96,13 +96,15 @@ namespace Meetra {
                         entry.SetEpoch(current_epoch);
                         score = beta;
                         flag = BETA;
-                    } else if (entry.GetFlag() == EXACT_SCORE) {
+                    } else if (entry.GetFlag() == EXACT) {
                         entry.SetEpoch(current_epoch);
-                        flag = EXACT_SCORE;
+                        flag = EXACT;
                     }
                 }
-                return;
+                break;
             }
         }
+
+        return flag;
     }
 }
