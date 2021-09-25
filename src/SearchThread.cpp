@@ -114,6 +114,9 @@ namespace Meetra {
     template<Node NodeType>
     Score SearchThread::NegaMax(Score alpha, Score beta, Depth depth, Depth ply, Search::PVMoveLine &pv_line) {
 
+        curr_rm->seldepth = std::max(ply, curr_rm->seldepth);
+        seldepth_reached = std::max(ply, seldepth_reached);
+
         if (IsMainThread()) {
             CheckTimers();
         }
@@ -133,32 +136,44 @@ namespace Meetra {
 
         TTFlag tt_flag;
         Move tt_move;
-        Score score = POSITIVE_INF;
+        Score tt_score;
+        Score eval;
         MoveGen move_gen(board);
-        Search::tt.Probe(board.GetHash(), alpha, beta, depth, ply, score, tt_flag, tt_move);
+        Search::tt.Probe(board.GetHash(), alpha, beta, depth, ply, tt_score, tt_flag, tt_move);
 
-        // checking for data race corruption or hash collision
-        if (move_gen.IsPseudoLegal(tt_move)) {
-            if (NodeType != PV && tt_flag != NOT_FOUND) {
-                return score;
+        if (tt_flag != NOT_FOUND && move_gen.IsPseudoLegal(tt_move)) {
+
+            // we always re-search PV nodes
+            if (NodeType != PV && tt_flag != MOVE_ONLY) {
+                return tt_score;
             }
-            if (tt_move != ZERO_MOVE) {
-                move_gen.PutTTMove(tt_move);
+
+            // the move wasn't good enough to cause cutoff, but we can still use it to order our moves
+            move_gen.PutTTMove(tt_move);
+
+            // best eval available for this position - either hash score or static eval
+            if (tt_flag == EXACT_SCORE || (tt_score >= eval && tt_flag == ALPHA) || (tt_score <= eval && tt_flag == BETA)) {
+                eval = tt_score;
+            } else {
+                eval = board.GetEval();
             }
+
+        } else {
+            // the move we got was corrupted
+            tt_flag = NOT_FOUND;
+            eval = board.GetEval();
         }
-
-        // best eval available for this position - either hash score or static eval
-        Score eval = score == POSITIVE_INF ? board.GetEval() : score;
 
         // reverse futility pruning
         if (NodeType == NONPV && depth < 6 && !move_gen.IsInCheck() && !IsMateScore(beta) && !IsMateScore(alpha)) {
             Score score_margin = 100 * depth;
             if (eval - score_margin >= beta) {
-                return beta; //static_score - score_margin;
+                return beta;
             }
         }
 
         Search::PVMoveLine line;
+        Score score;
 
         // null move pruning
         if (NodeType == NONPV && depth >= 4 && !move_gen.IsInCheck() && eval >= beta && eval >= board.GetEval()) {
@@ -349,7 +364,7 @@ namespace Meetra {
             oss << "info";
             if (pvs_to_send > 1) oss << " multipv " << i + 1;
             oss << " depth " << root_moves[i].depth
-                << " seldepth " <<root_moves[i].seldepth
+                << " seldepth " << root_moves[i].seldepth
                 << " nodes " << nodes
                 << " time " << elapsed_ms
                 << " nps " << nps

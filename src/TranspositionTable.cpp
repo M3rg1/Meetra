@@ -79,16 +79,15 @@ namespace Meetra {
                                    Depth depth, Depth ply, Score &score, TTFlag &flag, Move &move) const {
 
         flag = NOT_FOUND;
-        move = ZERO_MOVE;
-
         Hash16 hash16 = Zobrist::MakeHash16(key);
         TTBucket &bucket = table[key % buckets_count];
 
         for (auto &entry: bucket.bucket_entries) {
             if (entry.GetHash16() == hash16) {
+                flag = MOVE_ONLY;
                 move = entry.GetMove();
+                score = AddMatePly(entry.GetScore(), ply);
                 if (entry.GetDepth() >= depth) {
-                    score = AddMatePly(entry.GetScore(), ply);
                     if (entry.GetFlag() == ALPHA && score <= alpha) {
                         entry.SetEpoch(current_epoch);
                         score = alpha;

@@ -14,7 +14,7 @@ namespace Meetra {
 #define TT_ENTRIES_PER_BUCKET 4
 
     enum TTFlag {
-        EXACT_SCORE, ALPHA, BETA, NOT_FOUND
+        EXACT_SCORE, ALPHA, BETA, MOVE_ONLY, NOT_FOUND
     };
 
     class TranspositionTable {

@@ -256,11 +256,6 @@ namespace Meetra {
     // It should be used to validate potentially corrupted moves, for example moves from TT.
     bool MoveGen::IsPseudoLegal(Move m) const {
 
-        // ZERO_MOVE is always legal
-        if (m == ZERO_MOVE) {
-            return true;
-        }
-
         // there exists a piece on the origin square and its of the correct color
         Square from = FromSquare(m);
         Piece moved_piece = board.GetPieceOnSquare(from);
