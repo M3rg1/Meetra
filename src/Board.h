@@ -19,6 +19,8 @@ namespace Meetra {
         bool NewPosition(const std::string &fen);
         bool MakeMove(Move m);
         void UnmakeMove(Move m);
+        void MakeNullMove();
+        void UnmakeNullMove();
         bool MakeUciMove(const std::string &move_string);
 
         [[nodiscard]] bool IsMoveLegal(Move m) const;

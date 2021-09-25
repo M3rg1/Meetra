@@ -30,7 +30,7 @@ namespace Meetra {
 
             Score alpha = NEGATIVE_INF;
             Score beta = POSITIVE_INF;
-            bool search_pv = true;
+            int moves_searched = 0;
 
             // alpha beta search over root moves
             for (curr_rm_num = 0; curr_rm_num < root_moves.size(); curr_rm_num++) {
@@ -47,21 +47,23 @@ namespace Meetra {
                     break;
                 }
 
-                nodes_explored.fetch_add(1, std::memory_order_relaxed);
-                curr_rm->nodes++;
                 board.MakeMove(curr_rm->move);
 
                 Score score;
-                if (search_pv) {
-                    score = -NegaMax(-beta, -alpha, depth_reached - 1, 2, curr_rm->pv);
-                } else {
-                    score = -NegaMax(-alpha - 1, -alpha, depth_reached - 1, 2, curr_rm->pv);
-                    if (score > alpha) {
-                        score = -NegaMax(-beta, -alpha, depth_reached - 1, 2, curr_rm->pv);
-                    }
+
+                if (moves_searched > 0) {
+                    score = -NegaMax<NONPV>(-alpha - 1, -alpha, depth_reached - 1, 2, curr_rm->pv);
+                }
+
+                if (moves_searched == 0 || (score > alpha && score < beta)) {
+                    score = -NegaMax<PV>(-beta, -alpha, depth_reached - 1, 2, curr_rm->pv);
                 }
 
                 board.UnmakeMove(curr_rm->move);
+
+                nodes_explored.fetch_add(1, std::memory_order_relaxed);
+                curr_rm->nodes++;
+                moves_searched++;
 
                 if (!Search::Run()) {
                     break;
@@ -73,7 +75,6 @@ namespace Meetra {
                 if (Search::multi_pv > 1) {
                     curr_rm->score = score;
                 } else if (score > alpha) {
-                    search_pv = false;
                     curr_rm->score = score;
                     alpha = score;
                 } else {
@@ -110,6 +111,7 @@ namespace Meetra {
         }
     }
 
+    template<Node NodeType>
     Score SearchThread::NegaMax(Score alpha, Score beta, Depth depth, Depth ply, Search::PVMoveLine &pv_line) {
 
         if (IsMainThread()) {
@@ -125,19 +127,19 @@ namespace Meetra {
             return -DRAW_SCORE;
         } else if (board.IsRepetition()) {
             return -DRAW_SCORE;
-        } else if (depth == 0) {
+        } else if (depth <= 0) {
             return QSearch(alpha, beta, ply);
         }
 
         TTFlag tt_flag;
         Move tt_move;
-        Score score;
+        Score score = POSITIVE_INF;
         MoveGen move_gen(board);
         Search::tt.Probe(board.GetHash(), alpha, beta, depth, ply, score, tt_flag, tt_move);
 
         // checking for data race corruption or hash collision
         if (move_gen.IsPseudoLegal(tt_move)) {
-            if (tt_flag == ALPHA || tt_flag == BETA) {
+            if (NodeType != PV && (tt_flag == ALPHA || tt_flag == BETA || tt_flag == EXACT_SCORE)) {
                 return score;
             }
             if (tt_move != ZERO_MOVE) {
@@ -145,23 +147,37 @@ namespace Meetra {
             }
         }
 
-        // https://www.chessprogramming.org/Reverse_Futility_Pruning
-        if (depth < 6 && tt_flag != EXACT_SCORE && !move_gen.IsInCheck() && !IsMateScore(beta) &&
-            !IsMateScore(alpha)) {
-            Score static_score = board.GetEval();
+        // best eval available for this position - either hash score or static eval
+        Score eval = score == POSITIVE_INF ? board.GetEval() : score;
+
+        // reverse futility pruning
+        if (NodeType == NONPV && depth < 6 && !move_gen.IsInCheck() && !IsMateScore(beta) && !IsMateScore(alpha)) {
             Score score_margin = 100 * depth;
-            if (static_score - score_margin >= beta) {
+            if (eval - score_margin >= beta) {
                 return beta; //static_score - score_margin;
+            }
+        }
+
+        Search::PVMoveLine line;
+
+        // null move pruning
+        if (NodeType == NONPV && depth >= 4 && !move_gen.IsInCheck() && eval >= beta && eval >= board.GetEval()) {
+            board.MakeNullMove();
+            score = -NegaMax<NULLMOVE>(-beta, -beta + 1, depth - 4, ply + 4, line);
+            board.UnmakeNullMove();
+            if (score >= beta) {
+                score = NegaMax<NULLMOVE>(beta - 1, beta, depth - 4, ply + 4, line);
+                if (score >= beta && !IsMateScore(score)) {
+                    return beta;
+                }
             }
         }
 
         Score best_score = NEGATIVE_INF;
         Move best_move;
         Move move;
-        Search::PVMoveLine line;
         tt_flag = ALPHA;
-        bool no_moves = true;
-        bool search_pv = true;
+        int moves_searched = 0;
 
         bool used_tt_move = tt_move == ZERO_MOVE;
 
@@ -181,20 +197,21 @@ namespace Meetra {
                 continue;
             }
 
-            no_moves = false;
-            nodes_explored.fetch_add(1, std::memory_order_relaxed);
-            curr_rm->nodes++;
             line.Clear();
-            if (search_pv) {
-                score = -NegaMax(-beta, -alpha, depth - 1, ply + 1, line);
-            } else {
-                score = -NegaMax(-alpha - 1, -alpha, depth - 1, ply + 1, line);
-                if (score > alpha && score < beta) {
-                    score = -NegaMax(-beta, -alpha, depth - 1, ply + 1, line);
-                }
+
+            if (NodeType != PV || moves_searched > 0) {
+                score = -NegaMax<NONPV>(-alpha - 1, -alpha, depth - 1, ply + 1, line);
+            }
+
+            if (NodeType == PV && (moves_searched == 0 || (score > alpha && score < beta))) {
+                score = -NegaMax<PV>(-beta, -alpha, depth - 1, ply + 1, line);
             }
 
             board.UnmakeMove(move);
+
+            moves_searched++;
+            curr_rm->nodes++;
+            nodes_explored.fetch_add(1, std::memory_order_relaxed);
 
             if (!Search::Run()) {
                 return 0;
@@ -207,23 +224,22 @@ namespace Meetra {
 
                 if (score > alpha) {
 
-                    pv_line.Clear();
-                    pv_line.PutMove(move);
-                    pv_line.PutLine(line);
-
                     if (score >= beta) {
                         Search::tt.Save(board.GetHash(), beta, depth, move, BETA, ply);
                         return beta;
                     }
 
+                    pv_line.Clear();
+                    pv_line.PutMove(move);
+                    pv_line.PutLine(line);
+
                     tt_flag = EXACT_SCORE;
                     alpha = score;
-                    search_pv = false;
                 }
             }
         }
 
-        if (no_moves) {
+        if (moves_searched == 0) {
             return move_gen.IsInCheck() ? -MATE_SCORE + ply : -DRAW_SCORE;
         }
 

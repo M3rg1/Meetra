@@ -170,6 +170,23 @@ namespace Meetra {
         type_bbs[ALL_TYPES] ^= from_to;
     }
 
+    void Board::UnmakeNullMove() {
+        state = history[--history_cnt];
+    }
+
+    void Board::MakeNullMove() {
+        history[history_cnt++] = state;
+        IncrementMoveNumber(ColorToMove());
+        ChangeColorToMove();
+        Zobrist::UpdateColor(state.hash);
+        ClearCapturedPiece();
+        ResetPly();
+        if (EpSquare()) {
+            Zobrist::RemoveEp(state.hash, EpSquare());
+            ClearEpSquare();
+        }
+    }
+
     // Make a pseudo legal move.
     bool Board::MakeMove(Move m) {
 
