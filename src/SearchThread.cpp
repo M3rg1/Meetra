@@ -139,7 +139,7 @@ namespace Meetra {
 
         // checking for data race corruption or hash collision
         if (move_gen.IsPseudoLegal(tt_move)) {
-            if (NodeType != PV && (tt_flag == ALPHA || tt_flag == BETA || tt_flag == EXACT_SCORE)) {
+            if (NodeType != PV && tt_flag != NOT_FOUND) {
                 return score;
             }
             if (tt_move != ZERO_MOVE) {
