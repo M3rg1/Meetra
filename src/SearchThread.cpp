@@ -12,7 +12,7 @@ namespace Meetra {
         return std::abs(s) <= MATE_SCORE && std::abs(s) >= MIN_MATE_EVAL;
     }
 
-    // the main search function, iterative deepening framework
+    // the main search function - root position AB search, iterative deepening framework
     void SearchThread::Search() {
 
         active = true;
@@ -176,7 +176,7 @@ namespace Meetra {
             board.UnmakeNullMove();
             if (null_score >= beta) {
                 null_score = ABSearch<NULLMOVE>(beta - 1, beta, depth - R, ply + R, dummy);
-                if (null_score >= beta && !IsMateScore(null_score)) {
+                if (null_score >= beta) {
                     return beta;
                 }
             }
