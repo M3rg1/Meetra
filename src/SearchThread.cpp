@@ -135,7 +135,8 @@ namespace Meetra {
         }
 
         MoveGen move_gen(board);
-        Score eval = board.GetEval();
+        Score static_eval = board.GetEval();
+        Score eval = static_eval;
         Move tt_move;
         Score tt_score;
         TTFlag tt_flag = Search::tt.Probe(board.GetHash(), alpha, beta, depth, ply, tt_score, tt_move);
@@ -168,7 +169,7 @@ namespace Meetra {
 
         // null move pruning
 #define R 4
-        if (NodeType == NONPV && prune && depth >= R && eval >= beta) {
+        if (NodeType == NONPV && prune && depth >= R && eval >= beta && eval >= static_eval) {
             Search::PVMoveLine dummy;
             board.MakeNullMove();
             Score null_score = -ABSearch<NULLMOVE>(-beta, -beta + 1, depth - R, ply + R, dummy);
