@@ -13,9 +13,10 @@ namespace Meetra {
 #define MAX_HASH_SIZE 8192
 #define TT_ENTRIES_PER_BUCKET 4
 
-    enum TTFlag {
-        EXACT, ALPHA, BETA, MOVE_ONLY, NOT_FOUND
+    enum TTFlags {
+        NOT_FOUND, ALPHA, BETA, EXACT, CUTOFF
     };
+    using TTFlag = int;
 
     class TranspositionTable {
 

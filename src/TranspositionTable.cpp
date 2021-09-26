@@ -26,11 +26,11 @@ namespace Meetra {
     }
 
     void TranspositionTable::NewSearch() {
-        current_epoch++;
-        used_entries = 0;
-        if (current_epoch >= 64) {
+        if (current_epoch >= 63) {
             Clear();
         }
+        used_entries = 0;
+        current_epoch++;
     }
 
     void TranspositionTable::Clear() {
@@ -84,27 +84,26 @@ namespace Meetra {
 
         for (auto &entry: bucket.bucket_entries) {
             if (entry.GetHash16() == hash16) {
-                flag = MOVE_ONLY;
+                flag = entry.GetFlag();
                 move = entry.GetMove();
                 score = AddMatePly(entry.GetScore(), ply);
                 if (entry.GetDepth() >= depth) {
                     if (entry.GetFlag() == ALPHA && score <= alpha) {
                         entry.SetEpoch(current_epoch);
                         score = alpha;
-                        flag = ALPHA;
+                        flag |= CUTOFF;
                     } else if (entry.GetFlag() == BETA && score >= beta) {
                         entry.SetEpoch(current_epoch);
                         score = beta;
-                        flag = BETA;
+                        flag |= CUTOFF;
                     } else if (entry.GetFlag() == EXACT) {
                         entry.SetEpoch(current_epoch);
-                        flag = EXACT;
+                        flag |= CUTOFF;
                     }
                 }
                 break;
             }
         }
-
         return flag;
     }
 }

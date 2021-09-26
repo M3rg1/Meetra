@@ -52,11 +52,11 @@ namespace Meetra {
                 Score score;
 
                 if (moves_searched > 0) {
-                    score = -NegaMax<NONPV>(-alpha - 1, -alpha, depth_reached - 1, 2, curr_rm->pv);
+                    score = -ABSearch<NONPV>(-alpha - 1, -alpha, depth_reached - 1, 2, curr_rm->pv);
                 }
 
                 if (moves_searched == 0 || (score > alpha && score < beta)) {
-                    score = -NegaMax<PV>(-beta, -alpha, depth_reached - 1, 2, curr_rm->pv);
+                    score = -ABSearch<PV>(-beta, -alpha, depth_reached - 1, 2, curr_rm->pv);
                 }
 
                 board.UnmakeMove(curr_rm->move);
@@ -112,7 +112,7 @@ namespace Meetra {
     }
 
     template<Node NodeType>
-    Score SearchThread::NegaMax(Score alpha, Score beta, Depth depth, Depth ply, Search::PVMoveLine &pv_line) {
+    Score SearchThread::ABSearch(Score alpha, Score beta, Depth depth, Depth ply, Search::PVMoveLine &pv_line) {
 
         curr_rm->seldepth = std::max(ply, curr_rm->seldepth);
         seldepth_reached = std::max(ply, seldepth_reached);
@@ -134,75 +134,66 @@ namespace Meetra {
             return QSearch(alpha, beta, ply);
         }
 
+        MoveGen move_gen(board);
+        Score eval = board.GetEval();
         Move tt_move;
         Score tt_score;
-        Score eval = board.GetEval();
-        MoveGen move_gen(board);
         TTFlag tt_flag = Search::tt.Probe(board.GetHash(), alpha, beta, depth, ply, tt_score, tt_move);
 
         if (tt_flag != NOT_FOUND && move_gen.IsPseudoLegal(tt_move)) {
 
             // we always re-search PV nodes
-            if (NodeType != PV && tt_flag != MOVE_ONLY) {
+            if (NodeType != PV && tt_flag & CUTOFF) {
                 return tt_score;
             }
 
             // the move wasn't good enough to cause cutoff, but we can still use it to order our moves
             move_gen.PutTTMove(tt_move);
 
-            // best eval available for this position - either hash score or static eval
-            // we make further pruning based on this eval, before entering the move loop, therefore it is desirable
-            // for the eval to be as accurate as possible
-            if (tt_flag == EXACT || (tt_score >= eval && tt_flag == ALPHA) || (tt_score <= eval && tt_flag == BETA)) {
+            // improve our static eval if possible
+            if ((tt_flag & BETA && eval < tt_score) || (tt_flag & ALPHA && eval > tt_score)) {
                 eval = tt_score;
             }
-
-        } else {
-            // the move we got was corrupted
-            // tt_flag = NOT_FOUND;
         }
 
+        bool prune = !move_gen.IsInCheck() && !IsMateScore(beta) && !IsMateScore(alpha) && !IsMateScore(eval);
+
         // reverse futility pruning
-        if (NodeType == NONPV && depth < 6 && !move_gen.IsInCheck() && !IsMateScore(beta) && !IsMateScore(alpha)) {
+        if (NodeType == NONPV && prune && depth < 6) {
             Score score_margin = 100 * depth;
             if (eval - score_margin >= beta) {
                 return beta;
             }
         }
 
-        Search::PVMoveLine line;
-        Score score;
-
         // null move pruning
-        if (NodeType == NONPV && depth >= 4 && !move_gen.IsInCheck() && eval >= beta && eval >= board.GetEval()) {
+#define R 4
+        if (NodeType == NONPV && prune && depth >= R && eval >= beta) {
+            Search::PVMoveLine dummy;
             board.MakeNullMove();
-            score = -NegaMax<NULLMOVE>(-beta, -beta + 1, depth - 4, ply + 4, line);
+            Score null_score = -ABSearch<NULLMOVE>(-beta, -beta + 1, depth - R, ply + R, dummy);
             board.UnmakeNullMove();
-            if (score >= beta) {
-                score = NegaMax<NULLMOVE>(beta - 1, beta, depth - 4, ply + 4, line);
-                if (score >= beta && !IsMateScore(score)) {
+            if (null_score >= beta) {
+                null_score = ABSearch<NULLMOVE>(beta - 1, beta, depth - R, ply + R, dummy);
+                if (null_score >= beta && !IsMateScore(null_score)) {
                     return beta;
                 }
             }
         }
 
+        Search::PVMoveLine line;
         Score best_score = NEGATIVE_INF;
+        Score score;
         Move best_move;
         Move move;
         tt_flag = ALPHA;
         int moves_searched = 0;
 
-        bool used_tt_move = tt_move == ZERO_MOVE;
-
         while ((move = move_gen.GetBestMove<NORMAL>())) {
 
-            // temporary fix to not play TT move twice, this should be fixed in the generator before evaluating the move
-            if (move == tt_move) {
-                if (used_tt_move) {
-                    continue;
-                } else {
-                    used_tt_move = true;
-                }
+            // temporary fix to not play TT move twice - this should be done in the generator before evaluating the move
+            if (move == tt_move && moves_searched >= 1) {
+                continue;
             }
 
             if (!board.MakeMove(move)) {
@@ -213,11 +204,11 @@ namespace Meetra {
             line.Clear();
 
             if (NodeType != PV || moves_searched > 0) {
-                score = -NegaMax<NONPV>(-alpha - 1, -alpha, depth - 1, ply + 1, line);
+                score = -ABSearch<NONPV>(-alpha - 1, -alpha, depth - 1, ply + 1, line);
             }
 
             if (NodeType == PV && (moves_searched == 0 || (score > alpha && score < beta))) {
-                score = -NegaMax<PV>(-beta, -alpha, depth - 1, ply + 1, line);
+                score = -ABSearch<PV>(-beta, -alpha, depth - 1, ply + 1, line);
             }
 
             board.UnmakeMove(move);
@@ -238,8 +229,8 @@ namespace Meetra {
                 if (score > alpha) {
 
                     if (score >= beta) {
-                        Search::tt.Save(board.GetHash(), beta, depth, move, BETA, ply);
-                        return beta;
+                        Search::tt.Save(board.GetHash(), score, depth, move, BETA, ply);
+                        return score;
                     }
 
                     pv_line.Clear();
@@ -256,9 +247,9 @@ namespace Meetra {
             return move_gen.IsInCheck() ? -MATE_SCORE + ply : -DRAW_SCORE;
         }
 
-        Search::tt.Save(board.GetHash(), alpha, depth, best_move, tt_flag, ply);
+        Search::tt.Save(board.GetHash(), best_score, depth, best_move, tt_flag, ply);
 
-        return alpha;
+        return best_score;
     }
 
     Score SearchThread::QSearch(Score alpha, Score beta, Depth ply) {

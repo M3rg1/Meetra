@@ -38,7 +38,7 @@ namespace Meetra {
     private:
 
         template<Node NodeType>
-        Score NegaMax(Score alpha, Score beta, Depth depth, Depth ply, Search::PVMoveLine &pv_line);
+        Score ABSearch(Score alpha, Score beta, Depth depth, Depth ply, Search::PVMoveLine &pv_line);
         Score QSearch(Score alpha, Score beta, Depth ply);
 
         void CheckTimers();
