@@ -261,7 +261,7 @@ namespace Meetra {
         auto score = board.GetEval();
         if (score > alpha) {
             if (score >= beta) {
-                return beta;
+                return score;
             }
             alpha = score;
         }
@@ -274,10 +274,11 @@ namespace Meetra {
                 continue;
             }
 
-            nodes_explored.fetch_add(1, std::memory_order_relaxed);
-            curr_rm->nodes++;
             score = -QSearch(-beta, -alpha, ply + 1);
             board.UnmakeMove(move);
+
+            nodes_explored.fetch_add(1, std::memory_order_relaxed);
+            curr_rm->nodes++;
 
             if (score > alpha) {
                 if (score >= beta) {
@@ -404,13 +405,13 @@ namespace Meetra {
             return;
         }
 
-        auto elapsed_time = Search::ElapsedTimeMs();
+        auto elapsed = Search::ElapsedTimeMs();
 
         if (!Search::settings.infinite && !Search::settings.fixed_depth &&
-            Search::settings.allowed_time < elapsed_time) {
+            Search::settings.allowed_time < elapsed) {
             Search::StopSearch();
-        } else if (Search::last_update_time + UPDATE_INFO_INTERVAL < elapsed_time) {
-            Search::last_update_time = elapsed_time;
+        } else if (depth_reached > Search::plies_muted && Search::last_update_time + UPDATE_INFO_INTERVAL < elapsed) {
+            Search::last_update_time = elapsed;
             Uci::Send(GetUpdateSearchInfo());
             if (Search::show_currline) {
                 Uci::Send(GetCurrLineInfo());
