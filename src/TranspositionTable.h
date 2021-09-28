@@ -23,10 +23,10 @@ namespace Meetra {
     public:
 
         void Init(size_t size_mb = DEFAULT_HASH_SIZE);
-        void Save(Hash64 key, Score score, Depth depth, Move move, TTFlag flag, Depth ply);
+        void Save(Hash64 hash, Score score, Depth depth, Move move, TTFlag flag, Depth ply);
         void NewSearch();
         void Clear();
-        TTFlag Probe(Hash64 key, Score alpha, Score beta, Depth depth, Depth ply, Score &score, Move &move) const;
+        TTFlag Probe(Hash64 hash, Score alpha, Score beta, Depth depth, Depth ply, Score &score, Move &move) const;
         [[nodiscard]] inline double Usage() const {
             if (buckets_count == 0) return 0.0;
             double usage = static_cast<double>(used_entries.load(std::memory_order_relaxed))

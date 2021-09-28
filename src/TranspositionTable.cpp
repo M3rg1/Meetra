@@ -39,11 +39,11 @@ namespace Meetra {
         std::fill_n(table.get(), buckets_count, TTBucket());
     }
 
-    void TranspositionTable::Save(Hash64 key, Score score, Depth depth, Move move, TTFlag flag, Depth ply) {
+    void TranspositionTable::Save(Hash64 hash, Score score, Depth depth, Move move, TTFlag flag, Depth ply) {
 
-        TTBucket &bucket = table[key % buckets_count];
+        TTBucket &bucket = table[hash % buckets_count];
         TTEntry *entry_to_write;
-        Hash16 hash16 = Zobrist::MakeHash16(key);
+        Hash16 hash16 = Zobrist::MakeHash16(hash);
         int worst_entry_score = INT_MAX;
 
         for (auto &entry: bucket.bucket_entries) {
@@ -75,12 +75,12 @@ namespace Meetra {
         entry_to_write->SaveEntry(hash16, RemoveMatePly(score, ply), depth, move, flag, current_epoch);
     }
 
-    TTFlag TranspositionTable::Probe(Hash64 key, Score alpha, Score beta, Depth depth, Depth ply, Score &score,
+    TTFlag TranspositionTable::Probe(Hash64 hash, Score alpha, Score beta, Depth depth, Depth ply, Score &score,
                                      Move &move) const {
 
         TTFlag flag = NOT_FOUND;
-        Hash16 hash16 = Zobrist::MakeHash16(key);
-        TTBucket &bucket = table[key % buckets_count];
+        Hash16 hash16 = Zobrist::MakeHash16(hash);
+        TTBucket &bucket = table[hash % buckets_count];
 
         for (auto &entry: bucket.bucket_entries) {
             if (entry.GetHash16() == hash16) {
