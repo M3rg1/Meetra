@@ -15,7 +15,7 @@ namespace Meetra {
     void TranspositionTable::Init(size_t size_mb) {
 
         if (size_mb > MAX_HASH_SIZE || size_mb < MIN_HASH_SIZE) {
-            size_mb = std::clamp(size_mb, static_cast<size_t>(MIN_HASH_SIZE), static_cast<size_t>(MAX_HASH_SIZE));
+            size_mb = std::clamp(size_mb, MIN_HASH_SIZE, MAX_HASH_SIZE);
             Uci::SendInfo("Invalid TT size! Initializing to: " + std::to_string(size_mb) + "MB");
         }
 

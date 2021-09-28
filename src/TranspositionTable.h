@@ -8,9 +8,9 @@
 
 namespace Meetra {
 
-#define MIN_HASH_SIZE 8 // this should never be 0
-#define DEFAULT_HASH_SIZE 128
-#define MAX_HASH_SIZE 8192
+#define MIN_HASH_SIZE static_cast<size_t>(8) // this should never be 0
+#define DEFAULT_HASH_SIZE static_cast<size_t>(128)
+#define MAX_HASH_SIZE static_cast<size_t>(8192)
 #define TT_ENTRIES_PER_BUCKET 4
 
     enum TTFlags {
