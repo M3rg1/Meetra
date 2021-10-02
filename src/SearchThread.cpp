@@ -163,28 +163,27 @@ namespace Meetra {
         if (NodeType == NONPV && prune && depth < 6) {
             Score score_margin = 100 * depth;
             if (eval - score_margin >= beta) {
-                return beta;
-            }
-        }
-
-        // null move pruning
-#define R 4
-        if (NodeType == NONPV && prune && depth >= R && eval >= beta && eval >= static_eval) {
-            Search::PVMoveLine dummy;
-            board.MakeNullMove();
-            Score null_score = -ABSearch<NULLMOVE>(-beta, -beta + 1, depth - R, ply + R, dummy);
-            board.UnmakeNullMove();
-            if (null_score >= beta) {
-                null_score = ABSearch<NULLMOVE>(beta - 1, beta, depth - R, ply + R, dummy);
-                if (null_score >= beta) {
-                    return beta;
-                }
+                return eval - score_margin;
             }
         }
 
         Search::PVMoveLine line;
-        Score best_score = NEGATIVE_INF;
+        // null move pruning
+#define R 4
+        if (NodeType == NONPV && prune && depth >= R && eval >= beta && eval >= static_eval) {
+            board.MakeNullMove();
+            Score null_score = -ABSearch<NULLMOVE>(-beta, -beta + 1, depth - R, ply + R, line);
+            board.UnmakeNullMove();
+            if (null_score >= beta) {
+                Score verification = ABSearch<NULLMOVE>(beta - 1, beta, depth - R, ply + R, line);
+                if (verification >= beta) {
+                    return null_score;
+                }
+            }
+        }
+
         Score score;
+        Score best_score = NEGATIVE_INF;
         Move best_move;
         Move move;
         tt_flag = ALPHA;
@@ -282,7 +281,7 @@ namespace Meetra {
 
             if (score > alpha) {
                 if (score >= beta) {
-                    return beta;
+                    return score;
                 }
                 alpha = score;
             }
