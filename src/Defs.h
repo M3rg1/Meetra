@@ -135,9 +135,9 @@ namespace Meetra {
     inline Square ToSquare(Move m) { return (m >> 6) & 0x3F; }
     inline bool IsPromotion(Move m) { return m >> 14; }
     inline MoveType GetMoveType(Move m) { return m & 0xF000; }
-
 #pragma endregion
 
+#pragma region ===== Constants =====
     // search consts
     constexpr Depth MAX_SEARCH_DEPTH = 128;
 
@@ -170,6 +170,7 @@ namespace Meetra {
     constexpr size_t DEFAULT_HASH_SIZE = 128;
     constexpr size_t MAX_HASH_SIZE = 8192;
     constexpr size_t TT_ENTRIES_PER_BUCKET = 4;
+#pragma endregion
 }
 
 #endif //MEETRA_DEFS_H
