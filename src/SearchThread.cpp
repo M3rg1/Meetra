@@ -24,8 +24,8 @@ namespace Meetra {
             seldepth_reached = depth_reached;
 
             // if helper thread falls behind main thread, skip depth and go deeper
-            if (!IsMainThread() && depth_reached <= Search::mt_depth.load(std::memory_order_acquire)) {
-                depth_reached = Search::mt_depth.load(std::memory_order_acquire) + id;
+            if (!IsMainThread() && depth_reached <= Search::MtDepth()) {
+                depth_reached = std::min(Search::MtDepth() + id, Search::settings.allowed_depth);
             }
 
             Score alpha = NEGATIVE_INF;
@@ -42,8 +42,8 @@ namespace Meetra {
                     Uci::Send(GetCurrMoveInfo());
                 }
 
-                // if main thread already finished this depth, there's no reason for helper thread to remain
-                if (!IsMainThread() && depth_reached < Search::mt_depth.load(std::memory_order_acquire)) {
+                // if main thread already finished this depth, there's no reason for a helper thread to remain
+                if (!IsMainThread() && depth_reached < Search::MtDepth()) {
                     break;
                 }
 
@@ -93,13 +93,12 @@ namespace Meetra {
                 // finish if we don't have enough time left for a deeper search or mate has been found, and we are not
                 // performing fixed time/depth/infinite or multipv search
                 if (!Search::Run() || !Search::EnoughTimeLeft() ||
-                    (IsMateScore(root_moves[0].score) && Search::multi_pv == 1 && !Search::settings.infinite &&
-                     !Search::settings.fixed_time && !Search::settings.fixed_depth)) {
+                    (IsMateScore(root_moves[0].score) && Search::multi_pv == 1 && !Search::settings.infinite)) {
                     break;
                 }
 
                 // update GUI with info about currently finished depth we searched
-                if (depth_reached > Search::plies_muted) {
+                if (depth_reached > Search::plies_muted && depth_reached < Search::settings.allowed_depth) {
                     Uci::Send(GetSearchInfo());
                 }
             }
@@ -213,9 +212,9 @@ namespace Meetra {
 
             board.UnmakeMove(move);
 
-            moves_searched++;
-            curr_rm->nodes++;
             nodes_explored.fetch_add(1, std::memory_order_relaxed);
+            curr_rm->nodes++;
+            moves_searched++;
 
             if (!Search::Run()) {
                 return 0;
@@ -267,6 +266,8 @@ namespace Meetra {
 
         MoveGen move_gen(board);
         Move move;
+        int moves_searched = 0;
+
         while ((move = move_gen.GetBestMove<QSEARCH>())) {
             if (!board.MakeMove(move)) {
                 board.UnmakeMove(move);
@@ -278,6 +279,7 @@ namespace Meetra {
 
             nodes_explored.fetch_add(1, std::memory_order_relaxed);
             curr_rm->nodes++;
+            moves_searched++;
 
             if (score > alpha) {
                 if (score >= beta) {
@@ -316,11 +318,7 @@ namespace Meetra {
 
     std::string SearchThread::GetUpdateSearchInfo() const {
 
-        auto nodes = std::accumulate(Search::threads.begin(),
-                                     Search::threads.end(),
-                                     0ULL,
-                                     [&](auto sum, auto const &t) { return sum + t->NodesExplored(); });
-
+        auto nodes = Search::NodesTotal();
         auto elapsed_ms = Search::ElapsedTimeMs();
         auto nps = static_cast<uint64_t>(
                 ((static_cast<double>(nodes) / static_cast<double>(elapsed_ms))) * 1000.0);
@@ -339,11 +337,7 @@ namespace Meetra {
 
     std::string SearchThread::GetSearchInfo() const {
 
-        auto nodes = std::accumulate(Search::threads.begin(),
-                                     Search::threads.end(),
-                                     0ULL,
-                                     [&](auto sum, auto const &t) { return sum + t->NodesExplored(); });
-
+        auto nodes = Search::NodesTotal();
         auto elapsed_ms = Search::ElapsedTimeMs();
         auto nps = static_cast<uint64_t>(((static_cast<double>(nodes) / static_cast<double>(elapsed_ms))) * 1000.0);
         auto pvs_to_send = std::min(Search::multi_pv, static_cast<int>(root_moves.size()));
@@ -400,14 +394,13 @@ namespace Meetra {
 
     void SearchThread::CheckTimers() {
 
-        if ((nodes_explored.load(std::memory_order_relaxed) & 8191) != 0) {
+        if ((Nodes() & 8191) != 0) {
             return;
         }
 
         auto elapsed = Search::ElapsedTimeMs();
 
-        if (!Search::settings.infinite && !Search::settings.fixed_depth &&
-            Search::settings.allowed_time < elapsed) {
+        if (Search::settings.allowed_time < elapsed || Search::NodesTotal() > Search::settings.allowed_nodes) {
             Search::StopSearch();
         } else if (depth_reached > Search::plies_muted && Search::last_update_time + UPDATE_INFO_INTERVAL < elapsed) {
             Search::last_update_time = elapsed;

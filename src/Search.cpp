@@ -15,8 +15,7 @@ namespace Meetra::Search {
     }
 
     bool EnoughTimeLeft() {
-        if (settings.infinite || settings.fixed_time || settings.fixed_depth ||
-            settings.allowed_time > ElapsedTimeMs() * 2) {
+        if (settings.infinite || settings.allowed_time > ElapsedTimeMs() * 2) {
             return true;
         }
         return false;
@@ -31,9 +30,16 @@ namespace Meetra::Search {
         return reduction;
     }
 
+    uint64_t NodesTotal() {
+        return std::accumulate(Search::threads.begin(),
+                               Search::threads.end(),
+                               0ULL,
+                               [&](auto sum, auto const &t) { return sum + t->Nodes(); });
+    }
+
     void InitSearchTimer(Board &board) {
 
-        if (!settings.infinite && !settings.fixed_time && !settings.fixed_depth) {
+        if (!settings.infinite) {
             auto time_left = board.ColorToMove() == WHITE ? settings.wtime : settings.btime;
             int reduction = TimeReduction(board);
             settings.allowed_time = time_left / reduction;
@@ -84,7 +90,7 @@ namespace Meetra::Search {
         SearchThread *best_thread = threads[0].get();
         if (multi_pv == 1) {
             for (size_t i = 1; i < threads.size(); i++) {
-                while (threads[i]->IsThreadSearching()); // wait until thread finishes searching
+                while (threads[i]->IsSearching()); // wait until thread finishes searching
                 if (threads[i]->DidBeatMove(best_thread->GetBestRootMove())) {
                     best_thread = threads[i].get();
                 }
@@ -101,7 +107,7 @@ namespace Meetra::Search {
         run = true;
         InitSearch(s, board);
 
-        if (use_book && !settings.fixed_depth && !settings.infinite && !settings.fixed_time && !chess960 &&
+        if (use_book && !settings.infinite && !chess960 &&
             board.FullMoveClock() <= BOOK_DEPTH / 2) {
             auto moves = Book::Probe(board);
             if (!moves.empty()) {
@@ -122,7 +128,7 @@ namespace Meetra::Search {
 
         // if there's only one root move, and we are not in infinite or fixed depth/time search, return it immediately
         if (root_moves.empty() ||
-            (root_moves.size() == 1 && !settings.infinite && !settings.fixed_depth && !settings.fixed_time)) {
+            (root_moves.size() == 1 && !settings.infinite)) {
             StopSearch();
             Uci::Send("bestmove " + board.MoveToName(root_moves.empty() ? ZERO_MOVE : root_moves.front().move));
             Search::finished = true;

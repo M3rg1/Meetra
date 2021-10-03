@@ -254,24 +254,27 @@ namespace Meetra::Uci {
         std::string option;
 
         while (iss >> option) {
-
             if (option == "wtime") iss >> settings.wtime;
             else if (option == "btime") iss >> settings.btime;
             else if (option == "winc") iss >> settings.winc;
             else if (option == "binc") iss >> settings.binc;
             else if (option == "movestogo") iss >> settings.moves_to_go;
-            else if (option == "infinite") settings.infinite = true;
+            else if (option == "infinite")  {
+                settings.infinite = true;
+            }
+            else if (option == "nodes") {
+                iss >> settings.allowed_nodes;
+                settings.infinite = true;
+            }
             else if (option == "movetime") {
-                settings.fixed_time = true;
                 iss >> settings.allowed_time;
+                settings.infinite = true;
             } else if (option == "depth") {
                 iss >> settings.allowed_depth;
-                settings.fixed_depth = true;
+                settings.infinite = true;
             } else {
                 SendInfo("Unknown search option: " + option);
             }
-            //else if (token == "ponder") infinite = true; - need to implement ponderhit command for this (there we set search_timer)
-            //else if movestogo - thats when we get time increment
         }
 
         return settings;

@@ -20,11 +20,10 @@ namespace Meetra::Search {
 
     struct SearchSettings {
         bool infinite = false;
-        bool fixed_time = false;
-        bool fixed_depth = false;
 
-        long long allowed_time = 0;
+        long long allowed_time = LONG_LONG_MAX;
         Depth allowed_depth = MAX_SEARCH_DEPTH;
+        uint64_t allowed_nodes = UINT64_MAX;
 
         int moves_to_go = 0;
         long long wtime = DEFAULT_SEARCH_TIME;
@@ -97,8 +96,9 @@ namespace Meetra::Search {
 
     [[nodiscard]] long long int ElapsedTimeMs();
     [[nodiscard]] bool EnoughTimeLeft();
-    [[nodiscard]] inline bool Run() { return run.load(std::memory_order_acquire); }
-    [[nodiscard]] inline bool Finished() { return finished.load(std::memory_order_acquire); }
+    [[nodiscard]] inline bool Run() { return run.load(std::memory_order_relaxed); }
+    [[nodiscard]] inline bool Finished() { return finished.load(std::memory_order_relaxed); }
+    [[nodiscard]] inline Depth MtDepth() { return mt_depth.load(std::memory_order_relaxed); }
     inline void SetUseBook(bool use) { use_book = use; }
     inline void ShowShowCurrLine(bool show) { show_currline = show; }
     inline void SetPliesMuted(int ply_muted) { plies_muted = std::max(1, ply_muted); }
@@ -110,6 +110,7 @@ namespace Meetra::Search {
     inline void SetChess960(bool set) { chess960 = set; }
     inline void SetMoveOverhead(long long overhead) { move_overhead = std::clamp(overhead, MIN_OVERHEAD, MAX_OVERHEAD); }
     void SetNumThreads(int num_threads);
+    uint64_t NodesTotal();
 
 }
 
