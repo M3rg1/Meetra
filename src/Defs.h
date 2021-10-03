@@ -5,6 +5,8 @@
 
 namespace Meetra {
 
+    using TimeValue = int64_t;
+
     using Depth = int;
 
     using Score = int;

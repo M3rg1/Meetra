@@ -5,6 +5,7 @@
 #include "Search.h"
 #include <algorithm>
 #include <numeric>
+#include "Time.h"
 
 namespace Meetra {
 
@@ -38,7 +39,7 @@ namespace Meetra {
                 curr_rm = &root_moves[curr_rm_num];
                 curr_rm->seldepth = depth_reached;
 
-                if (IsMainThread() && Search::show_currmove && Search::ElapsedTimeMs() > 1000) {
+                if (IsMainThread() && Search::show_currmove && Time::ElapsedTime<Time::ms>(Search::start_time) > 1000) {
                     Uci::Send(GetCurrMoveInfo());
                 }
 
@@ -319,9 +320,9 @@ namespace Meetra {
     std::string SearchThread::GetUpdateSearchInfo() const {
 
         auto nodes = Search::NodesTotal();
-        auto elapsed_ms = Search::ElapsedTimeMs();
-        auto nps = static_cast<uint64_t>(
-                ((static_cast<double>(nodes) / static_cast<double>(elapsed_ms))) * 1000.0);
+        auto elapsed_ns = Time::ElapsedTime<Time::ns>(Search::start_time);
+        auto elapsed_ms = elapsed_ns / 1000000;
+        auto nps = static_cast<uint64_t>((static_cast<double>(nodes) / static_cast<double>(elapsed_ns)) * 1000000000.0);
 
         std::ostringstream oss;
 
@@ -338,8 +339,9 @@ namespace Meetra {
     std::string SearchThread::GetSearchInfo() const {
 
         auto nodes = Search::NodesTotal();
-        auto elapsed_ms = Search::ElapsedTimeMs();
-        auto nps = static_cast<uint64_t>(((static_cast<double>(nodes) / static_cast<double>(elapsed_ms))) * 1000.0);
+        auto elapsed_ns = Time::ElapsedTime<Time::ns>(Search::start_time);
+        auto elapsed_ms = elapsed_ns / 1000000;
+        auto nps = static_cast<uint64_t>((static_cast<double>(nodes) / static_cast<double>(elapsed_ns)) * 1000000000.0);
         auto pvs_to_send = std::min(Search::multi_pv, static_cast<int>(root_moves.size()));
 
         std::ostringstream oss;
@@ -398,7 +400,7 @@ namespace Meetra {
             return;
         }
 
-        auto elapsed = Search::ElapsedTimeMs();
+        auto elapsed = Time::ElapsedTime<Time::ms>(Search::start_time);
 
         if (Search::settings.allowed_time < elapsed || Search::NodesTotal() > Search::settings.allowed_nodes) {
             Search::StopSearch();

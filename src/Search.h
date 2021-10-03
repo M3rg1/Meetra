@@ -5,31 +5,33 @@
 #include "Evaluator.h"
 #include "TranspositionTable.h"
 #include "SearchThread.h"
+#include "Time.h"
+#include <climits>
 
 namespace Meetra::Search {
 
 #define MAX_SEARCH_DEPTH 128
-#define DEFAULT_SEARCH_TIME static_cast<long long>(60000)
+#define DEFAULT_SEARCH_TIME static_cast<TimeValue>(60000)
 #define DEFAULT_SEARCH_THREADS 1
-#define UPDATE_INFO_INTERVAL static_cast<long long>(1000)
+#define UPDATE_INFO_INTERVAL static_cast<TimeValue>(1000)
 #define MAX_SEARCH_THREADS 32
 #define MIN_MATE_EVAL (MATE_SCORE - MAX_SEARCH_DEPTH)
-#define MIN_OVERHEAD static_cast<long long>(0)
-#define MAX_OVERHEAD static_cast<long long>(1000)
-#define DEFAULT_OVERHEAD static_cast<long long>(5)
+#define MIN_OVERHEAD static_cast<TimeValue>(0)
+#define MAX_OVERHEAD static_cast<TimeValue>(1000)
+#define DEFAULT_OVERHEAD static_cast<TimeValue>(10)
 
     struct SearchSettings {
         bool infinite = false;
 
-        long long allowed_time = LONG_LONG_MAX;
-        Depth allowed_depth = MAX_SEARCH_DEPTH;
+        TimeValue allowed_time = INT64_MAX;
         uint64_t allowed_nodes = UINT64_MAX;
+        Depth allowed_depth = MAX_SEARCH_DEPTH;
 
         int moves_to_go = 0;
-        long long wtime = DEFAULT_SEARCH_TIME;
-        long long btime = DEFAULT_SEARCH_TIME;
-        long long winc = 0;
-        long long binc = 0;
+        TimeValue wtime = DEFAULT_SEARCH_TIME;
+        TimeValue btime = DEFAULT_SEARCH_TIME;
+        TimeValue winc = 0;
+        TimeValue binc = 0;
     };
 
     inline SearchSettings settings;
@@ -42,9 +44,9 @@ namespace Meetra::Search {
     inline bool show_currmove;
     inline int plies_muted;
     inline int multi_pv;
-    inline long long move_overhead;
-    inline long long start_time;
-    inline long long last_update_time;
+    inline TimeValue last_update_time;
+    inline TimeValue move_overhead;
+    inline Time::TimePoint start_time;
     inline TranspositionTable tt;
     inline std::vector<std::unique_ptr<SearchThread>> threads;
 
@@ -94,21 +96,20 @@ namespace Meetra::Search {
     void FinishSearch();
     void Shutdown();
 
-    [[nodiscard]] long long int ElapsedTimeMs();
     [[nodiscard]] bool EnoughTimeLeft();
     [[nodiscard]] inline bool Run() { return run.load(std::memory_order_relaxed); }
     [[nodiscard]] inline bool Finished() { return finished.load(std::memory_order_relaxed); }
     [[nodiscard]] inline Depth MtDepth() { return mt_depth.load(std::memory_order_relaxed); }
-    inline void SetUseBook(bool use) { use_book = use; }
-    inline void ShowShowCurrLine(bool show) { show_currline = show; }
-    inline void SetPliesMuted(int ply_muted) { plies_muted = std::max(1, ply_muted); }
-    inline void ShowCurrMoveInfo(bool show) { show_currmove = show; }
     inline void StopSearch() { run = false; }
-    inline void SetMultiPv(int pv_num) { multi_pv = std::max(1, pv_num); }
     inline void ClearTT() { tt.Clear(); }
+    inline void ShowShowCurrLine(bool show) { show_currline = show; }
+    inline void ShowCurrMoveInfo(bool show) { show_currmove = show; }
+    inline void SetPliesMuted(int ply_muted) { plies_muted = std::max(1, ply_muted); }
+    inline void SetMultiPv(int pv_num) { multi_pv = std::max(1, pv_num); }
     inline void SetTTSize(int size_mb) { tt.Init(size_mb); }
+    inline void SetUseBook(bool use) { use_book = use; }
     inline void SetChess960(bool set) { chess960 = set; }
-    inline void SetMoveOverhead(long long overhead) { move_overhead = std::clamp(overhead, MIN_OVERHEAD, MAX_OVERHEAD); }
+    inline void SetMoveOverhead(TimeValue overhead) { move_overhead = std::clamp(overhead, MIN_OVERHEAD, MAX_OVERHEAD); }
     void SetNumThreads(int num_threads);
     uint64_t NodesTotal();
 

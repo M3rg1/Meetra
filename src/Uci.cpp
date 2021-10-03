@@ -5,6 +5,7 @@
 #include "TestSuite.h"
 #include <algorithm>
 #include <unistd.h>
+#include "Time.h"
 
 namespace Meetra::Uci {
 
@@ -143,16 +144,16 @@ namespace Meetra::Uci {
         Depth depth = 0;
         iss >> depth;
 
-        auto start = std::chrono::steady_clock::now();
+        auto start = Time::Now();
 
         auto nodes = Perft<true>(depth, board);
 
-        auto end = std::chrono::steady_clock::now();
-        auto elapsed_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count() + 1;
+        auto elapsed_ns = Time::ElapsedTime<Time::ns>(start);
+        auto elapsed_ms = elapsed_ns / 1000000;
         auto nps = static_cast<uint64_t>(static_cast<double>(nodes) / (static_cast<double>(elapsed_ns) / 1000000000.0));
 
         std::ostringstream oss;
-        oss << "\nTime elapsed: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms"
+        oss << "\nTime elapsed: " << elapsed_ms << "ms"
             << " | Nodes explored: " << nodes
             << " | NPS: " << nps;
 

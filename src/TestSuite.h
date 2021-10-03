@@ -9,7 +9,7 @@
 #include "Uci.h"
 #include <fstream>
 #include <sstream>
-#include <chrono>
+#include "Time.h"
 
 namespace Meetra::TestSuite {
 
@@ -32,20 +32,19 @@ namespace Meetra::TestSuite {
                 return false;
             }
 
-            auto start = std::chrono::steady_clock::now();
+            auto start = Time::Now();
 
             uint64_t result = Perft<false>(depth, board);
 
-            auto end = std::chrono::steady_clock::now();
-            auto time_elapsed_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count() + 1;
-            auto nps = static_cast<uint64_t> (static_cast<double>(result) /
-                                              (static_cast<double>(time_elapsed_ns) / 1000000000.0));
-            auto time_elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+            auto elapsed_ns = Time::ElapsedTime<Time::ns>(start);
+            auto elapsed_ms = elapsed_ns / 1000000;
+            auto nps = static_cast<uint64_t>(static_cast<double>(result) /
+                                             (static_cast<double>(elapsed_ns) / 1000000000.0));
 
             std::ostringstream oss;
             oss << "Position: " << fen << '\n'
                 << "Depth: " << std::to_string(depth) << " | Expected: " << expected <<
-                " | Got: " << result << " | Time elapsed: " << time_elapsed_ms << "ms" << " | NPS: " << nps;
+                " | Got: " << result << " | Time elapsed: " << elapsed_ms << "ms" << " | NPS: " << nps;
 
             if (result != expected) {
                 oss << "\n=== TEST ERROR ===\n";
@@ -111,7 +110,7 @@ namespace Meetra::TestSuite {
             return;
         }
 
-        auto start = std::chrono::steady_clock::now();
+        auto start = Time::Now();
 
         int errors = 0;
         for (size_t i = 0; i < tests.size(); i++) {
@@ -121,8 +120,7 @@ namespace Meetra::TestSuite {
             }
         }
 
-        auto end = std::chrono::steady_clock::now();
-        auto time_elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+        auto time_elapsed_ms = Time::ElapsedTime<Time::ms>(start);
 
         Uci::Send("Finished in " + std::to_string(time_elapsed_ms) + "ms.");
 

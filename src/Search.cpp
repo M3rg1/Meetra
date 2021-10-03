@@ -1,21 +1,13 @@
 #include "Search.h"
 #include "MoveGen.h"
-#include <chrono>
 #include <random>
 #include "Book.h"
 #include <algorithm>
 
 namespace Meetra::Search {
 
-    long long int ElapsedTimeMs() {
-        auto now = time_point_cast<std::chrono::milliseconds>(
-                std::chrono::steady_clock::now()).time_since_epoch().count();
-        auto elapsed_ms = now - start_time;
-        return elapsed_ms + 1;
-    }
-
     bool EnoughTimeLeft() {
-        if (settings.infinite || settings.allowed_time > ElapsedTimeMs() * 2) {
+        if (settings.infinite || settings.allowed_time > Time::ElapsedTime<Time::ms>(Search::start_time) * 2) {
             return true;
         }
         return false;
@@ -54,8 +46,7 @@ namespace Meetra::Search {
         finished = false;
 
         last_update_time = 0;
-        start_time = time_point_cast<std::chrono::milliseconds>(
-                std::chrono::steady_clock::now()).time_since_epoch().count();
+        start_time = Time::Now();
 
         settings = s;
 
