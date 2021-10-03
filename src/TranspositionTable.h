@@ -24,7 +24,6 @@ namespace Meetra {
         void Clear();
         TTFlag Probe(Hash64 hash, Score alpha, Score beta, Depth depth, Depth ply, Score &score, Move &move) const;
         [[nodiscard]] inline double Usage() const {
-            if (buckets_count == 0) return 0.0;
             double usage = static_cast<double>(used_entries.load(std::memory_order_relaxed))
                            / static_cast<double>(buckets_count * TT_ENTRIES_PER_BUCKET);
             return std::min(usage, 1.0);
