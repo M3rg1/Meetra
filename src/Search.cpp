@@ -33,7 +33,7 @@ namespace Meetra::Search {
 
         if (!settings.infinite) {
             auto time_left = board.ColorToMove() == WHITE ? settings.wtime : settings.btime;
-            int reduction = TimeReduction(board);
+            auto reduction = TimeReduction(board);
             settings.allowed_time = time_left / reduction;
             settings.allowed_time += board.ColorToMove() == WHITE ? settings.winc : settings.binc;
         }

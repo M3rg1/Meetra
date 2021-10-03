@@ -169,7 +169,7 @@ namespace Meetra {
 
         Search::PVMoveLine line;
         // null move pruning
-#define R 4
+        constexpr int R = 4;
         if (NodeType == NONPV && prune && depth >= R && eval >= beta && eval >= static_eval) {
             board.MakeNullMove();
             Score null_score = -ABSearch<NULLMOVE>(-beta, -beta + 1, depth - R, ply + R, line);

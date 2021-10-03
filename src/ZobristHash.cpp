@@ -56,7 +56,7 @@ namespace Meetra::Zobrist {
 
     Hash64 GenHash64(const Board &board) {
 
-        Hash64 hash = NEW_HASH;
+        Hash64 hash = NEW_HASH64;
 
         for (Color c = WHITE; c < COLOR_NR; c++) {
             for (PieceType pt = PAWN; pt < PIECE_TYPE_NR; pt++) {

@@ -6,19 +6,8 @@
 #include "TranspositionTable.h"
 #include "SearchThread.h"
 #include "Time.h"
-#include <climits>
 
 namespace Meetra::Search {
-
-#define MAX_SEARCH_DEPTH 128
-#define DEFAULT_SEARCH_TIME static_cast<TimeRep>(60000)
-#define DEFAULT_SEARCH_THREADS 1
-#define UPDATE_INFO_INTERVAL static_cast<TimeRep>(1000)
-#define MAX_SEARCH_THREADS 32
-#define MIN_MATE_EVAL (MATE_SCORE - MAX_SEARCH_DEPTH)
-#define MIN_OVERHEAD static_cast<TimeRep>(0)
-#define MAX_OVERHEAD static_cast<TimeRep>(1000)
-#define DEFAULT_OVERHEAD static_cast<TimeRep>(10)
 
     struct SearchSettings {
         bool infinite = false;

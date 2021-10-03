@@ -5,11 +5,6 @@
 
 namespace Meetra {
 
-#define POSITIVE_INF 32000
-#define NEGATIVE_INF (-32000)
-#define MATE_SCORE 31000
-#define DRAW_SCORE 0
-
     class Board;
 
     namespace Evaluation {

@@ -13,10 +13,10 @@ namespace Meetra {
 
     using Hash64 = uint64_t;
     using Hash16 = uint16_t;
-#define NEW_HASH 0
+    constexpr Hash64 NEW_HASH64 = 0;
 
     using Bitboard = uint64_t;
-#define EMPTY_BB 0
+    constexpr Bitboard EMPTY_BB = 0;
 
     enum Colors {
         WHITE, BLACK,
@@ -63,7 +63,7 @@ namespace Meetra {
     inline File FileFromChar(char c) { return c - 'a'; }
     inline char CharFromFile(File f) { return static_cast<char>(f + 'a'); }
 
-    inline std::string_view piece_char = "oPNBRQK  pnbrqk";
+    constexpr std::string_view piece_char = "oPNBRQK  pnbrqk";
 
     inline Piece CharToPiece(char c) {
         return static_cast<Piece>(piece_char.find(c));
@@ -138,6 +138,38 @@ namespace Meetra {
 
 #pragma endregion
 
+    // search consts
+    constexpr Depth MAX_SEARCH_DEPTH = 128;
+
+    constexpr int DEFAULT_SEARCH_THREADS = 1;
+    constexpr int MAX_SEARCH_THREADS = 32;
+
+    const std::string BOOK_PATH = "tools/bestmove_r20d20_a5000.mtr.bin";
+    constexpr int BOOK_DEPTH = 20;
+
+    const std::string STARTPOS_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    constexpr int MAX_LEGAL_MOVES = 256;
+    constexpr int MAX_GAME_LENGTH = 1024;
+
+    // time related consts
+    constexpr TimeRep DEFAULT_SEARCH_TIME = 60000;
+    constexpr TimeRep MIN_OVERHEAD = 0;
+    constexpr TimeRep MAX_OVERHEAD = 1000;
+    constexpr TimeRep DEFAULT_OVERHEAD = 10;
+    constexpr TimeRep UPDATE_INFO_INTERVAL = 1000;
+
+    // eval consts
+    constexpr Score POSITIVE_INF = 32000;
+    constexpr Score NEGATIVE_INF = -32000;
+    constexpr Score MATE_SCORE = 31000;
+    constexpr Score DRAW_SCORE = 0;
+    constexpr Score MIN_MATE_EVAL = MATE_SCORE - MAX_SEARCH_DEPTH;
+
+    // TT consts
+    constexpr size_t MIN_HASH_SIZE = 8; // this should never be 0
+    constexpr size_t DEFAULT_HASH_SIZE = 128;
+    constexpr size_t MAX_HASH_SIZE = 8192;
+    constexpr size_t TT_ENTRIES_PER_BUCKET = 4;
 }
 
 #endif //MEETRA_DEFS_H

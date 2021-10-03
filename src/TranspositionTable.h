@@ -5,13 +5,9 @@
 #include <atomic>
 #include "Board.h"
 #include "ZobristHash.h"
+#include "Defs.h"
 
 namespace Meetra {
-
-#define MIN_HASH_SIZE static_cast<size_t>(8) // this should never be 0
-#define DEFAULT_HASH_SIZE static_cast<size_t>(128)
-#define MAX_HASH_SIZE static_cast<size_t>(8192)
-#define TT_ENTRIES_PER_BUCKET 4
 
     enum TTFlags {
         NOT_FOUND, ALPHA, BETA, EXACT, CUTOFF

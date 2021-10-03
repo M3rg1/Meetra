@@ -7,10 +7,6 @@
 
 namespace Meetra {
 
-#define STARTPOS_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-#define MAX_LEGAL_MOVES 256
-#define MAX_GAME_LENGTH 1024
-
     class Board {
 
     public:
