@@ -16,7 +16,7 @@ namespace Meetra::Time {
     }
 
     template<typename UNITS>
-    TimeValue ElapsedTime(TimePoint since) {
+    TimeRep ElapsedTime(TimePoint since) {
         return std::chrono::duration_cast<UNITS>(Now() - since).count() + 1;
     }
 

@@ -11,27 +11,27 @@
 namespace Meetra::Search {
 
 #define MAX_SEARCH_DEPTH 128
-#define DEFAULT_SEARCH_TIME static_cast<TimeValue>(60000)
+#define DEFAULT_SEARCH_TIME static_cast<TimeRep>(60000)
 #define DEFAULT_SEARCH_THREADS 1
-#define UPDATE_INFO_INTERVAL static_cast<TimeValue>(1000)
+#define UPDATE_INFO_INTERVAL static_cast<TimeRep>(1000)
 #define MAX_SEARCH_THREADS 32
 #define MIN_MATE_EVAL (MATE_SCORE - MAX_SEARCH_DEPTH)
-#define MIN_OVERHEAD static_cast<TimeValue>(0)
-#define MAX_OVERHEAD static_cast<TimeValue>(1000)
-#define DEFAULT_OVERHEAD static_cast<TimeValue>(10)
+#define MIN_OVERHEAD static_cast<TimeRep>(0)
+#define MAX_OVERHEAD static_cast<TimeRep>(1000)
+#define DEFAULT_OVERHEAD static_cast<TimeRep>(10)
 
     struct SearchSettings {
         bool infinite = false;
 
-        TimeValue allowed_time = INT64_MAX;
+        TimeRep allowed_time = INT64_MAX;
         uint64_t allowed_nodes = UINT64_MAX;
         Depth allowed_depth = MAX_SEARCH_DEPTH;
 
         int moves_to_go = 0;
-        TimeValue wtime = DEFAULT_SEARCH_TIME;
-        TimeValue btime = DEFAULT_SEARCH_TIME;
-        TimeValue winc = 0;
-        TimeValue binc = 0;
+        TimeRep wtime = DEFAULT_SEARCH_TIME;
+        TimeRep btime = DEFAULT_SEARCH_TIME;
+        TimeRep winc = 0;
+        TimeRep binc = 0;
     };
 
     inline SearchSettings settings;
@@ -44,8 +44,8 @@ namespace Meetra::Search {
     inline bool show_currmove;
     inline int plies_muted;
     inline int multi_pv;
-    inline TimeValue last_update_time;
-    inline TimeValue move_overhead;
+    inline TimeRep last_update_time;
+    inline TimeRep move_overhead;
     inline Time::TimePoint start_time;
     inline TranspositionTable tt;
     inline std::vector<std::unique_ptr<SearchThread>> threads;
@@ -109,7 +109,7 @@ namespace Meetra::Search {
     inline void SetTTSize(int size_mb) { tt.Init(size_mb); }
     inline void SetUseBook(bool use) { use_book = use; }
     inline void SetChess960(bool set) { chess960 = set; }
-    inline void SetMoveOverhead(TimeValue overhead) { move_overhead = std::clamp(overhead, MIN_OVERHEAD, MAX_OVERHEAD); }
+    inline void SetMoveOverhead(TimeRep overhead) { move_overhead = std::clamp(overhead, MIN_OVERHEAD, MAX_OVERHEAD); }
     void SetNumThreads(int num_threads);
     uint64_t NodesTotal();
 
