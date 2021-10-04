@@ -4,8 +4,6 @@
 #include "MoveGen.h"
 #include "Search.h"
 #include <algorithm>
-#include <numeric>
-#include "Time.h"
 
 namespace Meetra {
 
@@ -19,7 +17,7 @@ namespace Meetra {
         active = true;
 
         // iterative deepening
-        for (depth_reached = 2; depth_reached <= Search::settings.allowed_depth && Search::Run(); depth_reached++) {
+        for (depth_reached = 1; depth_reached <= Search::settings.allowed_depth && Search::Run(); depth_reached++) {
 
             // seldepth_reached is always at least the current depth being searched
             seldepth_reached = depth_reached;
@@ -229,6 +227,12 @@ namespace Meetra {
                 if (score > alpha) {
 
                     if (score >= beta) {
+
+                        if (move_gen.IsCapture(move)) {
+                            killers[ply][1] = killers[ply][0];
+                            killers[ply][0] = move;
+                        }
+
                         Search::tt.Save(board.GetHash(), score, depth, move, BETA, ply);
                         return score;
                     }

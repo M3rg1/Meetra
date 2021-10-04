@@ -29,6 +29,7 @@ namespace Meetra {
         [[nodiscard]] Move GetBestMove();
         [[nodiscard]] Move GetAnyMove();
         [[nodiscard]] bool IsPseudoLegal(Move m) const;
+        [[nodiscard]] inline bool IsCapture(Move m) const { return board.GetPieceOnSquare(ToSquare(m)) != NO_PIECE; }
         [[nodiscard]] inline bool IsInCheck() const { return checkers; }
 
     private:
@@ -64,21 +65,23 @@ namespace Meetra {
         bool double_check;
 
         [[nodiscard]] inline bool Empty() const { return moves_cnt == 0; }
-        inline Move PopMove() { return move_eval[--moves_cnt].move; }
+        inline Move PopBack() { return move_eval[--moves_cnt].move; }
         inline Move PopRef(ScoredMove &it) {
-            std::swap(it, move_eval[--moves_cnt]);
+            moves_cnt--;
+            std::swap(it, move_eval[moves_cnt]);
             return move_eval[moves_cnt].move;
         }
-        inline void PutMove(Move m) { move_eval[moves_cnt++].move = m; }
+        inline void PutMove(Move m) {
+            move_eval[moves_cnt].move = m;
+            move_eval[moves_cnt].score = board.GetMoveEval(m);
+            moves_cnt++;
+        }
         inline void PutPromMoves(Square from, Square to) {
             PutMove(NewMove(from, to, PROMOTE_QUEEN));
             PutMove(NewMove(from, to, PROMOTE_ROOK));
             PutMove(NewMove(from, to, PROMOTE_BISHOP));
             PutMove(NewMove(from, to, PROMOTE_KNIGHT));
         }
-
-        Move PickBestMove();
-        void EvalMoves();
 
         template<Color C, GenType Type>
         void NextPhase();

@@ -51,31 +51,20 @@ namespace Meetra {
         double_check = false;
     }
 
-    void MoveGen::EvalMoves() {
-        for (int i = 0; i < moves_cnt; i++) {
-            move_eval[i].score = move_eval[i].move != ZERO_MOVE ? board.GetMoveEval(move_eval[i].move) : NEGATIVE_INF;
-        }
-    }
-
-    Move MoveGen::PickBestMove() {
-        auto it = std::max_element(move_eval, move_eval + moves_cnt);
-        return PopRef(*it);
-    }
-
     template<GenType Type>
     Move MoveGen::GetBestMove() {
         while (Empty()) {
             my_color == WHITE ? NextPhase<WHITE, Type>() : NextPhase<BLACK, Type>();
-            EvalMoves();
         }
-        return PickBestMove();
+        auto it = std::max_element(move_eval, move_eval + moves_cnt);
+        return PopRef(*it);
     }
 
     Move MoveGen::GetAnyMove() {
         while (Empty()) {
             my_color == WHITE ? NextPhase<WHITE, NORMAL>() : NextPhase<BLACK, NORMAL>();
         }
-        return PopMove();
+        return PopBack();
     }
 
     template Move MoveGen::GetBestMove<QSEARCH>();
@@ -94,7 +83,8 @@ namespace Meetra {
                 gen_phase = END;
                 break;
             case END:
-                PutMove(ZERO_MOVE);
+                move_eval[0].move = ZERO_MOVE;
+                moves_cnt = 1;
                 break;
             case DOUBLE_CHECK:
                 GenMovesForPhase<DOUBLE_CHECK, C>();

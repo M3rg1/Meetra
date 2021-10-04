@@ -41,7 +41,7 @@ namespace Meetra::Search {
 
     struct PVMoveLine {
     private:
-        Move moves[MAX_SEARCH_DEPTH];
+        Move moves[MAX_SEARCH_DEPTH + 1];
         size_t len = 0;
     public:
         [[nodiscard]] size_t Size() const { return len; }
@@ -93,7 +93,7 @@ namespace Meetra::Search {
     inline void ClearTT() { tt.Clear(); }
     inline void ShowShowCurrLine(bool show) { show_currline = show; }
     inline void ShowCurrMoveInfo(bool show) { show_currmove = show; }
-    inline void SetPliesMuted(int ply_muted) { plies_muted = std::max(1, ply_muted); }
+    inline void SetPliesMuted(int ply_muted) { plies_muted = std::max(0, ply_muted); }
     inline void SetMultiPv(int pv_num) { multi_pv = std::max(1, pv_num); }
     inline void SetTTSize(int size_mb) { tt.Init(size_mb); }
     inline void SetUseBook(bool use) { use_book = use; }

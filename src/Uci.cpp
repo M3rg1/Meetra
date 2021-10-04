@@ -5,19 +5,18 @@
 #include "TestSuite.h"
 #include <algorithm>
 #include <unistd.h>
-#include "Time.h"
 
 namespace Meetra::Uci {
 
-    std::string GetLogo() {
-        return " __  __         _\n"               \
-               "|  \\/  |___ ___| |_ _ _ __ _\n"   \
-               "| |\\/| / -_) -_)  _| '_/ _` |\n"  \
-               "|_|  |_\\___\\___|\\__|_| \\__,_|";
-    }
-    std::string GetName() { return "Meetra"; }
-    std::string GetVersion() { return "0.0.1"; }
-    std::string GetAuthor() { return "M3rg1"; }
+    const std::string LOGO = " __  __         _\n"               \
+                             "|  \\/  |___ ___| |_ _ _ __ _\n"   \
+                             "| |\\/| / -_) -_)  _| '_/ _` |\n"  \
+                             "|_|  |_\\___\\___|\\__|_| \\__,_|";
+
+    const std::string NAME = "Meetra";
+    const std::string VERSION = "0.0.1";
+    const std::string AUTHOR = "M3rg1";
+
     std::string GetOptions() {
         std::ostringstream oss;
         oss << "option name Clear Hash type button\n"
@@ -26,7 +25,7 @@ namespace Meetra::Uci {
             << "option name Hash type spin default " << DEFAULT_HASH_SIZE << " min " << MIN_HASH_SIZE << " max "
             << MAX_HASH_SIZE << "\n"
             << "option name MultiPV type spin default 1 min 1 max 32\n"
-            << "option name Mute plies type spin default 1 min 1 max 64\n"
+            << "option name Mute plies type spin default 0 min 0 max 64\n"
             << "option name OwnBook type check default false\n"
             << "option name Threads type spin default " << DEFAULT_SEARCH_THREADS << " min 1 max " << MAX_SEARCH_THREADS
             << "\n"
@@ -60,9 +59,9 @@ namespace Meetra::Uci {
         Board board;
 
         if (isatty(STDOUT_FILENO)) {
-            Send(GetLogo() + "\n"
-                 + " v. " + GetVersion() + "\n"
-                 + " Made by " + GetAuthor() + "\n\n"
+            Send(LOGO + "\n"
+                 + " v. " + VERSION + "\n"
+                 + " Made by " + AUTHOR + "\n\n"
                  + board.PPBoard());
         }
 
@@ -123,8 +122,8 @@ namespace Meetra::Uci {
 
     void UciCommand() {
         Send(
-                "id name " + GetName() + " v. " + GetVersion() + '\n'
-                + "id author " + GetAuthor() + "\n"
+                "id name " + NAME + " v. " + VERSION + '\n'
+                + "id author " + AUTHOR + "\n"
                 + GetOptions() + "\n"
                 + "uciok"
         );

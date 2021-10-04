@@ -140,7 +140,7 @@ namespace Meetra::Search {
         show_currline = false;
         multi_pv = 1;
         show_currmove = true;
-        plies_muted = 1;
+        plies_muted = 0;
         last_update_time = 0;
         move_overhead = DEFAULT_OVERHEAD;
         SetNumThreads(DEFAULT_SEARCH_THREADS);

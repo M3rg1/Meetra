@@ -53,6 +53,7 @@ namespace Meetra {
         int id;
 
         Board board;
+        Move killers[MAX_SEARCH_DEPTH + 1][2];
         std::vector<Search::RootMove> root_moves;
         Search::RootMove *curr_rm;
         size_t curr_rm_num;
