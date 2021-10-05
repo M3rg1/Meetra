@@ -18,8 +18,7 @@ namespace Meetra::Search {
             return settings.moves_to_go + 2;
         }
         int reduction = 45 + std::min(b.GetPhase(), 20) - b.FullMoveClock();
-        reduction = std::max(reduction, 20);
-        return reduction;
+        return std::max(reduction, 20);
     }
 
     uint64_t NodesTotal() {
