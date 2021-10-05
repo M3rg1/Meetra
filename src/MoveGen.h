@@ -22,7 +22,7 @@ namespace Meetra {
             move_eval[moves_cnt++].score = 10000;
         }
 
-        template<GenType Type>
+        template<GenType T>
         [[nodiscard]] Move GetBestMove();
         [[nodiscard]] Move GetAnyMove();
         [[nodiscard]] bool IsPseudoLegal(Move m) const;
@@ -72,22 +72,23 @@ namespace Meetra {
             std::swap(it, move_eval[moves_cnt]);
             return move_eval[moves_cnt].move;
         }
-        inline void PutMove(Move m) {
-            move_eval[moves_cnt].move = m;
-            move_eval[moves_cnt].score = board.GetMoveEval(m);
-            moves_cnt++;
+        inline void PutMove(Move m) { move_eval[moves_cnt++].move = m; }
+        inline void PutPromMoves(Move m) {
+            PutMove(m | PROMOTE_QUEEN);
+            PutMove(m | PROMOTE_ROOK);
+            PutMove(m | PROMOTE_BISHOP);
+            PutMove(m | PROMOTE_KNIGHT);
         }
-        inline void PutPromMoves(Square from, Square to) {
-            PutMove(NewMove(from, to, PROMOTE_QUEEN));
-            PutMove(NewMove(from, to, PROMOTE_ROOK));
-            PutMove(NewMove(from, to, PROMOTE_BISHOP));
-            PutMove(NewMove(from, to, PROMOTE_KNIGHT));
+        inline void EvalMoves() {
+            for (int i = 0; i < moves_cnt; i++) {
+                move_eval[i].score = board.GetMoveEval(move_eval[i].move);
+            }
         }
 
-        template<Color C, GenType Type>
+        template<Color C, GenType T>
         void NextPhase();
 
-        template<GenPhase phase, Color C>
+        template<GenPhase P, Color C>
         void GenMovesForPhase();
 
         template<PieceType PT, Color C>

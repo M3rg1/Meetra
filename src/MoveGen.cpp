@@ -50,10 +50,13 @@ namespace Meetra {
         double_check = false;
     }
 
-    template<MoveGen::GenType Type>
+    template<MoveGen::GenType T>
     Move MoveGen::GetBestMove() {
         while (Empty()) {
-            my_color == WHITE ? NextPhase<WHITE, Type>() : NextPhase<BLACK, Type>();
+            my_color == WHITE ? NextPhase<WHITE, T>() : NextPhase<BLACK, T>();
+            if (move_eval[0].move != ZERO_MOVE) {
+                EvalMoves();
+            }
         }
         auto it = std::max_element(move_eval, move_eval + moves_cnt);
         return PopRef(*it);
@@ -67,23 +70,21 @@ namespace Meetra {
     }
 
     template Move MoveGen::GetBestMove<MoveGen::QSEARCH>();
-
     template Move MoveGen::GetBestMove<MoveGen::NORMAL>();
 
-    template<Color C, MoveGen::GenType Type>
+    template<Color C, MoveGen::GenType T>
     void MoveGen::NextPhase() {
         switch (gen_phase) {
             case CAPTURE:
                 GenMovesForPhase<CAPTURE, C>();
-                gen_phase = Type == QSEARCH ? END : QUIET;
+                gen_phase = T == QSEARCH ? END : QUIET;
                 break;
             case QUIET:
                 GenMovesForPhase<QUIET, C>();
                 gen_phase = END;
                 break;
             case END:
-                move_eval[0].move = ZERO_MOVE;
-                moves_cnt = 1;
+                PutMove(ZERO_MOVE);
                 break;
             case DOUBLE_CHECK:
                 GenMovesForPhase<DOUBLE_CHECK, C>();
@@ -92,18 +93,18 @@ namespace Meetra {
         }
     }
 
-    template<MoveGen::GenPhase phase, Color C>
+    template<MoveGen::GenPhase P, Color C>
     void MoveGen::GenMovesForPhase() {
 
-        if constexpr (phase == DOUBLE_CHECK) {
+        if constexpr (P == DOUBLE_CHECK) {
             GenMovesForPieceType<KING, C>(enemy_pieces | empty_squares);
             return;
-        } else if constexpr (phase == QUIET) {
+        } else if constexpr (P == QUIET) {
             phase_mask = legal_moves & empty_squares;
             GenCastlingMoves<C>();
             GenPawnQuiets<C>();
             GenMovesForPieceType<KING, C>(empty_squares);
-        } else if constexpr (phase == CAPTURE) {
+        } else if constexpr (P == CAPTURE) {
             phase_mask = legal_moves & enemy_pieces;
             GenPawnCaptures<C, LEFT>();
             GenPawnCaptures<C, RIGHT>();
@@ -147,7 +148,7 @@ namespace Meetra {
             Square dest_s = Bitboards::PopLsb(promotions);
             Square origin_s = dest_s - push_dir;
             if (!DiscoveryCheck(origin_s, dest_s)) {
-                PutPromMoves(origin_s, dest_s);
+                PutPromMoves(NewMove(origin_s, dest_s));
             }
         }
 
@@ -180,7 +181,7 @@ namespace Meetra {
             Square dest_s = Bitboards::PopLsb(promotions);
             Square origin_s = dest_s - capture_dir;
             if (!DiscoveryCheck(origin_s, dest_s)) {
-                PutPromMoves(origin_s, dest_s);
+                PutPromMoves(NewMove(origin_s, dest_s));
             }
         }
         while (captures) {
