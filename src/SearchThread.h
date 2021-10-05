@@ -19,7 +19,7 @@ namespace Meetra {
 
     public:
 
-        SearchThread();
+        explicit SearchThread(int id);
         ~SearchThread();
         void InitNewSearch(const Board &b, const std::vector<Search::RootMove> &moves);
         void StartThread();
@@ -50,9 +50,6 @@ namespace Meetra {
 
         void InitThread(const std::stop_token &stop_token);
 
-        inline static int next_id = 0;
-        int id = next_id++;
-
         Board board;
         Move killers[MAX_SEARCH_DEPTH + 1][2];
         std::vector<Search::RootMove> root_moves;
@@ -62,6 +59,7 @@ namespace Meetra {
         Depth seldepth_reached;
         std::atomic<uint64_t> nodes_explored;
 
+        int id;
         std::atomic<bool> active = false;
         std::mutex mtx;
         std::condition_variable_any cond_var;

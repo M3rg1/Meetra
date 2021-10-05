@@ -419,7 +419,9 @@ namespace Meetra {
         }
     }
 
-    SearchThread::SearchThread() : thread([&](const std::stop_token &stop_token) { InitThread(stop_token); }) {}
+    SearchThread::SearchThread(int id) :
+            id(id),
+            thread([&](const std::stop_token &stop_token) { InitThread(stop_token); }) {}
 
     void SearchThread::InitThread(const std::stop_token &stop_token) {
         while (true) {
@@ -433,9 +435,6 @@ namespace Meetra {
     }
 
     SearchThread::~SearchThread() {
-        if (IsMainThread()) {
-            next_id = 0;
-        }
         if (thread.joinable()) {
             thread.request_stop();
             thread.join();

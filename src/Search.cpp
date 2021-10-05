@@ -160,7 +160,7 @@ namespace Meetra::Search {
         Shutdown();
 
         for (int i = 0; i < num_threads; i++) {
-            threads.emplace_back(new SearchThread());
+            threads.emplace_back(new SearchThread(i));
         }
     }
 }
