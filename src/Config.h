@@ -10,10 +10,10 @@ namespace Meetra {
     constexpr int DEFAULT_SEARCH_THREADS = 1;
     constexpr int MAX_SEARCH_THREADS = 32;
 
-    const std::string BOOK_PATH = "tools/bestmove_r20d20_a5000.mtr.bin";
+    inline const std::string BOOK_PATH = "tools/bestmove_r20d20_a5000.mtr.bin";
     constexpr int BOOK_DEPTH = 20;
 
-    const std::string STARTPOS_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    inline const std::string STARTPOS_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     constexpr int MAX_LEGAL_MOVES = 256;
     constexpr int MAX_GAME_LENGTH = 1024;
 
@@ -41,7 +41,7 @@ namespace Meetra {
 
     // perft testing
     constexpr bool ETHEREAL_SUITE = false;
-    const std::string TEST_FILE_PATH = "tools/PerftTests.txt"; // perft960.txt - ethereal suite
+    inline const std::string TEST_FILE_PATH = "tools/PerftTests.txt"; // perft960.txt - ethereal suite
 }
 
 #endif //MEETRA_CONFIG_H
