@@ -49,7 +49,6 @@ namespace Meetra {
         [[nodiscard]] inline bool IsMainThread() const { return id == 0; }
 
         void InitThread(const std::stop_token &stop_token);
-        void Shutdown();
 
         inline static int next_id = 0;
         int id = next_id++;

@@ -103,10 +103,11 @@ namespace Meetra {
             }
         } // end iterative deepening loop
 
-        active = false;
         if (IsMainThread()) {
             Search::FinishSearch();
         }
+
+        active = false;
     }
 
     template<SearchThread::Node NodeType>
@@ -432,10 +433,13 @@ namespace Meetra {
     }
 
     SearchThread::~SearchThread() {
-        if (id == 0) {
+        if (IsMainThread()) {
             next_id = 0;
         }
-        Shutdown();
+        if (thread.joinable()) {
+            thread.request_stop();
+            thread.join();
+        }
     }
 
     void SearchThread::InitNewSearch(const Board &b, const std::vector<Search::RootMove> &moves) {
@@ -446,17 +450,6 @@ namespace Meetra {
         depth_reached = 0;
         seldepth_reached = 0;
         nodes_explored = 0;
-    }
-
-    void SearchThread::Shutdown() {
-        if (thread.joinable()) {
-            {
-                std::scoped_lock lock(mtx);
-                active = false;
-            }
-            thread.request_stop();
-            thread.join();
-        }
     }
 
     void SearchThread::StartThread() {
