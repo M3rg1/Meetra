@@ -100,9 +100,7 @@ namespace Meetra::Search {
     inline void SetTTSize(int size_mb) { tt.Init(size_mb); }
     inline void SetUseBook(bool use) { use_book = use; }
     inline void SetChess960(bool set) { chess960 = set; }
-    inline void SetMoveOverhead(TimeRep overhead) {
-        move_overhead = std::clamp(overhead, MIN_OVERHEAD, MAX_OVERHEAD);
-    }
+    inline void SetMoveOverhead(TimeRep overhead) { move_overhead = std::clamp(overhead, MIN_OVERHEAD, MAX_OVERHEAD); }
     void SetNumThreads(int num_threads);
     uint64_t NodesTotal();
 
