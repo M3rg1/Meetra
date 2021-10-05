@@ -124,8 +124,8 @@ namespace Meetra::Uci {
     void UciCommand() {
         Send(
                 "id name " + NAME + " v. " + VERSION + '\n'
-                + "id author " + AUTHOR + "\n"
-                + GetOptions() + "\n"
+                + "id author " + AUTHOR + '\n'
+                + GetOptions() + '\n'
                 + "uciok"
         );
     }
