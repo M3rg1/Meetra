@@ -7,7 +7,7 @@
 namespace Meetra::Search {
 
     bool EnoughTimeLeft() {
-        if (settings.infinite || settings.allowed_time > Time::ElapsedTime<Time::ms>(Search::start_time) * 2) {
+        if (settings.infinite || settings.allowed_time > Time::ElapsedTime<Time::ms>(start_time) * 2) {
             return true;
         }
         return false;
@@ -23,8 +23,8 @@ namespace Meetra::Search {
     }
 
     uint64_t NodesTotal() {
-        return std::accumulate(Search::threads.begin(),
-                               Search::threads.end(),
+        return std::accumulate(threads.begin(),
+                               threads.end(),
                                0ULL,
                                [&](auto sum, auto const &t) { return sum + t->Nodes(); });
     }
@@ -110,7 +110,7 @@ namespace Meetra::Search {
                         std::mt19937{std::random_device{}()}
                 );
                 Uci::Send("bestmove " + board.MoveToName(moves.back()));
-                Search::finished = true;
+                finished = true;
                 return;
             }
         }
@@ -122,7 +122,7 @@ namespace Meetra::Search {
             (root_moves.size() == 1 && !settings.infinite)) {
             StopSearch();
             Uci::Send("bestmove " + board.MoveToName(root_moves.empty() ? ZERO_MOVE : root_moves.front().move));
-            Search::finished = true;
+            finished = true;
             return;
         }
 
