@@ -103,7 +103,6 @@ namespace Meetra::Search {
     inline void SetMoveOverhead(TimeRep overhead) { move_overhead = std::clamp(overhead, MIN_OVERHEAD, MAX_OVERHEAD); }
     void SetNumThreads(int num_threads);
     uint64_t NodesTotal();
-
 }
 
 #endif //MEETRA_SEARCH_H
