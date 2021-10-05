@@ -97,7 +97,7 @@ namespace Meetra {
 
         Piece board[SQUARE_NR];
         Bitboard color_bbs[COLOR_NR];
-        Bitboard type_bbs[PIECE_TYPE_NR + 1]; // + 1 for all_types
+        Bitboard type_bbs[PIECE_TYPE_NR + 1];
 #pragma endregion
     };
 }

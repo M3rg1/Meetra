@@ -46,24 +46,24 @@ namespace Meetra {
 
         const Board &board;
 
-        GenPhase gen_phase;
+        Color my_color;
+        Color enemy_color;
 
-        ScoredMove move_eval[MAX_LEGAL_MOVES];
-        int moves_cnt;
-
+        Square king_s;
+        Square ep_s;
         Bitboard checkers;
         Bitboard blockers;
         Bitboard legal_moves;
-        Bitboard phase_mask;
-        Bitboard enemy_pieces;
         Bitboard all_pieces;
+        Bitboard enemy_pieces;
         Bitboard empty_squares;
-        Square king_s;
-        Square ep_s;
-
-        Color my_color;
-        Color enemy_color;
         bool double_check;
+
+        GenPhase gen_phase;
+        Bitboard phase_mask;
+
+        ScoredMove move_eval[MAX_LEGAL_MOVES];
+        int moves_cnt;
 
         [[nodiscard]] inline bool Empty() const { return moves_cnt == 0; }
         inline Move PopBack() { return move_eval[--moves_cnt].move; }
