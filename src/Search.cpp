@@ -29,7 +29,7 @@ namespace Meetra::Search {
                                [&](auto sum, auto const &t) { return sum + t->Nodes(); });
     }
 
-    void InitSearchTimer(Board &board) {
+    void InitSearchTimer(const Board &board) {
 
         if (!settings.infinite) {
             auto time_left = board.ColorToMove() == WHITE ? settings.wtime : settings.btime;
@@ -41,7 +41,7 @@ namespace Meetra::Search {
         settings.allowed_time -= move_overhead;
     }
 
-    void InitSearch(SearchSettings &s, Board &board) {
+    void InitSearch(const SearchSettings &s, const Board &board) {
 
         finished = false;
 
@@ -58,7 +58,7 @@ namespace Meetra::Search {
         InitSearchTimer(board);
     }
 
-    std::vector<RootMove> GenRootMoves(Board &board) {
+    std::vector<RootMove> GenRootMoves(const Board &board) {
         MoveGen move_gen(board);
         std::vector<RootMove> moves;
         Move move;

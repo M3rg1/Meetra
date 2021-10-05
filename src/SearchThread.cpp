@@ -228,7 +228,8 @@ namespace Meetra {
 
                     if (score >= beta) {
 
-                        if (move_gen.IsCapture(move)) {
+                        // killers only for pv nodes ?? for nonpv as well?? what about null move search
+                        if (NodeType == PV && move_gen.IsCapture(move)) {
                             killers[ply][1] = killers[ply][0];
                             killers[ply][0] = move;
                         }
@@ -417,18 +418,17 @@ namespace Meetra {
         }
     }
 
-    SearchThread::SearchThread() : active(false) {
-        id = next_id++;
-        thread = std::jthread([&](const std::stop_token &stop_token) {
-            while (true) {
-                {
-                    std::unique_lock lock(mtx);
-                    cond_var.wait(lock, stop_token, [&] { return active.load(); });
-                }
-                if (stop_token.stop_requested()) { return; }
-                Search();
+    SearchThread::SearchThread() : thread([&](const std::stop_token &stop_token) { InitThread(stop_token); }) {}
+
+    void SearchThread::InitThread(const std::stop_token &stop_token) {
+        while (true) {
+            {
+                std::unique_lock lock(mtx);
+                cond_var.wait(lock, stop_token, [&] { return active.load(); });
             }
-        });
+            if (stop_token.stop_requested()) { return; }
+            Search();
+        }
     }
 
     SearchThread::~SearchThread() {

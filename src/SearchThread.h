@@ -47,10 +47,11 @@ namespace Meetra {
         [[nodiscard]] std::string GetUpdateSearchInfo() const;
         [[nodiscard]] inline bool IsMainThread() const { return id == 0; }
 
+        void InitThread(const std::stop_token &stop_token);
         void Shutdown();
 
         inline static int next_id = 0;
-        int id;
+        int id = next_id++;
 
         Board board;
         Move killers[MAX_SEARCH_DEPTH + 1][2];
@@ -61,10 +62,10 @@ namespace Meetra {
         Depth seldepth_reached;
         std::atomic<uint64_t> nodes_explored;
 
-        std::atomic<bool> active;
-        std::jthread thread;
-        std::condition_variable_any cond_var;
+        std::atomic<bool> active = false;
         std::mutex mtx;
+        std::condition_variable_any cond_var;
+        std::jthread thread;
     };
 }
 
