@@ -8,6 +8,7 @@
 #include <fstream>
 #include "Uci.h"
 #include "Defs.h"
+#include "Config.h"
 
 namespace Meetra::Book {
 

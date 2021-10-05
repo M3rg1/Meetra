@@ -24,9 +24,7 @@ namespace Meetra {
     };
     using Color = int;
 
-    inline Color OtherColor(Color c) {
-        return c ^ 1;
-    }
+    constexpr Color OtherColor(Color c) { return c ^ 1; }
 
     enum PieceTypes {
         NONE_PIECE_TYPE, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING,
@@ -42,9 +40,9 @@ namespace Meetra {
     };
     using Piece = int;
 
-    inline Color ColorOfPiece(Piece p) { return p >> 3; }
-    inline PieceType TypeOfPiece(Piece p) { return p & 7; }
-    inline Piece NewPiece(PieceType pt, Color c) { return (c << 3) | pt; }
+    constexpr Color ColorOfPiece(Piece p) { return p >> 3; }
+    constexpr PieceType TypeOfPiece(Piece p) { return p & 7; }
+    constexpr Piece NewPiece(PieceType pt, Color c) { return (c << 3) | pt; }
 
     enum Ranks {
         RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8,
@@ -58,18 +56,18 @@ namespace Meetra {
     };
     using File = int;
 
-    inline Rank RankFromChar(char c) { return c - '1'; }
-    inline char CharFromRank(Rank r) { return static_cast<char>(r + '1'); }
-    inline File FileFromChar(char c) { return c - 'a'; }
-    inline char CharFromFile(File f) { return static_cast<char>(f + 'a'); }
+    constexpr Rank RankFromChar(char c) { return c - '1'; }
+    constexpr char CharFromRank(Rank r) { return static_cast<char>(r + '1'); }
+    constexpr File FileFromChar(char c) { return c - 'a'; }
+    constexpr char CharFromFile(File f) { return static_cast<char>(f + 'a'); }
 
     constexpr std::string_view piece_char = "oPNBRQK  pnbrqk";
 
-    inline Piece CharToPiece(char c) {
+    constexpr Piece CharToPiece(char c) {
         return static_cast<Piece>(piece_char.find(c));
     }
 
-    inline char PieceToChar(Piece p) {
+    constexpr char PieceToChar(Piece p) {
         return piece_char[p];
     }
 
@@ -96,11 +94,11 @@ namespace Meetra {
     };
     using Square = int;
 
-    inline Bitboard SquareToBB(Square s) { return 0x1ULL << s; }
-    inline Square SqFromFiRa(File f, Rank r) { return (r << 3) | f; }
-    inline File FileFromSquare(Square s) { return s & 7; }
-    inline Rank RankFromSquare(Square s) { return s >> 3; }
-    inline Square NameToSquare(const std::string &name) {
+    constexpr Bitboard SquareToBB(Square s) { return 0x1ULL << s; }
+    constexpr Square SqFromFiRa(File f, Rank r) { return (r << 3) | f; }
+    constexpr File FileFromSquare(Square s) { return s & 7; }
+    constexpr Rank RankFromSquare(Square s) { return s >> 3; }
+    constexpr Square NameToSquare(std::string_view name) {
         return SqFromFiRa(FileFromChar(name[0]), RankFromChar(name[1]));
     }
     inline std::string SquareToName(Square s) {
@@ -127,49 +125,14 @@ namespace Meetra {
     };
     using MoveType = int;
 
-    inline Move NewMove(Square from, Square to) { return from | (to << 6); }
-    inline Move NewMove(Square from, Square to, MoveType flag) { return NewMove(from, to) | flag; }
+    constexpr Move NewMove(Square from, Square to) { return from | (to << 6); }
+    constexpr Move NewMove(Square from, Square to, MoveType flag) { return NewMove(from, to) | flag; }
 
-    inline PieceType PieceTypeFromFlag(MoveType mt) { return (mt >> 12) - 2; }
-    inline Square FromSquare(Move m) { return m & 0x3F; }
-    inline Square ToSquare(Move m) { return (m >> 6) & 0x3F; }
-    inline bool IsPromotion(Move m) { return m >> 14; }
-    inline MoveType GetMoveType(Move m) { return m & 0xF000; }
-#pragma endregion
-
-#pragma region ===== Constants =====
-    // search consts
-    constexpr Depth MAX_SEARCH_DEPTH = 128;
-
-    constexpr int DEFAULT_SEARCH_THREADS = 1;
-    constexpr int MAX_SEARCH_THREADS = 32;
-
-    const std::string BOOK_PATH = "tools/bestmove_r20d20_a5000.mtr.bin";
-    constexpr int BOOK_DEPTH = 20;
-
-    const std::string STARTPOS_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    constexpr int MAX_LEGAL_MOVES = 256;
-    constexpr int MAX_GAME_LENGTH = 1024;
-
-    // time related consts
-    constexpr TimeRep DEFAULT_SEARCH_TIME = 60000;
-    constexpr TimeRep MIN_OVERHEAD = 0;
-    constexpr TimeRep MAX_OVERHEAD = 1000;
-    constexpr TimeRep DEFAULT_OVERHEAD = 10;
-    constexpr TimeRep UPDATE_INFO_INTERVAL = 1000;
-
-    // eval consts
-    constexpr Score POSITIVE_INF = 32000;
-    constexpr Score NEGATIVE_INF = -32000;
-    constexpr Score MATE_SCORE = 31000;
-    constexpr Score DRAW_SCORE = 0;
-    constexpr Score MIN_MATE_EVAL = MATE_SCORE - MAX_SEARCH_DEPTH;
-
-    // TT consts
-    constexpr size_t MIN_HASH_SIZE = 8; // this should never be 0
-    constexpr size_t DEFAULT_HASH_SIZE = 128;
-    constexpr size_t MAX_HASH_SIZE = 8192;
-    constexpr size_t TT_ENTRIES_PER_BUCKET = 4;
+    constexpr PieceType PieceTypeFromFlag(MoveType mt) { return (mt >> 12) - 2; }
+    constexpr Square FromSquare(Move m) { return m & 0x3F; }
+    constexpr Square ToSquare(Move m) { return (m >> 6) & 0x3F; }
+    constexpr bool IsPromotion(Move m) { return m >> 14; }
+    constexpr MoveType GetMoveType(Move m) { return m & 0xF000; }
 #pragma endregion
 }
 

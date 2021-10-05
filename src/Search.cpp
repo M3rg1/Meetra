@@ -62,7 +62,7 @@ namespace Meetra::Search {
         MoveGen move_gen(board);
         std::vector<RootMove> moves;
         Move move;
-        while ((move = move_gen.GetBestMove<NORMAL>())) {
+        while ((move = move_gen.GetBestMove<MoveGen::NORMAL>())) {
             if (board.IsMoveLegal(move)) {
                 moves.emplace_back(move);
             }

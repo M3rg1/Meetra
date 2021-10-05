@@ -3,20 +3,17 @@
 
 #include "Defs.h"
 #include "Board.h"
+#include "Config.h"
 
 namespace Meetra {
-
-    enum GenPhase {
-        CAPTURE, QUIET, END, DOUBLE_CHECK
-    };
-
-    enum GenType {
-        QSEARCH, NORMAL
-    };
 
     class MoveGen {
 
     public:
+
+        enum GenType {
+            QSEARCH, NORMAL
+        };
 
         explicit MoveGen(const Board &board);
 
@@ -33,6 +30,10 @@ namespace Meetra {
         [[nodiscard]] inline bool IsInCheck() const { return checkers; }
 
     private:
+
+        enum GenPhase {
+            CAPTURE, QUIET, END, DOUBLE_CHECK
+        };
 
         struct ScoredMove {
             Move move;

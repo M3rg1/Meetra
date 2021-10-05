@@ -5,67 +5,14 @@
 
 namespace Meetra::Bitboards {
 
-    constexpr Bitboard rank_masks[RANK_NR]{
-            0x00000000000000FFUL,
-            0x000000000000FF00UL,
-            0x0000000000FF0000UL,
-            0x00000000FF000000UL,
-            0x000000FF00000000UL,
-            0x0000FF0000000000UL,
-            0x00FF000000000000UL,
-            0xFF00000000000000UL
-    };
-
-    constexpr Bitboard file_masks[FILE_NR]{
-            0x0101010101010101UL,
-            0x0202020202020202UL,
-            0x0404040404040404UL,
-            0x0808080808080808UL,
-            0x1010101010101010UL,
-            0x2020202020202020UL,
-            0x4040404040404040UL,
-            0x8080808080808080UL
-    };
-
-    constexpr Bitboard diag_masks[15]{
-            0x1L, 0x102L, 0x10204L, 0x1020408L, 0x102040810L, 0x10204081020L, 0x1020408102040L,
-            0x102040810204080L, 0x204081020408000L, 0x408102040800000L, 0x810204080000000L,
-            0x1020408000000000L, 0x2040800000000000L, 0x4080000000000000L, 0x8000000000000000L
-    };
-
-    constexpr Bitboard anti_diag_masks[15]{
-            0x80L, 0x8040L, 0x804020L, 0x80402010L, 0x8040201008L, 0x804020100804L, 0x80402010080402L,
-            0x8040201008040201L, 0x4020100804020100L, 0x2010080402010000L, 0x1008040201000000L,
-            0x804020100000000L, 0x402010000000000L, 0x201000000000000L, 0x100000000000000L
-    };
-
-    struct Magic {
-        Bitboard *attacks;
-        Bitboard inner_mask;
-        uint64_t magic_num;
-        uint8_t shift;
-    };
-
-    Magic b_magics[SQUARE_NR];
-    Magic r_magics[SQUARE_NR];
-    Bitboard king_moves[SQUARE_NR];
-    Bitboard knight_moves[SQUARE_NR];
-    Bitboard pawn_attacks[COLOR_NR][SQUARE_NR];
-
-    Bitboard rays_to_squares[SQUARE_NR][SQUARE_NR];
-    Bitboard rays_to_borders[SQUARE_NR][SQUARE_NR];
-
-    Bitboard r_table[88064];
-    Bitboard b_table[4800];
-
 #pragma region ===== Hyperbola Quintessence, Reverse Bitboards (used for magics initialization) =====
 
     Bitboard ReverseBits(Bitboard b) {
-        b = ((b >> 1) & 0x5555555555555555UL) | ((b & 0x5555555555555555UL) << 1);
-        b = ((b >> 2) & 0x3333333333333333UL) | ((b & 0x3333333333333333UL) << 2);
-        b = ((b >> 4) & 0x0F0F0F0F0F0F0F0FUL) | ((b & 0x0F0F0F0F0F0F0F0FUL) << 4);
-        b = ((b >> 8) & 0x00FF00FF00FF00FFUL) | ((b & 0x00FF00FF00FF00FFUL) << 8);
-        b = ((b >> 16) & 0x0000FFFF0000FFFFUL) | ((b & 0x0000FFFF0000FFFFUL) << 16);
+        b = ((b >> 1) & 0x5555555555555555ULL) | ((b & 0x5555555555555555ULL) << 1);
+        b = ((b >> 2) & 0x3333333333333333ULL) | ((b & 0x3333333333333333ULL) << 2);
+        b = ((b >> 4) & 0x0F0F0F0F0F0F0F0FULL) | ((b & 0x0F0F0F0F0F0F0F0FULL) << 4);
+        b = ((b >> 8) & 0x00FF00FF00FF00FFULL) | ((b & 0x00FF00FF00FF00FFULL) << 8);
+        b = ((b >> 16) & 0x0000FFFF0000FFFFULL) | ((b & 0x0000FFFF0000FFFFULL) << 16);
         b = (b >> 32) | (b << 32);
         return b;
     }
@@ -244,52 +191,6 @@ namespace Meetra::Bitboards {
     }
 
 #pragma enregion
-
-#pragma region ===== Public getter functions =====
-
-    Bitboard RankMask(Rank r) { return rank_masks[r]; }
-
-    Bitboard GetRayToBorders(Square s1, Square s2) { return rays_to_borders[s1][s2]; }
-
-    Bitboard GetRayToSquares(Square s1, Square s2) { return rays_to_squares[s1][s2]; }
-
-    Bitboard GetRookRays(Square s) { return file_masks[FileFromSquare(s)] | rank_masks[RankFromSquare(s)]; }
-
-    Bitboard GetBishopRays(Square s) {
-        File f = FileFromSquare(s);
-        Rank r = RankFromSquare(s);
-        return diag_masks[f + r] | anti_diag_masks[r + 7 - f];
-    }
-
-    Bitboard GetRookAttacks(Square s, Bitboard occ) {
-        Magic m = r_magics[s];
-        return m.attacks[((occ & m.inner_mask) * m.magic_num) >> m.shift];
-    }
-
-    Bitboard GetBishopAttacks(Square s, Bitboard occ) {
-        Magic m = b_magics[s];
-        return m.attacks[((occ & m.inner_mask) * m.magic_num) >> m.shift];
-    }
-
-    template<PieceType PT>
-    Bitboard GetAttacks(Square s, Bitboard occ, Color c) {
-        if constexpr (PT == PAWN) return pawn_attacks[c][s];
-        else if constexpr (PT == BISHOP) return GetBishopAttacks(s, occ);
-        else if constexpr (PT == ROOK) return GetRookAttacks(s, occ);
-        else if constexpr (PT == QUEEN) return GetBishopAttacks(s, occ) | GetRookAttacks(s, occ);
-        else if constexpr (PT == KNIGHT) return knight_moves[s];
-        else if constexpr (PT == KING) return king_moves[s];
-        else return EMPTY_BB;
-    }
-
-    template Bitboard GetAttacks<PAWN>(Square s, Bitboard occ, Color c);
-    template Bitboard GetAttacks<KNIGHT>(Square s, Bitboard occ, Color c);
-    template Bitboard GetAttacks<BISHOP>(Square s, Bitboard occ, Color c);
-    template Bitboard GetAttacks<ROOK>(Square s, Bitboard occ, Color c);
-    template Bitboard GetAttacks<QUEEN>(Square s, Bitboard occ, Color c);
-    template Bitboard GetAttacks<KING>(Square s, Bitboard occ, Color c);
-
-#pragma endregion
 
 #pragma region ===== Misc =====
 

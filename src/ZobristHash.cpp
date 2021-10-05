@@ -3,6 +3,7 @@
 #include "Bitboards.h"
 #include "Board.h"
 #include <algorithm>
+#include "Config.h"
 
 namespace Meetra::Zobrist {
 
@@ -13,8 +14,7 @@ namespace Meetra::Zobrist {
 
     void Init() {
 
-        auto seed = 7299078832781365792;
-        std::mt19937_64 mt(seed);
+        std::mt19937_64 mt(ZOBRIST_SEED);
         auto gen = [&] { return mt(); };
 
         std::ranges::for_each(piece_keys, [&](auto &pt_keys) { std::ranges::generate(pt_keys, gen); });

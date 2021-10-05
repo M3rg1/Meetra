@@ -10,11 +10,9 @@
 #include <fstream>
 #include <sstream>
 #include "Time.h"
+#include "Config.h"
 
 namespace Meetra::TestSuite {
-
-#define TEST_FILE_PATH "tools/PerftTests.txt" // perft960.txt
-#define ETHEREAL_SUITE false
 
     class Test {
 

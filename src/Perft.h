@@ -3,6 +3,7 @@
 
 #include "MoveGen.h"
 #include "Uci.h"
+#include "Defs.h"
 
 namespace Meetra {
 

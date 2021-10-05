@@ -4,11 +4,11 @@
 
 namespace Meetra {
 
-    Score RemoveMatePly(Score score, Depth ply) {
+    constexpr Score RemoveMatePly(Score score, Depth ply) {
         return score > MIN_MATE_EVAL ? score + ply : score < -MIN_MATE_EVAL ? score - ply : score;
     }
 
-    Score AddMatePly(Score score, Depth ply) {
+    constexpr Score AddMatePly(Score score, Depth ply) {
         return score > MIN_MATE_EVAL ? score - ply : score < -MIN_MATE_EVAL ? score + ply : score;
     }
 

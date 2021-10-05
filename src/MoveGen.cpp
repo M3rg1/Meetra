@@ -1,6 +1,5 @@
 #include "MoveGen.h"
 #include "Bitboards.h"
-#include "Uci.h"
 
 namespace Meetra {
 
@@ -12,12 +11,12 @@ namespace Meetra {
 
     template<Color C>
     constexpr Bitboard PromRank() {
-        return C == WHITE ? 0xFF00000000000000UL : 0xFF000000000000FFUL;
+        return C == WHITE ? 0xFF00000000000000 : 0xFF000000000000FF;
     }
 
     template<Color C>
     constexpr Bitboard TwoFwdRank() {
-        return C == WHITE ? 0x00000000FF000000UL : 0x000000FF00000000UL;
+        return C == WHITE ? 0x00000000FF000000 : 0x000000FF00000000;
     }
 
     MoveGen::MoveGen(const Board &board) : board(board) {
@@ -32,11 +31,11 @@ namespace Meetra {
         empty_squares = ~all_pieces;
         ep_s = board.EpSquare();
         moves_cnt = 0;
-        legal_moves = 0xFFFFFFFFFFFFFFFFUL;
+        legal_moves = 0xFFFFFFFFFFFFFFFF;
 
         if (IsInCheck()) {
             if (Bitboards::MoreThanOne(checkers)) {
-                legal_moves = 0UL;
+                legal_moves = 0;
                 gen_phase = DOUBLE_CHECK;
                 double_check = true;
                 return;
@@ -51,7 +50,7 @@ namespace Meetra {
         double_check = false;
     }
 
-    template<GenType Type>
+    template<MoveGen::GenType Type>
     Move MoveGen::GetBestMove() {
         while (Empty()) {
             my_color == WHITE ? NextPhase<WHITE, Type>() : NextPhase<BLACK, Type>();
@@ -67,11 +66,11 @@ namespace Meetra {
         return PopBack();
     }
 
-    template Move MoveGen::GetBestMove<QSEARCH>();
+    template Move MoveGen::GetBestMove<MoveGen::QSEARCH>();
 
-    template Move MoveGen::GetBestMove<NORMAL>();
+    template Move MoveGen::GetBestMove<MoveGen::NORMAL>();
 
-    template<Color C, GenType Type>
+    template<Color C, MoveGen::GenType Type>
     void MoveGen::NextPhase() {
         switch (gen_phase) {
             case CAPTURE:
@@ -93,7 +92,7 @@ namespace Meetra {
         }
     }
 
-    template<GenPhase phase, Color C>
+    template<MoveGen::GenPhase phase, Color C>
     void MoveGen::GenMovesForPhase() {
 
         if constexpr (phase == DOUBLE_CHECK) {

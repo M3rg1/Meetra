@@ -6,6 +6,7 @@
 #include "Board.h"
 #include "ZobristHash.h"
 #include "Defs.h"
+#include "Config.h"
 
 namespace Meetra {
 

@@ -109,7 +109,7 @@ namespace Meetra {
         }
     }
 
-    template<Node NodeType>
+    template<SearchThread::Node NodeType>
     Score SearchThread::ABSearch(Score alpha, Score beta, Depth depth, Depth ply, Search::PVMoveLine &pv_line) {
 
         curr_rm->seldepth = std::max(ply, curr_rm->seldepth);
@@ -187,7 +187,7 @@ namespace Meetra {
         tt_flag = ALPHA;
         int moves_searched = 0;
 
-        while ((move = move_gen.GetBestMove<NORMAL>())) {
+        while ((move = move_gen.GetBestMove<MoveGen::NORMAL>())) {
 
             // temporary fix to not play TT move twice - this should be done in the generator before evaluating the move
             if (move == tt_move && moves_searched >= 1) {
@@ -274,7 +274,7 @@ namespace Meetra {
         Move move;
         int moves_searched = 0;
 
-        while ((move = move_gen.GetBestMove<QSEARCH>())) {
+        while ((move = move_gen.GetBestMove<MoveGen::QSEARCH>())) {
             if (!board.MakeMove(move)) {
                 board.UnmakeMove(move);
                 continue;

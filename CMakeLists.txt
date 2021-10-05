@@ -19,4 +19,4 @@ add_executable(Meetra src/Main.cpp src/Uci.cpp src/Uci.h src/Bitboards.cpp src/B
         src/Board.cpp src/Board.h src/MoveGen.cpp src/MoveGen.h src/MagicNumbers.h src/Search.cpp src/Search.h
         src/Evaluator.cpp src/Evaluator.h src/EvalValues.h src/TranspositionTable.cpp src/TranspositionTable.h
         src/ZobristHash.cpp src/ZobristHash.h src/SearchThread.cpp src/SearchThread.h src/TestSuite.h
-        src/Book.h src/Time.h)
+        src/Book.h src/Time.h src/Config.h)

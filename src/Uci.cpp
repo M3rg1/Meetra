@@ -5,6 +5,7 @@
 #include "TestSuite.h"
 #include <algorithm>
 #include <unistd.h>
+#include "Config.h"
 
 namespace Meetra::Uci {
 
@@ -22,15 +23,15 @@ namespace Meetra::Uci {
         oss << "option name Clear Hash type button\n"
             << "option name UCI_ShowCurrLine type check default false\n"
             << "option name Show current move type check default true\n"
-            << "option name Hash type spin default " << DEFAULT_HASH_SIZE << " min " << MIN_HASH_SIZE << " max "
-            << MAX_HASH_SIZE << "\n"
+            << "option name Hash type spin default " << DEFAULT_HASH_SIZE << " min " << MIN_HASH_SIZE
+            << " max " << MAX_HASH_SIZE << "\n"
             << "option name MultiPV type spin default 1 min 1 max 32\n"
             << "option name Mute plies type spin default 0 min 0 max 64\n"
             << "option name OwnBook type check default false\n"
-            << "option name Threads type spin default " << DEFAULT_SEARCH_THREADS << " min 1 max " << MAX_SEARCH_THREADS
-            << "\n"
-            << "option name Move overhead type spin default " << DEFAULT_OVERHEAD << " min " << MIN_OVERHEAD << " max "
-            << MAX_OVERHEAD << "\n"
+            << "option name Threads type spin default " << DEFAULT_SEARCH_THREADS << " min 1 max "
+            << MAX_SEARCH_THREADS << "\n"
+            << "option name Move overhead type spin default " << DEFAULT_OVERHEAD << " min "
+            << MIN_OVERHEAD << " max " << MAX_OVERHEAD << "\n"
             << "option name UCI_Chess960 type check default false";
         return oss.str();
     }
@@ -259,14 +260,12 @@ namespace Meetra::Uci {
             else if (option == "winc") iss >> settings.winc;
             else if (option == "binc") iss >> settings.binc;
             else if (option == "movestogo") iss >> settings.moves_to_go;
-            else if (option == "infinite")  {
+            else if (option == "infinite") {
                 settings.infinite = true;
-            }
-            else if (option == "nodes") {
+            } else if (option == "nodes") {
                 iss >> settings.allowed_nodes;
                 settings.infinite = true;
-            }
-            else if (option == "movetime") {
+            } else if (option == "movetime") {
                 iss >> settings.allowed_time;
                 settings.infinite = true;
             } else if (option == "depth") {

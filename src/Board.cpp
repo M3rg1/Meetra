@@ -10,8 +10,8 @@
 namespace Meetra {
 
     Bitboard castling_mask[COLOR_NR]{
-            0x00000000000000FFUL,
-            0xFF00000000000000UL
+            0x00000000000000FF,
+            0xFF00000000000000
     };
 
     Board::Board() {
@@ -347,7 +347,7 @@ namespace Meetra {
 
     bool Board::ParseFen(const std::string &fen) {
 
-        static std::regex rgx(R"(\s*([rnbqkpRNBQKP1-8]{1,8}\/){7}([rnbqkpRNBQKP1-8]{1,8})\s*[bw]\s*(([a-hkqA-HKQ]{1,4})|(-))?\s*(([a-h][36])|(-))?\s*\d*\s*\d*\s*)");
+        static const std::regex rgx(R"(\s*([rnbqkpRNBQKP1-8]{1,8}\/){7}([rnbqkpRNBQKP1-8]{1,8})\s*[bw]\s*(([a-hkqA-HKQ]{1,4})|(-))?\s*(([a-h][36])|(-))?\s*\d*\s*\d*\s*)");
         if (!std::regex_match(fen, rgx)) {
             return false;
         }

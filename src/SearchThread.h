@@ -6,6 +6,7 @@
 #include <mutex>
 #include <condition_variable>
 #include "Board.h"
+#include "Config.h"
 
 namespace Meetra {
 
@@ -13,10 +14,6 @@ namespace Meetra {
         struct RootMove;
         struct PVMoveLine;
     }
-
-    enum Node {
-        PV, NONPV, NULLMOVE
-    };
 
     class SearchThread {
 
@@ -31,11 +28,15 @@ namespace Meetra {
         [[nodiscard]] bool DidBeatMove(const Search::RootMove &other) const;
         [[nodiscard]] Search::RootMove GetBestRootMove() const;
         [[nodiscard]] std::string GetBestRmName() const;
+        [[nodiscard]] std::string GetSearchInfo() const;
         [[nodiscard]] inline bool IsSearching() const { return active.load(std::memory_order_relaxed); };
         [[nodiscard]] inline uint64_t Nodes() const { return nodes_explored.load(std::memory_order_relaxed); }
-        [[nodiscard]] std::string GetSearchInfo() const;
 
     private:
+
+        enum Node {
+            PV, NONPV, NULLMOVE
+        };
 
         template<Node NodeType>
         Score ABSearch(Score alpha, Score beta, Depth depth, Depth ply, Search::PVMoveLine &pv_line);
