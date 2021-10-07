@@ -18,7 +18,7 @@ namespace Meetra {
         void UnmakeMove(Move m);
         void MakeNullMove();
         void UnmakeNullMove();
-        bool MakeUciMove(const std::string &move_string);
+        bool MakeUciMove(std::string_view move_string);
 
         [[nodiscard]] bool IsMoveLegal(Move m) const;
         [[nodiscard]] bool IsBoardValid() const;

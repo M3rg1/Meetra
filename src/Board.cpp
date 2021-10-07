@@ -202,10 +202,8 @@ namespace Meetra {
         IncrementMoveNumber(this_col);
         IncrementPly();
         ClearCapturedPiece();
-        if (EpSquare()) {
-            Zobrist::RemoveEp(state.hash, EpSquare());
-            ClearEpSquare();
-        }
+        Zobrist::RemoveEp(state.hash, EpSquare());
+        ClearEpSquare();
 
         Square from = FromSquare(m);
         Square to = ToSquare(m);
@@ -410,7 +408,7 @@ namespace Meetra {
         return true;
     }
 
-    bool Board::MakeUciMove(const std::string &move_string) {
+    bool Board::MakeUciMove(std::string_view move_string) {
 
         Move uci_move = MoveFromName(move_string);
         MoveGen move_gen(*this);

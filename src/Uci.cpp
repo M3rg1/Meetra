@@ -199,11 +199,11 @@ namespace Meetra::Uci {
         Search::ClearTT();
     }
 
-    bool IsNumerical(const std::string &str) {
-        return !str.empty() && str.find_first_not_of("0123456789") == std::string::npos;
+    bool IsNumerical(std::string_view str) {
+        return !str.empty() && str.find_first_not_of("0123456789") == std::string_view::npos;
     }
 
-    bool IsBoolean(const std::string &str) {
+    bool IsBoolean(std::string_view str) {
         return str == "true" || str == "false";
     }
 

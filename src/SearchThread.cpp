@@ -363,7 +363,6 @@ namespace Meetra {
                 << " score ";
 
             Score score = root_moves[i].score;
-            Move move = root_moves[i].move;
             if (score > MIN_MATE_EVAL) {
                 int distance_to_mate = MATE_SCORE - score;
                 oss << "mate " << (distance_to_mate) / 2;
@@ -374,7 +373,7 @@ namespace Meetra {
                 oss << "cp " << score;
             }
 
-            oss << " pv " << board.MoveToName(move);
+            oss << " pv " << board.MoveToName(root_moves[i].move);
             for (size_t j = 0; j < root_moves[i].pv.Size(); ++j) {
                 oss << ' ' << board.MoveToName(root_moves[i].pv.At(j));
             }
