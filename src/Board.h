@@ -63,7 +63,7 @@ namespace Meetra {
         inline void SetCapturedPiece(Piece p) { state.captured_piece = p; }
         inline void ResetPly() { state.ply = 0; }
         inline void IncrementMoveNumber(Color col_to_move) { state.moves += col_to_move; }
-        inline void IncrementPly() { state.ply++; }
+        inline void IncrementPly() { ++state.ply; }
         inline void ClearCapturedPiece() { state.captured_piece = NO_PIECE; }
         inline void ChangeColorToMove() { state.to_move = OtherColor(state.to_move); }
         inline void ClearEpSquare() { state.ep_square = NO_SQ; }

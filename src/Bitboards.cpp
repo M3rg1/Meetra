@@ -80,14 +80,14 @@ namespace Meetra::Bitboards {
     }
 
     void GenMagics() {
-        for (Square s = A1; s < SQUARE_NR; s++) {
+        for (Square s = A1; s < SQUARE_NR; ++s) {
             SetBlockersRecursive(r_magics[s], s, EMPTY_BB, GetRookRays(s), GenRookMoves);
             SetBlockersRecursive(b_magics[s], s, EMPTY_BB, GetBishopRays(s), GenBishopMoves);
         }
     }
 
     void InitMagic() {
-        for (Square s = A1; s < SQUARE_NR; s++) {
+        for (Square s = A1; s < SQUARE_NR; ++s) {
 
             Bitboard inner;
 
@@ -114,7 +114,7 @@ namespace Meetra::Bitboards {
 #pragma region ===== Precomputing king moves, knight moves, pawn attacks =====
 
     void GenPieceMoves(std::initializer_list<Direction> dirs, Bitboard output[SQUARE_NR]) {
-        for (Square s = A1; s < SQUARE_NR; s++) {
+        for (Square s = A1; s < SQUARE_NR; ++s) {
             Bitboard moves = EMPTY_BB;
             for (auto d: dirs) {
                 if (s + d < SQUARE_NR && s + d >= A1) {
@@ -212,9 +212,9 @@ namespace Meetra::Bitboards {
 
     std::string PPBitboard(Bitboard b) {
         std::ostringstream oss;
-        for (Rank r = RANK_8; r >= RANK_1; r--) {
+        for (Rank r = RANK_8; r >= RANK_1; --r) {
             oss << r + 1 << " |";
-            for (File f = FILE_A; f < FILE_H; f++) {
+            for (File f = FILE_A; f < FILE_H; ++f) {
                 if ((b >> ((r * 8) + f)) & 1) {
                     oss << " x ";
                 } else {

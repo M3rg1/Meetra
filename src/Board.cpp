@@ -367,7 +367,7 @@ namespace Meetra {
                 s -= 16;
             } else {
                 AddPiece(s, CharToPiece(c));
-                s++;
+                ++s;
             }
         }
         if (s != H1 + 1) {
@@ -484,9 +484,9 @@ namespace Meetra {
 
         std::ostringstream oss;
 
-        for (Rank r = RANK_8; r >= RANK_1; r--) {
+        for (Rank r = RANK_8; r >= RANK_1; --r) {
             oss << r + 1 << " |";
-            for (File f = FILE_A; f <= FILE_H; f++) {
+            for (File f = FILE_A; f <= FILE_H; ++f) {
                 oss << ' ' << PieceToChar(GetPieceOnSquare(SqFromFiRa(f, r))) << ' ';
             }
             oss << '\n';

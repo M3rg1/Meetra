@@ -17,7 +17,7 @@ namespace Meetra {
         if (depth <= 1) {
             while ((m = move_gen.GetAnyMove())) {
                 if (board.IsMoveLegal(m)) {
-                    total_nodes++;
+                    ++total_nodes;
                     if constexpr (DIV) {
                         Uci::Send(board.MoveToName(m) + ": " + std::to_string(1));
                     }

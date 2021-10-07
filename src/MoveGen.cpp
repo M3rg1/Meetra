@@ -23,12 +23,12 @@ namespace Meetra {
 
         my_color = board.ColorToMove();
         enemy_color = OtherColor(my_color);
-        all_pieces = board.GetPieces_pt(ALL_TYPES);
         king_s = Bitboards::Lsb(board.GetPieces(KING, my_color));
+        enemy_pieces = board.GetPieces_c(enemy_color);
+        all_pieces = board.GetPieces_pt(ALL_TYPES);
+        empty_squares = ~all_pieces;
         checkers = board.AttackedBy(king_s, enemy_color, all_pieces);
         blockers = board.PinnedToSquare(king_s, enemy_color);
-        enemy_pieces = board.GetPieces_c(enemy_color);
-        empty_squares = ~all_pieces;
         ep_s = board.EpSquare();
         moves_cnt = 0;
         legal_moves = 0xFFFFFFFFFFFFFFFF;

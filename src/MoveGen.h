@@ -68,8 +68,7 @@ namespace Meetra {
         [[nodiscard]] inline bool Empty() const { return moves_cnt == 0; }
         inline Move PopBack() { return move_eval[--moves_cnt].move; }
         inline Move PopRef(ScoredMove &it) {
-            moves_cnt--;
-            std::swap(it, move_eval[moves_cnt]);
+            std::swap(it, move_eval[--moves_cnt]);
             return move_eval[moves_cnt].move;
         }
         inline void PutMove(Move m) { move_eval[moves_cnt++].move = m; }
@@ -80,7 +79,7 @@ namespace Meetra {
             PutMove(m | PROMOTE_KNIGHT);
         }
         inline void EvalMoves() {
-            for (int i = 0; i < moves_cnt; i++) {
+            for (int i = 0; i < moves_cnt; ++i) {
                 move_eval[i].score = board.GetMoveEval(move_eval[i].move);
             }
         }

@@ -79,7 +79,7 @@ namespace Meetra::Search {
         // missing entirely
         SearchThread *best_thread = threads[0].get();
         if (multi_pv == 1) {
-            for (size_t i = 1; i < threads.size(); i++) {
+            for (size_t i = 1; i < threads.size(); ++i) {
                 while (threads[i]->IsSearching()); // wait until thread finishes searching
                 if (threads[i]->DidBeatMove(best_thread->GetBestRootMove())) {
                     best_thread = threads[i].get();
@@ -97,8 +97,7 @@ namespace Meetra::Search {
         run = true;
         InitSearch(s, board);
 
-        if (use_book && !settings.infinite && !chess960 &&
-            board.FullMoveClock() <= BOOK_DEPTH / 2) {
+        if (use_book && !settings.infinite && !chess960 && board.FullMoveClock() <= BOOK_DEPTH / 2) {
             auto moves = Book::Probe(board);
             if (!moves.empty()) {
                 StopSearch();
@@ -117,8 +116,7 @@ namespace Meetra::Search {
         auto root_moves = GenRootMoves(board);
 
         // if there's only one root move, and we are not in infinite or fixed depth/time search, return it immediately
-        if (root_moves.empty() ||
-            (root_moves.size() == 1 && !settings.infinite)) {
+        if (root_moves.empty() || (root_moves.size() == 1 && !settings.infinite)) {
             StopSearch();
             Uci::Send("bestmove " + board.MoveToName(root_moves.empty() ? ZERO_MOVE : root_moves.front().move));
             finished = true;
@@ -159,7 +157,7 @@ namespace Meetra::Search {
 
         Shutdown();
 
-        for (int i = 0; i < num_threads; i++) {
+        for (int i = 0; i < num_threads; ++i) {
             threads.emplace_back(new SearchThread(i));
         }
     }

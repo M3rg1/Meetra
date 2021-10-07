@@ -30,7 +30,7 @@ namespace Meetra {
             Clear();
         }
         used_entries = 0;
-        current_epoch++;
+        ++current_epoch;
     }
 
     void TranspositionTable::Clear() {

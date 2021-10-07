@@ -17,7 +17,7 @@ namespace Meetra {
         active = true;
 
         // iterative deepening
-        for (depth_reached = 1; depth_reached <= Search::settings.allowed_depth && Search::Run(); depth_reached++) {
+        for (depth_reached = 1; depth_reached <= Search::settings.allowed_depth && Search::Run(); ++depth_reached) {
 
             // seldepth_reached is always at least the current depth being searched
             seldepth_reached = depth_reached;
@@ -29,10 +29,11 @@ namespace Meetra {
 
             Score alpha = NEGATIVE_INF;
             Score beta = POSITIVE_INF;
+            Score score;
             int moves_searched = 0;
 
             // alpha beta search over root moves
-            for (curr_rm_num = 0; curr_rm_num < root_moves.size(); curr_rm_num++) {
+            for (curr_rm_num = 0; curr_rm_num < root_moves.size(); ++curr_rm_num) {
 
                 curr_rm = &root_moves[curr_rm_num];
                 curr_rm->seldepth = depth_reached;
@@ -48,8 +49,6 @@ namespace Meetra {
 
                 board.MakeMove(curr_rm->move);
 
-                Score score;
-
                 if (moves_searched > 0) {
                     score = -ABSearch<NONPV>(-alpha - 1, -alpha, depth_reached - 1, 2, curr_rm->pv);
                 }
@@ -61,8 +60,8 @@ namespace Meetra {
                 board.UnmakeMove(curr_rm->move);
 
                 nodes_explored.fetch_add(1, std::memory_order_relaxed);
-                curr_rm->nodes++;
-                moves_searched++;
+                ++curr_rm->nodes;
+                ++moves_searched;
 
                 if (!Search::Run()) {
                     break;
@@ -213,8 +212,8 @@ namespace Meetra {
             board.UnmakeMove(move);
 
             nodes_explored.fetch_add(1, std::memory_order_relaxed);
-            curr_rm->nodes++;
-            moves_searched++;
+            ++curr_rm->nodes;
+            ++moves_searched;
 
             if (!Search::Run()) {
                 return 0;
@@ -285,8 +284,8 @@ namespace Meetra {
             board.UnmakeMove(move);
 
             nodes_explored.fetch_add(1, std::memory_order_relaxed);
-            curr_rm->nodes++;
-            moves_searched++;
+            ++curr_rm->nodes;
+            ++moves_searched;
 
             if (score > alpha) {
                 if (score >= beta) {
@@ -352,7 +351,7 @@ namespace Meetra {
 
         std::ostringstream oss;
 
-        for (int i = 0; i < pvs_to_send; i++) {
+        for (int i = 0; i < pvs_to_send; ++i) {
             oss << "info";
             if (pvs_to_send > 1) oss << " multipv " << i + 1;
             oss << " depth " << root_moves[i].depth
@@ -376,7 +375,7 @@ namespace Meetra {
             }
 
             oss << " pv " << board.MoveToName(move);
-            for (size_t j = 0; j < root_moves[i].pv.Size(); j++) {
+            for (size_t j = 0; j < root_moves[i].pv.Size(); ++j) {
                 oss << ' ' << board.MoveToName(root_moves[i].pv.At(j));
             }
             if (i + 1 < pvs_to_send) {
@@ -394,7 +393,7 @@ namespace Meetra {
 
     std::string SearchThread::GetCurrLineInfo() const {
         std::string ret = "info currline " + board.MoveToName(curr_rm->move);
-        for (size_t i = 0; i < curr_rm->pv.Size(); i++) {
+        for (size_t i = 0; i < curr_rm->pv.Size(); ++i) {
             ret += ' ' + board.MoveToName(curr_rm->pv.At(i));
         }
         return ret;

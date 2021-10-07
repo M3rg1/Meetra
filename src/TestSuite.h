@@ -111,10 +111,10 @@ namespace Meetra::TestSuite {
         auto start = Time::Now();
 
         int errors = 0;
-        for (size_t i = 0; i < tests.size(); i++) {
+        for (size_t i = 0; i < tests.size(); ++i) {
             Uci::Send("Running test " + std::to_string(i + 1));
             if (!tests[i].Run()) {
-                errors++;
+                ++errors;
             }
         }
 
