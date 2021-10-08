@@ -210,7 +210,7 @@ namespace Meetra::Bitboards {
                        SOUTH + 2 * EAST, 2 * SOUTH + EAST, SOUTH + 2 * WEST, 2 * SOUTH + WEST}, knight_moves);
     }
 
-    std::string PPBitboard(Bitboard b) {
+    [[maybe_unused]] std::string PPBitboard(Bitboard b) {
         std::ostringstream oss;
         for (Rank r = RANK_8; r >= RANK_1; --r) {
             oss << r + 1 << " |";

@@ -231,8 +231,8 @@ namespace Meetra {
         }
 
         // (for chess 960) we need to calculate all the squares that we travel through and make sure they are empty
-        Square r_dest = S == LONG ? C == WHITE ? D1 : D8 : C == WHITE ? F1 : F8;
-        Square k_dest = S == LONG ? C == WHITE ? C1 : C8 : C == WHITE ? G1 : G8;
+        constexpr Square r_dest = S == LONG ? C == WHITE ? D1 : D8 : C == WHITE ? F1 : F8;
+        constexpr Square k_dest = S == LONG ? C == WHITE ? C1 : C8 : C == WHITE ? G1 : G8;
         Bitboard pieces = all_pieces ^ rook_bb ^ SquareToBB(king_s);
         Bitboard walk_sq = Bitboards::GetRayToSquares(Bitboards::Lsb(rook_bb), r_dest) |
                            Bitboards::GetRayToSquares(king_s, k_dest) |

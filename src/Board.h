@@ -29,7 +29,7 @@ namespace Meetra {
         [[nodiscard]] Bitboard PinnedToSquare(Square s, Color blockers_color) const;
         [[nodiscard]] std::string MoveToName(Move m) const;
         [[nodiscard]] Move MoveFromName(std::string_view move_name) const;
-        [[nodiscard]] std::string PPBoard() const;
+        [[maybe_unused]] [[nodiscard]] std::string PPBoard() const;
 
 #pragma region ===== Getters =====
         [[nodiscard]] inline int HistorySize() const { return history_cnt; }

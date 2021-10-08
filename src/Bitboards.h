@@ -77,7 +77,7 @@ namespace Meetra::Bitboards {
         return s;
     }
 
-    [[nodiscard]] std::string PPBitboard(Bitboard b);
+    [[maybe_unused]] [[nodiscard]] std::string PPBitboard(Bitboard b);
 
     inline Bitboard GetRayToBorders(Square s1, Square s2) { return rays_to_borders[s1][s2]; }
     inline Bitboard GetRayToSquares(Square s1, Square s2) { return rays_to_squares[s1][s2]; }

@@ -288,7 +288,7 @@ namespace Meetra {
 
         state = history[--history_cnt];
 
-        // ches960 castling, special case
+        // ches960 castling is a special case
         if (Search::chess960 && GetMoveType(m) == CASTLING) {
             Move rook_move = RookCastlingMove(to, ColorToMove());
             RemovePiece(ToSquare(rook_move));
@@ -416,8 +416,7 @@ namespace Meetra {
 
         while ((move = move_gen.GetAnyMove())) {
             if (FromSquare(move) == FromSquare(uci_move) && ToSquare(move) == ToSquare(uci_move)) {
-                if ((IsPromotion(move) && move != uci_move) ||
-                    (GetMoveType(uci_move) == CASTLING && GetMoveType(move) != CASTLING)) {
+                if ((IsPromotion(uci_move) || GetMoveType(uci_move) == CASTLING) && move != uci_move) {
                     continue;
                 }
                 MakeMove(move);
@@ -478,7 +477,7 @@ namespace Meetra {
         return NewMove(s_from, s_to, flag);
     }
 
-    std::string Board::PPBoard() const {
+    [[maybe_unused]] std::string Board::PPBoard() const {
 
         std::ostringstream oss;
 
