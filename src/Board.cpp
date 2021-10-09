@@ -9,7 +9,7 @@
 
 namespace Meetra {
 
-    Bitboard castling_mask[COLOR_NR]{
+    constexpr Bitboard castling_mask[COLOR_NR]{
             0x00000000000000FF,
             0xFF00000000000000
     };
@@ -179,12 +179,10 @@ namespace Meetra {
         IncrementMoveNumber(ColorToMove());
         ChangeColorToMove();
         Zobrist::UpdateColor(state.hash);
+        Zobrist::RemoveEp(state.hash, EpSquare());
+        ClearEpSquare();
         ClearCapturedPiece();
         ResetPly();
-        if (EpSquare()) {
-            Zobrist::RemoveEp(state.hash, EpSquare());
-            ClearEpSquare();
-        }
     }
 
     // Make a pseudo legal move.

@@ -88,10 +88,8 @@ namespace Meetra {
 
                 Search::mt_depth.store(depth_reached, std::memory_order_relaxed);
 
-                // finish if we don't have enough time left for a deeper search or mate has been found, and we are not
-                // performing fixed time/depth/infinite or multipv search
-                if (!Search::Run() || !Search::EnoughTimeLeft() ||
-                    (IsMateScore(root_moves[0].score) && Search::multi_pv == 1 && !Search::settings.infinite)) {
+                // finish if we don't have enough time left for a deeper search
+                if (!Search::Run() || !Search::EnoughTimeLeft()) {
                     break;
                 }
 
@@ -132,7 +130,7 @@ namespace Meetra {
             return QSearch(alpha, beta, ply);
         }
 
-        MoveGen move_gen(board);
+        MoveGen move_gen(board, killers[ply]);
         Score static_eval = board.GetEval();
         Score eval = static_eval;
         Move tt_move;
@@ -154,6 +152,9 @@ namespace Meetra {
                 eval = tt_score;
             }
         }
+
+        killers[ply + 1][0] = ZERO_MOVE;
+        killers[ply + 1][1] = ZERO_MOVE;
 
         bool prune = !move_gen.IsInCheck() && !IsMateScore(beta) && !IsMateScore(alpha) && !IsMateScore(eval);
 
@@ -190,7 +191,7 @@ namespace Meetra {
         while ((move = move_gen.GetBestMove<MoveGen::NORMAL>())) {
 
             // temporary fix to not play TT move twice - this should be done in the generator before evaluating the move
-            if (move == tt_move && moves_searched >= 1) {
+            if (move == tt_move && moves_searched > 0) {
                 continue;
             }
 
@@ -220,28 +221,20 @@ namespace Meetra {
             }
 
             if (score > best_score) {
-
                 best_score = score;
                 best_move = move;
-
                 if (score > alpha) {
-
                     if (score >= beta) {
-
-                        // killers only for pv nodes ?? for nonpv as well?? what about null move search
-                        if (NodeType == PV && move_gen.IsCapture(move)) {
+                        if (killers[ply][0] != best_move && move_gen.IsQuiet(best_move)) {
                             killers[ply][1] = killers[ply][0];
-                            killers[ply][0] = move;
+                            killers[ply][0] = best_move;
                         }
-
-                        Search::tt.Save(board.GetHash(), score, depth, move, BETA, ply);
-                        return score;
+                        tt_flag = BETA;
+                        break;
                     }
-
                     pv_line.Clear();
                     pv_line.PutMove(move);
                     pv_line.PutLine(line);
-
                     tt_flag = EXACT;
                     alpha = score;
                 }
@@ -419,6 +412,7 @@ namespace Meetra {
 
     SearchThread::SearchThread(int id) :
             id(id),
+            active(false),
             thread([&](const std::stop_token &stop_token) { InitThread(stop_token); }) {}
 
     void SearchThread::InitThread(const std::stop_token &stop_token) {
@@ -447,6 +441,10 @@ namespace Meetra {
         depth_reached = 0;
         seldepth_reached = 0;
         nodes_explored = 0;
+        for (auto &e: killers) {
+            e[0] = ZERO_MOVE;
+            e[1] = ZERO_MOVE;
+        }
     }
 
     void SearchThread::StartThread() {

@@ -19,19 +19,26 @@ namespace Meetra {
         return C == WHITE ? 0x00000000FF000000 : 0x000000FF00000000;
     }
 
-    MoveGen::MoveGen(const Board &board) : board(board) {
+    MoveGen::MoveGen(const Board &board, const Move killer_moves[2]) : MoveGen(board) {
+        killers[0] = killer_moves[0];
+        killers[1] = killer_moves[1];
+    }
 
-        my_color = board.ColorToMove();
-        enemy_color = OtherColor(my_color);
-        king_s = Bitboards::Lsb(board.GetPieces(KING, my_color));
-        enemy_pieces = board.GetPieces_c(enemy_color);
-        all_pieces = board.GetPieces_pt(ALL_TYPES);
-        empty_squares = ~all_pieces;
-        checkers = board.AttackedBy(king_s, enemy_color, all_pieces);
-        blockers = board.PinnedToSquare(king_s, enemy_color);
-        ep_s = board.EpSquare();
-        moves_cnt = 0;
-        legal_moves = 0xFFFFFFFFFFFFFFFF;
+    MoveGen::MoveGen(const Board &board) :
+            board(board),
+            my_color(board.ColorToMove()),
+            enemy_color(OtherColor(my_color)),
+            king_s(Bitboards::Lsb(board.GetPieces(KING, my_color))),
+            enemy_pieces(board.GetPieces_c(enemy_color)),
+            all_pieces(board.GetPieces_pt(ALL_TYPES)),
+            empty_squares(~all_pieces),
+            checkers(board.AttackedBy(king_s, enemy_color, all_pieces)),
+            blockers(board.PinnedToSquare(king_s, enemy_color)),
+            ep_s(board.EpSquare()),
+            legal_moves(0xFFFFFFFFFFFFFFFF),
+            double_check(false),
+            gen_phase(CAPTURE),
+            killers{ZERO_MOVE, ZERO_MOVE} {
 
         if (IsInCheck()) {
             if (Bitboards::MoreThanOne(checkers)) {
@@ -45,9 +52,6 @@ namespace Meetra {
             Bitboard block_mask = Bitboards::GetRayToSquares(king_s, attacker_square);
             legal_moves = capture_mask | block_mask;
         }
-
-        gen_phase = CAPTURE;
-        double_check = false;
     }
 
     template<MoveGen::GenType T>
@@ -259,7 +263,7 @@ namespace Meetra {
             return false;
         }
 
-        // destination is either empty or occupied by enemy piece, but not a king (king captures are not allowed)
+        // destination is either empty or occupied by enemy piece, but not a king (king captures can crash the engine)
         Piece dest_piece = board.GetPieceOnSquare(ToSquare(m));
         if (dest_piece != NO_PIECE && (ColorOfPiece(dest_piece) == my_color || TypeOfPiece(dest_piece) == KING)) {
             return false;

@@ -51,7 +51,7 @@ namespace Meetra {
         void InitThread(const std::stop_token &stop_token);
 
         Board board;
-        Move killers[MAX_SEARCH_DEPTH + 1][2];
+        Move killers[MAX_SEARCH_DEPTH + 2][2];
         std::vector<Search::RootMove> root_moves;
         Search::RootMove *curr_rm;
         size_t curr_rm_num;
@@ -60,7 +60,7 @@ namespace Meetra {
         std::atomic<uint64_t> nodes_explored;
 
         int id;
-        std::atomic<bool> active = false;
+        std::atomic<bool> active;
         std::mutex mtx;
         std::condition_variable_any cond_var;
         std::jthread thread;

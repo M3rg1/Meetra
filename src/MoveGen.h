@@ -16,17 +16,18 @@ namespace Meetra {
         };
 
         explicit MoveGen(const Board &board);
+        MoveGen(const Board &board, const Move killer_moves[2]);
 
         inline void PutTTMove(Move tt_move) {
             move_eval[moves_cnt].move = tt_move;
-            move_eval[moves_cnt++].score = 10000;
+            move_eval[moves_cnt++].score = 100000;
         }
 
         template<GenType T>
         [[nodiscard]] Move GetBestMove();
         [[nodiscard]] Move GetAnyMove();
         [[nodiscard]] bool IsPseudoLegal(Move m) const;
-        [[nodiscard]] inline bool IsCapture(Move m) const { return board.GetPieceOnSquare(ToSquare(m)) != NO_PIECE; }
+        [[nodiscard]] inline bool IsQuiet(Move m) const { return board.GetPieceOnSquare(ToSquare(m)) == NO_PIECE; }
         [[nodiscard]] inline bool IsInCheck() const { return checkers; }
 
     private:
@@ -45,25 +46,26 @@ namespace Meetra {
         };
 
         const Board &board;
+        Move killers[2];
 
         Color my_color;
         Color enemy_color;
 
         Square king_s;
         Square ep_s;
-        Bitboard checkers;
-        Bitboard blockers;
-        Bitboard legal_moves;
         Bitboard all_pieces;
         Bitboard enemy_pieces;
         Bitboard empty_squares;
+        Bitboard checkers;
+        Bitboard blockers;
+        Bitboard legal_moves;
         bool double_check;
 
         GenPhase gen_phase;
         Bitboard phase_mask;
 
         ScoredMove move_eval[MAX_LEGAL_MOVES];
-        int moves_cnt;
+        int moves_cnt = 0;
 
         [[nodiscard]] inline bool Empty() const { return moves_cnt == 0; }
         inline Move PopBack() { return move_eval[--moves_cnt].move; }
@@ -80,7 +82,13 @@ namespace Meetra {
         }
         inline void EvalMoves() {
             for (int i = 0; i < moves_cnt; ++i) {
-                move_eval[i].score = board.GetMoveEval(move_eval[i].move);
+                if (move_eval[i].move == killers[0]) {
+                    move_eval[i].score = 90000;
+                } else if (move_eval[i].move == killers[1]) {
+                    move_eval[i].score = 80000;
+                } else {
+                    move_eval[i].score = board.GetMoveEval(move_eval[i].move);
+                }
             }
         }
 
