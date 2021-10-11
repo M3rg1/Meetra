@@ -46,7 +46,6 @@ namespace Meetra {
         };
 
         const Board &board;
-        Move killers[2];
 
         Color my_color;
         Color enemy_color;
@@ -54,8 +53,8 @@ namespace Meetra {
         Square king_s;
         Square ep_s;
         Bitboard all_pieces;
-        Bitboard enemy_pieces;
         Bitboard empty_squares;
+        Bitboard enemy_pieces;
         Bitboard checkers;
         Bitboard blockers;
         Bitboard legal_moves;
@@ -64,8 +63,9 @@ namespace Meetra {
         GenPhase gen_phase;
         Bitboard phase_mask;
 
+        Move killers[2];
         ScoredMove move_eval[MAX_LEGAL_MOVES];
-        int moves_cnt = 0;
+        int moves_cnt;
 
         [[nodiscard]] inline bool Empty() const { return moves_cnt == 0; }
         inline Move PopBack() { return move_eval[--moves_cnt].move; }
@@ -80,17 +80,8 @@ namespace Meetra {
             PutMove(m | PROMOTE_BISHOP);
             PutMove(m | PROMOTE_KNIGHT);
         }
-        inline void EvalMoves() {
-            for (int i = 0; i < moves_cnt; ++i) {
-                if (move_eval[i].move == killers[0]) {
-                    move_eval[i].score = 90000;
-                } else if (move_eval[i].move == killers[1]) {
-                    move_eval[i].score = 80000;
-                } else {
-                    move_eval[i].score = board.GetMoveEval(move_eval[i].move);
-                }
-            }
-        }
+
+        void EvalMoves();
 
         template<Color C, GenType T>
         void NextPhase();

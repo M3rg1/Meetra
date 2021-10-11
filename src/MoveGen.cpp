@@ -29,16 +29,17 @@ namespace Meetra {
             my_color(board.ColorToMove()),
             enemy_color(OtherColor(my_color)),
             king_s(Bitboards::Lsb(board.GetPieces(KING, my_color))),
-            enemy_pieces(board.GetPieces_c(enemy_color)),
+            ep_s(board.EpSquare()),
             all_pieces(board.GetPieces_pt(ALL_TYPES)),
             empty_squares(~all_pieces),
+            enemy_pieces(board.GetPieces_c(enemy_color)),
             checkers(board.AttackedBy(king_s, enemy_color, all_pieces)),
             blockers(board.PinnedToSquare(king_s, enemy_color)),
-            ep_s(board.EpSquare()),
             legal_moves(0xFFFFFFFFFFFFFFFF),
             double_check(false),
             gen_phase(CAPTURE),
-            killers{ZERO_MOVE, ZERO_MOVE} {
+            killers{ZERO_MOVE, ZERO_MOVE},
+            moves_cnt(0) {
 
         if (IsInCheck()) {
             if (Bitboards::MoreThanOne(checkers)) {
@@ -51,6 +52,18 @@ namespace Meetra {
             Square attacker_square = Bitboards::Lsb(capture_mask);
             Bitboard block_mask = Bitboards::GetRayToSquares(king_s, attacker_square);
             legal_moves = capture_mask | block_mask;
+        }
+    }
+
+    void MoveGen::EvalMoves() {
+        for (int i = 0; i < moves_cnt; ++i) {
+            if (move_eval[i].move == killers[0]) {
+                move_eval[i].score = 90000;
+            } else if (move_eval[i].move == killers[1]) {
+                move_eval[i].score = 80000;
+            } else {
+                move_eval[i].score = board.GetMoveEval(move_eval[i].move);
+            }
         }
     }
 

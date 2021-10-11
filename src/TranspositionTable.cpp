@@ -4,11 +4,11 @@
 
 namespace Meetra {
 
-    constexpr Score RemoveMatePly(Score score, Depth ply) {
+    Score RemoveMatePly(Score score, Depth ply) {
         return score > MIN_MATE_EVAL ? score + ply : score < -MIN_MATE_EVAL ? score - ply : score;
     }
 
-    constexpr Score AddMatePly(Score score, Depth ply) {
+    Score AddMatePly(Score score, Depth ply) {
         return score > MIN_MATE_EVAL ? score - ply : score < -MIN_MATE_EVAL ? score + ply : score;
     }
 
@@ -21,7 +21,6 @@ namespace Meetra {
 
         buckets_count = (size_mb * 1048576) / sizeof(TTBucket);
         table = std::make_unique<TTBucket[]>(buckets_count);
-
         Clear();
     }
 
@@ -49,29 +48,22 @@ namespace Meetra {
         for (auto &entry: bucket.bucket_entries) {
 
             if (entry.GetHash16() == hash16) {
-                if (entry.GetEpoch() != current_epoch || entry.GetDepth() <= depth) {
+                if (entry.GetEpoch() != current_epoch || entry.GetDepth() < depth) {
                     entry_to_write = &entry;
+                    break;
                 } else {
                     return;
                 }
-                break;
             }
 
-            int entry_score = entry.GetDepth();
-            entry_score -= (current_epoch - entry.GetEpoch()) * 2;
-            if (entry.GetFlag() == EXACT) {
-                entry_score += 2;
-            }
-
+            int entry_score = entry.GetDepth() + 2 * ((entry.GetFlag() == EXACT) - (current_epoch - entry.GetEpoch())) ;
             if (entry_score < worst_entry_score) {
                 worst_entry_score = entry_score;
                 entry_to_write = &entry;
             }
         }
 
-        if (entry_to_write->GetEpoch() != current_epoch) {
-            used_entries.fetch_add(1, std::memory_order::relaxed);
-        }
+        used_entries.fetch_add(entry_to_write->GetEpoch() != current_epoch, std::memory_order::relaxed);
         entry_to_write->SaveEntry(hash16, RemoveMatePly(score, ply), depth, move, flag, current_epoch);
     }
 

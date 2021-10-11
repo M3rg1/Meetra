@@ -14,8 +14,6 @@ namespace Meetra {
     // the main search function - root position AB search, iterative deepening framework
     void SearchThread::Search() {
 
-        active = true;
-
         // iterative deepening
         for (depth_reached = 1; depth_reached <= Search::settings.allowed_depth && Search::Run(); ++depth_reached) {
 
@@ -103,8 +101,6 @@ namespace Meetra {
         if (IsMainThread()) {
             Search::FinishSearch();
         }
-
-        active = false;
     }
 
     template<SearchThread::Node NodeType>
@@ -148,7 +144,7 @@ namespace Meetra {
             move_gen.PutTTMove(tt_move);
 
             // improve our static eval if possible
-            if ((tt_flag & BETA && eval < tt_score) || (tt_flag & ALPHA && eval > tt_score)) {
+            if ((tt_flag & ALPHA && eval > tt_score) || (tt_flag & BETA && eval < tt_score)) {
                 eval = tt_score;
             }
         }
@@ -419,10 +415,12 @@ namespace Meetra {
         while (true) {
             {
                 std::unique_lock lock(mtx);
-                cond_var.wait(lock, stop_token, [&] { return active.load(); });
+                cond_var.notify_all();
+                cond_var.wait(lock, stop_token, [&] { return active; });
             }
             if (stop_token.stop_requested()) { return; }
             Search();
+            active = false;
         }
     }
 
@@ -431,6 +429,11 @@ namespace Meetra {
             thread.request_stop();
             thread.join();
         }
+    }
+
+    void SearchThread::WaitForFinish() {
+        std::unique_lock lock(mtx);
+        cond_var.wait(lock, [&] { return !active; });
     }
 
     void SearchThread::InitNewSearch(const Board &b, const std::vector<Search::RootMove> &moves) {

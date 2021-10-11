@@ -44,6 +44,11 @@ namespace Meetra {
     constexpr PieceType TypeOfPiece(Piece p) { return p & 7; }
     constexpr Piece NewPiece(PieceType pt, Color c) { return (c << 3) | pt; }
 
+    constexpr std::string_view piece_char = "oPNBRQK  pnbrqk";
+
+    constexpr Piece CharToPiece(char c) { return static_cast<Piece>(piece_char.find(c)); }
+    constexpr char PieceToChar(Piece p) { return piece_char[p]; }
+
     enum Ranks {
         RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8,
         RANK_NR
@@ -60,16 +65,6 @@ namespace Meetra {
     constexpr char CharFromRank(Rank r) { return static_cast<char>(r + '1'); }
     constexpr File FileFromChar(char c) { return c - 'a'; }
     constexpr char CharFromFile(File f) { return static_cast<char>(f + 'a'); }
-
-    constexpr std::string_view piece_char = "oPNBRQK  pnbrqk";
-
-    constexpr Piece CharToPiece(char c) {
-        return static_cast<Piece>(piece_char.find(c));
-    }
-
-    constexpr char PieceToChar(Piece p) {
-        return piece_char[p];
-    }
 
     enum PawnMoveDir {
         LEFT, RIGHT, FORWARD,
@@ -109,7 +104,6 @@ namespace Meetra {
         SHORT, LONG, CS_NR
     };
 
-#pragma region ===== Move =====
     /**
      * Move bits:
      * 0-5 from square
@@ -118,9 +112,10 @@ namespace Meetra {
      * if the 14th bit is 1, it's a promotion move -> prom bits  N = 0010.., B = 1010.., R = 0110.., Q = 1110..
      */
     using Move = uint16_t;
+    constexpr Move ZERO_MOVE = 0;
 
     enum MoveTypes {
-        ZERO_MOVE = 0, NO_FLAG = 0, EN_PASSANT = 1 << 12, CASTLING = 2 << 12, TWO_FORWARD = 3 << 12,
+        NO_FLAG = 0, EN_PASSANT = 1 << 12, CASTLING = 2 << 12, TWO_FORWARD = 3 << 12,
         PROMOTE_KNIGHT = 4 << 12, PROMOTE_BISHOP = 5 << 12, PROMOTE_ROOK = 6 << 12, PROMOTE_QUEEN = 7 << 12
     };
     using MoveType = int;
@@ -133,7 +128,6 @@ namespace Meetra {
     constexpr Square ToSquare(Move m) { return (m >> 6) & 0x3F; }
     constexpr bool IsPromotion(Move m) { return m >> 14; }
     constexpr MoveType GetMoveType(Move m) { return m & 0xF000; }
-#pragma endregion
 }
 
 #endif //MEETRA_DEFS_H

@@ -1,6 +1,7 @@
 #ifndef MEETRA_SEARCH_H
 #define MEETRA_SEARCH_H
 
+#include <algorithm>
 #include "Board.h"
 #include "Evaluator.h"
 #include "TranspositionTable.h"
@@ -27,7 +28,6 @@ namespace Meetra::Search {
 
     inline SearchSettings settings;
     inline std::atomic<bool> run;
-    inline std::atomic<bool> finished;
     inline std::atomic<Depth> mt_depth;
     inline bool chess960;
     inline bool use_book;
@@ -89,8 +89,8 @@ namespace Meetra::Search {
 
     [[nodiscard]] bool EnoughTimeLeft();
     [[nodiscard]] inline bool Run() { return run.load(std::memory_order_relaxed); }
-    [[nodiscard]] inline bool Finished() { return finished.load(std::memory_order_relaxed); }
     [[nodiscard]] inline Depth MtDepth() { return mt_depth.load(std::memory_order_relaxed); }
+    inline void WaitFinished() { std::ranges::for_each(threads, [&](auto &t) { t->WaitForFinish(); }); }
     inline void StopSearch() { run = false; }
     inline void ClearTT() { tt.Clear(); }
     inline void ShowShowCurrLine(bool show) { show_currline = show; }

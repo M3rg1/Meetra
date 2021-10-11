@@ -24,12 +24,12 @@ namespace Meetra {
         void InitNewSearch(const Board &b, const std::vector<Search::RootMove> &moves);
         void StartThread();
         void Search();
+        void WaitForFinish();
 
         [[nodiscard]] bool DidBeatMove(const Search::RootMove &other) const;
         [[nodiscard]] Search::RootMove GetBestRootMove() const;
         [[nodiscard]] std::string GetBestRmName() const;
         [[nodiscard]] std::string GetSearchInfo() const;
-        [[nodiscard]] inline bool IsSearching() const { return active.load(std::memory_order_relaxed); };
         [[nodiscard]] inline uint64_t Nodes() const { return nodes_explored.load(std::memory_order_relaxed); }
 
     private:
@@ -60,7 +60,7 @@ namespace Meetra {
         std::atomic<uint64_t> nodes_explored;
 
         int id;
-        std::atomic<bool> active;
+        bool active;
         std::mutex mtx;
         std::condition_variable_any cond_var;
         std::jthread thread;

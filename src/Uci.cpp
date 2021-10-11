@@ -131,7 +131,7 @@ namespace Meetra::Uci {
     }
 
     void GoCommand(std::istringstream &iss, const Board &board) {
-        if (Search::Run()) {
+        if (Search::run) {
             SendInfo("Search is already in progress!");
             return;
         }
@@ -192,11 +192,12 @@ namespace Meetra::Uci {
 
     void StopCommand() {
         Search::StopSearch();
-        while (!Search::Finished()); // wait until search is finished before accepting more commands
+        Search::WaitFinished(); // wait until search is finished before accepting more commands
     }
 
     void UciNewGameCommand() {
         Search::ClearTT();
+        // TODO clear threads etc.
     }
 
     bool IsNumerical(std::string_view str) {
@@ -209,8 +210,9 @@ namespace Meetra::Uci {
 
     void SetOptionCommand(std::istringstream &iss) {
 
-        if (!Search::Finished()) {
+        if (Search::run) {
             SendInfo("Cannot change settings while search is ongoing!");
+            return;
         }
 
         std::string token, option;

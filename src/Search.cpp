@@ -42,10 +42,8 @@ namespace Meetra::Search {
 
     void InitSearch(const SearchSettings &s, const Board &board) {
 
-        finished = false;
-
-        last_update_time = 0;
         start_time = Time::Now();
+        last_update_time = 0;
 
         settings = s;
 
@@ -80,7 +78,7 @@ namespace Meetra::Search {
         SearchThread *best_thread = threads[0].get();
         if (multi_pv == 1) {
             for (size_t i = 1; i < threads.size(); ++i) {
-                while (threads[i]->IsSearching()); // wait until thread finishes searching
+                threads[i]->WaitForFinish();
                 if (threads[i]->DidBeatMove(best_thread->GetBestRootMove())) {
                     best_thread = threads[i].get();
                 }
@@ -89,7 +87,6 @@ namespace Meetra::Search {
 
         Uci::Send(best_thread->GetSearchInfo());
         Uci::Send("bestmove " + best_thread->GetBestRmName());
-        finished = true;
     }
 
     void StartSearch(SearchSettings s, Board board) {
@@ -108,7 +105,6 @@ namespace Meetra::Search {
                         std::mt19937{std::random_device{}()}
                 );
                 Uci::Send("bestmove " + board.MoveToName(moves.back()));
-                finished = true;
                 return;
             }
         }
@@ -119,7 +115,6 @@ namespace Meetra::Search {
         if (root_moves.empty() || (root_moves.size() == 1 && !settings.infinite)) {
             StopSearch();
             Uci::Send("bestmove " + board.MoveToName(root_moves.empty() ? ZERO_MOVE : root_moves.front().move));
-            finished = true;
             return;
         }
 
@@ -131,7 +126,6 @@ namespace Meetra::Search {
     void Init() {
         tt.Init();
         run = false;
-        finished = true;
         chess960 = false;
         use_book = false;
         show_currline = false;
