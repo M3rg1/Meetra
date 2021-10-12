@@ -80,9 +80,7 @@ namespace Meetra {
                 move = entry.GetMove();
                 score = AddMatePly(entry.GetScore(), ply);
                 if (entry.GetDepth() >= depth &&
-                    //(score >= beta ? (flag & BETA) : (flag & ALPHA))) {
                     ((score <= alpha && (flag & ALPHA)) || (score >= beta && (flag & BETA)) || flag == EXACT)) {
-                    //((score <= beta && (flag & ALPHA)) || (score >= beta && (flag & BETA)))) {
                     entry.SetEpoch(current_epoch);
                     flag |= CUTOFF;
                 }
