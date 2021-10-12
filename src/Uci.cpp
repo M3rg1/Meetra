@@ -196,6 +196,10 @@ namespace Meetra::Uci {
     }
 
     void UciNewGameCommand() {
+        if (Search::run) {
+            SendInfo("Search is already in progress!");
+            return;
+        }
         Search::ClearTT();
         // TODO clear threads etc.
     }
