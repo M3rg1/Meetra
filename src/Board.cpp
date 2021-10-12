@@ -62,6 +62,24 @@ namespace Meetra {
             return false;
         }
 
+        if (CrAvailable(WHITE, SHORT) || CrAvailable(WHITE, LONG)) {
+            if (!(white_king & castling_mask[WHITE])) {
+                return false;
+            }
+            if (!Search::chess960 && Bitboards::Lsb(white_king) != E1) {
+                return false;
+            }
+        }
+
+        if (CrAvailable(BLACK, SHORT) || CrAvailable(BLACK, LONG)) {
+            if (!(black_king & castling_mask[BLACK])) {
+                return false;
+            }
+            if (!Search::chess960 && Bitboards::Lsb(black_king) != E8) {
+                return false;
+            }
+        }
+
         return true;
     }
 
