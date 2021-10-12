@@ -106,12 +106,16 @@ namespace Meetra {
     template<SearchThread::Node NodeType>
     Score SearchThread::ABSearch(Score alpha, Score beta, Depth depth, Depth ply, Search::PVMoveLine &pv_line) {
 
-        curr_rm->seldepth = std::max(ply, curr_rm->seldepth);
-        seldepth_reached = std::max(ply, seldepth_reached);
-
         if (IsMainThread()) {
             CheckTimers();
         }
+
+        if (!Search::Run()) {
+            return 0;
+        }
+
+        curr_rm->seldepth = std::max(ply, curr_rm->seldepth);
+        seldepth_reached = std::max(ply, seldepth_reached);
 
         if (board.Move50Rule()) {
             // it could be a checkmate on the 50th move
@@ -155,8 +159,8 @@ namespace Meetra {
         bool prune = !move_gen.IsInCheck() && !IsMateScore(beta) && !IsMateScore(alpha) && !IsMateScore(eval);
 
         // reverse futility pruning
-        if (NodeType == NONPV && prune && depth < 6) {
-            Score score_margin = 100 * depth;
+        if (NodeType == NONPV && prune && depth <= FUTILITY_DEPTH) {
+            Score score_margin = FUTILITY_FACTOR * depth;
             if (eval - score_margin >= beta) {
                 return eval - score_margin;
             }
@@ -164,13 +168,12 @@ namespace Meetra {
 
         Search::PVMoveLine line;
         // null move pruning
-        constexpr int R = 4;
-        if (NodeType == NONPV && prune && depth >= R && eval >= beta && eval >= static_eval) {
+        if (NodeType == NONPV && prune && depth >= NULL_DEPTH && eval >= beta && eval >= static_eval) {
             board.MakeNullMove();
-            Score null_score = -ABSearch<NULLMOVE>(-beta, -beta + 1, depth - R, ply + R, line);
+            Score null_score = -ABSearch<NULLMOVE>(-beta, -beta + 1, depth - NULL_DEPTH, ply + NULL_DEPTH, line);
             board.UnmakeNullMove();
             if (null_score >= beta) {
-                Score verification = ABSearch<NULLMOVE>(beta - 1, beta, depth - R, ply + R, line);
+                Score verification = ABSearch<NULLMOVE>(beta - 1, beta, depth - NULL_DEPTH, ply + NULL_DEPTH, line);
                 if (verification >= beta) {
                     return null_score;
                 }
@@ -363,7 +366,7 @@ namespace Meetra {
             }
 
             oss << " pv " << board.MoveToName(root_moves[i].move);
-            for (size_t j = 0; j < root_moves[i].pv.Size(); ++j) {
+            for (int j = 0; j < root_moves[i].pv.Size(); ++j) {
                 oss << ' ' << board.MoveToName(root_moves[i].pv.At(j));
             }
             if (i + 1 < pvs_to_send) {
@@ -389,7 +392,7 @@ namespace Meetra {
 
     void SearchThread::CheckTimers() {
 
-        if ((Nodes() & 8191) != 0) {
+        if ((Nodes() & 4095) != 0) {
             return;
         }
 
@@ -415,12 +418,12 @@ namespace Meetra {
         while (true) {
             {
                 std::unique_lock lock(mtx);
+                active = false;
                 cond_var.notify_all();
                 cond_var.wait(lock, stop_token, [&] { return active; });
             }
             if (stop_token.stop_requested()) { return; }
             Search();
-            active = false;
         }
     }
 

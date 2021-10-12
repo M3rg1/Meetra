@@ -22,8 +22,8 @@ namespace Meetra {
     // search time related consts
     constexpr TimeRep DEFAULT_SEARCH_TIME = 60000;
     constexpr TimeRep MIN_OVERHEAD = 0;
-    constexpr TimeRep MAX_OVERHEAD = 1000;
-    constexpr TimeRep DEFAULT_OVERHEAD = 10;
+    constexpr TimeRep MAX_OVERHEAD = 10000;
+    constexpr TimeRep DEFAULT_OVERHEAD = 20;
     constexpr TimeRep UPDATE_INFO_INTERVAL = 1000;
 
     // eval consts
@@ -38,6 +38,11 @@ namespace Meetra {
     constexpr size_t DEFAULT_HASH_SIZE = 128;
     constexpr size_t MAX_HASH_SIZE = 8192;
     constexpr size_t TT_ENTRIES_PER_BUCKET = 4;
+
+    // search stuff
+    constexpr Score FUTILITY_FACTOR = 90;
+    constexpr Depth FUTILITY_DEPTH = 6;
+    constexpr Depth NULL_DEPTH = 4;
 
     // perft testing
     constexpr bool ETHEREAL_SUITE = false;

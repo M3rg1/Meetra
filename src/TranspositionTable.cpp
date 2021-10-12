@@ -48,7 +48,7 @@ namespace Meetra {
         for (auto &entry: bucket.bucket_entries) {
 
             if (entry.GetHash16() == hash16) {
-                if (entry.GetEpoch() != current_epoch || entry.GetDepth() < depth) {
+                if (entry.GetEpoch() != current_epoch || entry.GetDepth() < depth || flag == EXACT) {
                     entry_to_write = &entry;
                     break;
                 } else {
@@ -56,7 +56,7 @@ namespace Meetra {
                 }
             }
 
-            int entry_score = entry.GetDepth() + 2 * ((entry.GetFlag() == EXACT) - (current_epoch - entry.GetEpoch())) ;
+            int entry_score = entry.GetDepth() + 2 * (entry.GetFlag() == EXACT) - 4 * (current_epoch - entry.GetEpoch());
             if (entry_score < worst_entry_score) {
                 worst_entry_score = entry_score;
                 entry_to_write = &entry;
@@ -79,19 +79,12 @@ namespace Meetra {
                 flag = entry.GetFlag();
                 move = entry.GetMove();
                 score = AddMatePly(entry.GetScore(), ply);
-                if (entry.GetDepth() >= depth) {
-                    if (entry.GetFlag() == ALPHA && score <= alpha) {
-                        entry.SetEpoch(current_epoch);
-                        score = alpha;
-                        flag |= CUTOFF;
-                    } else if (entry.GetFlag() == BETA && score >= beta) {
-                        entry.SetEpoch(current_epoch);
-                        score = beta;
-                        flag |= CUTOFF;
-                    } else if (entry.GetFlag() == EXACT) {
-                        entry.SetEpoch(current_epoch);
-                        flag |= CUTOFF;
-                    }
+                if (entry.GetDepth() >= depth &&
+                    //(score >= beta ? (flag & BETA) : (flag & ALPHA))) {
+                    ((score <= alpha && (flag & ALPHA)) || (score >= beta && (flag & BETA)) || flag == EXACT)) {
+                    //((score <= beta && (flag & ALPHA)) || (score >= beta && (flag & BETA)))) {
+                    entry.SetEpoch(current_epoch);
+                    flag |= CUTOFF;
                 }
                 break;
             }

@@ -13,6 +13,7 @@
 namespace Meetra::Search {
 
     struct SearchSettings {
+
         bool infinite = false;
 
         TimeRep allowed_time = INT64_MAX;
