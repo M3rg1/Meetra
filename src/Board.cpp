@@ -80,6 +80,9 @@ namespace Meetra {
             }
         }
 
+        // TODO check EP validity - there must be a pawn on the EP capture square
+        //  also check that the EP square is on the right rank
+
         return true;
     }
 

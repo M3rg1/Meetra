@@ -110,10 +110,6 @@ namespace Meetra {
             CheckTimers();
         }
 
-        if (!Search::Run()) {
-            return 0;
-        }
-
         curr_rm->seldepth = std::max(ply, curr_rm->seldepth);
         seldepth_reached = std::max(ply, seldepth_reached);
 
@@ -220,16 +216,14 @@ namespace Meetra {
             }
 
             if (score > best_score) {
-                best_score = score;
-                best_move = move;
                 if (score > alpha) {
                     if (score >= beta) {
-                        if (killers[ply][0] != best_move && move_gen.IsQuiet(best_move)) {
+                        if (killers[ply][0] != move && move_gen.IsQuiet(move)) {
                             killers[ply][1] = killers[ply][0];
-                            killers[ply][0] = best_move;
+                            killers[ply][0] = move;
                         }
-                        tt_flag = BETA;
-                        break;
+                        Search::tt.Save(board.GetHash(), score, depth, move, BETA, ply);
+                        return score;
                     }
                     pv_line.Clear();
                     pv_line.PutMove(move);
@@ -237,6 +231,8 @@ namespace Meetra {
                     tt_flag = EXACT;
                     alpha = score;
                 }
+                best_score = score;
+                best_move = move;
             }
         }
 
@@ -254,40 +250,54 @@ namespace Meetra {
         curr_rm->seldepth = std::max(ply, curr_rm->seldepth);
         seldepth_reached = std::max(ply, seldepth_reached);
 
-        auto score = board.GetEval();
-        if (score > alpha) {
-            if (score >= beta) {
-                return score;
+        MoveGen move_gen(board);
+
+        if (!move_gen.IsInCheck()) {
+            Score static_eval = board.GetEval();
+            if (static_eval > alpha) {
+                if (static_eval >= beta) {
+                    return static_eval;
+                }
+                alpha = static_eval;
             }
-            alpha = score;
         }
 
-        MoveGen move_gen(board);
         Move move;
-        int moves_searched = 0;
+        Score best_score = NEGATIVE_INF;
 
         while ((move = move_gen.GetBestMove<MoveGen::QSEARCH>())) {
+
             if (!board.MakeMove(move)) {
                 board.UnmakeMove(move);
                 continue;
             }
 
-            score = -QSearch(-beta, -alpha, ply + 1);
+            Score score = -QSearch(-beta, -alpha, ply + 1);
+
             board.UnmakeMove(move);
 
             nodes_explored.fetch_add(1, std::memory_order_relaxed);
             ++curr_rm->nodes;
-            ++moves_searched;
 
-            if (score > alpha) {
-                if (score >= beta) {
-                    return score;
+            if (score > best_score) {
+                if (score > alpha) {
+                    if (score >= beta) {
+                        return score;
+                    }
+                    alpha = score;
                 }
-                alpha = score;
+                best_score = score;
             }
         }
 
-        return alpha;
+        if (best_score == NEGATIVE_INF) {
+            if (move_gen.IsInCheck()) {
+                return -MATE_SCORE + ply;
+            }
+            best_score = alpha;
+        }
+
+        return best_score;
     }
 
     bool SearchThread::DidBeatMove(const Search::RootMove &other) const {
@@ -311,7 +321,7 @@ namespace Meetra {
     }
 
     std::string SearchThread::GetBestRmName() const {
-        return board.MoveToName(root_moves[0].move);
+        return board.MoveToName(GetBestRootMove().move);
     }
 
     std::string SearchThread::GetUpdateSearchInfo() const {
@@ -319,7 +329,7 @@ namespace Meetra {
         auto nodes = Search::NodesTotal();
         auto elapsed_ns = Time::ElapsedTime<Time::ns>(Search::start_time);
         auto elapsed_ms = elapsed_ns / 1000000;
-        auto nps = static_cast<uint64_t>((static_cast<double>(nodes) / static_cast<double>(elapsed_ns)) * 1000000000.0);
+        auto nps = static_cast<uint64_t>((static_cast<double>(nodes) / static_cast<double>(elapsed_ns + 1)) * 1000000000.0);
 
         std::ostringstream oss;
 
@@ -338,7 +348,7 @@ namespace Meetra {
         auto nodes = Search::NodesTotal();
         auto elapsed_ns = Time::ElapsedTime<Time::ns>(Search::start_time);
         auto elapsed_ms = elapsed_ns / 1000000;
-        auto nps = static_cast<uint64_t>((static_cast<double>(nodes) / static_cast<double>(elapsed_ns)) * 1000000000.0);
+        auto nps = static_cast<uint64_t>((static_cast<double>(nodes) / static_cast<double>(elapsed_ns + 1)) * 1000000000.0);
         auto pvs_to_send = std::min(Search::multi_pv, static_cast<int>(root_moves.size()));
 
         std::ostringstream oss;

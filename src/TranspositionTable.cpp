@@ -48,7 +48,7 @@ namespace Meetra {
         for (auto &entry: bucket.bucket_entries) {
 
             if (entry.GetHash16() == hash16) {
-                if (entry.GetEpoch() != current_epoch || entry.GetDepth() < depth || flag == EXACT) {
+                if (entry.GetEpoch() != current_epoch || entry.GetDepth() <= depth || flag == EXACT) {
                     entry_to_write = &entry;
                     break;
                 } else {

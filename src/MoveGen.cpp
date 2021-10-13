@@ -94,7 +94,7 @@ namespace Meetra {
         switch (gen_phase) {
             case CAPTURE:
                 GenMovesForPhase<CAPTURE, C>();
-                gen_phase = T == QSEARCH ? END : QUIET;
+                gen_phase = T == QSEARCH && !IsInCheck() ? END : QUIET;
                 break;
             case QUIET:
                 GenMovesForPhase<QUIET, C>();
