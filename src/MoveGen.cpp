@@ -65,7 +65,7 @@ void MoveGen::EvalMoves() {
     }
 }
 
-template<MoveGen::GenType T>
+template<GenType T>
 Move MoveGen::GetBestMove() {
     while (Empty()) {
         my_color == WHITE ? NextPhase<WHITE, T>() : NextPhase<BLACK, T>();
@@ -84,10 +84,10 @@ Move MoveGen::GetAnyMove() {
     return PopBack();
 }
 
-template Move MoveGen::GetBestMove<MoveGen::QSEARCH>();
-template Move MoveGen::GetBestMove<MoveGen::NORMAL>();
+template Move MoveGen::GetBestMove<QSEARCH>();
+template Move MoveGen::GetBestMove<NORMAL>();
 
-template<Color C, MoveGen::GenType T>
+template<Color C, GenType T>
 void MoveGen::NextPhase() {
     switch (gen_phase) {
         case CAPTURE:

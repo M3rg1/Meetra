@@ -16,6 +16,15 @@ constexpr Hash64 NEW_HASH64 = 0;
 using Bitboard = uint64_t;
 constexpr Bitboard EMPTY_BB = 0;
 
+enum TTFlags {
+    NOT_FOUND, ALPHA, BETA, EXACT, CUTOFF
+};
+using TTFlag = int;
+
+enum GenType {
+    QSEARCH, NORMAL
+};
+
 enum Colors {
     WHITE, BLACK,
     COLOR_NR

@@ -9,10 +9,6 @@ class MoveGen {
 
 public:
 
-    enum GenType {
-        QSEARCH, NORMAL
-    };
-
     explicit MoveGen(const Board &board);
     MoveGen(const Board &board, const Move killer_moves[2]);
 

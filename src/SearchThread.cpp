@@ -179,7 +179,7 @@ namespace Search {
         tt_flag = ALPHA;
         int moves_searched = 0;
 
-        while ((move = move_gen.GetBestMove<MoveGen::NORMAL>())) {
+        while ((move = move_gen.GetBestMove<NORMAL>())) {
 
             // temporary fix to not play TT move twice - this should be done in the generator before evaluating the move
             if (move == tt_move && moves_searched > 0) {
@@ -261,7 +261,7 @@ namespace Search {
         Move move;
         Score best_score = NEGATIVE_INF;
 
-        while ((move = move_gen.GetBestMove<MoveGen::QSEARCH>())) {
+        while ((move = move_gen.GetBestMove<QSEARCH>())) {
 
             if (!board.MakeMove(move)) {
                 board.UnmakeMove(move);

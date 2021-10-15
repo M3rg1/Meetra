@@ -8,11 +8,6 @@
 #include "Defs.h"
 #include "Config.h"
 
-enum TTFlags {
-    NOT_FOUND, ALPHA, BETA, EXACT, CUTOFF
-};
-using TTFlag = int;
-
 class TranspositionTable {
 
 public:
