@@ -5,7 +5,7 @@
 #include "Search.h"
 #include <algorithm>
 
-namespace Meetra {
+namespace Search {
 
     bool IsMateScore(Score s) {
         return std::abs(s) <= MATE_SCORE && std::abs(s) >= MIN_MATE_EVAL;
@@ -15,14 +15,14 @@ namespace Meetra {
     void SearchThread::Search() {
 
         // iterative deepening
-        for (depth_reached = 1; depth_reached <= Search::settings.allowed_depth && Search::Run(); ++depth_reached) {
+        for (depth_reached = 1; depth_reached <= settings.allowed_depth && Run(); ++depth_reached) {
 
             // seldepth_reached is always at least the current depth being searched
             seldepth_reached = depth_reached;
 
             // if helper thread falls behind main thread, skip depth and go deeper
-            if (!IsMainThread() && depth_reached <= Search::MtDepth()) {
-                depth_reached = std::min(Search::MtDepth() + id, Search::settings.allowed_depth);
+            if (!IsMainThread() && depth_reached <= MtDepth()) {
+                depth_reached = std::min(MtDepth() + id, settings.allowed_depth);
             }
 
             Score alpha = NEGATIVE_INF;
@@ -36,12 +36,12 @@ namespace Meetra {
                 curr_rm = &root_moves[curr_rm_num];
                 curr_rm->seldepth = depth_reached;
 
-                if (IsMainThread() && Search::show_currmove && Time::ElapsedTime<Time::ms>(Search::start_time) > 1000) {
+                if (IsMainThread() && show_currmove && Time::ElapsedTime<Time::ms>(start_time) > 1000) {
                     Uci::Send(GetCurrMoveInfo());
                 }
 
                 // if main thread already finished this depth, there's no reason for a helper thread to remain
-                if (!IsMainThread() && depth_reached < Search::MtDepth()) {
+                if (!IsMainThread() && depth_reached < MtDepth()) {
                     break;
                 }
 
@@ -61,14 +61,14 @@ namespace Meetra {
                 ++curr_rm->nodes;
                 ++moves_searched;
 
-                if (!Search::Run()) {
+                if (!Run()) {
                     break;
                 }
 
                 curr_rm->previous_score = curr_rm->score;
                 curr_rm->depth = depth_reached;
 
-                if (Search::multi_pv > 1) {
+                if (multi_pv > 1) {
                     curr_rm->score = score;
                 } else if (score > alpha) {
                     curr_rm->score = score;
@@ -81,30 +81,27 @@ namespace Meetra {
             // sort based on score -> previous score -> node count
             std::ranges::stable_sort(root_moves);
 
-            // checking time and updating GUI when main thread finishes depth
             if (IsMainThread()) {
 
-                Search::mt_depth.store(depth_reached, std::memory_order_relaxed);
+                mt_depth.store(depth_reached, std::memory_order_relaxed);
 
-                // finish if we don't have enough time left for a deeper search
-                if (!Search::Run() || !Search::EnoughTimeLeft()) {
+                if (!Run() || !EnoughTimeLeft()) {
                     break;
                 }
 
-                // update GUI with info about currently finished depth we searched
-                if (depth_reached > Search::plies_muted && depth_reached < Search::settings.allowed_depth) {
+                if (depth_reached > plies_muted && depth_reached < settings.allowed_depth) {
                     Uci::Send(GetSearchInfo());
                 }
             }
         } // end iterative deepening loop
 
         if (IsMainThread()) {
-            Search::FinishSearch();
+            FinishSearch();
         }
     }
 
     template<SearchThread::Node NodeType>
-    Score SearchThread::ABSearch(Score alpha, Score beta, Depth depth, Depth ply, Search::PVMoveLine &pv_line) {
+    Score SearchThread::ABSearch(Score alpha, Score beta, Depth depth, Depth ply, PVLine &pv_line) {
 
         if (IsMainThread()) {
             CheckTimers();
@@ -131,19 +128,18 @@ namespace Meetra {
         Score eval = static_eval;
         Move tt_move;
         Score tt_score;
-        TTFlag tt_flag = Search::tt.Probe(board.GetHash(), alpha, beta, depth, ply, tt_score, tt_move);
+        TTFlag tt_flag = tt.Probe(board.GetHash(), alpha, beta, depth, ply, tt_score, tt_move);
 
         if (tt_flag != NOT_FOUND && move_gen.IsPseudoLegal(tt_move)) {
 
-            // we always re-search PV nodes
+            // always re-search PV nodes
             if (NodeType != PV && tt_flag & CUTOFF) {
                 return tt_score;
             }
 
-            // the move wasn't good enough to cause cutoff, but we can still use it to order our moves
             move_gen.PutTTMove(tt_move);
 
-            // improve our static eval if possible
+            // improve static eval if possible
             if ((tt_flag & ALPHA && eval > tt_score) || (tt_flag & BETA && eval < tt_score)) {
                 eval = tt_score;
             }
@@ -162,7 +158,7 @@ namespace Meetra {
             }
         }
 
-        Search::PVMoveLine line;
+        PVLine line;
         // null move pruning
         if (NodeType == NONPV && prune && depth >= NULL_DEPTH && eval >= beta && eval >= static_eval) {
             board.MakeNullMove();
@@ -211,7 +207,7 @@ namespace Meetra {
             ++curr_rm->nodes;
             ++moves_searched;
 
-            if (!Search::Run()) {
+            if (!Run()) {
                 return 0;
             }
 
@@ -222,7 +218,7 @@ namespace Meetra {
                             killers[ply][1] = killers[ply][0];
                             killers[ply][0] = move;
                         }
-                        Search::tt.Save(board.GetHash(), score, depth, move, BETA, ply);
+                        tt.Save(board.GetHash(), score, depth, move, BETA, ply);
                         return score;
                     }
                     pv_line.Clear();
@@ -240,7 +236,7 @@ namespace Meetra {
             return move_gen.IsInCheck() ? -MATE_SCORE + ply : -DRAW_SCORE;
         }
 
-        Search::tt.Save(board.GetHash(), best_score, depth, best_move, tt_flag, ply);
+        tt.Save(board.GetHash(), best_score, depth, best_move, tt_flag, ply);
 
         return best_score;
     }
@@ -300,7 +296,7 @@ namespace Meetra {
         return best_score;
     }
 
-    bool SearchThread::DidBeatMove(const Search::RootMove &other) const {
+    bool SearchThread::DidBeatMove(const RootMove &other) const {
         auto rm = std::ranges::find(root_moves, other);
         if (rm->depth < other.depth) {
             return false;
@@ -316,7 +312,7 @@ namespace Meetra {
         return false;
     }
 
-    Search::RootMove SearchThread::GetBestRootMove() const {
+    RootMove SearchThread::GetBestRootMove() const {
         return root_moves[0];
     }
 
@@ -326,8 +322,8 @@ namespace Meetra {
 
     std::string SearchThread::GetUpdateSearchInfo() const {
 
-        auto nodes = Search::NodesTotal();
-        auto elapsed_ns = Time::ElapsedTime<Time::ns>(Search::start_time);
+        auto nodes = NodesTotal();
+        auto elapsed_ns = Time::ElapsedTime<Time::ns>(start_time);
         auto elapsed_ms = elapsed_ns / 1000000;
         auto nps = static_cast<uint64_t>((static_cast<double>(nodes) / static_cast<double>(elapsed_ns)) * 1000000000.0);
 
@@ -338,18 +334,18 @@ namespace Meetra {
             << " nodes " << nodes
             << " time " << elapsed_ms
             << " nps " << nps
-            << " hashfull " << static_cast<int>(Search::tt.Usage() * 1000.0);
+            << " hashfull " << static_cast<int>(tt.Usage() * 1000.0);
 
         return oss.str();
     }
 
     std::string SearchThread::GetSearchInfo() const {
 
-        auto nodes = Search::NodesTotal();
-        auto elapsed_ns = Time::ElapsedTime<Time::ns>(Search::start_time);
+        auto nodes = NodesTotal();
+        auto elapsed_ns = Time::ElapsedTime<Time::ns>(start_time);
         auto elapsed_ms = elapsed_ns / 1000000;
         auto nps = static_cast<uint64_t>((static_cast<double>(nodes) / static_cast<double>(elapsed_ns)) * 1000000000.0);
-        auto pvs_to_send = std::min(Search::multi_pv, static_cast<int>(root_moves.size()));
+        auto pvs_to_send = std::min(multi_pv, static_cast<int>(root_moves.size()));
 
         std::ostringstream oss;
 
@@ -361,7 +357,7 @@ namespace Meetra {
                 << " nodes " << nodes
                 << " time " << elapsed_ms
                 << " nps " << nps
-                << " hashfull " << static_cast<int>(Search::tt.Usage() * 1000)
+                << " hashfull " << static_cast<int>(tt.Usage() * 1000)
                 << " score ";
 
             Score score = root_moves[i].score;
@@ -406,14 +402,14 @@ namespace Meetra {
             return;
         }
 
-        auto elapsed = Time::ElapsedTime<Time::ms>(Search::start_time);
+        auto elapsed = Time::ElapsedTime<Time::ms>(start_time);
 
-        if (Search::settings.allowed_time < elapsed || Search::NodesTotal() > Search::settings.allowed_nodes) {
-            Search::StopSearch();
-        } else if (depth_reached > Search::plies_muted && Search::last_update_time + UPDATE_INFO_INTERVAL < elapsed) {
-            Search::last_update_time = elapsed;
+        if (settings.allowed_time < elapsed || NodesTotal() > settings.allowed_nodes) {
+            StopSearch();
+        } else if (depth_reached > plies_muted && last_update_time + UPDATE_INFO_INTERVAL < elapsed) {
+            last_update_time = elapsed;
             Uci::Send(GetUpdateSearchInfo());
-            if (Search::show_currline) {
+            if (show_currline) {
                 Uci::Send(GetCurrLineInfo());
             }
         }
@@ -442,7 +438,7 @@ namespace Meetra {
         cond_var.wait(lock, [&] { return !active; });
     }
 
-    void SearchThread::InitNewSearch(const Board &b, const std::vector<Search::RootMove> &moves) {
+    void SearchThread::InitNewSearch(const Board &b, const std::vector<RootMove> &moves) {
         board = b;
         root_moves = moves;
         curr_rm = &root_moves[0];

@@ -10,7 +10,7 @@
 #include "Defs.h"
 #include "Config.h"
 
-namespace Meetra::Search {
+namespace Search {
 
     struct SearchSettings {
 
@@ -42,7 +42,7 @@ namespace Meetra::Search {
     inline TranspositionTable tt;
     inline std::vector<std::unique_ptr<SearchThread>> threads;
 
-    struct PVMoveLine {
+    struct PVLine {
     private:
         Move moves[MAX_SEARCH_DEPTH + 1];
         size_t len = 0;
@@ -51,7 +51,7 @@ namespace Meetra::Search {
         [[nodiscard]] Move At(size_t idx) const { return moves[idx]; }
         void PutMove(Move m) { moves[len++] = m; }
         void Clear() { len = 0; }
-        void PutLine(const PVMoveLine &other) {
+        void PutLine(const PVLine &other) {
             std::copy_n(other.moves, other.len, moves + len);
             len += other.len;
         }
@@ -59,7 +59,7 @@ namespace Meetra::Search {
 
     struct RootMove {
         Move move;
-        PVMoveLine pv;
+        PVLine pv;
         Score score = NEGATIVE_INF;
         Score previous_score = NEGATIVE_INF;
         Depth depth = 0;

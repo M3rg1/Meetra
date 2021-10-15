@@ -4,7 +4,7 @@
 #include "Board.h"
 #include <algorithm>
 
-namespace Meetra::Evaluation {
+namespace Evaluation {
 
     void Evaluator::SetBoard(const Board &board) {
 
@@ -17,9 +17,9 @@ namespace Meetra::Evaluation {
                 Bitboard pieces = board.GetPieces(pt, c);
                 while (pieces) {
                     Square s = Bitboards::PopLsb(pieces);
-                    mg[c] += EvalValues::mg_table[c][pt][s];
-                    eg[c] += EvalValues::eg_table[c][pt][s];
-                    phase += EvalValues::phase_inc[pt];
+                    mg[c] += mg_table[c][pt][s];
+                    eg[c] += eg_table[c][pt][s];
+                    phase += phase_inc[pt];
                 }
             }
         }
@@ -43,26 +43,26 @@ namespace Meetra::Evaluation {
         PieceType moved_pt = board.GetPieceTypeOnSq(from);
         PieceType taken_pt = board.GetPieceTypeOnSq(capture_s);
 
-        mg[col] += EvalValues::mg_table[col][moved_pt][to] - EvalValues::mg_table[col][moved_pt][from];
-        eg[col] += EvalValues::eg_table[col][moved_pt][to] - EvalValues::eg_table[col][moved_pt][from];
+        mg[col] += mg_table[col][moved_pt][to] - mg_table[col][moved_pt][from];
+        eg[col] += eg_table[col][moved_pt][to] - eg_table[col][moved_pt][from];
 
         if (taken_pt != NONE_PIECE_TYPE) {
-            mg[enemy_col] -= EvalValues::mg_table[enemy_col][taken_pt][capture_s];
-            eg[enemy_col] -= EvalValues::eg_table[enemy_col][taken_pt][capture_s];
-            phase -= EvalValues::phase_inc[taken_pt];
+            mg[enemy_col] -= mg_table[enemy_col][taken_pt][capture_s];
+            eg[enemy_col] -= eg_table[enemy_col][taken_pt][capture_s];
+            phase -= phase_inc[taken_pt];
         }
 
         if (IsPromotion(m)) {
             PieceType prom_to = PieceTypeFromFlag(GetMoveType(m));
-            mg[col] += EvalValues::mg_table[col][prom_to][to] - EvalValues::mg_table[col][PAWN][to];
-            eg[col] += EvalValues::eg_table[col][prom_to][to] - EvalValues::eg_table[col][PAWN][to];
-            phase += EvalValues::phase_inc[prom_to] - EvalValues::phase_inc[PAWN];
+            mg[col] += mg_table[col][prom_to][to] - mg_table[col][PAWN][to];
+            eg[col] += eg_table[col][prom_to][to] - eg_table[col][PAWN][to];
+            phase += phase_inc[prom_to] - phase_inc[PAWN];
         } else if (GetMoveType(m) == CASTLING) {
             Move r_move = board.RookCastlingMove(to, col);
             Square r_to = ToSquare(r_move);
             Square r_from = FromSquare(r_move);
-            mg[col] += EvalValues::mg_table[col][ROOK][r_to] - EvalValues::mg_table[col][ROOK][r_from];
-            eg[col] += EvalValues::eg_table[col][ROOK][r_to] - EvalValues::eg_table[col][ROOK][r_from];
+            mg[col] += mg_table[col][ROOK][r_to] - mg_table[col][ROOK][r_from];
+            eg[col] += eg_table[col][ROOK][r_to] - eg_table[col][ROOK][r_from];
         }
 
         mg_score = mg[enemy_col] - mg[col];
@@ -86,24 +86,24 @@ namespace Meetra::Evaluation {
         PieceType moved_pt = board.GetPieceTypeOnSq(from);
         PieceType taken_pt = board.GetPieceTypeOnSq(capture_s);
 
-        Score mg_val = EvalValues::mg_table[col][moved_pt][to] - EvalValues::mg_table[col][moved_pt][from];
-        Score eg_val = EvalValues::eg_table[col][moved_pt][to] - EvalValues::eg_table[col][moved_pt][from];
+        Score mg_val = mg_table[col][moved_pt][to] - mg_table[col][moved_pt][from];
+        Score eg_val = eg_table[col][moved_pt][to] - eg_table[col][moved_pt][from];
 
         if (taken_pt != NONE_PIECE_TYPE) {
-            mg_val += EvalValues::mg_table[OtherColor(col)][taken_pt][capture_s];
-            eg_val += EvalValues::eg_table[OtherColor(col)][taken_pt][capture_s];
+            mg_val += mg_table[OtherColor(col)][taken_pt][capture_s];
+            eg_val += eg_table[OtherColor(col)][taken_pt][capture_s];
         }
 
         if (IsPromotion(m)) {
             PieceType prom_to = PieceTypeFromFlag(GetMoveType(m));
-            mg_val += EvalValues::mg_table[col][prom_to][to] - EvalValues::mg_table[col][PAWN][to];
-            eg_val += EvalValues::eg_table[col][prom_to][to] - EvalValues::eg_table[col][PAWN][to];
+            mg_val += mg_table[col][prom_to][to] - mg_table[col][PAWN][to];
+            eg_val += eg_table[col][prom_to][to] - eg_table[col][PAWN][to];
         } else if (GetMoveType(m) == CASTLING) {
             Move r_move = board.RookCastlingMove(to, col);
             Square r_to = ToSquare(r_move);
             Square r_from = FromSquare(r_move);
-            mg_val += EvalValues::mg_table[col][ROOK][r_to] - EvalValues::mg_table[col][ROOK][r_from];
-            eg_val += EvalValues::eg_table[col][ROOK][r_to] - EvalValues::eg_table[col][ROOK][r_from];
+            mg_val += mg_table[col][ROOK][r_to] - mg_table[col][ROOK][r_from];
+            eg_val += eg_table[col][ROOK][r_to] - eg_table[col][ROOK][r_from];
         }
 
         return (mg_val * mg_phase + eg_val * eg_phase) / 24;

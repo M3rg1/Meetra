@@ -1,13 +1,12 @@
 #include <iostream>
 #include "Uci.h"
-#include "Perft.h"
 #include "Search.h"
 #include "TestSuite.h"
 #include <algorithm>
 #include <unistd.h>
 #include "Config.h"
 
-namespace Meetra::Uci {
+namespace Uci {
 
     const std::string LOGO = " __  __         _\n"               \
                              "|  \\/  |___ ___| |_ _ _ __ _\n"   \
@@ -98,7 +97,7 @@ namespace Meetra::Uci {
     }
 
     void TestCommand() {
-        TestSuite::RunTests();
+        Testing::RunTests();
     }
 
     void QuitCommand() {
@@ -146,7 +145,7 @@ namespace Meetra::Uci {
 
         auto start = Time::Now();
 
-        auto nodes = Perft<true>(depth, board);
+        auto nodes = Testing::Perft<true>(depth, board);
 
         auto elapsed_ns = Time::ElapsedTime<Time::ns>(start);
         auto elapsed_ms = elapsed_ns / 1000000;
@@ -201,7 +200,6 @@ namespace Meetra::Uci {
             return;
         }
         Search::ClearTT();
-        // TODO clear threads etc.
     }
 
     bool IsNumerical(std::string_view str) {

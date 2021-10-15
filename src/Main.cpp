@@ -6,13 +6,13 @@
 
 int main() {
 
-    Meetra::Uci::Init();
-    Meetra::Bitboards::Init();
-    Meetra::Zobrist::Init();
-    Meetra::Search::Init();
-    Meetra::EvalValues::Init();
+    Uci::Init();
+    Bitboards::Init();
+    Zobrist::Init();
+    Search::Init();
+    Evaluation::Init();
 
-    Meetra::Uci::Listen();
+    Uci::Listen();
 
     return 0;
 }

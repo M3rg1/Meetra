@@ -12,18 +12,50 @@
 #include "Time.h"
 #include "Config.h"
 
-namespace Meetra::TestSuite {
+namespace Testing {
 
-    class Test {
+    template<bool DIV>
+    uint64_t Perft(Depth depth, Board &board) {
 
+        MoveGen move_gen(board);
+        uint64_t total_nodes = 0;
+        Move m;
+
+        if (depth <= 1) {
+            while ((m = move_gen.GetAnyMove())) {
+                if (board.IsMoveLegal(m)) {
+                    ++total_nodes;
+                    if constexpr (DIV) {
+                        Uci::Send(board.MoveToName(m) + ": " + std::to_string(1));
+                    }
+                }
+            }
+            return total_nodes;
+        }
+
+        while ((m = move_gen.GetAnyMove())) {
+            if (!board.MakeMove(m)) {
+                board.UnmakeMove(m);
+                continue;
+            }
+            uint64_t nodes = Perft<false>(depth - 1, board);
+            board.UnmakeMove(m);
+            total_nodes += nodes;
+            if constexpr (DIV) {
+                Uci::Send(board.MoveToName(m) + ": " + std::to_string(nodes));
+            }
+        }
+
+        return total_nodes;
+    }
+
+    struct Test {
     private :
         std::string fen;
         Depth depth;
         uint64_t expected;
-
     public:
         inline bool Run() {
-
             Board board;
             if (!board.NewPosition(fen)) {
                 Uci::Send("Error parsing FEN, skipping test.\n=== TEST ERROR ===\n");
@@ -56,7 +88,6 @@ namespace Meetra::TestSuite {
         }
 
         friend std::istream &operator>>(std::istream &is, Test &t) {
-
             std::string token;
             // for parsing Ethereal's chess 960 perft suite
             if (ETHEREAL_SUITE) {
@@ -108,20 +139,18 @@ namespace Meetra::TestSuite {
             return;
         }
 
+        int errors = 0;
         auto start = Time::Now();
 
-        int errors = 0;
         for (size_t i = 0; i < tests.size(); ++i) {
             Uci::Send("Running test " + std::to_string(i + 1));
             if (!tests[i].Run()) {
                 ++errors;
             }
         }
-
         auto time_elapsed_ms = Time::ElapsedTime<Time::ms>(start);
 
         Uci::Send("Finished in " + std::to_string(time_elapsed_ms) + "ms.");
-
         if (errors == 0) {
             Uci::Send("============= ALL TESTS OK =============");
         } else {

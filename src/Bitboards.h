@@ -4,7 +4,7 @@
 #include "Defs.h"
 #include <bit>
 
-namespace Meetra::Bitboards {
+namespace Bitboards {
 
     constexpr Bitboard rank_masks[RANK_NR]{
             0x00000000000000FF,

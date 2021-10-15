@@ -4,7 +4,7 @@
 #include <chrono>
 #include "Defs.h"
 
-namespace Meetra::Time {
+namespace Time {
 
     using Clock = std::chrono::steady_clock;
     using ms = std::chrono::milliseconds;

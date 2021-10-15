@@ -3,7 +3,7 @@
 
 #include "Defs.h"
 
-namespace Meetra::EvalValues {
+namespace Evaluation {
 
     constexpr Score mg_value[PIECE_TYPE_NR] = {0, 82, 337, 365, 477, 1025, 0};
     constexpr Score eg_value[PIECE_TYPE_NR] = {0, 94, 281, 297, 512, 936, 0};
@@ -188,7 +188,6 @@ namespace Meetra::EvalValues {
             }
         }
     }
-
 }
 
 #endif //MEETRA_EVALVALUES_H

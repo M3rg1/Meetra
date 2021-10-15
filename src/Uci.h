@@ -3,7 +3,7 @@
 
 #include <string>
 
-namespace Meetra::Uci {
+namespace Uci {
 
     void Init();
     void Listen();

@@ -3,9 +3,9 @@
 #include <sstream>
 #include <algorithm>
 
-namespace Meetra::Bitboards {
+namespace Bitboards {
 
-#pragma region ===== Hyperbola Quintessence, Reverse Bitboards (used for magics initialization) =====
+#pragma region ===== Hyperbola Quintessence (used for magics initialization) =====
 
     Bitboard ReverseBits(Bitboard b) {
         b = ((b >> 1) & 0x5555555555555555ULL) | ((b & 0x5555555555555555ULL) << 1);
@@ -182,10 +182,10 @@ namespace Meetra::Bitboards {
     }
 
     void GenRaysBetweenSquares() {
-        for (Square origin = A1; origin < SQUARE_NR; ++origin) {
-            for (Square destination = A1; destination < SQUARE_NR; ++destination) {
-                rays_to_squares[origin][destination] = GenRay(origin, destination);
-                rays_to_borders[origin][destination] = GenRayToEdge(origin, destination);
+        for (Square s1 = A1; s1 < SQUARE_NR; ++s1) {
+            for (Square s2 = A1; s2 < SQUARE_NR; ++s2) {
+                rays_to_squares[s1][s2] = GenRay(s1, s2);
+                rays_to_borders[s1][s2] = GenRayToEdge(s1, s2);
             }
         }
     }

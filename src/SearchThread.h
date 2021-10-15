@@ -8,25 +8,23 @@
 #include "Board.h"
 #include "Config.h"
 
-namespace Meetra {
+namespace Search {
 
-    namespace Search {
-        struct RootMove;
-        struct PVMoveLine;
-    }
+    struct RootMove;
+    struct PVLine;
 
     class SearchThread {
 
     public:
 
         explicit SearchThread(int id);
-        void InitNewSearch(const Board &b, const std::vector<Search::RootMove> &moves);
+        void InitNewSearch(const Board &b, const std::vector<RootMove> &moves);
         void StartThread();
         void Search();
         void WaitForFinish();
 
-        [[nodiscard]] bool DidBeatMove(const Search::RootMove &other) const;
-        [[nodiscard]] Search::RootMove GetBestRootMove() const;
+        [[nodiscard]] bool DidBeatMove(const RootMove &other) const;
+        [[nodiscard]] RootMove GetBestRootMove() const;
         [[nodiscard]] std::string GetBestRmName() const;
         [[nodiscard]] std::string GetSearchInfo() const;
         [[nodiscard]] inline uint64_t Nodes() const { return nodes_explored.load(std::memory_order_relaxed); }
@@ -38,7 +36,7 @@ namespace Meetra {
         };
 
         template<Node NodeType>
-        Score ABSearch(Score alpha, Score beta, Depth depth, Depth ply, Search::PVMoveLine &pv_line);
+        Score ABSearch(Score alpha, Score beta, Depth depth, Depth ply, PVLine &pv_line);
         Score QSearch(Score alpha, Score beta, Depth ply);
 
         void CheckTimers();
@@ -51,8 +49,8 @@ namespace Meetra {
 
         Board board;
         Move killers[MAX_SEARCH_DEPTH + 2][2];
-        std::vector<Search::RootMove> root_moves;
-        Search::RootMove *curr_rm;
+        std::vector<RootMove> root_moves;
+        RootMove *curr_rm;
         size_t curr_rm_num;
         Depth depth_reached;
         Depth seldepth_reached;

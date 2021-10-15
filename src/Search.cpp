@@ -2,9 +2,8 @@
 #include "MoveGen.h"
 #include <random>
 #include "Book.h"
-#include <algorithm>
 
-namespace Meetra::Search {
+namespace Search {
 
     bool EnoughTimeLeft() {
         if (settings.infinite || settings.allowed_time > Time::ElapsedTime<Time::ms>(start_time) * 2) {

@@ -10,7 +10,7 @@
 #include "Defs.h"
 #include "Config.h"
 
-namespace Meetra::Book {
+namespace Book {
 
     struct BookEntry {
         Hash64 hash;

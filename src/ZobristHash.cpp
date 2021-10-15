@@ -5,7 +5,7 @@
 #include <algorithm>
 #include "Config.h"
 
-namespace Meetra::Zobrist {
+namespace Zobrist {
 
     uint64_t piece_keys[SQUARE_NR][B_KING + 1];
     uint64_t castling_keys[SQUARE_NR];
@@ -83,5 +83,4 @@ namespace Meetra::Zobrist {
 
         return hash;
     }
-
 }

@@ -3,7 +3,7 @@
 
 #include "Defs.h"
 
-namespace Meetra {
+namespace Bitboards {
 
     constexpr uint64_t bishop_magic_num[SQUARE_NR] = {
             0xffedf9fd7cfcffff,//0xc085080200420200,
@@ -146,7 +146,7 @@ namespace Meetra {
             11, 10, 10, 10, 10, 10, 10, 11,
             11, 10, 10, 10, 10, 10, 10, 11,
             11, 10, 10, 10, 10, 10, 10, 11,
-            10,  9,  9,  9,  9,  9,  9, 10,
+            10, 9, 9, 9, 9, 9, 9, 10,
             11, 10, 10, 10, 10, 11, 10, 11,
     };
 
@@ -160,7 +160,5 @@ namespace Meetra {
             4, 4, 5, 5, 5, 5, 4, 4,
             5, 4, 5, 5, 5, 5, 4, 5,
     };
-
 }
-
 #endif //MEETRA_MAGICNUMBERS_H
