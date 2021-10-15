@@ -28,7 +28,6 @@ namespace Search {
             Score alpha = NEGATIVE_INF;
             Score beta = POSITIVE_INF;
             Score score;
-            int moves_searched = 0;
 
             // alpha beta search over root moves
             for (curr_rm_num = 0; curr_rm_num < root_moves.size(); ++curr_rm_num) {
@@ -47,11 +46,11 @@ namespace Search {
 
                 board.MakeMove(curr_rm->move);
 
-                if (moves_searched > 0) {
+                if (curr_rm_num > 0) {
                     score = -ABSearch<NONPV>(-alpha - 1, -alpha, depth_reached - 1, 2, curr_rm->pv);
                 }
 
-                if (moves_searched == 0 || (score > alpha && score < beta)) {
+                if (curr_rm_num == 0 || (score > alpha && score < beta)) {
                     score = -ABSearch<PV>(-beta, -alpha, depth_reached - 1, 2, curr_rm->pv);
                 }
 
@@ -59,7 +58,6 @@ namespace Search {
 
                 nodes_explored.fetch_add(1, std::memory_order_relaxed);
                 ++curr_rm->nodes;
-                ++moves_searched;
 
                 if (!Run()) {
                     break;
