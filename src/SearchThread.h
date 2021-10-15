@@ -20,7 +20,6 @@ namespace Meetra {
     public:
 
         explicit SearchThread(int id);
-        ~SearchThread();
         void InitNewSearch(const Board &b, const std::vector<Search::RootMove> &moves);
         void StartThread();
         void Search();

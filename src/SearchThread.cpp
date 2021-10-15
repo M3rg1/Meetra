@@ -156,9 +156,9 @@ namespace Meetra {
 
         // reverse futility pruning
         if (NodeType == NONPV && prune && depth <= FUTILITY_DEPTH) {
-            Score score_margin = FUTILITY_FACTOR * depth;
-            if (eval - score_margin >= beta) {
-                return eval - score_margin;
+            Score futility_score = eval - FUTILITY_FACTOR * depth;
+            if (futility_score >= beta) {
+                return futility_score;
             }
         }
 
@@ -329,7 +329,7 @@ namespace Meetra {
         auto nodes = Search::NodesTotal();
         auto elapsed_ns = Time::ElapsedTime<Time::ns>(Search::start_time);
         auto elapsed_ms = elapsed_ns / 1000000;
-        auto nps = static_cast<uint64_t>((static_cast<double>(nodes) / static_cast<double>(elapsed_ns + 1)) * 1000000000.0);
+        auto nps = static_cast<uint64_t>((static_cast<double>(nodes) / static_cast<double>(elapsed_ns)) * 1000000000.0);
 
         std::ostringstream oss;
 
@@ -348,7 +348,7 @@ namespace Meetra {
         auto nodes = Search::NodesTotal();
         auto elapsed_ns = Time::ElapsedTime<Time::ns>(Search::start_time);
         auto elapsed_ms = elapsed_ns / 1000000;
-        auto nps = static_cast<uint64_t>((static_cast<double>(nodes) / static_cast<double>(elapsed_ns + 1)) * 1000000000.0);
+        auto nps = static_cast<uint64_t>((static_cast<double>(nodes) / static_cast<double>(elapsed_ns)) * 1000000000.0);
         auto pvs_to_send = std::min(Search::multi_pv, static_cast<int>(root_moves.size()));
 
         std::ostringstream oss;
@@ -434,13 +434,6 @@ namespace Meetra {
             }
             if (stop_token.stop_requested()) { return; }
             Search();
-        }
-    }
-
-    SearchThread::~SearchThread() {
-        if (thread.joinable()) {
-            thread.request_stop();
-            thread.join();
         }
     }
 

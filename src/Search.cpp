@@ -91,6 +91,8 @@ namespace Meetra::Search {
 
     void StartSearch(SearchSettings s, Board board) {
 
+        Search::WaitFinished();
+
         run = true;
         InitSearch(s, board);
 
