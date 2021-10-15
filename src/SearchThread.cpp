@@ -421,7 +421,7 @@ namespace Meetra {
 
     SearchThread::SearchThread(int id) :
             id(id),
-            active(false),
+            active(true),
             thread([&](const std::stop_token &stop_token) { InitThread(stop_token); }) {}
 
     void SearchThread::InitThread(const std::stop_token &stop_token) {
