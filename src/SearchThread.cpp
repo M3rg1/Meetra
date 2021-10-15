@@ -100,7 +100,7 @@ namespace Search {
         }
     }
 
-    template<SearchThread::Node NodeType>
+    template<Node NodeType>
     Score SearchThread::ABSearch(Score alpha, Score beta, Depth depth, Depth ply, PVLine &pv_line) {
 
         if (IsMainThread()) {

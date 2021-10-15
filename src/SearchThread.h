@@ -31,10 +31,6 @@ namespace Search {
 
     private:
 
-        enum Node {
-            PV, NONPV, NULLMOVE
-        };
-
         template<Node NodeType>
         Score ABSearch(Score alpha, Score beta, Depth depth, Depth ply, PVLine &pv_line);
         Score QSearch(Score alpha, Score beta, Depth ply);

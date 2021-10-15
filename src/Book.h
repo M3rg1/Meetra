@@ -13,8 +13,8 @@
 namespace Book {
 
     struct BookEntry {
-        Hash64 hash;
-        Move move;
+        uint64_t hash;
+        uint16_t move;
     };
 
     inline std::vector<Move> BinarySearch(std::ifstream &stream, size_t size_bytes, Hash64 hash) {

@@ -10,13 +10,13 @@ using Depth = int;
 using Score = int;
 
 using Hash64 = uint64_t;
-using Hash16 = uint16_t;
+using Hash16 = int;
 constexpr Hash64 NEW_HASH64 = 0;
 
 using Bitboard = uint64_t;
 constexpr Bitboard EMPTY_BB = 0;
 
-enum TTFlags {
+enum TTFlags : int {
     NOT_FOUND, ALPHA, BETA, EXACT, CUTOFF
 };
 using TTFlag = int;
@@ -25,7 +25,11 @@ enum GenType {
     QSEARCH, NORMAL
 };
 
-enum Colors {
+enum Node : int {
+    PV, NONPV, NULLMOVE
+};
+
+enum Colors : int {
     WHITE, BLACK,
     COLOR_NR
 };
@@ -33,14 +37,14 @@ using Color = int;
 
 constexpr Color OtherColor(Color c) { return c ^ 1; }
 
-enum PieceTypes {
+enum PieceTypes : int {
     NONE_PIECE_TYPE, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING,
     PIECE_TYPE_NR,
     ALL_TYPES = 7
 };
 using PieceType = int;
 
-enum Pieces {
+enum Pieces : int {
     NO_PIECE = 0,
     W_PAWN = 1, W_KNIGHT = 2, W_BISHOP = 3, W_ROOK = 4, W_QUEEN = 5, W_KING = 6,
     B_PAWN = 9, B_KNIGHT = 10, B_BISHOP = 11, B_ROOK = 12, B_QUEEN = 13, B_KING = 14,
@@ -56,13 +60,13 @@ constexpr std::string_view piece_char = "oPNBRQK  pnbrqk";
 constexpr Piece CharToPiece(char c) { return static_cast<Piece>(piece_char.find(c)); }
 constexpr char PieceToChar(Piece p) { return piece_char[p]; }
 
-enum Ranks {
+enum Ranks : int {
     RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8,
     RANK_NR
 };
 using Rank = int;
 
-enum Files {
+enum Files : int {
     FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H,
     FILE_NR
 };
@@ -73,16 +77,16 @@ constexpr char CharFromRank(Rank r) { return static_cast<char>(r + '1'); }
 constexpr File FileFromChar(char c) { return c - 'a'; }
 constexpr char CharFromFile(File f) { return static_cast<char>(f + 'a'); }
 
-enum PawnMoveDir {
+enum PawnMoveDir : int {
     LEFT, RIGHT, FORWARD,
 };
 
-enum Directions {
+enum Directions : int {
     NORTH = 8, NORTH_EAST = 9, EAST = 1, SOUTH_EAST = -7, SOUTH = -8, SOUTH_WEST = -9, WEST = -1, NORTH_WEST = 7
 };
 using Direction = int;
 
-enum Squares {
+enum Squares : int {
     A1, B1, C1, D1, E1, F1, G1, H1,
     A2, B2, C2, D2, E2, F2, G2, H2,
     A3, B3, C3, D3, E3, F3, G3, H3,
@@ -107,21 +111,21 @@ inline std::string SquareToName(Square s) {
     return {CharFromFile(FileFromSquare(s)), CharFromRank(RankFromSquare(s))};
 }
 
-enum CastlingSide {
+enum CastlingSide : int {
     SHORT, LONG, CS_NR
 };
 
 /**
- * Move bits:
+ * Move is 16 bits (for TT storing) :
  * 0-5 from square
  * 6-11 to square
  * 12-15 MoveType flag
  * if the 14th bit is 1, it's a promotion move -> prom bits  N = 0010.., B = 1010.., R = 0110.., Q = 1110..
  */
-using Move = uint16_t;
+using Move = int;
 constexpr Move ZERO_MOVE = 0;
 
-enum MoveTypes {
+enum MoveTypes : int {
     NO_FLAG = 0, EN_PASSANT = 1 << 12, CASTLING = 2 << 12, TWO_FORWARD = 3 << 12,
     PROMOTE_KNIGHT = 4 << 12, PROMOTE_BISHOP = 5 << 12, PROMOTE_ROOK = 6 << 12, PROMOTE_QUEEN = 7 << 12
 };
