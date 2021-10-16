@@ -20,7 +20,7 @@ namespace Search {
         uint64_t allowed_nodes = UINT64_MAX;
         Depth allowed_depth = MAX_SEARCH_DEPTH;
 
-        int moves_to_go = 0;
+        size_t moves_to_go = 0;
         TimeRep wtime = DEFAULT_SEARCH_TIME;
         TimeRep btime = DEFAULT_SEARCH_TIME;
         TimeRep winc = 0;
@@ -34,8 +34,8 @@ namespace Search {
     inline bool use_book;
     inline bool show_currline;
     inline bool show_currmove;
-    inline int plies_muted;
-    inline int multi_pv;
+    inline Depth plies_muted;
+    inline size_t multi_pv;
     inline TimeRep last_update_time;
     inline TimeRep move_overhead;
     inline Time::TimePoint start_time;
@@ -90,19 +90,18 @@ namespace Search {
 
     [[nodiscard]] bool EnoughTimeLeft();
     [[nodiscard]] inline bool Run() { return run.load(std::memory_order_relaxed); }
-    [[nodiscard]] inline Depth MtDepth() { return mt_depth.load(std::memory_order_relaxed); }
     inline void WaitFinished() { std::ranges::for_each(threads, [&](auto &t) { t->WaitForFinish(); }); }
     inline void StopSearch() { run = false; }
     inline void ClearTT() { tt.Clear(); }
     inline void ShowShowCurrLine(bool show) { show_currline = show; }
     inline void ShowCurrMoveInfo(bool show) { show_currmove = show; }
-    inline void SetPliesMuted(int ply_muted) { plies_muted = std::max(0, ply_muted); }
-    inline void SetMultiPv(int pv_num) { multi_pv = std::max(1, pv_num); }
-    inline void SetTTSize(int size_mb) { tt.Init(size_mb); }
+    inline void SetPliesMuted(Depth ply_muted) { plies_muted = ply_muted; }
+    inline void SetMultiPv(size_t pv_num) { multi_pv = std::max(1ULL, pv_num); }
+    inline void SetTTSize(size_t size_mb) { tt.Init(size_mb); }
     inline void SetUseBook(bool use) { use_book = use; }
     inline void SetChess960(bool set) { chess960 = set; }
     inline void SetMoveOverhead(TimeRep overhead) { move_overhead = std::clamp(overhead, MIN_OVERHEAD, MAX_OVERHEAD); }
-    void SetNumThreads(int num_threads);
+    void SetNumThreads(size_t num_threads);
     uint64_t NodesTotal();
 }
 

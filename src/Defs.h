@@ -20,9 +20,14 @@ enum TTFlags : int {
     NOT_FOUND, ALPHA, BETA, EXACT, CUTOFF
 };
 using TTFlag = int;
+using TTEpoch = int;
 
-enum GenType {
+enum GenType : int {
     QSEARCH, NORMAL
+};
+
+enum GenPhase : int {
+    CAPTURE, QUIET, END, DOUBLE_CHECK
 };
 
 enum Node : int {

@@ -21,14 +21,12 @@ public:
     [[nodiscard]] Move GetBestMove();
     [[nodiscard]] Move GetAnyMove();
     [[nodiscard]] bool IsPseudoLegal(Move m) const;
-    [[nodiscard]] inline bool IsQuiet(Move m) const { return board.GetPieceOnSquare(ToSquare(m)) == NO_PIECE; }
     [[nodiscard]] inline bool IsInCheck() const { return checkers; }
+    [[nodiscard]] inline bool IsQuiet(Move m) const {
+        return board.GetPieceOnSquare(ToSquare(m)) == NO_PIECE && GetMoveType(m) != EN_PASSANT;
+    }
 
 private:
-
-    enum GenPhase {
-        CAPTURE, QUIET, END, DOUBLE_CHECK
-    };
 
     struct ScoredMove {
         Move move;

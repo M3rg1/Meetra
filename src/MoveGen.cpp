@@ -108,7 +108,7 @@ void MoveGen::NextPhase() {
     }
 }
 
-template<MoveGen::GenPhase P, Color C>
+template<GenPhase P, Color C>
 void MoveGen::GenMovesForPhase() {
 
     if constexpr (P == DOUBLE_CHECK) {
@@ -248,17 +248,16 @@ bool MoveGen::CanCastle() const {
     // (for chess 960) we need to calculate all the squares that we travel through and make sure they are empty
     constexpr Square r_dest = S == LONG ? C == WHITE ? D1 : D8 : C == WHITE ? F1 : F8;
     constexpr Square k_dest = S == LONG ? C == WHITE ? C1 : C8 : C == WHITE ? G1 : G8;
-    Bitboard pieces = all_pieces ^ rook_bb ^ SquareToBB(king_s);
+    Bitboard occ = all_pieces ^ rook_bb ^ SquareToBB(king_s);
     Bitboard walk_sq = Bitboards::GetRayToSquares(Bitboards::Lsb(rook_bb), r_dest) |
                        Bitboards::GetRayToSquares(king_s, k_dest) |
                        SquareToBB(r_dest) | SquareToBB(k_dest);
 
-    return (pieces & walk_sq) == EMPTY_BB;
+    return (occ & walk_sq) == EMPTY_BB;
 }
 
 // this function does not guarantee the move is actually pseudo legal, it only guarantees that when the move is made
 // and unmade, it won't crash the program. It does a lot of general validations that should catch most corrupted moves.
-// It should be used to validate potentially corrupted moves, for example moves from TT.
 bool MoveGen::IsPseudoLegal(Move m) const {
 
     // there exists a piece on the origin square and its of the correct color
@@ -274,6 +273,12 @@ bool MoveGen::IsPseudoLegal(Move m) const {
         return false;
     }
 
+    // castling is a bit more complex because of chess960, we just generate the castling move and compare them
+    MoveType move_type = GetMoveType(m);
+    if (move_type == CASTLING) {
+        return my_color == WHITE ? ValidateCastling<WHITE>(m) : ValidateCastling<BLACK>(m);
+    }
+
     // destination is either empty or occupied by enemy piece, but not a king (king captures can crash the engine)
     Piece dest_piece = board.GetPieceOnSquare(ToSquare(m));
     if (dest_piece != NO_PIECE && (ColorOfPiece(dest_piece) == my_color || TypeOfPiece(dest_piece) == KING)) {
@@ -284,12 +289,6 @@ bool MoveGen::IsPseudoLegal(Move m) const {
     Square to = ToSquare(m);
     if (!(SquareToBB(to) & legal_moves) && moved_pt != KING) {
         return false;
-    }
-
-    // castling is a bit more complex because of chess960, we just generate the castling move and compare them
-    MoveType move_type = GetMoveType(m);
-    if (move_type == CASTLING) {
-        return my_color == WHITE ? ValidateCastling<WHITE>(m) : ValidateCastling<BLACK>(m);
     }
 
     // check that pawn move has the correct flag

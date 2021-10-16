@@ -65,31 +65,30 @@ namespace Uci {
                  + board.PPBoard());
         }
 
-        std::string token, input;
+        std::string command, input;
 
         do {
 
-            token.clear();
+            command.clear();
             std::getline(std::cin, input);
             std::istringstream iss(input);
-            iss >> token;
+            iss >> command;
 
-            if (token == "uci") UciCommand();
-            else if (token == "isready") IsReadyCommand();
-            else if (token == "go") GoCommand(iss, board);
-            else if (token == "position") PositionCommand(iss, board);
-            else if (token == "setoption") SetOptionCommand(iss);
-            else if (token == "stop") StopCommand();
-            else if (token == "ucinewgame") UciNewGameCommand();
-            else if (token == "perft") PerftCommand(iss, board);
-            else if (token == "board") BoardCommand(board);
-            else if (token == "test") TestCommand();
-            else if (token == "quit") QuitCommand();
-            else if (token.empty()) continue;
+            if (command == "uci") UciCommand();
+            else if (command == "isready") IsReadyCommand();
+            else if (command == "go") GoCommand(iss, board);
+            else if (command == "position") PositionCommand(iss, board);
+            else if (command == "setoption") SetOptionCommand(iss);
+            else if (command == "stop") StopCommand();
+            else if (command == "ucinewgame") UciNewGameCommand();
+            else if (command == "perft") PerftCommand(iss, board);
+            else if (command == "board") BoardCommand(board);
+            else if (command == "test") TestCommand();
+            else if (command == "quit") QuitCommand();
+            else if (command.empty()) continue;
             else UnknownCommand();
 
-        } while (token != "quit" && !std::cin.eof());
-
+        } while (command != "quit" && !std::cin.eof());
     }
 
     void BoardCommand(const Board &board) {
@@ -202,8 +201,8 @@ namespace Uci {
         Search::ClearTT();
     }
 
-    bool IsNumerical(std::string_view str) {
-        return !str.empty() && str.find_first_not_of("0123456789") == std::string_view::npos;
+    bool IsNumber(std::string_view str) {
+        return !str.empty() && std::ranges::all_of(str, ::isdigit);
     }
 
     bool IsBoolean(std::string_view str) {
@@ -230,15 +229,15 @@ namespace Uci {
 
         if (option == "clear hash") {
             Search::ClearTT();
-        } else if (option == "hash" && IsNumerical(value)) {
-            Search::SetTTSize(std::stoi(value));
-        } else if (option == "mute plies" && IsNumerical(value)) {
+        } else if (option == "hash" && IsNumber(value)) {
+            Search::SetTTSize(std::stoull(value));
+        } else if (option == "mute plies" && IsNumber(value)) {
             Search::SetPliesMuted(std::stoi(value));
-        } else if (option == "threads" && IsNumerical(value)) {
-            Search::SetNumThreads(std::stoi(value));
-        } else if (option == "multipv" && IsNumerical(value)) {
-            Search::SetMultiPv(std::stoi(value));
-        } else if (option == "move overhead" && IsNumerical(value)) {
+        } else if (option == "threads" && IsNumber(value)) {
+            Search::SetNumThreads(std::stoull(value));
+        } else if (option == "multipv" && IsNumber(value)) {
+            Search::SetMultiPv(std::stoull(value));
+        } else if (option == "move overhead" && IsNumber(value)) {
             Search::SetMoveOverhead(std::stoll(value));
         } else if (option == "uci_showcurrline" && IsBoolean(value)) {
             Search::ShowShowCurrLine(value == "true");

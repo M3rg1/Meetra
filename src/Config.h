@@ -3,17 +3,16 @@
 
 #include "Defs.h"
 
-constexpr Depth MAX_SEARCH_DEPTH = 128;
+constexpr size_t DEFAULT_SEARCH_THREADS = 1;
+constexpr size_t MAX_SEARCH_THREADS = 32;
 
-constexpr int DEFAULT_SEARCH_THREADS = 1;
-constexpr int MAX_SEARCH_THREADS = 32;
-
+constexpr Depth BOOK_DEPTH = 20;
 inline const std::string BOOK_PATH = "tools/bestmove_r20d20_a5000.mtr.bin";
-constexpr int BOOK_DEPTH = 20;
 
+constexpr size_t MAX_LEGAL_MOVES = 256;
+constexpr size_t MAX_GAME_LENGTH = 1024;
+constexpr Depth MAX_SEARCH_DEPTH = 128;
 inline const std::string STARTPOS_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-constexpr int MAX_LEGAL_MOVES = 256;
-constexpr int MAX_GAME_LENGTH = 1024;
 
 constexpr uint64_t ZOBRIST_SEED = 7299078832781365792;
 
@@ -29,7 +28,7 @@ constexpr Score POSITIVE_INF = 32000;
 constexpr Score NEGATIVE_INF = -32000;
 constexpr Score MATE_SCORE = 31000;
 constexpr Score DRAW_SCORE = 0;
-constexpr Score MIN_MATE_EVAL = MATE_SCORE - MAX_SEARCH_DEPTH;
+constexpr Score MIN_MATE_EVAL = MATE_SCORE - 1000;
 
 // TT consts
 constexpr size_t MIN_HASH_SIZE = 8; // this should never be 0

@@ -111,24 +111,29 @@ namespace Testing {
     };
 
     inline std::vector<Test> LoadTests() {
-        std::vector<Test> tests;
+
         std::fstream test_file;
         test_file.open(TEST_FILE_PATH, std::ios::in);
-        if (test_file.is_open()) {
-            std::string line;
-            while (getline(test_file, line)) {
-                if (line.empty() || line[line.find_first_not_of(' ')] == '#') {
-                    continue;
-                }
-                std::istringstream ss(line);
-                Test t;
-                ss >> t;
-                tests.emplace_back(t);
-            }
-            test_file.close();
-        } else {
-            Uci::SendInfo("Could not open 'PerftTests.txt' file!");
+        if (!test_file.is_open()) {
+            Uci::SendInfo("Could not open the test file!");
+            return {};
         }
+
+        std::vector<Test> tests;
+        std::string line;
+
+        while (getline(test_file, line)) {
+            if (line.empty() || line[line.find_first_not_of(' ')] == '#') {
+                continue;
+            }
+            std::istringstream ss(line);
+            Test t;
+            ss >> t;
+            tests.emplace_back(t);
+        }
+
+        test_file.close();
+
         return tests;
     }
 
@@ -148,6 +153,7 @@ namespace Testing {
                 ++errors;
             }
         }
+
         auto time_elapsed_ms = Time::ElapsedTime<Time::ms>(start);
 
         Uci::Send("Finished in " + std::to_string(time_elapsed_ms) + "ms.");

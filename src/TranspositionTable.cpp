@@ -68,9 +68,9 @@ void TranspositionTable::Save(Hash64 hash, Score score, Depth depth, Move move, 
 TTFlag TranspositionTable::Probe(Hash64 hash, Score alpha, Score beta, Depth depth, Depth ply, Score &score,
                                  Move &move) const {
 
+    TTBucket &bucket = table[hash % buckets_count];
     TTFlag flag = NOT_FOUND;
     Hash16 hash16 = Zobrist::MakeHash16(hash);
-    TTBucket &bucket = table[hash % buckets_count];
 
     for (auto &entry: bucket.bucket_entries) {
         if (entry.GetHash16() == hash16) {
@@ -85,6 +85,7 @@ TTFlag TranspositionTable::Probe(Hash64 hash, Score alpha, Score beta, Depth dep
             break;
         }
     }
+
     return flag;
 }
 

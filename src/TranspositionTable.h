@@ -25,8 +25,6 @@ public:
 
 private:
 
-    using TTEpoch = int;
-
     // 8 bytes
     class TTEntry {
         uint16_t hash = 0;

@@ -21,8 +21,8 @@ namespace Search {
             seldepth_reached = depth_reached;
 
             // if helper thread falls behind main thread, skip depth and go deeper
-            if (!IsMainThread() && depth_reached <= MtDepth()) {
-                depth_reached = std::min(MtDepth() + id, settings.allowed_depth);
+            if (!IsMainThread() && depth_reached <= mt_depth) {
+                depth_reached = std::min(mt_depth + id, settings.allowed_depth);
             }
 
             Score alpha = NEGATIVE_INF;
@@ -40,7 +40,7 @@ namespace Search {
                 }
 
                 // if main thread already finished this depth, there's no reason for a helper thread to remain
-                if (!IsMainThread() && depth_reached < MtDepth()) {
+                if (!IsMainThread() && depth_reached < mt_depth) {
                     break;
                 }
 
@@ -79,11 +79,11 @@ namespace Search {
             // sort based on score -> previous score -> node count
             std::ranges::stable_sort(root_moves);
 
-            if (IsMainThread()) {
+            if (IsMainThread() && Run()) {
 
-                mt_depth.store(depth_reached, std::memory_order_relaxed);
+                mt_depth = depth_reached;
 
-                if (!Run() || !EnoughTimeLeft()) {
+                if (!EnoughTimeLeft()) {
                     break;
                 }
 
@@ -343,11 +343,11 @@ namespace Search {
         auto elapsed_ns = Time::ElapsedTime<Time::ns>(start_time);
         auto elapsed_ms = elapsed_ns / 1000000;
         auto nps = static_cast<uint64_t>((static_cast<double>(nodes) / static_cast<double>(elapsed_ns)) * 1000000000.0);
-        auto pvs_to_send = std::min(multi_pv, static_cast<int>(root_moves.size()));
+        auto pvs_to_send = std::min(multi_pv, root_moves.size());
 
         std::ostringstream oss;
 
-        for (int i = 0; i < pvs_to_send; ++i) {
+        for (size_t i = 0; i < pvs_to_send; ++i) {
             oss << "info";
             if (pvs_to_send > 1) oss << " multipv " << i + 1;
             oss << " depth " << root_moves[i].depth

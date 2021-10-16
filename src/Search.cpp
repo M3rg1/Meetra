@@ -24,7 +24,7 @@ namespace Search {
         return std::accumulate(threads.begin(),
                                threads.end(),
                                0ULL,
-                               [&](auto sum, auto const &t) { return sum + t->Nodes(); });
+                               [&](auto sum, const auto &t) { return sum + t->Nodes(); });
     }
 
     void InitSearchTimer(const Board &board) {
@@ -47,7 +47,7 @@ namespace Search {
         settings = s;
 
         tt.NewSearch();
-        mt_depth.store(0, std::memory_order_relaxed);
+        mt_depth = 0;
 
         settings.allowed_depth = std::min(s.allowed_depth, MAX_SEARCH_DEPTH);
 
@@ -143,16 +143,16 @@ namespace Search {
         threads.clear();
     }
 
-    void SetNumThreads(int num_threads) {
+    void SetNumThreads(size_t num_threads) {
 
         if (num_threads > MAX_SEARCH_THREADS || num_threads < 1) {
-            num_threads = std::clamp(num_threads, 1, MAX_SEARCH_THREADS);
+            num_threads = std::clamp(num_threads, 1ULL, MAX_SEARCH_THREADS);
             Uci::SendInfo("Invalid threads count! Initializing to: " + std::to_string(num_threads) + " threads");
         }
 
         Shutdown();
 
-        for (int i = 0; i < num_threads; ++i) {
+        for (size_t i = 0; i < num_threads; ++i) {
             threads.emplace_back(new SearchThread(i));
         }
     }

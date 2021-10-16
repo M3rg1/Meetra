@@ -30,7 +30,7 @@ public:
     [[maybe_unused]] [[nodiscard]] std::string PPBoard() const;
 
 #pragma region ===== Getters =====
-    [[nodiscard]] inline int HistorySize() const { return history_cnt; }
+    [[nodiscard]] inline size_t HistorySize() const { return history_cnt; }
     [[nodiscard]] inline Score GetEval() const { return state.evaluator.GetBoardEval(); };
     [[nodiscard]] inline Score GetMoveEval(Move m) const { return state.evaluator.GetMoveEval(*this, m); };
     [[nodiscard]] inline Bitboard GetPieces(PieceType pt, Color c) const { return type_bbs[pt] & color_bbs[c]; }
@@ -88,7 +88,7 @@ private:
 
     BoardState state;
     BoardState history[MAX_GAME_LENGTH];
-    int history_cnt;
+    size_t history_cnt;
 
     // original positions of rooks that are available for castling
     Bitboard origin_rooks[COLOR_NR][CS_NR];

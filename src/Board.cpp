@@ -1,12 +1,11 @@
 #include "Board.h"
 #include "Bitboards.h"
 #include <sstream>
-#include "Uci.h"
 #include "MoveGen.h"
 #include <algorithm>
 #include "Search.h"
 #include <regex>
-
+#include "Uci.h"
 
 constexpr Bitboard castling_mask[COLOR_NR]{
         0x00000000000000FF,
@@ -79,8 +78,14 @@ bool Board::IsBoardValid() const {
         }
     }
 
-    // TODO check EP validity - there must be a pawn on the EP capture square
-    //  also check that the EP square is on the right rank
+    if (EpSquare()) {
+        Square capture_s = ColorToMove() == WHITE ? EpSquare() + SOUTH : EpSquare() + NORTH;
+        Bitboard rank_mask = ColorToMove() == WHITE ? Bitboards::RankMask(RANK_5) : Bitboards::RankMask(RANK_4);
+        if (GetPieceOnSquare(capture_s) != NewPiece(PAWN, OtherColor(ColorToMove())) ||
+            !(rank_mask & SquareToBB(capture_s))) {
+            return false;
+        }
+    }
 
     return true;
 }
@@ -228,7 +233,8 @@ bool Board::MakeMove(Move m) {
 
     MoveType move_type = GetMoveType(m);
 
-    Piece captured_piece = move_type == EN_PASSANT ? NewPiece(PAWN, next_col) : GetPieceOnSquare(to);
+    Square capture_square = move_type == EN_PASSANT ? (this_col == WHITE ? to + SOUTH : to + NORTH) : to;
+    Piece captured_piece = GetPieceOnSquare(capture_square);
 
     // in chess960, when castling, we remove the rook from its square before moving, and put it back later
     // we also need to set captured piece to none, in case the king tries to capture itself
@@ -240,7 +246,6 @@ bool Board::MakeMove(Move m) {
     }
 
     if (captured_piece) {
-        Square capture_square = move_type == EN_PASSANT ? (this_col == WHITE ? to + SOUTH : to + NORTH) : to;
         RemovePiece(capture_square);
         Zobrist::RemovePiece(state.hash, captured_piece, capture_square);
         SetCapturedPiece(captured_piece);
@@ -318,7 +323,7 @@ void Board::UnmakeMove(Move m) {
     MovePiece(to, from);
 
     if (captured_piece) {
-        Square capture_s = GetMoveType(m) == EN_PASSANT ? ColorToMove() == WHITE ? to + SOUTH : to + NORTH : to;
+        Square capture_s = GetMoveType(m) == EN_PASSANT ? (ColorToMove() == WHITE ? to + SOUTH : to + NORTH) : to;
         AddPiece(capture_s, captured_piece);
     }
 
@@ -342,10 +347,8 @@ bool Board::AllSquaresSafe(Bitboard squares, Color attacker, Bitboard occ) const
 }
 
 bool Board::IsRepetition() const {
-    // http://www.talkchess.com/forum3/viewtopic.php?f=7&t=51000&start=20
-    int rep = 0;
-    int stop = std::max(HistorySize() - Ply(), 0);
-    for (int i = HistorySize() - 2; i >= stop; i -= 2) {
+    int stop = std::max(static_cast<int>(HistorySize()) - Ply(), 0);
+    for (int i = static_cast<int>(HistorySize()) - 2, rep = 0; i >= stop; i -= 2) {
         if (history[i].hash == state.hash) {
             if (++rep > 1) {
                 return true;
@@ -363,8 +366,7 @@ Move Board::RookCastlingMove(Square king_to, Color c) const {
 
 bool Board::ParseFen(const std::string &fen) {
 
-    static const std::regex rgx(
-            R"(\s*([rnbqkpRNBQKP1-8]{1,8}\/){7}([rnbqkpRNBQKP1-8]{1,8})\s*[bw]\s*(([a-hkqA-HKQ]{1,4})|(-))?\s*(([a-h][36])|(-))?\s*\d*\s*\d*\s*)");
+    static const std::regex rgx(R"(\s*([rnbqkpRNBQKP1-8]{1,8}\/){7}([rnbqkpRNBQKP1-8]{1,8})\s*[bw]\s*(([a-hkqA-HKQ]{1,4})|(-))?\s*(([a-h][36])|(-))?\s*\d*\s*\d*\s*)");
     if (!std::regex_match(fen, rgx)) {
         return false;
     }
