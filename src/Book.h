@@ -20,8 +20,8 @@ namespace Book {
     inline std::vector<Move> BinarySearch(std::ifstream &stream, size_t size_bytes, Hash64 hash) {
 
         std::vector<Move> moves;
-        auto right = static_cast<std::streamoff>(size_bytes / sizeof(BookEntry));
-        auto left = static_cast<std::streamoff>(0);
+        std::streamoff right = size_bytes / sizeof(BookEntry);
+        std::streamoff left = 0;
         BookEntry book_entry;
 
         while (left <= right) {
