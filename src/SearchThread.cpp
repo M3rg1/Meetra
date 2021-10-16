@@ -355,7 +355,7 @@ namespace Search {
                 << " nodes " << nodes
                 << " time " << elapsed_ms
                 << " nps " << nps
-                << " hashfull " << static_cast<int>(tt.Usage() * 1000)
+                << " hashfull " << static_cast<int>(tt.Usage() * 1000.0)
                 << " score ";
 
             Score score = root_moves[i].score;
@@ -370,7 +370,7 @@ namespace Search {
             }
 
             oss << " pv " << board.MoveToName(root_moves[i].move);
-            for (int j = 0; j < root_moves[i].pv.Size(); ++j) {
+            for (size_t j = 0; j < root_moves[i].pv.Size(); ++j) {
                 oss << ' ' << board.MoveToName(root_moves[i].pv.At(j));
             }
             if (i + 1 < pvs_to_send) {
