@@ -227,6 +227,7 @@ bool Board::MakeMove(Move m) {
     Square from = FromSquare(m);
     Square to = ToSquare(m);
     MoveType move_type = GetMoveType(m);
+    Piece moved_piece = GetPieceOnSquare(from);
 
     // in chess960, when castling, we remove the rook from its square before moving, and put it back later
     // we also need to set captured piece to none, in case the king tries to capture itself
@@ -245,7 +246,6 @@ bool Board::MakeMove(Move m) {
         }
     }
 
-    Piece moved_piece = GetPieceOnSquare(from);
     MovePiece(from, to);
     Zobrist::MovePiece(state.hash, moved_piece, from, to);
 
@@ -267,8 +267,7 @@ bool Board::MakeMove(Move m) {
             AddPiece(to, promoted_to);
             Zobrist::AddPiece(state.hash, promoted_to, to);
         } else if (move_type == EN_PASSANT) {
-            return !IsAttackedBySliders(Bitboards::Lsb(GetPieces(KING, this_col)), next_col,
-                                        GetPieces_pt(ALL_TYPES));
+            return !IsAttackedBySliders(Bitboards::Lsb(GetPieces(KING, this_col)), next_col, GetPieces_pt(ALL_TYPES));
         }
 
         return true;
