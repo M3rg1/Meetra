@@ -226,7 +226,6 @@ bool Board::MakeMove(Move m) {
 
     Square from = FromSquare(m);
     Square to = ToSquare(m);
-
     MoveType move_type = GetMoveType(m);
 
     // in chess960, when castling, we remove the rook from its square before moving, and put it back later
