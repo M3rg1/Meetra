@@ -228,6 +228,7 @@ bool Board::MakeMove(Move m) {
     Square to = ToSquare(m);
     MoveType move_type = GetMoveType(m);
     Piece moved_piece = GetPieceOnSquare(from);
+    PieceType moved_pt = TypeOfPiece(moved_piece);
 
     // in chess960, when castling, we remove the rook from its square before moving, and put it back later
     // we also need to set captured piece to none, in case the king tries to capture itself
@@ -253,7 +254,7 @@ bool Board::MakeMove(Move m) {
     state.cr &= ~(SquareToBB(from) | SquareToBB(to));
     Zobrist::UpdateCr(state.hash, previous_cr, GetCr());
 
-    if (TypeOfPiece(moved_piece) == PAWN) {
+    if (moved_pt == PAWN) {
 
         ResetPly();
 
@@ -273,7 +274,7 @@ bool Board::MakeMove(Move m) {
         return true;
     }
 
-    if (TypeOfPiece(moved_piece) == KING) {
+    if (moved_pt == KING) {
 
         state.cr &= castling_mask[next_col];
         Zobrist::UpdateCr(state.hash, previous_cr, GetCr());
