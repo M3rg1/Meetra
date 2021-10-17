@@ -83,6 +83,10 @@ bool Board::IsBoardValid() const {
         }
     }
 
+    if (GetPieces_pt(PAWN) & (Bitboards::RankMask(RANK_8) | Bitboards::RankMask(RANK_1))) {
+        return false;
+    }
+
     return true;
 }
 
