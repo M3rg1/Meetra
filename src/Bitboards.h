@@ -2,7 +2,6 @@
 #define MEETRA_BITBOARDS_H
 
 #include "Defs.h"
-#include <bit>
 
 namespace Bitboards {
 
@@ -68,7 +67,6 @@ namespace Bitboards {
 
     [[nodiscard]] constexpr bool MoreThanOne(Bitboard b) { return (b & (b - 1)); }
     [[nodiscard]] constexpr bool ExactlyOne(Bitboard b) { return b && !MoreThanOne(b); }
-    [[nodiscard]] constexpr int PopCount(Bitboard b) { return std::__popcount(b); }
     [[nodiscard]] constexpr Square Msb(Bitboard b) { return 63 ^ __builtin_clzll(b); }
     [[nodiscard]] constexpr Square Lsb(Bitboard b) { return __builtin_ctzll(b); }
     constexpr Square PopLsb(Bitboard &b) {

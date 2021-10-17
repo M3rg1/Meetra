@@ -5,6 +5,7 @@
 #include <algorithm>
 #include "Search.h"
 #include <regex>
+#include <bit>
 
 constexpr Bitboard castling_mask[COLOR_NR]{
         0x00000000000000FF,
@@ -52,10 +53,6 @@ bool Board::IsBoardValid() const {
 
     Square enemy_king_square = ColorToMove() == WHITE ? Bitboards::Lsb(black_king) : Bitboards::Lsb(white_king);
     if (IsAttackedByAny(enemy_king_square, ColorToMove(), GetPieces_pt(ALL_TYPES))) {
-        return false;
-    }
-
-    if ((state.cr & GetPieces_pt(ROOK)) != state.cr) {
         return false;
     }
 
@@ -397,16 +394,18 @@ bool Board::ParseFen(const std::string &fen) {
     if (iss >> token && token != "-") {
         for (char c: token) {
             Color col = std::isupper(c) ? WHITE : BLACK;
-            Bitboard rooks = GetPieces(ROOK, col);
-            rooks &= col == WHITE ? Bitboards::RankMask(RANK_1) : Bitboards::RankMask(RANK_8);
+            Bitboard rooks = GetPieces(ROOK, col) & castling_mask[col];
             c = std::tolower(c, std::locale());
             if (c == 'k' || c == 'q' || ('a' <= c && c <= 'h')) {
                 Bitboard r_bb = SquareToBB(c == 'k' ? Bitboards::Msb(rooks) :
                                            c == 'q' ? Bitboards::Lsb(rooks) :
                                            SqFromFiRa(FileFromChar(c), col == WHITE ? RANK_1 : RANK_8));
-                state.cr |= r_bb;
+                state.cr |= r_bb & rooks;
                 origin_rooks[col][r_bb > GetPieces(KING, col) ? SHORT : LONG] = r_bb;
             }
+        }
+        if (std::popcount(state.cr) != token.length()) {
+            return false;
         }
     }
 
