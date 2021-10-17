@@ -5,7 +5,6 @@
 #include <algorithm>
 #include "Search.h"
 #include <regex>
-#include "Uci.h"
 
 constexpr Bitboard castling_mask[COLOR_NR]{
         0x00000000000000FF,

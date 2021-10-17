@@ -6,7 +6,7 @@
 namespace Search {
 
     bool EnoughTimeLeft() {
-        if (settings.infinite || settings.allowed_time > Time::ElapsedTime<Time::ms>(start_time) * 2) {
+        if (settings.fixed || settings.allowed_time > Time::ElapsedTime<Time::ms>(start_time) * 2) {
             return true;
         }
         return false;
@@ -28,15 +28,13 @@ namespace Search {
     }
 
     void InitSearchTimer(const Board &board) {
-
-        if (!settings.infinite) {
+        if (!settings.fixed) {
             auto time_left = board.ColorToMove() == WHITE ? settings.wtime : settings.btime;
             auto reduction = TimeReduction(board);
             settings.allowed_time = time_left / reduction;
             settings.allowed_time += board.ColorToMove() == WHITE ? settings.winc : settings.binc;
+            settings.allowed_time -= move_overhead;
         }
-
-        settings.allowed_time -= move_overhead;
     }
 
     void InitSearch(const SearchSettings &s, const Board &board) {
@@ -95,7 +93,7 @@ namespace Search {
         run = true;
         InitSearch(s, board);
 
-        if (use_book && !settings.infinite && !chess960 && board.FullMoveClock() <= BOOK_DEPTH / 2) {
+        if (use_book && !settings.fixed && !chess960 && board.FullMoveClock() <= BOOK_DEPTH / 2) {
             auto moves = Book::Probe(board);
             if (!moves.empty()) {
                 StopSearch();
@@ -112,8 +110,7 @@ namespace Search {
 
         auto root_moves = GenRootMoves(board);
 
-        // if there's only one root move, and we are not in infinite or fixed depth/time search, return it immediately
-        if (root_moves.empty() || (root_moves.size() == 1 && !settings.infinite)) {
+        if (root_moves.empty() || (root_moves.size() == 1 && !settings.fixed)) {
             StopSearch();
             Uci::Send("bestmove " + board.MoveToName(root_moves.empty() ? ZERO_MOVE : root_moves.front().move));
             return;

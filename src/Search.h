@@ -14,7 +14,7 @@ namespace Search {
 
     struct SearchSettings {
 
-        bool infinite = false;
+        bool fixed = false;
 
         TimeRep allowed_time = INT64_MAX;
         uint64_t allowed_nodes = UINT64_MAX;

@@ -263,17 +263,17 @@ namespace Uci {
             else if (option == "winc") iss >> settings.winc;
             else if (option == "binc") iss >> settings.binc;
             else if (option == "movestogo") iss >> settings.moves_to_go;
-            else if (option == "infinite") {
-                settings.infinite = true;
+            else if (option == "fixed") {
+                settings.fixed = true;
             } else if (option == "nodes") {
                 iss >> settings.allowed_nodes;
-                settings.infinite = true;
+                settings.fixed = true;
             } else if (option == "movetime") {
                 iss >> settings.allowed_time;
-                settings.infinite = true;
+                settings.fixed = true;
             } else if (option == "depth") {
                 iss >> settings.allowed_depth;
-                settings.infinite = true;
+                settings.fixed = true;
             } else {
                 SendInfo("Unknown search option: " + option);
             }

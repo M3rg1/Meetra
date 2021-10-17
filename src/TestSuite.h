@@ -49,12 +49,14 @@ namespace Testing {
         return total_nodes;
     }
 
-    struct Test {
-    private :
+    class Test {
+
         std::string fen;
         Depth depth;
         uint64_t expected;
+
     public:
+
         inline bool Run() {
             Board board;
             if (!board.NewPosition(fen)) {
@@ -89,22 +91,11 @@ namespace Testing {
 
         friend std::istream &operator>>(std::istream &is, Test &t) {
             std::string token;
-            // for parsing Ethereal's chess 960 perft suite
-            if (ETHEREAL_SUITE) {
-                is >> t.fen;
-                while (is >> token && token != ";D1") {
-                    t.fen += ' ' + token;
-                }
-                while (is >> token && token != ";D5");
-                t.depth = 5;
-                is >> t.expected;
-            } else {
-                is >> token >> t.depth;
-                is >> token >> t.expected;
-                is >> token >> t.fen;
-                while (is >> token && token != "#") {
-                    t.fen += ' ' + token;
-                }
+            is >> token >> t.depth;
+            is >> token >> t.expected;
+            is >> token >> t.fen;
+            while (is >> token && token != "#") {
+                t.fen += ' ' + token;
             }
             return is;
         }
@@ -115,7 +106,7 @@ namespace Testing {
         std::fstream test_file;
         test_file.open(TEST_FILE_PATH, std::ios::in);
         if (!test_file.is_open()) {
-            Uci::SendInfo("Could not open the test file!");
+            Uci::Send("Could not open the test file!");
             return {};
         }
 

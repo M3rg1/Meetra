@@ -9,17 +9,16 @@ namespace Evaluation {
 
     class Evaluator {
 
-        int mg[COLOR_NR];
-        int eg[COLOR_NR];
+        Score mg[COLOR_NR];
+        Score eg[COLOR_NR];
         int phase;
 
-        int mg_score;
-        int eg_score;
+        Score mg_score;
+        Score eg_score;
         int mg_phase;
         int eg_phase;
 
     public:
-        static void Init();
         void SetBoard(const Board &board);
         void MakeMove(const Board &board, Move m);
         [[nodiscard]] Score GetMoveEval(const Board &board, Move m) const;
