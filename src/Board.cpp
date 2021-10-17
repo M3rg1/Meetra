@@ -232,23 +232,21 @@ bool Board::MakeMove(Move m) {
 
     MoveType move_type = GetMoveType(m);
 
-    Square capture_square = move_type == EN_PASSANT ? (this_col == WHITE ? to + SOUTH : to + NORTH) : to;
-    Piece captured_piece = GetPieceOnSquare(capture_square);
-
     // in chess960, when castling, we remove the rook from its square before moving, and put it back later
     // we also need to set captured piece to none, in case the king tries to capture itself
     if (Search::chess960 && move_type == CASTLING) {
-        captured_piece = NO_PIECE;
         Move rook_move = RookCastlingMove(to, this_col);
         Square rook_from = FromSquare(rook_move);
         RemovePiece(rook_from);
-    }
-
-    if (captured_piece) {
-        RemovePiece(capture_square);
-        Zobrist::RemovePiece(state.hash, captured_piece, capture_square);
-        SetCapturedPiece(captured_piece);
-        ResetPly();
+    } else {
+        Square capture_square = move_type == EN_PASSANT ? (this_col == WHITE ? to + SOUTH : to + NORTH) : to;
+        Piece captured_piece = GetPieceOnSquare(capture_square);
+        if (captured_piece) {
+            RemovePiece(capture_square);
+            Zobrist::RemovePiece(state.hash, captured_piece, capture_square);
+            SetCapturedPiece(captured_piece);
+            ResetPly();
+        }
     }
 
     Piece moved_piece = GetPieceOnSquare(from);
@@ -358,9 +356,10 @@ bool Board::IsRepetition() const {
 }
 
 Move Board::RookCastlingMove(Square king_to, Color c) const {
-    Square to = FileFromSquare(king_to) == FILE_G ? king_to - 1 : king_to + 1;
-    Bitboard rook_pos = FileFromSquare(to) == FILE_F ? origin_rooks[c][SHORT] : origin_rooks[c][LONG];
-    return NewMove(Bitboards::Lsb(rook_pos), to);
+    CastlingSide side = FileFromSquare(king_to) == FILE_G ? SHORT : LONG;
+    Bitboard from = Bitboards::Lsb(origin_rooks[c][side]);
+    Square to = side == SHORT ? king_to - 1 : king_to + 1;
+    return NewMove(from, to);
 }
 
 bool Board::ParseFen(const std::string &fen) {
@@ -401,17 +400,10 @@ bool Board::ParseFen(const std::string &fen) {
             Bitboard rooks = GetPieces(ROOK, col);
             rooks &= col == WHITE ? Bitboards::RankMask(RANK_1) : Bitboards::RankMask(RANK_8);
             c = std::tolower(c, std::locale());
-
-            if (c == 'k') {
-                Bitboard r_bb = SquareToBB(Bitboards::Msb(rooks));
-                state.cr |= r_bb;
-                origin_rooks[col][SHORT] = r_bb;
-            } else if (c == 'q') {
-                Bitboard r_bb = SquareToBB(Bitboards::Lsb(rooks));
-                state.cr |= r_bb;
-                origin_rooks[col][LONG] = r_bb;
-            } else if ('a' <= c && c <= 'h') {
-                Bitboard r_bb = SquareToBB(SqFromFiRa(FileFromChar(c), col == WHITE ? RANK_1 : RANK_8));
+            if (c == 'k' || c == 'q' || ('a' <= c && c <= 'h')) {
+                Bitboard r_bb = SquareToBB(c == 'k' ? Bitboards::Msb(rooks) :
+                                           c == 'q' ? Bitboards::Lsb(rooks) :
+                                           SqFromFiRa(FileFromChar(c), col == WHITE ? RANK_1 : RANK_8));
                 state.cr |= r_bb;
                 origin_rooks[col][r_bb > GetPieces(KING, col) ? SHORT : LONG] = r_bb;
             }
