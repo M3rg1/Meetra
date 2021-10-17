@@ -42,12 +42,8 @@ bool Board::NewPosition(const std::string &fen) {
 bool Board::IsBoardValid() const {
 
     Bitboard white_king = GetPieces(KING, WHITE);
-    if (!Bitboards::ExactlyOne(white_king)) {
-        return false;
-    }
-
     Bitboard black_king = GetPieces(KING, BLACK);
-    if (!Bitboards::ExactlyOne(black_king)) {
+    if (!Bitboards::ExactlyOne(white_king) || !Bitboards::ExactlyOne(black_king)) {
         return false;
     }
 
