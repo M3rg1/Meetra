@@ -157,6 +157,7 @@ namespace Search {
         }
 
         PVLine line;
+        // TODO dont do null move if tt move exists? http://www.talkchess.com/forum3/viewtopic.php?t=64093
         // null move pruning
         if (NodeType == NONPV && prune && depth >= NULL_DEPTH && eval >= beta && eval >= static_eval) {
             board.MakeNullMove();

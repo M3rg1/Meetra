@@ -20,7 +20,7 @@ namespace Search {
         uint64_t allowed_nodes = UINT64_MAX;
         Depth allowed_depth = MAX_SEARCH_DEPTH;
 
-        size_t moves_to_go = 0;
+        int moves_to_go = 0;
         TimeRep wtime = DEFAULT_SEARCH_TIME;
         TimeRep btime = DEFAULT_SEARCH_TIME;
         TimeRep winc = 0;
