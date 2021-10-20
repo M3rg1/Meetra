@@ -4,7 +4,7 @@
 #include "Defs.h"
 
 constexpr size_t DEFAULT_SEARCH_THREADS = 1;
-constexpr size_t MAX_SEARCH_THREADS = 32;
+constexpr size_t MAX_SEARCH_THREADS = 64;
 
 constexpr Depth BOOK_DEPTH = 20;
 inline const std::string BOOK_PATH = "tools/bestmove_r20d20_a5000.mtr.bin";
@@ -22,6 +22,7 @@ constexpr TimeRep MIN_OVERHEAD = 0;
 constexpr TimeRep MAX_OVERHEAD = 10000;
 constexpr TimeRep DEFAULT_OVERHEAD = 10;
 constexpr TimeRep UPDATE_INFO_INTERVAL = 1000;
+constexpr TimeRep CURRMOVE_DELAY = 1000;
 
 // eval consts
 constexpr Score POSITIVE_INF = 32000;
@@ -33,7 +34,7 @@ constexpr Score MIN_MATE_EVAL = MATE_SCORE - MAX_SEARCH_DEPTH;
 // TT consts
 constexpr size_t MIN_HASH_SIZE = 8; // this should never be 0
 constexpr size_t DEFAULT_HASH_SIZE = 128;
-constexpr size_t MAX_HASH_SIZE = 8192;
+constexpr size_t MAX_HASH_SIZE = 32768;
 constexpr size_t TT_ENTRIES_PER_BUCKET = 4;
 
 // search stuff

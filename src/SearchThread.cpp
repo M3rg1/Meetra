@@ -35,7 +35,7 @@ namespace Search {
                 curr_rm = &root_moves[curr_rm_num];
                 curr_rm->seldepth = depth_reached;
 
-                if (IsMainThread() && show_currmove && Time::ElapsedTime<Time::ms>(start_time) > 1000) {
+                if (IsMainThread() && show_currmove && Time::ElapsedTime<Time::ms>(start_time) > CURRMOVE_DELAY) {
                     Uci::Send(GetCurrMoveInfo());
                 }
 
