@@ -111,7 +111,7 @@ namespace Search {
         if (board.Move50Rule()) {
             // it could be a checkmate on the 50th move
             MoveGen mg(board);
-            if (mg.GetAnyMove() == ZERO_MOVE) {
+            if (mg.IsInCheck()) {
                 return -MATE_SCORE + ply;
             }
             return -DRAW_SCORE;
