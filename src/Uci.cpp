@@ -263,7 +263,7 @@ namespace Uci {
             else if (option == "winc") iss >> settings.winc;
             else if (option == "binc") iss >> settings.binc;
             else if (option == "movestogo") iss >> settings.moves_to_go;
-            else if (option == "fixed") {
+            else if (option == "infinite") {
                 settings.fixed = true;
             } else if (option == "nodes") {
                 iss >> settings.allowed_nodes;
