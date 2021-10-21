@@ -49,7 +49,9 @@ namespace Testing {
         return total_nodes;
     }
 
-    class Test {
+    struct Test {
+
+    private:
 
         std::string fen;
         Depth depth;

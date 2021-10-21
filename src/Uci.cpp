@@ -47,7 +47,7 @@ namespace Uci {
     void TestCommand();
     void QuitCommand();
     void UnknownCommand();
-    Search::SearchSettings ParseSearchOptions(std::istringstream &iss);
+    Search::Settings ParseSearchOptions(std::istringstream &iss);
 
     void Init() {
         std::ios_base::sync_with_stdio(false);
@@ -133,7 +133,7 @@ namespace Uci {
             SendInfo("Search is already in progress!");
             return;
         }
-        Search::SearchSettings settings = ParseSearchOptions(iss);
+        Search::Settings settings = ParseSearchOptions(iss);
         Search::StartSearch(settings, board);
     }
 
@@ -252,9 +252,9 @@ namespace Uci {
         }
     }
 
-    Search::SearchSettings ParseSearchOptions(std::istringstream &iss) {
+    Search::Settings ParseSearchOptions(std::istringstream &iss) {
 
-        Search::SearchSettings settings;
+        Search::Settings settings;
         std::string option;
 
         while (iss >> option) {

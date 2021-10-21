@@ -83,7 +83,7 @@ private:
         Piece captured_piece = NO_PIECE;
         Square ep_square = NO_SQ;
         Bitboard cr = EMPTY_BB;
-        Evaluation::Evaluator evaluator;
+        Evaluator evaluator;
     };
 
     BoardState state;

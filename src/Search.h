@@ -12,7 +12,7 @@
 
 namespace Search {
 
-    struct SearchSettings {
+    struct Settings {
 
         bool fixed = false;
 
@@ -27,7 +27,7 @@ namespace Search {
         TimeRep binc = 0;
     };
 
-    inline SearchSettings settings;
+    inline Settings settings;
     inline std::atomic<bool> run;
     inline std::atomic<Depth> mt_depth;
     inline bool chess960;
@@ -84,7 +84,7 @@ namespace Search {
     };
 
     void Init();
-    void StartSearch(SearchSettings settings, Board board);
+    void StartSearch(Settings settings, Board board);
     void FinishSearch();
     void Shutdown();
 

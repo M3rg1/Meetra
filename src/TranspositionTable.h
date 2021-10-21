@@ -26,14 +26,8 @@ public:
 private:
 
     // 8 bytes
-    class TTEntry {
-        uint16_t hash = 0;
-        int16_t score = 0;
-        uint16_t move = 0;
-        uint8_t depth = 0;
-        uint8_t epoch_and_flag = 0; // 2 low bits for flag, rest for epoch.
-        // epoch would be fine with 3 bits, leaving another 3 for whatever else is needed
-    public:
+    struct TTEntry {
+
         [[nodiscard]] inline Hash16 GetHash16() const { return static_cast<Hash16>(hash); }
         [[nodiscard]] inline Score GetScore() const { return static_cast<Score>(score); }
         [[nodiscard]] inline Depth GetDepth() const { return static_cast<Depth>(depth); }
@@ -54,6 +48,14 @@ private:
             epoch_and_flag = static_cast<uint8_t>(f);
             epoch_and_flag |= static_cast<uint8_t>(e) << 2;
         }
+
+    private:
+        uint16_t hash = 0;
+        int16_t score = 0;
+        uint16_t move = 0;
+        uint8_t depth = 0;
+        uint8_t epoch_and_flag = 0; // 2 low bits for flag, rest for epoch.
+        // epoch would be fine with 3 bits, leaving another 3 for whatever else is needed
     };
 
     struct TTBucket {

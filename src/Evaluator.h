@@ -5,27 +5,26 @@
 
 class Board;
 
-namespace Evaluation {
+class Evaluator {
 
-    class Evaluator {
+public:
 
-        Score mg[COLOR_NR];
-        Score eg[COLOR_NR];
-        int phase;
+    void SetBoard(const Board &board);
+    void MakeMove(const Board &board, Move m);
+    [[nodiscard]] Score GetMoveEval(const Board &board, Move m) const;
+    [[nodiscard]] Score GetBoardEval() const;
+    [[nodiscard]] inline int GetPhase() const { return phase; }
 
-        Score mg_score;
-        Score eg_score;
-        int mg_phase;
-        int eg_phase;
+private:
 
-    public:
-        void SetBoard(const Board &board);
-        void MakeMove(const Board &board, Move m);
-        [[nodiscard]] Score GetMoveEval(const Board &board, Move m) const;
-        [[nodiscard]] Score GetBoardEval() const;
-        [[nodiscard]] inline int GetPhase() const { return phase; }
-    };
+    Score mg[COLOR_NR];
+    Score eg[COLOR_NR];
+    int phase;
 
-}
+    Score mg_score;
+    Score eg_score;
+    int mg_phase;
+    int eg_phase;
+};
 
 #endif //MEETRA_EVALUATOR_H

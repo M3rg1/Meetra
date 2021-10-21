@@ -37,7 +37,7 @@ namespace Search {
         }
     }
 
-    void InitSearch(const SearchSettings &s, const Board &board) {
+    void InitSearch(const Settings &s, const Board &board) {
 
         start_time = Time::Now();
         last_update_time = 0;
@@ -86,7 +86,7 @@ namespace Search {
         Uci::Send("bestmove " + best_thread->GetBestRmName());
     }
 
-    void StartSearch(SearchSettings s, Board board) {
+    void StartSearch(Settings s, Board board) {
 
         Search::WaitFinished();
 
