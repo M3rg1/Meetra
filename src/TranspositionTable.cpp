@@ -43,7 +43,7 @@ void TranspositionTable::Save(Hash64 hash, Score score, Depth depth, Move move, 
     Hash16 hash16 = Zobrist::MakeHash16(hash);
     int worst_entry_score = INT_MAX;
 
-    for (auto &entry: bucket.bucket_entries) {
+    for (auto &entry: bucket.entries) {
 
         if (entry.GetHash16() == hash16) {
             if (entry.GetEpoch() != current_epoch || entry.GetDepth() <= depth || flag == EXACT) {
@@ -72,7 +72,7 @@ TTFlag TranspositionTable::Probe(Hash64 hash, Score alpha, Score beta, Depth dep
     TTFlag flag = NOT_FOUND;
     Hash16 hash16 = Zobrist::MakeHash16(hash);
 
-    for (auto &entry: bucket.bucket_entries) {
+    for (auto &entry: bucket.entries) {
         if (entry.GetHash16() == hash16) {
             flag = entry.GetFlag();
             move = entry.GetMove();

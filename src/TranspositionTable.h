@@ -32,21 +32,17 @@ private:
         [[nodiscard]] inline Score GetScore() const { return static_cast<Score>(score); }
         [[nodiscard]] inline Depth GetDepth() const { return static_cast<Depth>(depth); }
         [[nodiscard]] inline Move GetMove() const { return static_cast<Move>(move); }
-        [[nodiscard]] inline TTFlag GetFlag() const { return static_cast<TTFlag>(epoch_and_flag & 0x3); }
-        [[nodiscard]] inline TTEpoch GetEpoch() const { return static_cast<TTEpoch>(epoch_and_flag >> 2); }
-
-        inline void SetEpoch(TTEpoch e) {
-            epoch_and_flag &= 0x3;
-            epoch_and_flag |= static_cast<uint8_t>(e) << 2;
-        }
+        [[nodiscard]] inline TTFlag GetFlag() const { return static_cast<TTFlag>(flag); }
+        [[nodiscard]] inline TTEpoch GetEpoch() const { return static_cast<TTEpoch>(epoch); }
+        inline void SetEpoch(TTEpoch e) { epoch = e; }
 
         inline void SaveEntry(Hash16 h, Score s, Depth d, Move m, TTFlag f, TTEpoch e) {
             hash = static_cast<uint16_t>(h);
             score = static_cast<int16_t>(s);
             depth = static_cast<uint8_t>(d);
             move = static_cast<uint16_t>(m);
-            epoch_and_flag = static_cast<uint8_t>(f);
-            epoch_and_flag |= static_cast<uint8_t>(e) << 2;
+            flag = static_cast<uint8_t>(f);
+            epoch = static_cast<uint8_t>(e);
         }
 
     private:
@@ -54,12 +50,12 @@ private:
         int16_t score = 0;
         uint16_t move = 0;
         uint8_t depth = 0;
-        uint8_t epoch_and_flag = 0; // 2 low bits for flag, rest for epoch.
-        // epoch would be fine with 3 bits, leaving another 3 for whatever else is needed
+        uint8_t flag: 2 = 0;
+        uint8_t epoch: 6 = 0;  // epoch would be fine with 3 bits, leaving another 3 for whatever else is needed
     };
 
     struct TTBucket {
-        TTEntry bucket_entries[TT_ENTRIES_PER_BUCKET]{};
+        TTEntry entries[TT_ENTRIES_PER_BUCKET]{};
     };
 
     TTEpoch current_epoch;

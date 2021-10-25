@@ -17,10 +17,10 @@ namespace Search {
         // iterative deepening
         for (depth_reached = 1; depth_reached <= settings.allowed_depth && Run(); ++depth_reached) {
 
-            // seldepth_reached is always at least the current depth being searched
+            // seldepth is always at least the current depth being searched
             seldepth_reached = depth_reached;
 
-            // if helper thread falls behind main thread, skip depth and go deeper
+            // if a helper thread falls behind the main thread, skip current depth and go deeper
             if (!IsMainThread() && depth_reached <= mt_depth) {
                 depth_reached = std::min(mt_depth + id, settings.allowed_depth);
             }
@@ -111,10 +111,13 @@ namespace Search {
         if (board.Move50Rule()) {
             // it could be a checkmate on the 50th move
             MoveGen mg(board);
-            if (mg.IsInCheck()) {
-                return -MATE_SCORE + ply;
+            Move m;
+            while((m  = mg.GetAnyMove())) {
+                if (board.IsMoveLegal(m)) {
+                    return -DRAW_SCORE;
+                }
             }
-            return -DRAW_SCORE;
+            return -MATE_SCORE + ply;
         } else if (board.IsRepetition()) {
             return -DRAW_SCORE;
         } else if (depth <= 0) {
@@ -157,7 +160,6 @@ namespace Search {
         }
 
         PVLine line;
-        // TODO dont do null move if tt move exists? http://www.talkchess.com/forum3/viewtopic.php?t=64093
         // null move pruning
         if (NodeType == NONPV && prune && depth >= NULL_DEPTH && eval >= beta && eval >= static_eval) {
             board.MakeNullMove();
@@ -180,7 +182,7 @@ namespace Search {
 
         while ((move = move_gen.GetBestMove<NORMAL>())) {
 
-            // temporary fix to not play TT move twice - this should be done in the generator before evaluating the move
+            // temporary fix to not play TT move twice - this should be done in the move list before evaluating the move
             if (move == tt_move && moves_searched > 0) {
                 continue;
             }
