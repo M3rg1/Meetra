@@ -284,13 +284,13 @@ bool MoveGen::IsPseudoLegal(Move m) const {
     }
 
     // destination is either empty or occupied by enemy piece, but not a king (king captures can crash the engine)
-    Piece dest_piece = board.GetPieceOnSquare(ToSquare(m));
+    Square to = ToSquare(m);
+    Piece dest_piece = board.GetPieceOnSquare(to);
     if (dest_piece != NO_PIECE && (ColorOfPiece(dest_piece) == my_color || TypeOfPiece(dest_piece) == KING)) {
         return false;
     }
 
     // make sure we only move to the allowed squares
-    Square to = ToSquare(m);
     if (moved_pt != KING && moved_pt != PAWN && !(SquareToBB(to) & legal_moves)) {
         return false;
     }
