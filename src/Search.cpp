@@ -143,7 +143,7 @@ namespace Search {
     void SetNumThreads(size_t num_threads) {
 
         if (num_threads > MAX_SEARCH_THREADS || num_threads < 1) {
-            num_threads = std::clamp(num_threads, 1ULL, MAX_SEARCH_THREADS);
+            num_threads = std::clamp(num_threads, static_cast<size_t>(1), MAX_SEARCH_THREADS);
             Uci::SendInfo("Invalid threads count! Initializing to: " + std::to_string(num_threads) + " threads");
         }
 

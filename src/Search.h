@@ -96,7 +96,7 @@ namespace Search {
     inline void ShowShowCurrLine(bool show) { show_currline = show; }
     inline void ShowCurrMoveInfo(bool show) { show_currmove = show; }
     inline void SetPliesMuted(Depth ply_muted) { plies_muted = ply_muted; }
-    inline void SetMultiPv(size_t pv_num) { multi_pv = std::max(1ULL, pv_num); }
+    inline void SetMultiPv(size_t pv_num) { multi_pv = std::max(static_cast<size_t>(1), pv_num); }
     inline void SetTTSize(size_t size_mb) { tt.Init(size_mb); }
     inline void SetUseBook(bool use) { use_book = use; }
     inline void SetChess960(bool set) { chess960 = set; }
