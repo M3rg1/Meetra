@@ -4,7 +4,7 @@ project(Meetra)
 set(CMAKE_CXX_STANDARD 23)
 
 # https://stackoverflow.com/questions/35116327/when-g-static-link-pthread-cause-segmentation-fault-why/45271521
-SET(CMAKE_EXE_LINKER_FLAGS "-static -pthread -Wl,--whole-archive -lpthread -Wl,--no-whole-archive")
+set(CMAKE_EXE_LINKER_FLAGS "-static -pthread -Wl,--whole-archive -lpthread -Wl,--no-whole-archive")
 
 # -fno-inline-small-functions
 # -funroll-loops
