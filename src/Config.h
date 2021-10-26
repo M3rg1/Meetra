@@ -33,7 +33,7 @@ constexpr Score MIN_MATE_EVAL = MATE_SCORE - MAX_SEARCH_DEPTH;
 
 // TT consts
 constexpr size_t MIN_HASH_SIZE = 8; // this should never be 0
-constexpr size_t DEFAULT_HASH_SIZE = 128;
+constexpr size_t DEFAULT_HASH_SIZE = 8;
 constexpr size_t MAX_HASH_SIZE = 32768;
 constexpr size_t TT_ENTRIES_PER_BUCKET = 4;
 

@@ -69,7 +69,7 @@ template<GenType T>
 Move MoveGen::GetBestMove() {
     while (Empty()) {
         my_color == WHITE ? NextPhase<WHITE, T>() : NextPhase<BLACK, T>();
-        if (move_eval[0].move != ZERO_MOVE) {
+        if (!Empty() && move_eval[0].move != ZERO_MOVE) {
             EvalMoves();
         }
     }
