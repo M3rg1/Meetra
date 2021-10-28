@@ -32,7 +32,7 @@ For example, some free GUIs with UCI support:
 - Own book (the books currently available arent very good though)
 - **Additional UCI commands**
     - Mute plies - the engine won't be sending any output to the GUI up to the specified depth
-    - Move overhead - how much time should be set aside for communication delay between the GUI and any other potential delays (best kept at default value)
+    - Move overhead - how much time should be set aside for communication delay between the engine and GUI, and any other potential delays (best kept at default value)
     - Clear hash - clears any stored information from previous searches (the GUI will usually handle this)
     - Show current move - whether the engine will be sending information about which move in the root position is currently being searched
 
