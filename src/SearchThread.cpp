@@ -3,6 +3,7 @@
 #include "Uci.h"
 #include "MoveGen.h"
 #include "Search.h"
+#include "Bitboards.h"
 #include <algorithm>
 
 namespace Search {
@@ -194,14 +195,32 @@ namespace Search {
                 continue;
             }
 
+            // late move reduction
+            Depth reduction = 0;
+            Depth extension = 0;
+
+            if (NodeType != PV && prune && depth >= 3 && move != tt_move && move_gen.IsQuiet(move)) {
+                reduction += 1;
+                if (depth >= 5) {
+                    reduction += depth / 3;
+                }
+                if (move_gen.IsQuiet(move)) {
+                    reduction += 2;
+                }
+                if (moves_searched >= 5) {
+                    reduction += 1;
+                }
+                // TODO if move gives check (board.IsInCheck, after playing the move), dont reduce at all (instead extend)
+            }
+
             line.Clear();
 
             if (NodeType != PV || moves_searched > 0) {
-                score = -ABSearch<NONPV>(-alpha - 1, -alpha, depth - 1, ply + 1, line);
+                score = -ABSearch<NONPV>(-alpha - 1, -alpha, depth - 1 - reduction + extension, ply + 1, line);
             }
 
             if (NodeType == PV && (moves_searched == 0 || (score > alpha && score < beta))) {
-                score = -ABSearch<PV>(-beta, -alpha, depth - 1, ply + 1, line);
+                score = -ABSearch<PV>(-beta, -alpha, depth - 1 + extension, ply + 1, line);
             }
 
             board.UnmakeMove(move);

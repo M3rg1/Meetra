@@ -27,7 +27,7 @@ enum GenType : int {
 };
 
 enum GenPhase : int {
-    CAPTURE, QUIET, END, DOUBLE_CHECK
+    PROMOTION, CAPTURE, QUIET, END, DOUBLE_CHECK
 };
 
 enum Node : int {

@@ -23,7 +23,7 @@ public:
     [[nodiscard]] bool IsPseudoLegal(Move m) const;
     [[nodiscard]] inline bool IsInCheck() const { return checkers; }
     [[nodiscard]] inline bool IsQuiet(Move m) const {
-        return board.GetPieceOnSquare(ToSquare(m)) == NO_PIECE && GetMoveType(m) != EN_PASSANT;
+        return GetMoveType(m) != EN_PASSANT && !IsPromotion(m) && board.GetPieceOnSquare(ToSquare(m)) == NO_PIECE;
     }
 
 private:
@@ -86,6 +86,9 @@ private:
 
     template<Color C>
     void GenEpMoves();
+
+    template<Color C, PawnMoveDir D>
+    void GenPawnPromotions();
 
     template<Color C, PawnMoveDir D>
     void GenPawnCaptures();

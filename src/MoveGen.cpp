@@ -35,7 +35,7 @@ MoveGen::MoveGen(const Board &board) :
         blockers(board.PinnedToSquare(king_s, enemy_color)),
         legal_moves(0xFFFFFFFFFFFFFFFF),
         double_check(false),
-        gen_phase(CAPTURE),
+        gen_phase(PROMOTION),
         killers{ZERO_MOVE, ZERO_MOVE},
         moves_cnt(0) {
 
@@ -90,6 +90,10 @@ template Move MoveGen::GetBestMove<NORMAL>();
 template<Color C, GenType T>
 void MoveGen::NextPhase() {
     switch (gen_phase) {
+        case PROMOTION:
+            GenMovesForPhase<PROMOTION, C>();
+            gen_phase = CAPTURE;
+            break;
         case CAPTURE:
             GenMovesForPhase<CAPTURE, C>();
             gen_phase = T == QSEARCH && !IsInCheck() ? END : QUIET;
@@ -114,17 +118,22 @@ void MoveGen::GenMovesForPhase() {
     if constexpr (P == DOUBLE_CHECK) {
         GenMovesForPieceType<KING, C>(enemy_pieces | empty_squares);
         return;
-    } else if constexpr (P == QUIET) {
-        phase_mask = legal_moves & empty_squares;
-        GenCastlingMoves<C>();
-        GenPawnQuiets<C>();
-        GenMovesForPieceType<KING, C>(empty_squares);
-    } else if constexpr (P == CAPTURE) {
+    } else if constexpr (P == PROMOTION) {
+        GenPawnPromotions<C, LEFT>();
+        GenPawnPromotions<C, RIGHT>();
+        GenPawnPromotions<C, FORWARD>();
+        return;
+    }  else if constexpr (P == CAPTURE) {
         phase_mask = legal_moves & enemy_pieces;
         GenPawnCaptures<C, LEFT>();
         GenPawnCaptures<C, RIGHT>();
         GenEpMoves<C>();
         GenMovesForPieceType<KING, C>(enemy_pieces);
+    } else if constexpr (P == QUIET) {
+        phase_mask = legal_moves & empty_squares;
+        GenCastlingMoves<C>();
+        GenPawnQuiets<C>();
+        GenMovesForPieceType<KING, C>(empty_squares);
     }
 
     GenMovesForPieceType<KNIGHT, C>(phase_mask);
@@ -153,19 +162,9 @@ template<Color C>
 void MoveGen::GenPawnQuiets() {
 
     constexpr Direction push_dir = PawnMove<C, FORWARD>();
-    Bitboard pawns = board.GetPieces(PAWN, C);
-    Bitboard one_fwd = Bitboards::Shift<push_dir>(pawns) & empty_squares;
-    Bitboard two_fwd = Bitboards::Shift<push_dir>(one_fwd) & empty_squares & TwoFwdRank<C>() & phase_mask;
-    Bitboard promotions = one_fwd & phase_mask & PromRank<C>();
-    one_fwd &= phase_mask & ~PromRank<C>();
-
-    while (promotions) {
-        Square dest_s = Bitboards::PopLsb(promotions);
-        Square origin_s = dest_s - push_dir;
-        if (!DiscoveryCheck(origin_s, dest_s)) {
-            PutPromMoves(NewMove(origin_s, dest_s));
-        }
-    }
+    Bitboard one_fwd = Bitboards::Shift<push_dir>(board.GetPieces(PAWN, C)) & empty_squares & ~PromRank<C>();
+    Bitboard two_fwd = Bitboards::Shift<push_dir>(one_fwd) & empty_squares & TwoFwdRank<C>() & legal_moves;
+    one_fwd &= legal_moves;
 
     while (two_fwd) {
         Square dest_s = Bitboards::PopLsb(two_fwd);
@@ -188,22 +187,30 @@ template<Color C, PawnMoveDir D>
 void MoveGen::GenPawnCaptures() {
 
     constexpr Direction capture_dir = PawnMove<C, D>();
-    Bitboard captures = Bitboards::Shift<capture_dir>(board.GetPieces(PAWN, C)) & phase_mask;
-    Bitboard promotions = captures & PromRank<C>();
-    captures &= ~PromRank<C>();
+    Bitboard captures =
+            Bitboards::Shift<capture_dir>(board.GetPieces(PAWN, C)) & legal_moves & enemy_pieces & ~PromRank<C>();
 
-    while (promotions) {
-        Square dest_s = Bitboards::PopLsb(promotions);
-        Square origin_s = dest_s - capture_dir;
-        if (!DiscoveryCheck(origin_s, dest_s)) {
-            PutPromMoves(NewMove(origin_s, dest_s));
-        }
-    }
     while (captures) {
         Square dest_s = Bitboards::PopLsb(captures);
         Square origin_s = dest_s - capture_dir;
         if (!DiscoveryCheck(origin_s, dest_s)) {
             PutMove(NewMove(origin_s, dest_s));
+        }
+    }
+}
+
+template<Color C, PawnMoveDir D>
+void MoveGen::GenPawnPromotions() {
+
+    constexpr Direction dir = PawnMove<C, D>();
+    Bitboard promotions = Bitboards::Shift<dir>(board.GetPieces(PAWN, C)) & legal_moves & PromRank<C>();
+    promotions &= D == FORWARD ? empty_squares : enemy_pieces;
+
+    while (promotions) {
+        Square dest_s = Bitboards::PopLsb(promotions);
+        Square origin_s = dest_s - dir;
+        if (!DiscoveryCheck(origin_s, dest_s)) {
+            PutPromMoves(NewMove(origin_s, dest_s));
         }
     }
 }
@@ -299,7 +306,8 @@ bool MoveGen::IsPseudoLegal(Move m) const {
     if (moved_pt == PAWN) {
 
         Bitboard prom_mask = my_color == WHITE ? PromRank<WHITE>() : PromRank<BLACK>();
-        if (move_type == PROMOTE_QUEEN || move_type == PROMOTE_ROOK || move_type == PROMOTE_BISHOP || move_type == PROMOTE_KNIGHT) {
+        if (move_type == PROMOTE_QUEEN || move_type == PROMOTE_ROOK || move_type == PROMOTE_BISHOP ||
+            move_type == PROMOTE_KNIGHT) {
             if (!(prom_mask & SquareToBB(to)) || DiscoveryCheck(from, to)) {
                 return false;
             }
@@ -320,7 +328,8 @@ bool MoveGen::IsPseudoLegal(Move m) const {
         if (move_type == TWO_FORWARD) {
             Square between = from + (my_color == WHITE ? NORTH : SOUTH);
             Bitboard mask = my_color == WHITE ? TwoFwdRank<WHITE>() : TwoFwdRank<BLACK>();
-            if ((to ^ from) != 16 || !(SquareToBB(to) & mask) || (SquareToBB(between) & all_pieces) || DiscoveryCheck(from, to)) {
+            if ((to ^ from) != 16 || !(SquareToBB(to) & mask) || (SquareToBB(between) & all_pieces) ||
+                DiscoveryCheck(from, to)) {
                 return false;
             }
             return true;
