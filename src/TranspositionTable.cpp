@@ -54,14 +54,19 @@ void TranspositionTable::Save(Hash64 hash, Score score, Depth depth, Move move, 
             }
         }
 
-        int entry_score = entry.GetDepth() + 2 * (entry.GetFlag() == EXACT) - 4 * (current_epoch - entry.GetEpoch());
+        int entry_score = entry.GetDepth() - 4 * (current_epoch - entry.GetEpoch());
+        if (entry.GetFlag() == EXACT) {
+            entry_score += 2;
+        }
         if (entry_score < worst_entry_score) {
             worst_entry_score = entry_score;
             entry_to_write = &entry;
         }
     }
 
-    used_entries.fetch_add(entry_to_write->GetEpoch() != current_epoch, std::memory_order::relaxed);
+    if (entry_to_write->GetEpoch() != current_epoch) {
+        used_entries.fetch_add(1, std::memory_order::relaxed);
+    }
     entry_to_write->SaveEntry(hash16, RemoveMatePly(score, ply), depth, move, flag, current_epoch);
 }
 

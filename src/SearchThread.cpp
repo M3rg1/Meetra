@@ -111,18 +111,24 @@ namespace Search {
 
         if (board.Move50Rule()) {
             // it could be a checkmate on the 50th move
-            MoveGen mg(board);
-            Move m;
-            while((m  = mg.GetAnyMove())) {
-                if (board.IsMoveLegal(m)) {
-                    return -DRAW_SCORE;
+            if (board.IsInCheck()) {
+                MoveGen mg(board);
+                Move m;
+                while ((m = mg.GetAnyMove())) {
+                    if (board.IsMoveLegal(m)) {
+                        return -DRAW_SCORE;
+                    }
                 }
             }
             return -MATE_SCORE + ply;
         } else if (board.IsRepetition()) {
             return -DRAW_SCORE;
         } else if (depth <= 0) {
-            return QSearch(alpha, beta, ply);
+            if (board.IsInCheck()) {
+                    depth = 1;
+            } else {
+                return QSearch(alpha, beta, ply);
+            }
         }
 
         MoveGen move_gen(board, killers[ply]);
@@ -152,19 +158,25 @@ namespace Search {
         killers[ply + 1][0] = ZERO_MOVE;
         killers[ply + 1][1] = ZERO_MOVE;
 
-        bool prune = !move_gen.IsInCheck() && !IsMateScore(beta) && !IsMateScore(alpha) && !IsMateScore(eval);
+        bool prune = !board.IsInCheck() && !IsMateScore(beta) && !IsMateScore(alpha) && !IsMateScore(eval);
 
         // reverse futility pruning
-        if (NodeType == NONPV && prune && depth <= FUTILITY_DEPTH) {
-            Score futility_score = eval - FUTILITY_FACTOR * depth;
-            if (futility_score >= beta) {
-                return futility_score;
-            }
+        if (NodeType == NONPV
+            && prune
+            && depth <= FUTILITY_DEPTH
+            && eval - FUTILITY_FACTOR * depth >= beta
+                ) {
+            return eval;
         }
 
         PVLine line;
         // null move pruning
-        if (NodeType == NONPV && prune && depth >= NULL_DEPTH && eval >= beta && eval >= static_eval) {
+        if (NodeType == NONPV
+            && prune
+            && depth >= NULL_DEPTH
+            && eval >= beta
+            && eval >= static_eval
+                ) {
             board.MakeNullMove();
             Score null_score = -ABSearch<NULLMOVE>(-beta, -beta + 1, depth - NULL_DEPTH, ply + NULL_DEPTH, line);
             board.UnmakeNullMove();
@@ -181,7 +193,7 @@ namespace Search {
         Move best_move;
         Move move;
         tt_flag = ALPHA;
-        int moves_searched = 0;
+        size_t moves_searched = 0;
 
         while ((move = move_gen.GetBestMove<NORMAL>())) {
 
@@ -197,30 +209,42 @@ namespace Search {
 
             // late move reduction
             Depth reduction = 0;
-            Depth extension = 0;
-
-            if (NodeType != PV && prune && depth >= 3 && move != tt_move && move_gen.IsQuiet(move)) {
-                reduction += 1;
-                if (depth >= 5) {
-                    reduction += depth / 3;
+            if (NodeType != PV
+                && prune
+                && depth >= 3
+                && moves_searched >= 3
+                && move != tt_move
+                && !board.CapturedPiece()
+                && !board.IsInCheck()
+                && !IsPromotion(move)
+                    ) {
+                ++reduction;
+                if (moves_searched >= 6) {
+                    ++reduction;
+                    if (moves_searched >= 12) {
+                        reduction += depth / 3;
+                    }
                 }
-                if (move_gen.IsQuiet(move)) {
-                    reduction += 2;
-                }
-                if (moves_searched >= 5) {
-                    reduction += 1;
-                }
-                // TODO if move gives check (board.IsInCheck, after playing the move), dont reduce at all (instead extend)
             }
 
-            line.Clear();
+/*            if (NodeType == PV && moves_searched == 0) {
+                line.Clear();
+                score = -ABSearch<PV>(-beta, -alpha, depth - 1, ply + 1, line);
+            } else {
+                score = -ABSearch<NONPV>(-alpha - 1, -alpha, depth - 1 - reduction, ply + 1, line);
+                if (score > alpha && score < beta) {
+                    line.Clear();
+                    score = -ABSearch<PV>(-beta, -alpha, depth - 1, ply + 1, line);
+                }
+            }*/
 
             if (NodeType != PV || moves_searched > 0) {
-                score = -ABSearch<NONPV>(-alpha - 1, -alpha, depth - 1 - reduction + extension, ply + 1, line);
+                score = -ABSearch<NONPV>(-alpha - 1, -alpha, depth - 1 - reduction, ply + 1, line);
             }
 
             if (NodeType == PV && (moves_searched == 0 || (score > alpha && score < beta))) {
-                score = -ABSearch<PV>(-beta, -alpha, depth - 1 + extension, ply + 1, line);
+                line.Clear();
+                score = -ABSearch<PV>(-beta, -alpha, depth - 1, ply + 1, line);
             }
 
             board.UnmakeMove(move);
@@ -252,10 +276,10 @@ namespace Search {
                 best_score = score;
                 best_move = move;
             }
-        }
+        } // end move loop
 
         if (moves_searched == 0) {
-            return move_gen.IsInCheck() ? -MATE_SCORE + ply : -DRAW_SCORE;
+            return board.IsInCheck() ? -MATE_SCORE + ply : -DRAW_SCORE;
         }
 
         tt.Save(board.GetHash(), best_score, depth, best_move, tt_flag, ply);
@@ -270,7 +294,7 @@ namespace Search {
 
         MoveGen move_gen(board);
 
-        if (!move_gen.IsInCheck()) {
+        if (!board.IsInCheck()) {
             Score static_eval = board.GetEval();
             if (static_eval > alpha) {
                 if (static_eval >= beta) {
@@ -309,7 +333,7 @@ namespace Search {
         }
 
         if (best_score == NEGATIVE_INF) {
-            if (move_gen.IsInCheck()) {
+            if (board.IsInCheck()) {
                 return -MATE_SCORE + ply;
             }
             best_score = alpha;

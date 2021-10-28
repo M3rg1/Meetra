@@ -31,7 +31,7 @@ MoveGen::MoveGen(const Board &board) :
         all_pieces(board.GetPieces_pt(ALL_TYPES)),
         empty_squares(~all_pieces),
         enemy_pieces(board.GetPieces_c(enemy_color)),
-        checkers(board.AttackedBy(king_s, enemy_color, all_pieces)),
+        checkers(board.GetCheckers()),
         blockers(board.PinnedToSquare(king_s, enemy_color)),
         legal_moves(0xFFFFFFFFFFFFFFFF),
         double_check(false),
@@ -39,7 +39,7 @@ MoveGen::MoveGen(const Board &board) :
         killers{ZERO_MOVE, ZERO_MOVE},
         moves_cnt(0) {
 
-    if (IsInCheck()) {
+    if (checkers) {
         if (Bitboards::MoreThanOne(checkers)) {
             legal_moves = 0;
             gen_phase = DOUBLE_CHECK;
@@ -96,7 +96,7 @@ void MoveGen::NextPhase() {
             break;
         case CAPTURE:
             GenMovesForPhase<CAPTURE, C>();
-            gen_phase = T == QSEARCH && !IsInCheck() ? END : QUIET;
+            gen_phase = T == QSEARCH && !checkers ? END : QUIET;
             break;
         case QUIET:
             GenMovesForPhase<QUIET, C>();
@@ -233,7 +233,7 @@ void MoveGen::GenEpMoves() {
 
 template<Color C>
 void MoveGen::GenCastlingMoves() {
-    if (IsInCheck()) {
+    if (checkers) {
         return;
     }
     if (CanCastle<C, SHORT>()) {
@@ -341,7 +341,7 @@ bool MoveGen::IsPseudoLegal(Move m) const {
 
 template<Color C>
 bool MoveGen::ValidateCastling(Move m) const {
-    if (IsInCheck()) {
+    if (checkers) {
         return false;
     }
     if (CanCastle<C, SHORT>()) {

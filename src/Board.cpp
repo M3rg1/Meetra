@@ -36,6 +36,9 @@ bool Board::NewPosition(const std::string &fen) {
     state.hash = Zobrist::GenHash64(*this);
     state.evaluator.SetBoard(*this);
 
+    Square king_s = Bitboards::Lsb(GetPieces(KING, ColorToMove()));
+    state.checkers = AttackedBy(king_s, OtherColor(ColorToMove()), GetPieces_pt(ALL_TYPES));
+
     return true;
 }
 
@@ -268,10 +271,10 @@ bool Board::MakeMove(Move m) {
             AddPiece(to, promoted_to);
             Zobrist::AddPiece(state.hash, promoted_to, to);
         } else if (move_type == EN_PASSANT) {
-            return !IsAttackedBySliders(Bitboards::Lsb(GetPieces(KING, this_col)), next_col, GetPieces_pt(ALL_TYPES));
+            if (IsAttackedBySliders(Bitboards::Lsb(GetPieces(KING, this_col)), next_col, GetPieces_pt(ALL_TYPES))) {
+                return false;
+            }
         }
-
-        return true;
     }
 
     if (moved_pt == KING) {
@@ -287,11 +290,16 @@ bool Board::MakeMove(Move m) {
             Search::chess960 ? AddPiece(r_to, NewPiece(ROOK, this_col)) : MovePiece(r_from, r_to);
             Zobrist::MovePiece(state.hash, NewPiece(ROOK, this_col), r_from, r_to);
             Bitboard king_walk = Bitboards::GetRayToSquares(from, to) | SquareToBB(to);
-            return AllSquaresSafe(king_walk, next_col, GetPieces_pt(ALL_TYPES));
+            if(!AllSquaresSafe(king_walk, next_col, GetPieces_pt(ALL_TYPES))) {
+                return false;
+            }
+        } else if (IsAttackedByAny(to, next_col, GetPieces_pt(ALL_TYPES))) {
+            return false;
         }
-
-        return !IsAttackedByAny(to, next_col, GetPieces_pt(ALL_TYPES));
     }
+
+    Square king_s = Bitboards::Lsb(GetPieces(KING, next_col));
+    state.checkers = AttackedBy(king_s, this_col, GetPieces_pt(ALL_TYPES));
 
     return true;
 }
