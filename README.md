@@ -30,11 +30,11 @@ For example, some free GUIs with UCI support:
 - Up to 32GB transposition table
 - Infinite search, limited nodes search, fixed depth search
 - Own book (the books currently available arent very good though)
-    - **Additional UCI commands**
-        - Mute plies - the engine won't be sending any output to the GUI up to the specified depth
-        - Move overhead - how much time should be set aside for communication delay between the GUI and any other potential delays (best kept at default value)
-        - Clear hash - clears any stored information from previous searches (the GUI will usually handle this)
-        - Show current move - whether the engine will be sending information about which move in the root position is currently being searched
+- **Additional UCI commands**
+    - Mute plies - the engine won't be sending any output to the GUI up to the specified depth
+    - Move overhead - how much time should be set aside for communication delay between the GUI and any other potential delays (best kept at default value)
+    - Clear hash - clears any stored information from previous searches (the GUI will usually handle this)
+    - Show current move - whether the engine will be sending information about which move in the root position is currently being searched
 
 
 #### Internal engine architecture
@@ -66,5 +66,6 @@ For example, some free GUIs with UCI support:
     - [Quiesence search](https://www.chessprogramming.org/Quiescence_Search) (no TT probing, with check extensions)
 - **Evaluation**
     - [Piece-square tables](https://www.chessprogramming.org/Piece-Square_Tables) with [tapered evalution](https://www.chessprogramming.org/Tapered_Eval) using the [PeSTO's Evaluation Function](https://www.chessprogramming.org/PeSTO%27s_Evaluation_Function)
-- **Custom binary opening book format**
+- **Opening book**
+    - Custom binary book format 
     - Binary search for book probing
