@@ -21,9 +21,6 @@ public:
     [[nodiscard]] Move GetBestMove();
     [[nodiscard]] Move GetAnyMove();
     [[nodiscard]] bool IsPseudoLegal(Move m) const;
-    [[nodiscard]] inline bool IsQuiet(Move m) const { // TODO this should be in board class
-        return GetMoveType(m) != EN_PASSANT && !IsPromotion(m) && board.GetPieceOnSquare(ToSquare(m)) == NO_PIECE;
-    }
 
 private:
 

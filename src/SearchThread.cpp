@@ -260,7 +260,7 @@ namespace Search {
             if (score > best_score) {
                 if (score > alpha) {
                     if (score >= beta) {
-                        if (killers[ply][0] != move && move_gen.IsQuiet(move)) {
+                        if (killers[ply][0] != move && board.IsQuiet(move)) {
                             killers[ply][1] = killers[ply][0];
                             killers[ply][0] = move;
                         }
