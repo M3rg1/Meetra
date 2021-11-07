@@ -327,13 +327,13 @@ namespace Search {
         return best_score;
     }
 
-    bool SearchThread::DidBeatMove(const RootMove &other) const {
-        auto rm = std::ranges::find(root_moves, other);
-        if (rm->depth < other.depth) {
+    bool SearchThread::DidBeatMove(const RootMove &move) const {
+        auto rm = std::ranges::find(root_moves, move);
+        if (rm->depth < move.depth) {
             return false;
-        } else if (rm->depth > other.depth) {
+        } else if (rm->depth > move.depth) {
             return true;
-        } else if (GetBestRootMove().move != other.move) {
+        } else if (GetBestRootMove().move != move.move) {
             return true;
         }
         return false;

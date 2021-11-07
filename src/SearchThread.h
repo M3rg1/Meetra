@@ -23,7 +23,7 @@ namespace Search {
         void Search();
         void WaitForFinish();
 
-        [[nodiscard]] bool DidBeatMove(const RootMove &other) const;
+        [[nodiscard]] bool DidBeatMove(const RootMove &move) const;
         [[nodiscard]] RootMove GetBestRootMove() const;
         [[nodiscard]] std::string GetBestRmName() const;
         [[nodiscard]] std::string GetSearchInfo() const;
