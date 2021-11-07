@@ -19,10 +19,9 @@ namespace Testing {
 
         MoveGen move_gen(board);
         uint64_t total_nodes = 0;
-        Move m;
 
         if (depth <= 1) {
-            while ((m = move_gen.GetAnyMove())) {
+            while (Move m = move_gen.GetAnyMove()) {
                 if (board.IsMoveLegal(m)) {
                     ++total_nodes;
                     if constexpr (DIV) {
@@ -33,7 +32,7 @@ namespace Testing {
             return total_nodes;
         }
 
-        while ((m = move_gen.GetAnyMove())) {
+        while (Move m = move_gen.GetAnyMove()) {
             if (!board.MakeMove(m)) {
                 board.UnmakeMove(m);
                 continue;

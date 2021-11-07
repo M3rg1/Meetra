@@ -110,22 +110,24 @@ namespace Search {
         seldepth_reached = std::max(ply, seldepth_reached);
 
         if (board.Move50Rule()) {
-            // it could be a checkmate on the 50th move
-            if (board.IsInCheck()) {
-                MoveGen mg(board);
-                Move m;
-                while ((m = mg.GetAnyMove())) {
-                    if (board.IsMoveLegal(m)) {
-                        return -DRAW_SCORE;
-                    }
+            // it could be a checkmate (or stalemate) on the 50th move
+            MoveGen mg(board);
+            bool legal_moves = false;
+            while (Move m = mg.GetAnyMove()) {
+                if (board.IsMoveLegal(m)) {
+                    legal_moves = true;
+                    break;
                 }
             }
-            return -MATE_SCORE + ply;
+            if (board.IsInCheck() && !legal_moves) {
+                return -MATE_SCORE + ply;
+            }
+            return -DRAW_SCORE;
         } else if (board.IsRepetition()) {
             return -DRAW_SCORE;
         } else if (depth <= 0) {
             if (board.IsInCheck()) {
-                    depth = 1;
+                depth = 1;
             } else {
                 return QSearch(alpha, beta, ply);
             }
@@ -191,11 +193,10 @@ namespace Search {
         Score score;
         Score best_score = NEGATIVE_INF;
         Move best_move;
-        Move move;
         tt_flag = ALPHA;
         size_t moves_searched = 0;
 
-        while ((move = move_gen.GetBestMove<NORMAL>())) {
+        while (Move move = move_gen.GetBestMove<NORMAL>()) {
 
             // temporary fix to not play TT move twice - this should be done in the move list before evaluating the move
             if (move == tt_move && moves_searched > 0) {
@@ -212,31 +213,17 @@ namespace Search {
             if (NodeType != PV
                 && prune
                 && depth >= 3
-                && moves_searched >= 3
-                && move != tt_move
+                && moves_searched >= 2
                 && !board.CapturedPiece()
                 && !board.IsInCheck()
                 && !IsPromotion(move)
                     ) {
-                ++reduction;
-                if (moves_searched >= 6) {
-                    ++reduction;
-                    if (moves_searched >= 12) {
-                        reduction += depth / 3;
-                    }
+                if (moves_searched >= 7) {
+                    reduction = depth / 3;
+                } else {
+                    reduction = 1;
                 }
             }
-
-/*            if (NodeType == PV && moves_searched == 0) {
-                line.Clear();
-                score = -ABSearch<PV>(-beta, -alpha, depth - 1, ply + 1, line);
-            } else {
-                score = -ABSearch<NONPV>(-alpha - 1, -alpha, depth - 1 - reduction, ply + 1, line);
-                if (score > alpha && score < beta) {
-                    line.Clear();
-                    score = -ABSearch<PV>(-beta, -alpha, depth - 1, ply + 1, line);
-                }
-            }*/
 
             if (NodeType != PV || moves_searched > 0) {
                 score = -ABSearch<NONPV>(-alpha - 1, -alpha, depth - 1 - reduction, ply + 1, line);
@@ -304,10 +291,8 @@ namespace Search {
             }
         }
 
-        Move move;
         Score best_score = NEGATIVE_INF;
-
-        while ((move = move_gen.GetBestMove<QSEARCH>())) {
+        while (Move move = move_gen.GetBestMove<QSEARCH>()) {
 
             if (!board.MakeMove(move)) {
                 board.UnmakeMove(move);
@@ -346,14 +331,10 @@ namespace Search {
         auto rm = std::ranges::find(root_moves, other);
         if (rm->depth < other.depth) {
             return false;
-        }
-        if (rm->depth > other.depth) {
+        } else if (rm->depth > other.depth) {
             return true;
-        }
-        if (rm->depth == other.depth) {
-            if (GetBestRootMove().move != other.move) {
-                return true;
-            }
+        } else if (GetBestRootMove().move != other.move) {
+            return true;
         }
         return false;
     }
@@ -407,23 +388,15 @@ namespace Search {
                 << " score ";
 
             Score score = root_moves[i].score;
-            if (score > MIN_MATE_EVAL) {
-                int distance_to_mate = MATE_SCORE - score;
-                oss << "mate " << (distance_to_mate) / 2;
-            } else if (score < -MIN_MATE_EVAL) {
-                int distance_to_mate = MATE_SCORE + score;
-                oss << "mate " << -(distance_to_mate) / 2;
-            } else {
-                oss << "cp " << score;
-            }
+            if (score > MIN_MATE_EVAL) oss << "mate " << (MATE_SCORE - score) / 2;
+            else if (score < -MIN_MATE_EVAL) oss << "mate " << -(MATE_SCORE + score) / 2;
+            else oss << "cp " << score;
 
             oss << " pv " << board.MoveToName(root_moves[i].move);
             for (size_t j = 0; j < root_moves[i].pv.Size(); ++j) {
                 oss << ' ' << board.MoveToName(root_moves[i].pv.At(j));
             }
-            if (i + 1 < pvs_to_send) {
-                oss << '\n';
-            }
+            if (i + 1 < pvs_to_send) oss << '\n';
         }
 
         return oss.str();
@@ -464,9 +437,9 @@ namespace Search {
     SearchThread::SearchThread(int id) :
             id(id),
             active(true),
-            thread([&](const std::stop_token &stop_token) { InitThread(stop_token); }) {}
+            thread([&](std::stop_token stop_token) { InitThread(stop_token); }) {}
 
-    void SearchThread::InitThread(const std::stop_token &stop_token) {
+    void SearchThread::InitThread(std::stop_token stop_token) {
         while (true) {
             {
                 std::unique_lock lock(mtx);

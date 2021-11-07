@@ -54,6 +54,18 @@ namespace Uci {
         std::cin.tie(nullptr);
     }
 
+    void Send(std::string_view data) {
+
+        static std::mutex mtx;
+        std::scoped_lock lock(mtx);
+
+        std::cout << data << std::endl;
+    }
+
+    void SendInfo(const std::string &data) {
+        Send("info string " + data);
+    }
+
     void Listen() {
 
         Board board;
@@ -107,18 +119,6 @@ namespace Uci {
         Send("Unknown command, please see the engine documentation for available commands.");
     }
 
-    void Send(std::string_view data) {
-
-        static std::mutex mtx;
-        std::scoped_lock lock(mtx);
-
-        std::cout << data << std::endl;
-    }
-
-    void SendInfo(const std::string &data) {
-        Send("info string " + data);
-    }
-
     void UciCommand() {
         Send(
                 "id name " + NAME + " v. " + VERSION + '\n'
@@ -168,7 +168,7 @@ namespace Uci {
         iss >> token;
         if (token == "startpos") {
             fen = STARTPOS_FEN;
-            iss >> token; // moves
+            iss >> token; // "moves"
         } else if (token == "fen") {
             while ((iss >> token) && token != "moves") {
                 fen += token + ' ';
@@ -216,16 +216,15 @@ namespace Uci {
             return;
         }
 
-        std::string token, option;
+        std::string token, option, value;
+
         iss >> token >> option;
         while (iss >> token && token != "value") {
             option += ' ' + token;
         }
+        iss >> value;
 
         std::ranges::transform(option, option.begin(), ::tolower);
-
-        std::string value;
-        iss >> value;
 
         if (option == "clear hash") {
             Search::ClearTT();

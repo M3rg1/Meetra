@@ -411,7 +411,7 @@ bool Board::ParseFen(const std::string &fen) {
                 origin_rooks[col][r_bb > GetPieces(KING, col) ? SHORT : LONG] = r_bb;
             }
         }
-        if (std::popcount(state.cr) != token.length()) {
+        if (std::popcount(state.cr) != static_cast<int>(token.length())) {
             return false;
         }
     }
@@ -430,9 +430,8 @@ bool Board::MakeUciMove(std::string_view move_string) {
 
     Move uci_move = MoveFromName(move_string);
     MoveGen move_gen(*this);
-    Move move;
 
-    while ((move = move_gen.GetAnyMove())) {
+    while (Move move = move_gen.GetAnyMove()) {
         if (FromSquare(move) == FromSquare(uci_move) && ToSquare(move) == ToSquare(uci_move)) {
             if ((IsPromotion(uci_move) || GetMoveType(uci_move) == CASTLING) && move != uci_move) {
                 continue;

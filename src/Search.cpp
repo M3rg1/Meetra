@@ -30,8 +30,7 @@ namespace Search {
     void InitSearchTimer(const Board &board) {
         if (!settings.fixed) {
             auto time_left = board.ColorToMove() == WHITE ? settings.wtime : settings.btime;
-            auto reduction = TimeReduction(board);
-            settings.allowed_time = time_left / reduction;
+            settings.allowed_time = time_left / TimeReduction(board);
             settings.allowed_time += board.ColorToMove() == WHITE ? settings.winc : settings.binc;
             settings.allowed_time -= move_overhead;
         }
@@ -55,8 +54,7 @@ namespace Search {
     std::vector<RootMove> GenRootMoves(const Board &board) {
         MoveGen move_gen(board);
         std::vector<RootMove> moves;
-        Move move;
-        while ((move = move_gen.GetBestMove<NORMAL>())) {
+        while (Move move = move_gen.GetBestMove<NORMAL>()) {
             if (board.IsMoveLegal(move)) {
                 moves.emplace_back(move);
             }
@@ -94,8 +92,7 @@ namespace Search {
         InitSearch(s, board);
 
         if (use_book && !settings.fixed && !chess960 && board.FullMoveClock() <= BOOK_DEPTH / 2) {
-            auto moves = Book::Probe(board);
-            if (!moves.empty()) {
+            if (auto moves = Book::Probe(board); !moves.empty()) {
                 StopSearch();
                 std::ranges::sample(
                         moves,
