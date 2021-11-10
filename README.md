@@ -56,7 +56,7 @@ For example, some free GUIs with UCI support:
     - [Principal variation search](https://www.chessprogramming.org/Principal_Variation_Search)
     - [Parallel search](https://www.chessprogramming.org/Parallel_Search)
         - [Lazy SMP](https://www.chessprogramming.org/Lazy_SMP)
-    - [Transpostion table](https://www.chessprogramming.org/Transposition_Table)
+    - [Transposition table](https://www.chessprogramming.org/Transposition_Table)
         - 8 bytes per entry
         - 4 entries per bucket
         - age, depth and node type replacement scheme
