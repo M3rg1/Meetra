@@ -41,8 +41,8 @@ namespace Book {
                 } while (stream.read((char *) &book_entry, sizeof(BookEntry)) && book_entry.hash == hash);
 
                 int i = 1;
-                while (stream.seekg(static_cast<std::streamoff>((mid - i) * sizeof(BookEntry)), std::ios::beg) &&
-                       stream.read((char *) &book_entry, sizeof(BookEntry)) && book_entry.hash == hash) {
+                while (stream.seekg(static_cast<std::streamoff>((mid - i) * sizeof(BookEntry)), std::ios::beg)
+                       && stream.read((char *) &book_entry, sizeof(BookEntry)) && book_entry.hash == hash) {
                     moves.emplace_back(book_entry.move);
                     ++i;
                 }

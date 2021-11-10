@@ -31,8 +31,8 @@ namespace Bitboards {
         File f = FileFromSquare(s);
         Rank r = RankFromSquare(s);
         Bitboard move_mask = diag_masks[f + r];
-        return (((occ & move_mask) - (b << 1)) ^
-                ReverseBits(ReverseBits(occ & move_mask) - (ReverseBits(b) << 1))) & move_mask;
+        return (((occ & move_mask) - (b << 1))
+                ^ ReverseBits(ReverseBits(occ & move_mask) - (ReverseBits(b) << 1))) & move_mask;
     }
 
     Bitboard GenHorizontalMoves(Square s, Bitboard occ) {
@@ -44,8 +44,8 @@ namespace Bitboards {
     Bitboard GenVerticalMoves(Square s, Bitboard occ) {
         Bitboard b = SquareToBB(s);
         File f = FileFromSquare(s);
-        return (((occ & file_masks[f]) - (b << 1)) ^
-                ReverseBits(ReverseBits(occ & file_masks[f]) - (ReverseBits(b) << 1))) & file_masks[f];
+        return (((occ & file_masks[f]) - (b << 1))
+                ^ ReverseBits(ReverseBits(occ & file_masks[f]) - (ReverseBits(b) << 1))) & file_masks[f];
     }
 
     Bitboard GenBishopMoves(Square s, Bitboard occ) {
@@ -76,7 +76,6 @@ namespace Bitboards {
 
         blockers ^= SquareToBB(current);
         SetBlockersRecursive(m, origin, blockers, explore_occ, move_generator);
-
     }
 
     void GenMagics() {
@@ -89,18 +88,16 @@ namespace Bitboards {
     void InitMagic() {
         for (Square s = A1; s < SQUARE_NR; ++s) {
 
-            Bitboard inner;
-
-            inner = (GenHorizontalMoves(s, EMPTY_BB) & ~file_masks[FILE_A] & ~file_masks[FILE_H]) |
-                    (GenVerticalMoves(s, EMPTY_BB) & ~rank_masks[RANK_1] & ~rank_masks[RANK_8]);
+            Bitboard inner = (GenHorizontalMoves(s, EMPTY_BB) & ~file_masks[FILE_A] & ~file_masks[FILE_H])
+                             | (GenVerticalMoves(s, EMPTY_BB) & ~rank_masks[RANK_1] & ~rank_masks[RANK_8]);
 
             r_magics[s].shift = 64 - r_magic_shift[s];
             r_magics[s].inner_mask = inner;
             r_magics[s].magic_num = rook_magic_num[s];
             r_magics[s].attacks = s == A1 ? r_table : r_magics[s - 1].attacks + (1 << r_magic_shift[s - 1]);
 
-            inner = GenBishopMoves(s, EMPTY_BB) & ~file_masks[FILE_A] & ~rank_masks[RANK_1] & ~file_masks[FILE_H] &
-                    ~rank_masks[RANK_8];
+            inner = GenBishopMoves(s, EMPTY_BB) & ~file_masks[FILE_A] & ~rank_masks[RANK_1] & ~file_masks[FILE_H]
+                    & ~rank_masks[RANK_8];
 
             b_magics[s].shift = 64 - b_magic_shift[s];
             b_magics[s].inner_mask = inner;
@@ -122,7 +119,7 @@ namespace Bitboards {
                 }
             }
             File f = FileFromSquare(s);
-            moves &= f > FILE_D ? ~file_masks[FILE_A] & ~file_masks[FILE_B] : ~file_masks[FILE_H] & ~file_masks[FILE_G];
+            moves &= f > FILE_D ? ~file_masks[FILE_A] & ~file_masks[FILE_B] : ~file_masks[FILE_G] & ~file_masks[FILE_H];
             output[s] = moves;
         }
     }

@@ -77,8 +77,8 @@ bool Board::IsBoardValid() const {
     if (EpSquare()) {
         Square capture_s = ColorToMove() == WHITE ? EpSquare() + SOUTH : EpSquare() + NORTH;
         Bitboard rank_mask = ColorToMove() == WHITE ? Bitboards::RankMask(RANK_5) : Bitboards::RankMask(RANK_4);
-        if (GetPieceOnSquare(capture_s) != NewPiece(PAWN, OtherColor(ColorToMove())) ||
-            !(rank_mask & SquareToBB(capture_s))) {
+        if (GetPieceOnSquare(capture_s) != NewPiece(PAWN, OtherColor(ColorToMove()))
+            || !(rank_mask & SquareToBB(capture_s))) {
             return false;
         }
     }
@@ -97,8 +97,8 @@ Bitboard Board::PinnedToSquare(Square s, Color blockers_color) const {
     Bitboard bishops = GetPieces(BISHOP, blockers_color);
     Bitboard rooks = GetPieces(ROOK, blockers_color);
 
-    Bitboard attackers = ((bishops | queens) & Bitboards::GetBishopRays(s)) |
-                         ((rooks | queens) & Bitboards::GetRookRays(s));
+    Bitboard attackers = ((bishops | queens) & Bitboards::GetBishopRays(s))
+                         | ((rooks | queens) & Bitboards::GetRookRays(s));
 
     Bitboard pinned_pieces = EMPTY_BB;
     while (attackers) {
@@ -144,24 +144,24 @@ bool Board::IsMoveLegal(Move m) const {
 }
 
 bool Board::IsAttackedByAny(Square s, Color attacked_by, Bitboard occ) const {
-    return Bitboards::GetAttacks<KNIGHT>(s) & GetPieces(KNIGHT, attacked_by) ||
-           Bitboards::GetAttacks<PAWN>(s, occ, OtherColor(attacked_by)) & GetPieces(PAWN, attacked_by) ||
-           Bitboards::GetAttacks<KING>(s) & GetPieces(KING, attacked_by) ||
-           Bitboards::GetAttacks<BISHOP>(s, occ) & (GetPieces(BISHOP, attacked_by) | GetPieces(QUEEN, attacked_by)) ||
-           Bitboards::GetAttacks<ROOK>(s, occ) & (GetPieces(ROOK, attacked_by) | GetPieces(QUEEN, attacked_by));
+    return Bitboards::GetAttacks<KNIGHT>(s) & GetPieces(KNIGHT, attacked_by)
+           || Bitboards::GetAttacks<PAWN>(s, occ, OtherColor(attacked_by)) & GetPieces(PAWN, attacked_by)
+           || Bitboards::GetAttacks<KING>(s) & GetPieces(KING, attacked_by)
+           || Bitboards::GetAttacks<BISHOP>(s, occ) & (GetPieces(BISHOP, attacked_by) | GetPieces(QUEEN, attacked_by))
+           || Bitboards::GetAttacks<ROOK>(s, occ) & (GetPieces(ROOK, attacked_by) | GetPieces(QUEEN, attacked_by));
 }
 
 Bitboard Board::AttackedBy(Square s, Color attacked_by, Bitboard occ) const {
-    return Bitboards::GetAttacks<KNIGHT>(s) & GetPieces(KNIGHT, attacked_by) |
-           Bitboards::GetAttacks<PAWN>(s, occ, OtherColor(attacked_by)) & GetPieces(PAWN, attacked_by) |
-           Bitboards::GetAttacks<KING>(s) & GetPieces(KING, attacked_by) |
-           Bitboards::GetAttacks<BISHOP>(s, occ) & (GetPieces(BISHOP, attacked_by) | GetPieces(QUEEN, attacked_by)) |
-           Bitboards::GetAttacks<ROOK>(s, occ) & (GetPieces(ROOK, attacked_by) | GetPieces(QUEEN, attacked_by));
+    return Bitboards::GetAttacks<KNIGHT>(s) & GetPieces(KNIGHT, attacked_by)
+           | Bitboards::GetAttacks<PAWN>(s, occ, OtherColor(attacked_by)) & GetPieces(PAWN, attacked_by)
+           | Bitboards::GetAttacks<KING>(s) & GetPieces(KING, attacked_by)
+           | Bitboards::GetAttacks<BISHOP>(s, occ) & (GetPieces(BISHOP, attacked_by) | GetPieces(QUEEN, attacked_by))
+           | Bitboards::GetAttacks<ROOK>(s, occ) & (GetPieces(ROOK, attacked_by) | GetPieces(QUEEN, attacked_by));
 }
 
 bool Board::IsAttackedBySliders(Square s, Color attacked_by, Bitboard occ) const {
-    return Bitboards::GetAttacks<BISHOP>(s, occ) & (GetPieces(BISHOP, attacked_by) | GetPieces(QUEEN, attacked_by)) ||
-           Bitboards::GetAttacks<ROOK>(s, occ) & (GetPieces(ROOK, attacked_by) | GetPieces(QUEEN, attacked_by));
+    return Bitboards::GetAttacks<BISHOP>(s, occ) & (GetPieces(BISHOP, attacked_by) | GetPieces(QUEEN, attacked_by))
+           || Bitboards::GetAttacks<ROOK>(s, occ) & (GetPieces(ROOK, attacked_by) | GetPieces(QUEEN, attacked_by));
 }
 
 void Board::RemovePiece(Square s) {
@@ -516,11 +516,14 @@ Move Board::MoveFromName(std::string_view move_name) const {
 
     oss << (ColorToMove() == WHITE ? 'w' : 'b') << ' ';
 
-    if (!GetCr()) oss << '-';
-    if (CrAvailable(WHITE, SHORT)) oss << 'K';
-    if (CrAvailable(WHITE, LONG)) oss << 'Q';
-    if (CrAvailable(BLACK, SHORT)) oss << 'k';
-    if (CrAvailable(BLACK, LONG)) oss << 'q';
+    if (!GetCr()) {
+        oss << '-';
+    } else {
+        if (CrAvailable(WHITE, SHORT)) oss << 'K';
+        if (CrAvailable(WHITE, LONG)) oss << 'Q';
+        if (CrAvailable(BLACK, SHORT)) oss << 'k';
+        if (CrAvailable(BLACK, LONG)) oss << 'q';
+    }
 
     oss << ' ' << (EpSquare() ? SquareToName(EpSquare()) : "-") << ' ' << Ply() << ' ' << FullMoveClock();
 
