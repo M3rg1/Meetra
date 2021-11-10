@@ -44,7 +44,7 @@ For example, some free GUIs with UCI support:
     - [Little endian rank-file mapping](https://www.chessprogramming.org/Square_Mapping_Considerations)
     - [Zobrist hashing](https://www.chessprogramming.org/Zobrist_Hashing)
 - **Move generation**
-    - [Staged  move generator](https://www.chessprogramming.org/Move_Generation#Staged_move_generation) (TT move, captures, quiet moves)
+    - [Staged  move generator](https://www.chessprogramming.org/Move_Generation#Staged_move_generation) (TT move, promotions, captures, quiet moves)
     - Precomputed moves for all pieces
     - [Fancy Magic bitboards](https://www.chessprogramming.org/Magic_Bitboards) (initialized via [Hyperbola Quintessence](https://www.chessprogramming.org/Hyperbola_Quintessence))
 - **Move ordering**
