@@ -3,7 +3,6 @@
 #include "Bitboards.h"
 #include "Board.h"
 #include <algorithm>
-#include "Config.h"
 
 namespace Zobrist {
 
