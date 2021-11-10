@@ -62,7 +62,7 @@ namespace Testing {
 
             Board board;
             if (!board.NewPosition(fen)) {
-                Uci::Send("Position: " + fen + "\nError parsing FEN, skipping test.\n=== TEST ERROR ===\n");
+                Uci::Send("Position: " + fen + "\nError parsing FEN, skipping test.\n=== ERROR ===\n");
                 return false;
             }
 
