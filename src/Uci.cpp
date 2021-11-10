@@ -74,7 +74,7 @@ namespace Uci {
             Send(LOGO + "\n"
                  + " v. " + VERSION + "\n"
                  + " Made by " + AUTHOR + "\n\n"
-                 + board.PPBoard());
+                 + board.PrettyPrint());
         }
 
         std::string command, input;
@@ -104,7 +104,7 @@ namespace Uci {
     }
 
     void BoardCommand(const Board &board) {
-        Uci::Send('\n' + board.PPBoard());
+        Uci::Send('\n' + board.PrettyPrint());
     }
 
     void TestCommand() {

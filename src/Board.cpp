@@ -531,7 +531,7 @@ Move Board::MoveFromName(std::string_view move_name) const {
     return oss.str();
 }
 
-[[maybe_unused]] std::string Board::PPBoard() const {
+[[maybe_unused]] std::string Board::PrettyPrint() const {
 
     std::ostringstream oss;
 
