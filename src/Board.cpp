@@ -234,7 +234,6 @@ bool Board::MakeMove(Move m) {
     PieceType moved_pt = TypeOfPiece(moved_piece);
 
     // in chess960, when castling, we remove the rook from its square before moving, and put it back later
-    // we also need to set captured piece to none, in case the king tries to capture itself
     if (Search::chess960 && move_type == CASTLING) {
         Move rook_move = RookCastlingMove(to, this_col);
         Square rook_from = FromSquare(rook_move);
