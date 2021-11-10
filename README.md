@@ -2,7 +2,7 @@
 
 ##### Build requirements:
 - GCC 11 or newer
-- CMake 3.20 or newer
+- CMake 3.00 or newer
 
 
 Navigate to the root folder and run these commands:
