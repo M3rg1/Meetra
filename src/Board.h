@@ -27,6 +27,7 @@ public:
     [[nodiscard]] Bitboard PinnedToSquare(Square s, Color blockers_color) const;
     [[nodiscard]] std::string MoveToName(Move m) const;
     [[nodiscard]] Move MoveFromName(std::string_view move_name) const;
+    [[maybe_unused]] [[nodiscard]] std::string GetFen() const;
     [[maybe_unused]] [[nodiscard]] std::string PPBoard() const;
     [[nodiscard]] inline bool IsQuiet(Move m) const {
         return GetMoveType(m) != EN_PASSANT && !IsPromotion(m) && GetPieceOnSquare(ToSquare(m)) == NO_PIECE;

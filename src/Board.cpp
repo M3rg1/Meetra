@@ -6,6 +6,7 @@
 #include "Search.h"
 #include <regex>
 #include <bit>
+#include <iomanip>
 
 constexpr Bitboard castling_mask[COLOR_NR]{
         0x00000000000000FF,
@@ -289,7 +290,7 @@ bool Board::MakeMove(Move m) {
             Search::chess960 ? AddPiece(r_to, NewPiece(ROOK, this_col)) : MovePiece(r_from, r_to);
             Zobrist::MovePiece(state.hash, NewPiece(ROOK, this_col), r_from, r_to);
             Bitboard king_walk = Bitboards::GetRayToSquares(from, to) | SquareToBB(to);
-            if(!AllSquaresSafe(king_walk, next_col, GetPieces_pt(ALL_TYPES))) {
+            if (!AllSquaresSafe(king_walk, next_col, GetPieces_pt(ALL_TYPES))) {
                 return false;
             }
         } else if (IsAttackedByAny(to, next_col, GetPieces_pt(ALL_TYPES))) {
@@ -493,6 +494,43 @@ Move Board::MoveFromName(std::string_view move_name) const {
     return NewMove(s_from, s_to, flag);
 }
 
+[[maybe_unused]] std::string Board::GetFen() const {
+
+    std::ostringstream oss;
+
+    for (Rank r = RANK_8; r >= RANK_1; --r) {
+        int empty_cnt = 0;
+        for (File f = FILE_A; f <= FILE_H; ++f) {
+            Piece p = GetPieceOnSquare(SqFromFiRa(f, r));
+            if (p != NO_PIECE) {
+                if (empty_cnt > 0) {
+                    oss << empty_cnt;
+                    empty_cnt = 0;
+                }
+                oss << PieceToChar(p);
+            } else {
+                ++empty_cnt;
+            }
+        }
+        if (empty_cnt > 0) {
+            oss << empty_cnt;
+        }
+        oss << (r > RANK_1 ? '/' : ' ');
+    }
+
+    oss << (ColorToMove() == WHITE ? 'w' : 'b') << ' ';
+
+    if (!GetCr()) oss << '-';
+    if (CrAvailable(WHITE, SHORT)) oss << 'K';
+    if (CrAvailable(WHITE, LONG)) oss << 'Q';
+    if (CrAvailable(BLACK, SHORT)) oss << 'k';
+    if (CrAvailable(BLACK, LONG)) oss << 'q';
+
+    oss << ' ' << (EpSquare() ? SquareToName(EpSquare()) : "-") << ' ' << Ply() << ' ' << FullMoveClock();
+
+    return oss.str();
+}
+
 [[maybe_unused]] std::string Board::PPBoard() const {
 
     std::ostringstream oss;
@@ -506,18 +544,8 @@ Move Board::MoveFromName(std::string_view move_name) const {
     }
     oss << "---------------------------\n"
         << "  | A  B  C  D  E  F  G  H\n\n"
-        << "Player to move: " << (ColorToMove() == WHITE ? "white\n" : "black\n")
-        << "Castling rights: ";
-    if (!GetCr()) {
-        oss << '-';
-    } else {
-        if (CrAvailable(WHITE, SHORT)) oss << 'K';
-        if (CrAvailable(WHITE, LONG)) oss << 'Q';
-        if (CrAvailable(BLACK, SHORT)) oss << 'k';
-        if (CrAvailable(BLACK, LONG)) oss << 'q';
-    }
-    oss << " | EP square: " << (EpSquare() ? SquareToName(EpSquare()) : "-") << '\n'
-        << "Full-move clock: " << FullMoveClock() << " | Half-move clock: " << Ply();
+        << "FEN: " << GetFen() << '\n'
+        << "Hash: 0x" << std::hex << std::uppercase << std::setfill('0') << std::setw(16) << GetHash();
 
     return oss.str();
 }
