@@ -82,7 +82,7 @@ namespace Testing {
                 << " | Got: " << result
                 << " | Time elapsed: " << elapsed_ms << "ms"
                 << " | NPS: " << nps << '\n'
-                << (result != expected ? "=== TEST ERROR ===" : "=== TEST OK ===") << '\n';
+                << (result != expected ? "=== ERROR ===" : "=== OK ===") << '\n';
 
             Uci::Send(oss.str());
 
@@ -139,7 +139,7 @@ namespace Testing {
         auto start = Time::Now();
 
         for (size_t i = 0; i < tests.size(); ++i) {
-            Uci::Send("Running test " + std::to_string(i + 1));
+            Uci::Send("Running test " + std::to_string(i + 1) + " ...");
             if (!tests[i].Run()) {
                 ++errors;
             }
@@ -147,12 +147,9 @@ namespace Testing {
 
         auto time_elapsed_ms = Time::ElapsedTime<Time::ms>(start);
 
-        Uci::Send("Finished in " + std::to_string(time_elapsed_ms) + "ms.");
-        if (errors == 0) {
-            Uci::Send("============= ALL TESTS OK =============");
-        } else {
-            Uci::Send("============= " + std::to_string(errors) + " ERRORS IN TESTS =============");
-        }
+        Uci::Send("==========================================\n\n"
+                  "Total time elapsed: " + std::to_string(time_elapsed_ms) + "ms\n" +
+                  "Errors found: " + std::to_string(errors));
     }
 
 }
