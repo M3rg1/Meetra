@@ -77,14 +77,12 @@ namespace Testing {
 
             std::ostringstream oss;
             oss << "Position: " << fen << '\n'
-                << "Depth: " << std::to_string(depth) << " | Expected: " << expected <<
-                " | Got: " << result << " | Time elapsed: " << elapsed_ms << "ms" << " | NPS: " << nps;
-
-            if (result != expected) {
-                oss << "\n=== TEST ERROR ===\n";
-            } else {
-                oss << "\n=== TEST OK ===\n";
-            }
+                << "Depth: " << std::to_string(depth)
+                << " | Expected: " << expected
+                << " | Got: " << result
+                << " | Time elapsed: " << elapsed_ms << "ms"
+                << " | NPS: " << nps << '\n'
+                << (result != expected ? "=== TEST ERROR ===" : "=== TEST OK ===") << '\n';
 
             Uci::Send(oss.str());
 
