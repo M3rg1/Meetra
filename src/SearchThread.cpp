@@ -3,8 +3,6 @@
 #include "Uci.h"
 #include "MoveGen.h"
 #include "Search.h"
-#include "Bitboards.h"
-#include <algorithm>
 
 namespace Search {
 
@@ -190,10 +188,10 @@ namespace Search {
             }
         }
 
+        tt_flag = ALPHA;
         Score score;
         Score best_score = NEGATIVE_INF;
         Move best_move;
-        tt_flag = ALPHA;
         size_t moves_searched = 0;
 
         while (Move move = move_gen.GetBestMove<NORMAL>()) {

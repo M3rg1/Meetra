@@ -2,9 +2,7 @@
 #include "Uci.h"
 #include "Search.h"
 #include "TestSuite.h"
-#include <algorithm>
 #include <unistd.h>
-#include "Config.h"
 
 namespace Uci {
 

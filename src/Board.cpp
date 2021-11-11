@@ -1,10 +1,8 @@
 #include "Board.h"
-#include "Bitboards.h"
 #include <sstream>
 #include "MoveGen.h"
 #include <algorithm>
 #include <regex>
-#include <bit>
 #include <iomanip>
 
 constexpr Bitboard castling_mask[COLOR_NR]{

@@ -1,5 +1,4 @@
 #include "MoveGen.h"
-#include "Bitboards.h"
 
 template<Color C, PawnMoveDir DIR>
 constexpr Direction PawnMove() {
