@@ -126,7 +126,7 @@ namespace Search {
         } else if (board.IsRepetition()) {
             return -DRAW_SCORE;
         } else if (depth <= 0) {
-            if (board.IsInCheck()) {
+            if (board.IsInCheck() && ply < MAX_SEARCH_DEPTH) {
                 depth = 1;
             } else {
                 return QSearch(alpha, beta, ply);
