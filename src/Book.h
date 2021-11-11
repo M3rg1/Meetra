@@ -55,8 +55,8 @@ namespace Book {
     }
 
     inline std::vector<Move> Probe(const Board &board) {
-        std::ifstream book_stream;
-        book_stream.open(BOOK_PATH, std::ios::in | std::ios::binary);
+
+        std::ifstream book_stream(BOOK_PATH, std::ios::in | std::ios::binary);
         if (!book_stream.is_open()) {
             Uci::SendInfo("Could not open book.");
             return {};

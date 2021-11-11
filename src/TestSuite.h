@@ -108,8 +108,7 @@ namespace Testing {
 
     inline std::vector<Test> LoadTests() {
 
-        std::fstream test_file;
-        test_file.open(TEST_FILE_PATH, std::ios::in);
+        std::fstream test_file(TEST_FILE_PATH, std::ios::in);
         if (!test_file.is_open()) {
             Uci::Send("Could not open the test file!");
             return {};
