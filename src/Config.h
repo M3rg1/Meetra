@@ -43,8 +43,7 @@ constexpr Depth FUTILITY_DEPTH = 6;
 constexpr Depth NULL_DEPTH = 4;
 
 // perft testing
-constexpr bool ETHEREAL_SUITE = false;
-inline const std::string TEST_FILE_PATH = "tools/PerftTests.txt"; // perft960.txt - ethereal suite
+inline const std::string TEST_FILE_PATH = "tools/PerftTests.txt";
 
 
 #endif //MEETRA_CONFIG_H
