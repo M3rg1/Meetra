@@ -278,6 +278,14 @@ namespace Search {
         curr_rm->seldepth = std::max(ply, curr_rm->seldepth);
         seldepth_reached = std::max(ply, seldepth_reached);
 
+        if (ply >= 3 * depth_reached || ply >= MAX_SEARCH_DEPTH) {
+            return board.GetEval();
+        }
+
+        if (board.Move50Rule() || board.IsRepetition()) {
+            return -DRAW_SCORE;
+        }
+
         MoveGen move_gen(board);
 
         if (!board.IsInCheck()) {

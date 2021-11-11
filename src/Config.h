@@ -29,7 +29,7 @@ constexpr Score POSITIVE_INF = 32000;
 constexpr Score NEGATIVE_INF = -32000;
 constexpr Score MATE_SCORE = 31000;
 constexpr Score DRAW_SCORE = 0;
-constexpr Score MIN_MATE_EVAL = MATE_SCORE - (4 * MAX_SEARCH_DEPTH);
+constexpr Score MIN_MATE_EVAL = MATE_SCORE - MAX_SEARCH_DEPTH;
 
 // TT consts
 constexpr size_t MIN_HASH_SIZE = 8; // this should never be 0
