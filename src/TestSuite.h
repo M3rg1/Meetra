@@ -124,8 +124,6 @@ namespace Testing {
             tests.emplace_back(line);
         }
 
-        test_file.close();
-
         return tests;
     }
 
