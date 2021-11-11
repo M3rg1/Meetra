@@ -28,7 +28,7 @@ namespace Book {
 
             std::streamoff mid = (right + left) / 2;
             stream.seekg(static_cast<std::streamoff>(mid * sizeof(BookEntry)), std::ios::beg);
-            stream.read((char *) &book_entry, sizeof(BookEntry));
+            stream.read(reinterpret_cast<char *>(&book_entry), sizeof(BookEntry));
 
             if (book_entry.hash > hash) {
                 right = mid - 1;
@@ -38,11 +38,14 @@ namespace Book {
 
                 do {
                     moves.emplace_back(book_entry.move);
-                } while (stream.read((char *) &book_entry, sizeof(BookEntry)) && book_entry.hash == hash);
+                } while (stream.read(reinterpret_cast<char *>(&book_entry), sizeof(BookEntry))
+                         && book_entry.hash == hash);
 
                 int i = 1;
                 while (stream.seekg(static_cast<std::streamoff>((mid - i) * sizeof(BookEntry)), std::ios::beg)
-                       && stream.read((char *) &book_entry, sizeof(BookEntry)) && book_entry.hash == hash) {
+                       && stream.read(reinterpret_cast<char *>(&book_entry), sizeof(BookEntry))
+                       && book_entry.hash == hash
+                        ) {
                     moves.emplace_back(book_entry.move);
                     ++i;
                 }
