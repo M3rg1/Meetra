@@ -150,11 +150,11 @@ bool Board::IsAttackedByAny(Square s, Color attacked_by, Bitboard occ) const {
 }
 
 Bitboard Board::AttackedBy(Square s, Color attacked_by, Bitboard occ) const {
-    return Bitboards::GetAttacks<KNIGHT>(s) & GetPieces(KNIGHT, attacked_by)
-           | Bitboards::GetAttacks<PAWN>(s, occ, OtherColor(attacked_by)) & GetPieces(PAWN, attacked_by)
-           | Bitboards::GetAttacks<KING>(s) & GetPieces(KING, attacked_by)
-           | Bitboards::GetAttacks<BISHOP>(s, occ) & (GetPieces(BISHOP, attacked_by) | GetPieces(QUEEN, attacked_by))
-           | Bitboards::GetAttacks<ROOK>(s, occ) & (GetPieces(ROOK, attacked_by) | GetPieces(QUEEN, attacked_by));
+    return (Bitboards::GetAttacks<KNIGHT>(s) & GetPieces(KNIGHT, attacked_by))
+           | (Bitboards::GetAttacks<PAWN>(s, occ, OtherColor(attacked_by)) & GetPieces(PAWN, attacked_by))
+           | (Bitboards::GetAttacks<KING>(s) & GetPieces(KING, attacked_by))
+           | (Bitboards::GetAttacks<BISHOP>(s, occ) & (GetPieces(BISHOP, attacked_by) | GetPieces(QUEEN, attacked_by)))
+           | (Bitboards::GetAttacks<ROOK>(s, occ) & (GetPieces(ROOK, attacked_by) | GetPieces(QUEEN, attacked_by)));
 }
 
 bool Board::IsAttackedBySliders(Square s, Color attacked_by, Bitboard occ) const {
@@ -362,7 +362,8 @@ Move Board::RookCastlingMove(Square king_to, Color c) const {
 
 bool Board::ParseFen(const std::string &fen) {
 
-    static const std::regex rgx(R"(\s*([rnbqkpRNBQKP1-8]{1,8}\/){7}([rnbqkpRNBQKP1-8]{1,8})\s*[bw]\s*(([a-hkqA-HKQ]{1,4})|(-))?\s*(([a-h][36])|(-))?\s*\d*\s*\d*\s*)");
+    static const std::regex rgx(
+            R"(\s*([rnbqkpRNBQKP1-8]{1,8}\/){7}([rnbqkpRNBQKP1-8]{1,8})\s*[bw]\s*(([a-hkqA-HKQ]{1,4})|(-))?\s*(([a-h][36])|(-))?\s*\d*\s*\d*\s*)");
     if (!std::regex_match(fen, rgx)) {
         return false;
     }
@@ -517,8 +518,10 @@ Move Board::MoveFromName(std::string_view move_name) const {
     if (!GetCr()) {
         oss << '-';
     } else {
-        if (CrAvailable(WHITE, SHORT)) oss << (chess960 ? std::toupper(FileToChar(SqToFile(RookSq(WHITE, SHORT))), std::locale()) : 'K');
-        if (CrAvailable(WHITE, LONG)) oss << (chess960 ? std::toupper(FileToChar(SqToFile(RookSq(WHITE, LONG))), std::locale()) : 'Q');
+        if (CrAvailable(WHITE, SHORT))
+            oss << (chess960 ? std::toupper(FileToChar(SqToFile(RookSq(WHITE, SHORT))), std::locale()) : 'K');
+        if (CrAvailable(WHITE, LONG))
+            oss << (chess960 ? std::toupper(FileToChar(SqToFile(RookSq(WHITE, LONG))), std::locale()) : 'Q');
         if (CrAvailable(BLACK, SHORT)) oss << (chess960 ? FileToChar(SqToFile(RookSq(BLACK, SHORT))) : 'k');
         if (CrAvailable(BLACK, LONG)) oss << (chess960 ? FileToChar(SqToFile(RookSq(BLACK, LONG))) : 'q');
     }

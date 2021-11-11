@@ -1,4 +1,5 @@
 #include <sstream>
+#include <utility>
 #include "SearchThread.h"
 #include "Uci.h"
 #include "MoveGen.h"
@@ -435,7 +436,7 @@ namespace Search {
     SearchThread::SearchThread(int id) :
             id(id),
             active(true),
-            thread([&](std::stop_token stop_token) { InitThread(stop_token); }) {}
+            thread([&](std::stop_token stop_token) { InitThread(std::move(stop_token)); }) {}
 
     void SearchThread::InitThread(std::stop_token stop_token) {
         while (true) {
