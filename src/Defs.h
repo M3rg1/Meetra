@@ -77,10 +77,10 @@ enum Files : int {
 };
 using File = int;
 
-constexpr Rank RankFromChar(char c) { return c - '1'; }
-constexpr char CharFromRank(Rank r) { return static_cast<char>(r + '1'); }
-constexpr File FileFromChar(char c) { return c - 'a'; }
-constexpr char CharFromFile(File f) { return static_cast<char>(f + 'a'); }
+constexpr Rank CharToRank(char c) { return c - '1'; }
+constexpr char RankToChar(Rank r) { return static_cast<char>(r + '1'); }
+constexpr File CharToFile(char c) { return c - 'a'; }
+constexpr char FileToChar(File f) { return static_cast<char>(f + 'a'); }
 
 enum PawnMoveDir : int {
     LEFT, RIGHT, FORWARD,
@@ -105,16 +105,12 @@ enum Squares : int {
 };
 using Square = int;
 
-constexpr Bitboard SquareToBB(Square s) { return 0x1ULL << s; }
-constexpr Square SqFromFiRa(File f, Rank r) { return (r << 3) | f; }
-constexpr File FileFromSquare(Square s) { return s & 7; }
-constexpr Rank RankFromSquare(Square s) { return s >> 3; }
-constexpr Square NameToSquare(std::string_view name) {
-    return SqFromFiRa(FileFromChar(name[0]), RankFromChar(name[1]));
-}
-inline std::string SquareToName(Square s) {
-    return {CharFromFile(FileFromSquare(s)), CharFromRank(RankFromSquare(s))};
-}
+constexpr Bitboard SqToBB(Square s) { return 0x1ULL << s; }
+constexpr Square FiRaToSq(File f, Rank r) { return (r << 3) | f; }
+constexpr File SqToFile(Square s) { return s & 7; }
+constexpr Rank SqToRank(Square s) { return s >> 3; }
+constexpr Square StrToSq(std::string_view name) { return FiRaToSq(CharToFile(name[0]), CharToRank(name[1])); }
+inline std::string SqToStr(Square s) { return {FileToChar(SqToFile(s)), RankToChar(SqToRank(s))}; }
 
 enum CastlingSide : int {
     SHORT, LONG, CS_NR
@@ -139,7 +135,7 @@ using MoveType = int;
 constexpr Move NewMove(Square from, Square to) { return from | (to << 6); }
 constexpr Move NewMove(Square from, Square to, MoveType flag) { return NewMove(from, to) | flag; }
 
-constexpr PieceType PieceTypeFromFlag(MoveType mt) { return (mt >> 12) - 2; }
+constexpr PieceType PromotionTo(MoveType mt) { return (mt >> 12) - 2; }
 constexpr Square FromSquare(Move m) { return m & 0x3F; }
 constexpr Square ToSquare(Move m) { return (m >> 6) & 0x3F; }
 constexpr bool IsPromotion(Move m) { return m >> 14; }

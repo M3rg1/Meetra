@@ -175,6 +175,7 @@ namespace Uci {
             }
         }
 
+        board.SetChess960(Search::chess960);
         if (!board.NewPosition(fen)) {
             SendInfo("Invalid fen: " + fen);
             return;

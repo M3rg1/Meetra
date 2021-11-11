@@ -50,17 +50,32 @@ namespace Testing {
 
     struct Test {
 
-    private:
-
         std::string fen;
-        Depth depth;
-        uint64_t expected;
+        Depth depth = 0;
+        uint64_t expected = 0;
+        uint64_t result = 0;
+        Board board;
 
-    public:
+        explicit Test(const std::string &str) {
+
+            std::istringstream iss(str);
+            std::string token;
+
+            if (str.contains("FRC")) {
+                board.SetChess960(true);
+                iss >> token;
+            }
+
+            iss >> token >> depth;
+            iss >> token >> expected;
+            iss >> token >> fen;
+            while (iss >> token && token != "#") {
+                fen += ' ' + token;
+            }
+        }
 
         inline bool Run() {
 
-            Board board;
             if (!board.NewPosition(fen)) {
                 Uci::Send("Position: " + fen + "\nError parsing FEN, skipping test.\n=== ERROR ===\n");
                 return false;
@@ -68,7 +83,7 @@ namespace Testing {
 
             auto start = Time::Now();
 
-            uint64_t result = Perft<false>(depth, board);
+            result = Perft<false>(depth, board);
 
             auto elapsed_ns = Time::ElapsedTime<Time::ns>(start) + 1;
             auto elapsed_ms = elapsed_ns / 1000000;
@@ -88,17 +103,6 @@ namespace Testing {
 
             return result == expected;
         }
-
-        friend std::istream &operator>>(std::istream &is, Test &t) {
-            std::string token;
-            is >> token >> t.depth;
-            is >> token >> t.expected;
-            is >> token >> t.fen;
-            while (is >> token && token != "#") {
-                t.fen += ' ' + token;
-            }
-            return is;
-        }
     };
 
     inline std::vector<Test> LoadTests() {
@@ -117,10 +121,7 @@ namespace Testing {
             if (line.empty() || line[line.find_first_not_of(' ')] == '#') {
                 continue;
             }
-            std::istringstream ss(line);
-            Test t;
-            ss >> t;
-            tests.emplace_back(t);
+            tests.emplace_back(line);
         }
 
         test_file.close();
@@ -136,6 +137,7 @@ namespace Testing {
         }
 
         int errors = 0;
+        uint64_t total_nodes = 0;
         auto start = Time::Now();
 
         for (size_t i = 0; i < tests.size(); ++i) {
@@ -143,13 +145,21 @@ namespace Testing {
             if (!tests[i].Run()) {
                 ++errors;
             }
+            total_nodes += tests[i].result;
         }
 
-        auto time_elapsed_ms = Time::ElapsedTime<Time::ms>(start);
+        auto elapsed_ns = Time::ElapsedTime<Time::ns>(start) + 1;
+        auto elapsed_ms = elapsed_ns / 1000000;
+        auto nps = static_cast<uint64_t>((static_cast<double>(total_nodes) / static_cast<double>(elapsed_ns))
+                                         * 1000000000.0);
 
-        Uci::Send("==========================================\n\n"
-                  "Total time elapsed: " + std::to_string(time_elapsed_ms) + "ms\n" +
-                  "Errors found: " + std::to_string(errors));
+        std::ostringstream oss;
+        oss << "==========================================\n\n"
+            << "Total time elapsed: " << elapsed_ms << "ms\n"
+            << "NPS: " + std::to_string(nps) + "\n"
+            << "Errors found: " + std::to_string(errors);
+
+        Uci::Send(oss.str());
     }
 
 }

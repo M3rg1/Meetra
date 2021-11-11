@@ -80,11 +80,11 @@ namespace Bitboards {
     inline Bitboard GetRayToBorders(Square s1, Square s2) { return rays_to_borders[s1][s2]; }
     inline Bitboard GetRayToSquares(Square s1, Square s2) { return rays_to_squares[s1][s2]; }
     constexpr Bitboard RankMask(Rank r) { return rank_masks[r]; }
-    constexpr Bitboard GetRookRays(Square s) { return file_masks[FileFromSquare(s)] | rank_masks[RankFromSquare(s)]; }
+    constexpr Bitboard GetRookRays(Square s) { return file_masks[SqToFile(s)] | rank_masks[SqToRank(s)]; }
 
     constexpr Bitboard GetBishopRays(Square s) {
-        File f = FileFromSquare(s);
-        Rank r = RankFromSquare(s);
+        File f = SqToFile(s);
+        Rank r = SqToRank(s);
         return diag_masks[f + r] | anti_diag_masks[r + 7 - f];
     }
 

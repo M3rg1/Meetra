@@ -148,7 +148,7 @@ void MoveGen::GenMovesForPieceType(Bitboard legality_mask) {
     while (pieces) {
         Square origin_s = Bitboards::PopLsb(pieces);
         Bitboard possible_moves = Bitboards::GetAttacks<PT>(origin_s, all_pieces) & legality_mask;
-        if (blockers & SquareToBB(origin_s)) {
+        if (blockers & SqToBB(origin_s)) {
             possible_moves &= Bitboards::GetRayToBorders(king_s, origin_s);
         }
         while (possible_moves) {
@@ -217,7 +217,7 @@ void MoveGen::GenPawnPromotions() {
 
 // allow movement only on a line between piece and king, if piece is a blocker
 bool MoveGen::DiscoveryCheck(Square orig, Square dest) const {
-    return (blockers & SquareToBB(orig)) && !(Bitboards::GetRayToBorders(king_s, orig) & SquareToBB(dest));
+    return (blockers & SqToBB(orig)) && !(Bitboards::GetRayToBorders(king_s, orig) & SqToBB(dest));
 }
 
 template<Color C>
@@ -255,10 +255,10 @@ bool MoveGen::CanCastle() const {
     // (for chess 960) we need to calculate all the squares that we travel through and make sure they are empty
     constexpr Square r_dest = S == LONG ? C == WHITE ? D1 : D8 : C == WHITE ? F1 : F8;
     constexpr Square k_dest = S == LONG ? C == WHITE ? C1 : C8 : C == WHITE ? G1 : G8;
-    Bitboard occ = all_pieces ^ rook_bb ^ SquareToBB(king_s);
+    Bitboard occ = all_pieces ^ rook_bb ^ SqToBB(king_s);
     Bitboard walk_sq = Bitboards::GetRayToSquares(Bitboards::Lsb(rook_bb), r_dest) |
                        Bitboards::GetRayToSquares(king_s, k_dest) |
-                       SquareToBB(r_dest) | SquareToBB(k_dest);
+            SqToBB(r_dest) | SqToBB(k_dest);
 
     return (occ & walk_sq) == EMPTY_BB;
 }
@@ -298,7 +298,7 @@ bool MoveGen::IsPseudoLegal(Move m) const {
     }
 
     // make sure we only move to the allowed squares
-    if (moved_pt != KING && moved_pt != PAWN && !(SquareToBB(to) & legal_moves)) {
+    if (moved_pt != KING && moved_pt != PAWN && !(SqToBB(to) & legal_moves)) {
         return false;
     }
 
@@ -308,13 +308,13 @@ bool MoveGen::IsPseudoLegal(Move m) const {
         Bitboard prom_mask = my_color == WHITE ? PromRank<WHITE>() : PromRank<BLACK>();
         if (move_type == PROMOTE_QUEEN || move_type == PROMOTE_ROOK || move_type == PROMOTE_BISHOP ||
             move_type == PROMOTE_KNIGHT) {
-            if (!(prom_mask & SquareToBB(to)) || DiscoveryCheck(from, to)) {
+            if (!(prom_mask & SqToBB(to)) || DiscoveryCheck(from, to)) {
                 return false;
             }
             return true;
         }
 
-        if (prom_mask & SquareToBB(to)) {
+        if (prom_mask & SqToBB(to)) {
             return false;
         }
 
@@ -328,7 +328,7 @@ bool MoveGen::IsPseudoLegal(Move m) const {
         if (move_type == TWO_FORWARD) {
             Square between = from + (my_color == WHITE ? NORTH : SOUTH);
             Bitboard mask = my_color == WHITE ? TwoFwdRank<WHITE>() : TwoFwdRank<BLACK>();
-            if ((to ^ from) != 16 || !(SquareToBB(to) & mask) || (SquareToBB(between) & all_pieces) ||
+            if ((to ^ from) != 16 || !(SqToBB(to) & mask) || (SqToBB(between) & all_pieces) ||
                 DiscoveryCheck(from, to)) {
                 return false;
             }

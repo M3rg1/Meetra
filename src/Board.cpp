@@ -3,7 +3,6 @@
 #include <sstream>
 #include "MoveGen.h"
 #include <algorithm>
-#include "Search.h"
 #include <regex>
 #include <bit>
 #include <iomanip>
@@ -60,7 +59,7 @@ bool Board::IsBoardValid() const {
         if (!(white_king & castling_mask[WHITE])) {
             return false;
         }
-        if (!Search::chess960 && Bitboards::Lsb(white_king) != E1) {
+        if (!chess960 && Bitboards::Lsb(white_king) != E1) {
             return false;
         }
     }
@@ -69,7 +68,7 @@ bool Board::IsBoardValid() const {
         if (!(black_king & castling_mask[BLACK])) {
             return false;
         }
-        if (!Search::chess960 && Bitboards::Lsb(black_king) != E8) {
+        if (!chess960 && Bitboards::Lsb(black_king) != E8) {
             return false;
         }
     }
@@ -78,7 +77,7 @@ bool Board::IsBoardValid() const {
         Square capture_s = ColorToMove() == WHITE ? EpSquare() + SOUTH : EpSquare() + NORTH;
         Bitboard rank_mask = ColorToMove() == WHITE ? Bitboards::RankMask(RANK_5) : Bitboards::RankMask(RANK_4);
         if (GetPieceOnSquare(capture_s) != NewPiece(PAWN, OtherColor(ColorToMove()))
-            || !(rank_mask & SquareToBB(capture_s))) {
+            || !(rank_mask & SqToBB(capture_s))) {
             return false;
         }
     }
@@ -121,11 +120,11 @@ bool Board::IsMoveLegal(Move m) const {
             Square to = ToSquare(m);
             Move r_move = RookCastlingMove(to, ColorToMove());
             // the xor is for chess960, when king doesn't move, but the rook moving could open an attack on the king
-            Bitboard occ = GetPieces_pt(ALL_TYPES) ^ SquareToBB(FromSquare(r_move));
-            Bitboard king_walk = Bitboards::GetRayToSquares(from, to) | SquareToBB(to);
+            Bitboard occ = GetPieces_pt(ALL_TYPES) ^ SqToBB(FromSquare(r_move));
+            Bitboard king_walk = Bitboards::GetRayToSquares(from, to) | SqToBB(to);
             return AllSquaresSafe(king_walk, OtherColor(ColorToMove()), occ);
         }
-        Bitboard occ = GetPieces_pt(ALL_TYPES) ^ SquareToBB(FromSquare(m));
+        Bitboard occ = GetPieces_pt(ALL_TYPES) ^ SqToBB(FromSquare(m));
         return !IsAttackedByAny(ToSquare(m), OtherColor(ColorToMove()), occ);
     }
 
@@ -135,7 +134,7 @@ bool Board::IsMoveLegal(Move m) const {
         Square to = ToSquare(m);
         Square capture_s = my_col == WHITE ? to + SOUTH : to + NORTH;
         Square king_s = Bitboards::Lsb(GetPieces(KING, my_col));
-        Bitboard occ = GetPieces_pt(ALL_TYPES) ^ SquareToBB(capture_s) ^ (SquareToBB(from) | SquareToBB(to));
+        Bitboard occ = GetPieces_pt(ALL_TYPES) ^ SqToBB(capture_s) ^ (SqToBB(from) | SqToBB(to));
         // ep move can't open us to attacks by anything other than slider pieces
         return !IsAttackedBySliders(king_s, OtherColor(my_col), occ);
     }
@@ -167,7 +166,7 @@ bool Board::IsAttackedBySliders(Square s, Color attacked_by, Bitboard occ) const
 void Board::RemovePiece(Square s) {
     Piece p = board[s];
     board[s] = NO_PIECE;
-    Bitboard pos = SquareToBB(s);
+    Bitboard pos = SqToBB(s);
     color_bbs[ColorOfPiece(p)] ^= pos;
     type_bbs[TypeOfPiece(p)] ^= pos;
     type_bbs[ALL_TYPES] ^= pos;
@@ -175,7 +174,7 @@ void Board::RemovePiece(Square s) {
 
 void Board::AddPiece(Square s, Piece p) {
     board[s] = p;
-    Bitboard pos = SquareToBB(s);
+    Bitboard pos = SqToBB(s);
     color_bbs[ColorOfPiece(p)] |= pos;
     type_bbs[TypeOfPiece(p)] |= pos;
     type_bbs[ALL_TYPES] |= pos;
@@ -185,7 +184,7 @@ void Board::MovePiece(Square from, Square to) {
     Piece p = board[from];
     board[from] = NO_PIECE;
     board[to] = p;
-    Bitboard from_to = SquareToBB(from) ^ SquareToBB(to);
+    Bitboard from_to = SqToBB(from) ^ SqToBB(to);
     color_bbs[ColorOfPiece(p)] ^= from_to;
     type_bbs[TypeOfPiece(p)] ^= from_to;
     type_bbs[ALL_TYPES] ^= from_to;
@@ -231,7 +230,7 @@ bool Board::MakeMove(Move m) {
     PieceType moved_pt = TypeOfPiece(moved_piece);
 
     // in chess960, when castling, we remove the rook from its square before moving, and put it back later
-    if (Search::chess960 && move_type == CASTLING) {
+    if (chess960 && move_type == CASTLING) {
         Move rook_move = RookCastlingMove(to, this_col);
         Square rook_from = FromSquare(rook_move);
         RemovePiece(rook_from);
@@ -250,7 +249,7 @@ bool Board::MakeMove(Move m) {
     Zobrist::MovePiece(state.hash, moved_piece, from, to);
 
     Bitboard previous_cr = state.cr;
-    state.cr &= ~(SquareToBB(from) | SquareToBB(to));
+    state.cr &= ~(SqToBB(from) | SqToBB(to));
     Zobrist::UpdateCr(state.hash, previous_cr, GetCr());
 
     if (moved_pt == PAWN) {
@@ -261,7 +260,7 @@ bool Board::MakeMove(Move m) {
             SetEpSquare(this_col == WHITE ? to + SOUTH : to + NORTH);
             Zobrist::AddEp(state.hash, EpSquare());
         } else if (IsPromotion(m)) {
-            Piece promoted_to = NewPiece(PieceTypeFromFlag(move_type), this_col);
+            Piece promoted_to = NewPiece(PromotionTo(move_type), this_col);
             RemovePiece(to);
             Zobrist::RemovePiece(state.hash, moved_piece, to);
             AddPiece(to, promoted_to);
@@ -283,9 +282,9 @@ bool Board::MakeMove(Move m) {
             Square r_to = ToSquare(r_move);
             Square r_from = FromSquare(r_move);
             // put back the rook that we took out earlier in chess 960 castling
-            Search::chess960 ? AddPiece(r_to, NewPiece(ROOK, this_col)) : MovePiece(r_from, r_to);
+            chess960 ? AddPiece(r_to, NewPiece(ROOK, this_col)) : MovePiece(r_from, r_to);
             Zobrist::MovePiece(state.hash, NewPiece(ROOK, this_col), r_from, r_to);
-            Bitboard king_walk = Bitboards::GetRayToSquares(from, to) | SquareToBB(to);
+            Bitboard king_walk = Bitboards::GetRayToSquares(from, to) | SqToBB(to);
             if (!AllSquaresSafe(king_walk, next_col, GetPieces_pt(ALL_TYPES))) {
                 return false;
             }
@@ -309,7 +308,7 @@ void Board::UnmakeMove(Move m) {
     state = history[--history_cnt];
 
     // ches960 castling is a special case
-    if (Search::chess960 && GetMoveType(m) == CASTLING) {
+    if (chess960 && GetMoveType(m) == CASTLING) {
         Move rook_move = RookCastlingMove(to, ColorToMove());
         RemovePiece(ToSquare(rook_move));
         MovePiece(to, from);
@@ -356,8 +355,8 @@ bool Board::IsRepetition() const {
 }
 
 Move Board::RookCastlingMove(Square king_to, Color c) const {
-    CastlingSide side = FileFromSquare(king_to) == FILE_G ? SHORT : LONG;
-    Bitboard from = Bitboards::Lsb(origin_rooks[c][side]);
+    CastlingSide side = SqToFile(king_to) == FILE_G ? SHORT : LONG;
+    Square from = Bitboards::Lsb(origin_rooks[c][side]);
     Square to = side == SHORT ? king_to - 1 : king_to + 1;
     return NewMove(from, to);
 }
@@ -378,7 +377,7 @@ bool Board::ParseFen(const std::string &fen) {
         if (std::isdigit(c)) {
             s += c - '0';
         } else if (c == '/') {
-            if (FileFromSquare(s) != FILE_A) {
+            if (SqToFile(s) != FILE_A) {
                 return false;
             }
             s -= 16;
@@ -400,9 +399,9 @@ bool Board::ParseFen(const std::string &fen) {
             Bitboard rooks = GetPieces(ROOK, col) & castling_mask[col];
             c = std::tolower(c, std::locale());
             if (c == 'k' || c == 'q' || ('a' <= c && c <= 'h')) {
-                Bitboard r_bb = SquareToBB(c == 'k' ? Bitboards::Msb(rooks) :
-                                           c == 'q' ? Bitboards::Lsb(rooks) :
-                                           SqFromFiRa(FileFromChar(c), col == WHITE ? RANK_1 : RANK_8));
+                Bitboard r_bb = SqToBB(c == 'k' ? Bitboards::Msb(rooks) :
+                                       c == 'q' ? Bitboards::Lsb(rooks) :
+                                       FiRaToSq(CharToFile(c), col == WHITE ? RANK_1 : RANK_8));
                 state.cr |= r_bb & rooks;
                 origin_rooks[col][r_bb > GetPieces(KING, col) ? SHORT : LONG] = r_bb;
             }
@@ -413,7 +412,7 @@ bool Board::ParseFen(const std::string &fen) {
     }
 
     if (iss >> token && token != "-") {
-        SetEpSquare(SqFromFiRa(FileFromChar(token[0]), RankFromChar(token[1])));
+        SetEpSquare(FiRaToSq(CharToFile(token[0]), CharToRank(token[1])));
     }
 
     iss >> state.ply;
@@ -445,14 +444,14 @@ std::string Board::MoveToName(Move m) const {
         return "0000";
     }
 
-    std::string ret = SquareToName(FromSquare(m)) + SquareToName(ToSquare(m));
+    std::string ret = SqToStr(FromSquare(m)) + SqToStr(ToSquare(m));
 
     // chess 960 castling is denoted by capturing own rook
-    if (Search::chess960 && GetMoveType(m) == CASTLING) {
-        Rank r = RankFromSquare(FromSquare(m));
+    if (chess960 && GetMoveType(m) == CASTLING) {
+        Rank r = SqToRank(FromSquare(m));
         Color c = r == RANK_1 ? WHITE : BLACK;
         Move r_move = RookCastlingMove(ToSquare(m), c);
-        ret = SquareToName(FromSquare(m)) + SquareToName(FromSquare(r_move));
+        ret = SqToStr(FromSquare(m)) + SqToStr(FromSquare(r_move));
     }
 
     if (IsPromotion(m)) {
@@ -468,8 +467,8 @@ std::string Board::MoveToName(Move m) const {
 
 Move Board::MoveFromName(std::string_view move_name) const {
 
-    Square s_from = NameToSquare(&move_name[0]);
-    Square s_to = NameToSquare(&move_name[2]);
+    Square s_from = StrToSq(&move_name[0]);
+    Square s_to = StrToSq(&move_name[2]);
     MoveType flag = NO_FLAG;
 
     if (move_name.length() == 5) {
@@ -479,7 +478,7 @@ Move Board::MoveFromName(std::string_view move_name) const {
                PROMOTE_KNIGHT;
     }
 
-    if (Search::chess960) {
+    if (chess960) {
         Piece p = GetPieceOnSquare(s_to);
         if (ColorOfPiece(p) == ColorToMove() && TypeOfPiece(p) == ROOK) {
             s_to = s_to > s_from ? ColorToMove() == WHITE ? G1 : G8 : ColorToMove() == WHITE ? C1 : C8;
@@ -497,7 +496,7 @@ Move Board::MoveFromName(std::string_view move_name) const {
     for (Rank r = RANK_8; r >= RANK_1; --r) {
         int empty_cnt = 0;
         for (File f = FILE_A; f <= FILE_H; ++f) {
-            Piece p = GetPieceOnSquare(SqFromFiRa(f, r));
+            Piece p = GetPieceOnSquare(FiRaToSq(f, r));
             if (p != NO_PIECE) {
                 if (empty_cnt > 0) {
                     oss << empty_cnt;
@@ -519,13 +518,13 @@ Move Board::MoveFromName(std::string_view move_name) const {
     if (!GetCr()) {
         oss << '-';
     } else {
-        if (CrAvailable(WHITE, SHORT)) oss << 'K';
-        if (CrAvailable(WHITE, LONG)) oss << 'Q';
-        if (CrAvailable(BLACK, SHORT)) oss << 'k';
-        if (CrAvailable(BLACK, LONG)) oss << 'q';
+        if (CrAvailable(WHITE, SHORT)) oss << (chess960 ? std::toupper(FileToChar(SqToFile(RookSq(WHITE, SHORT))), std::locale()) : 'K');
+        if (CrAvailable(WHITE, LONG)) oss << (chess960 ? std::toupper(FileToChar(SqToFile(RookSq(WHITE, LONG))), std::locale()) : 'Q');
+        if (CrAvailable(BLACK, SHORT)) oss << (chess960 ? FileToChar(SqToFile(RookSq(BLACK, SHORT))) : 'k');
+        if (CrAvailable(BLACK, LONG)) oss << (chess960 ? FileToChar(SqToFile(RookSq(BLACK, LONG))) : 'q');
     }
 
-    oss << ' ' << (EpSquare() ? SquareToName(EpSquare()) : "-") << ' ' << Ply() << ' ' << FullMoveClock();
+    oss << ' ' << (EpSquare() ? SqToStr(EpSquare()) : "-") << ' ' << Ply() << ' ' << FullMoveClock();
 
     return oss.str();
 }
@@ -537,7 +536,7 @@ Move Board::MoveFromName(std::string_view move_name) const {
     for (Rank r = RANK_8; r >= RANK_1; --r) {
         oss << r + 1 << " |";
         for (File f = FILE_A; f <= FILE_H; ++f) {
-            oss << ' ' << PieceToChar(GetPieceOnSquare(SqFromFiRa(f, r))) << ' ';
+            oss << ' ' << PieceToChar(GetPieceOnSquare(FiRaToSq(f, r))) << ' ';
         }
         oss << '\n';
     }
@@ -545,6 +544,9 @@ Move Board::MoveFromName(std::string_view move_name) const {
         << "  | A  B  C  D  E  F  G  H\n\n"
         << "FEN: " << GetFen() << '\n'
         << "Hash: 0x" << std::hex << std::uppercase << std::setfill('0') << std::setw(16) << GetHash();
+    if (chess960) {
+        oss << "\nChess 960 board";
+    }
 
     return oss.str();
 }

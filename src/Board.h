@@ -5,6 +5,7 @@
 #include "ZobristHash.h"
 #include "Evaluator.h"
 #include "Config.h"
+#include "Bitboards.h"
 
 class Board {
 
@@ -17,6 +18,7 @@ public:
     void MakeNullMove();
     void UnmakeNullMove();
     bool MakeUciMove(std::string_view move_string);
+    void SetChess960(bool set) { chess960 = set; }
 
     [[nodiscard]] bool IsMoveLegal(Move m) const;
     [[nodiscard]] bool IsBoardValid() const;
@@ -52,6 +54,7 @@ public:
     [[nodiscard]] inline int FullMoveClock() const { return state.moves; }
     [[nodiscard]] inline bool Move50Rule() const { return Ply() >= 100; };
     [[nodiscard]] inline Bitboard RookSqBB(Color c, CastlingSide s) const { return state.cr & origin_rooks[c][s]; }
+    [[nodiscard]] inline Bitboard RookSq(Color c, CastlingSide s) const { return Bitboards::Lsb(RookSqBB(c, s)); }
     [[nodiscard]] inline int GetPhase() const { return state.evaluator.GetPhase(); }
     [[nodiscard]] inline bool IsInCheck() const { return state.checkers; }
     [[nodiscard]] inline Bitboard GetCheckers() const { return state.checkers; }
@@ -92,6 +95,8 @@ private:
         Bitboard checkers = EMPTY_BB;
         Evaluator evaluator;
     };
+
+    bool chess960 = false;
 
     BoardState state;
     BoardState history[MAX_GAME_LENGTH];

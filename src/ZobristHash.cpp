@@ -31,7 +31,7 @@ namespace Zobrist {
     }
 
     void AddEp(Hash64 &h, Square s) {
-        h ^= ep_keys[FileFromSquare(s)];
+        h ^= ep_keys[SqToFile(s)];
     }
 
     void RemoveEp(Hash64 &h, Square s) {
@@ -68,7 +68,7 @@ namespace Zobrist {
         }
 
         if (board.EpSquare()) {
-            hash ^= ep_keys[FileFromSquare(board.EpSquare())];
+            hash ^= ep_keys[SqToFile(board.EpSquare())];
         }
 
         Bitboard cr = board.GetCr();

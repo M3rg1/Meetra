@@ -18,32 +18,32 @@ namespace Bitboards {
     }
 
     Bitboard GenDiagMoves(Square s, Bitboard occ) {
-        Bitboard bitboard = SquareToBB(s);
-        File f = FileFromSquare(s);
-        Rank r = RankFromSquare(s);
+        Bitboard bitboard = SqToBB(s);
+        File f = SqToFile(s);
+        Rank r = SqToRank(s);
         Bitboard move_mask = anti_diag_masks[r + 7 - f];
         return (((occ & move_mask) - (bitboard << 1)) ^ ReverseBits(ReverseBits(occ & move_mask)
                                                                     - (ReverseBits(bitboard) << 1))) & move_mask;
     }
 
     Bitboard GenAntiDiagMoves(Square s, Bitboard occ) {
-        Bitboard b = SquareToBB(s);
-        File f = FileFromSquare(s);
-        Rank r = RankFromSquare(s);
+        Bitboard b = SqToBB(s);
+        File f = SqToFile(s);
+        Rank r = SqToRank(s);
         Bitboard move_mask = diag_masks[f + r];
         return (((occ & move_mask) - (b << 1))
                 ^ ReverseBits(ReverseBits(occ & move_mask) - (ReverseBits(b) << 1))) & move_mask;
     }
 
     Bitboard GenHorizontalMoves(Square s, Bitboard occ) {
-        Bitboard b = SquareToBB(s);
-        Rank r = RankFromSquare(s);
+        Bitboard b = SqToBB(s);
+        Rank r = SqToRank(s);
         return ((occ - (b << 1)) ^ ReverseBits(ReverseBits(occ) - (ReverseBits(b) << 1))) & rank_masks[r];
     }
 
     Bitboard GenVerticalMoves(Square s, Bitboard occ) {
-        Bitboard b = SquareToBB(s);
-        File f = FileFromSquare(s);
+        Bitboard b = SqToBB(s);
+        File f = SqToFile(s);
         return (((occ & file_masks[f]) - (b << 1))
                 ^ ReverseBits(ReverseBits(occ & file_masks[f]) - (ReverseBits(b) << 1))) & file_masks[f];
     }
@@ -71,10 +71,10 @@ namespace Bitboards {
 
         Square current = PopLsb(explore_occ);
 
-        blockers |= SquareToBB(current);
+        blockers |= SqToBB(current);
         SetBlockersRecursive(m, origin, blockers, explore_occ, move_generator);
 
-        blockers ^= SquareToBB(current);
+        blockers ^= SqToBB(current);
         SetBlockersRecursive(m, origin, blockers, explore_occ, move_generator);
     }
 
@@ -115,10 +115,10 @@ namespace Bitboards {
             Bitboard moves = EMPTY_BB;
             for (auto d: dirs) {
                 if (s + d < SQUARE_NR && s + d >= A1) {
-                    moves |= SquareToBB(s + d);
+                    moves |= SqToBB(s + d);
                 }
             }
-            File f = FileFromSquare(s);
+            File f = SqToFile(s);
             moves &= f > FILE_D ? ~file_masks[FILE_A] & ~file_masks[FILE_B] : ~file_masks[FILE_G] & ~file_masks[FILE_H];
             output[s] = moves;
         }
@@ -130,10 +130,10 @@ namespace Bitboards {
 
     Bitboard GenRayToEdge(Square s1, Square s2) {
 
-        File f1 = FileFromSquare(s1);
-        Rank r1 = RankFromSquare(s1);
-        File f2 = FileFromSquare(s2);
-        Rank r2 = RankFromSquare(s2);
+        File f1 = SqToFile(s1);
+        Rank r1 = SqToRank(s1);
+        File f2 = SqToFile(s2);
+        Rank r2 = SqToRank(s2);
 
         if (r1 == r2) {
             return rank_masks[r1];
@@ -157,13 +157,13 @@ namespace Bitboards {
         Square max = std::max(s1, s2);
         Square min = std::min(s1, s2);
 
-        Rank r_max = RankFromSquare(max);
-        File f_max = FileFromSquare(max);
+        Rank r_max = SqToRank(max);
+        File f_max = SqToFile(max);
 
-        Rank r_min = RankFromSquare(min);
-        File f_min = FileFromSquare(min);
+        Rank r_min = SqToRank(min);
+        File f_min = SqToFile(min);
 
-        Bitboard mask = SquareToBB(max) - (SquareToBB(min) << 1);
+        Bitboard mask = SqToBB(max) - (SqToBB(min) << 1);
 
         if (r_max == r_min) {
             return rank_masks[r_max] & mask;

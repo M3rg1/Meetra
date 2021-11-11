@@ -53,7 +53,7 @@ void Evaluator::MakeMove(const Board &board, Move m) {
     }
 
     if (IsPromotion(m)) {
-        PieceType prom_to = PieceTypeFromFlag(GetMoveType(m));
+        PieceType prom_to = PromotionTo(GetMoveType(m));
         mg[col] += mg_table[col][prom_to][to] - mg_table[col][PAWN][to];
         eg[col] += eg_table[col][prom_to][to] - eg_table[col][PAWN][to];
         phase += phase_inc[prom_to] - phase_inc[PAWN];
@@ -95,7 +95,7 @@ Score Evaluator::GetMoveEval(const Board &board, Move m) const {
     }
 
     if (IsPromotion(m)) {
-        PieceType prom_to = PieceTypeFromFlag(GetMoveType(m));
+        PieceType prom_to = PromotionTo(GetMoveType(m));
         mg_val += mg_table[col][prom_to][to] - mg_table[col][PAWN][to];
         eg_val += eg_table[col][prom_to][to] - eg_table[col][PAWN][to];
     } else if (GetMoveType(m) == CASTLING) {
