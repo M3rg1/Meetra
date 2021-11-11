@@ -93,7 +93,7 @@ namespace Testing {
 
             std::ostringstream oss;
             oss << "Position: " << fen << '\n'
-                << "Depth: " << std::to_string(depth)
+                << "Depth: " << depth
                 << " | Expected: " << expected
                 << " | Got: " << result
                 << " | Time elapsed: " << elapsed_ms << "ms"
@@ -136,7 +136,7 @@ namespace Testing {
         }
 
         int errors = 0;
-        uint64_t total_nodes = 0;
+        uint64_t nodes = 0;
         auto start = Time::Now();
 
         for (size_t i = 0; i < tests.size(); ++i) {
@@ -144,19 +144,18 @@ namespace Testing {
             if (!tests[i].Run()) {
                 ++errors;
             }
-            total_nodes += tests[i].result;
+            nodes += tests[i].result;
         }
 
         auto elapsed_ns = Time::ElapsedTime<Time::ns>(start) + 1;
         auto elapsed_ms = elapsed_ns / 1000000;
-        auto nps = static_cast<uint64_t>((static_cast<double>(total_nodes) / static_cast<double>(elapsed_ns))
-                                         * 1000000000.0);
+        auto nps = static_cast<uint64_t>((static_cast<double>(nodes) / static_cast<double>(elapsed_ns)) * 1000000000.0);
 
         std::ostringstream oss;
         oss << "==========================================\n\n"
             << "Total time elapsed: " << elapsed_ms << "ms\n"
-            << "NPS: " + std::to_string(nps) + "\n"
-            << "Errors found: " + std::to_string(errors);
+            << "NPS: " << nps << "\n"
+            << "Errors found: " << errors;
 
         Uci::Send(oss.str());
     }
