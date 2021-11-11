@@ -12,13 +12,12 @@ class Board {
 public:
 
     Board();
-    bool NewPosition(const std::string &fen);
+    bool NewPosition(const std::string &fen, bool isChess960);
     bool MakeMove(Move m);
     void UnmakeMove(Move m);
     void MakeNullMove();
     void UnmakeNullMove();
     bool MakeUciMove(std::string_view move_string);
-    void SetChess960(bool set) { chess960 = set; }
 
     [[nodiscard]] bool IsMoveLegal(Move m) const;
     [[nodiscard]] bool IsBoardValid() const;

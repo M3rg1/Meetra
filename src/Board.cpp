@@ -13,13 +13,14 @@ constexpr Bitboard castling_mask[COLOR_NR]{
 };
 
 Board::Board() {
-    NewPosition(STARTPOS_FEN);
+    NewPosition(STARTPOS_FEN, false);
 }
 
-bool Board::NewPosition(const std::string &fen) {
+bool Board::NewPosition(const std::string &fen, bool isChess960) {
 
     Board previous = *this;
 
+    chess960 = isChess960;
     history_cnt = 0;
     state = BoardState();
     std::ranges::fill(board, NO_PIECE);

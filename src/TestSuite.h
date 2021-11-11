@@ -54,7 +54,7 @@ namespace Testing {
         Depth depth = 0;
         uint64_t expected = 0;
         uint64_t result = 0;
-        Board board;
+        bool chess960 = false;
 
         explicit Test(const std::string &str) {
 
@@ -62,7 +62,7 @@ namespace Testing {
             std::string token;
 
             if (str.contains("FRC")) {
-                board.SetChess960(true);
+                chess960 = true;
                 iss >> token;
             }
 
@@ -76,7 +76,8 @@ namespace Testing {
 
         inline bool Run() {
 
-            if (!board.NewPosition(fen)) {
+            Board board;
+            if (!board.NewPosition(fen, chess960)) {
                 Uci::Send("Position: " + fen + "\nError parsing FEN, skipping test.\n=== ERROR ===\n");
                 return false;
             }
