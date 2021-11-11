@@ -61,12 +61,13 @@ namespace Testing {
             std::istringstream iss(str);
             std::string token;
 
-            if (str.contains("FRC")) {
+            iss >> token;
+            if (token == "FRC") {
                 chess960 = true;
                 iss >> token;
             }
 
-            iss >> token >> depth;
+            iss >> depth;
             iss >> token >> expected;
             iss >> token >> fen;
             while (iss >> token && token != "#") {
