@@ -64,9 +64,8 @@ namespace Testing {
             iss >> token;
             if (token == "FRC") {
                 chess960 = true;
-                iss >> token;
+                iss >> token; // depth
             }
-
             iss >> depth;
             iss >> token >> expected;
             iss >> token >> fen;
