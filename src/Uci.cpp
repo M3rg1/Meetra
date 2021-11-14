@@ -58,7 +58,7 @@ namespace Uci {
     }
 
     void SendInfo(std::string_view data) {
-        std::osyncstream(std::cout) << "info string" << data << std::endl;
+        std::osyncstream(std::cout) << "info string " << data << std::endl;
     }
 
     void Listen() {
