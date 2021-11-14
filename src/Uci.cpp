@@ -3,6 +3,7 @@
 #include "Search.h"
 #include "TestSuite.h"
 #include <unistd.h>
+#include <syncstream>
 
 namespace Uci {
 
@@ -53,15 +54,11 @@ namespace Uci {
     }
 
     void Send(std::string_view data) {
-
-        static std::mutex mtx;
-        std::scoped_lock lock(mtx);
-
-        std::cout << data << std::endl;
+        std::osyncstream(std::cout) << data << std::endl;
     }
 
-    void SendInfo(const std::string &data) {
-        Send("info string " + data);
+    void SendInfo(std::string_view data) {
+        std::osyncstream(std::cout) << "info string" << data << std::endl;
     }
 
     void Listen() {
