@@ -122,7 +122,7 @@ void MoveGen::GenMovesForPhase() {
         GenPawnPromotions<C, RIGHT>();
         GenPawnPromotions<C, FORWARD>();
         return;
-    }  else if constexpr (P == CAPTURE) {
+    } else if constexpr (P == CAPTURE) {
         phase_mask = legal_moves & enemy_pieces;
         GenPawnCaptures<C, LEFT>();
         GenPawnCaptures<C, RIGHT>();
@@ -257,7 +257,7 @@ bool MoveGen::CanCastle() const {
     Bitboard occ = all_pieces ^ rook_bb ^ SqToBB(king_s);
     Bitboard walk_sq = Bitboards::GetRayToSquares(Bitboards::Lsb(rook_bb), r_dest) |
                        Bitboards::GetRayToSquares(king_s, k_dest) |
-            SqToBB(r_dest) | SqToBB(k_dest);
+                       SqToBB(r_dest) | SqToBB(k_dest);
 
     return (occ & walk_sq) == EMPTY_BB;
 }
@@ -305,8 +305,8 @@ bool MoveGen::IsPseudoLegal(Move m) const {
     if (moved_pt == PAWN) {
 
         Bitboard prom_mask = my_color == WHITE ? PromRank<WHITE>() : PromRank<BLACK>();
-        if (move_type == PROMOTE_QUEEN || move_type == PROMOTE_ROOK || move_type == PROMOTE_BISHOP ||
-            move_type == PROMOTE_KNIGHT) {
+        if (move_type == PROMOTE_QUEEN || move_type == PROMOTE_ROOK || move_type == PROMOTE_BISHOP
+            || move_type == PROMOTE_KNIGHT) {
             if (!(prom_mask & SqToBB(to)) || DiscoveryCheck(from, to)) {
                 return false;
             }
@@ -327,8 +327,8 @@ bool MoveGen::IsPseudoLegal(Move m) const {
         if (move_type == TWO_FORWARD) {
             Square between = from + (my_color == WHITE ? NORTH : SOUTH);
             Bitboard mask = my_color == WHITE ? TwoFwdRank<WHITE>() : TwoFwdRank<BLACK>();
-            if ((to ^ from) != 16 || !(SqToBB(to) & mask) || (SqToBB(between) & all_pieces) ||
-                DiscoveryCheck(from, to)) {
+            if ((to ^ from) != 16 || !(SqToBB(to) & mask) || (SqToBB(between) & all_pieces)
+                || DiscoveryCheck(from, to)) {
                 return false;
             }
             return true;

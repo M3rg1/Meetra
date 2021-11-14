@@ -130,22 +130,20 @@ namespace Bitboards {
 
     Bitboard GenRayToEdge(Square s1, Square s2) {
 
+        if (s1 == s2) {
+            return EMPTY_BB;
+        }
+
         File f1 = SqToFile(s1);
         Rank r1 = SqToRank(s1);
         File f2 = SqToFile(s2);
         Rank r2 = SqToRank(s2);
 
-        if (r1 == r2) {
-            return rank_masks[r1];
-        } else if (f1 == f2) {
-            return file_masks[f1];
-        } else if (f1 + r1 == f2 + r2) {
-            return diag_masks[f1 + r1];
-        } else if (f1 - r1 == f2 - r2) {
-            return anti_diag_masks[r1 + 7 - f1];
-        }
-
-        return EMPTY_BB;
+        return r1 == r2 ? rank_masks[r1] :
+               f1 == f2 ? file_masks[f1] :
+               f1 + r1 == f2 + r2 ? diag_masks[f1 + r1] :
+               f1 - r1 == f2 - r2 ? anti_diag_masks[r1 + 7 - f1] :
+               EMPTY_BB;
     }
 
     Bitboard GenRay(Square s1, Square s2) {
@@ -165,17 +163,11 @@ namespace Bitboards {
 
         Bitboard mask = SqToBB(max) - (SqToBB(min) << 1);
 
-        if (r_max == r_min) {
-            return rank_masks[r_max] & mask;
-        } else if (f_max == f_min) {
-            return file_masks[f_max] & mask;
-        } else if (f_min + r_min == f_max + r_max) {
-            return diag_masks[f_max + r_max] & mask;
-        } else if (f_min - r_min == f_max - r_max) {
-            return anti_diag_masks[r_max + 7 - f_max] & mask;
-        }
-
-        return EMPTY_BB;
+        return r_max == r_min ? rank_masks[r_max] & mask :
+               f_max == f_min ? file_masks[f_max] & mask :
+               f_min + r_min == f_max + r_max ? diag_masks[f_max + r_max] & mask :
+               f_min - r_min == f_max - r_max ? anti_diag_masks[r_max + 7 - f_max] & mask :
+               EMPTY_BB;
     }
 
     void GenRaysBetweenSquares() {
