@@ -30,6 +30,10 @@ namespace Book {
             stream.seekg(static_cast<std::streamoff>(mid * sizeof(BookEntry)), std::ios::beg);
             stream.read(reinterpret_cast<char *>(&book_entry), sizeof(BookEntry));
 
+            if(!stream.good()) {
+                break;
+            }
+
             if (book_entry.hash > hash) {
                 right = mid - 1;
             } else if (book_entry.hash < hash) {
