@@ -538,7 +538,7 @@ Move Board::MoveFromName(std::string_view move_name) const {
     for (Rank r = RANK_8; r >= RANK_1; --r) {
         oss << r + 1 << " |";
         for (File f = FILE_A; f <= FILE_H; ++f) {
-            oss << ' ' << PieceToChar(GetPieceOnSquare(FiRaToSq(f, r))) << ' ';
+            oss << ' ' << PieceToChar(GetPieceOnSquare(FiRaToSq(f, r))) << (f == FILE_H ? "" : " ");
         }
         oss << '\n';
     }
