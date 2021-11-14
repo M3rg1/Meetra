@@ -57,6 +57,7 @@ public:
     [[nodiscard]] inline int GetPhase() const { return state.evaluator.GetPhase(); }
     [[nodiscard]] inline bool IsInCheck() const { return state.checkers; }
     [[nodiscard]] inline Bitboard GetCheckers() const { return state.checkers; }
+    [[nodiscard]] inline bool IsChess960() const { return chess960; }
     [[nodiscard]] Move RookCastlingMove(Square king_to, Color c) const;
     [[nodiscard]] bool IsRepetition() const;
 #pragma endregion

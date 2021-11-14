@@ -16,8 +16,8 @@ namespace Search {
 
         bool fixed = false;
 
-        TimeRep allowed_time = INT64_MAX;
-        uint64_t allowed_nodes = UINT64_MAX;
+        TimeRep allowed_time = std::numeric_limits<TimeRep>::max();
+        uint64_t allowed_nodes = std::numeric_limits<uint64_t>::max();
         Depth allowed_depth = MAX_SEARCH_DEPTH;
 
         int moves_to_go = 0;
@@ -30,7 +30,7 @@ namespace Search {
     inline Settings settings;
     inline std::atomic<bool> run;
     inline std::atomic<Depth> mt_depth;
-    inline bool chess960;
+    inline bool chess960; // each board still has its own value with which it was constructed
     inline bool use_book;
     inline bool show_currline;
     inline bool show_currmove;

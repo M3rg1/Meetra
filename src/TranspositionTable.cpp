@@ -41,7 +41,7 @@ void TranspositionTable::Save(Hash64 hash, Score score, Depth depth, Move move, 
     TTBucket &bucket = table[hash % buckets_count];
     TTEntry *entry_to_write;
     Hash16 hash16 = Zobrist::MakeHash16(hash);
-    int worst_entry_score = INT_MAX;
+    int worst_entry_score = std::numeric_limits<int>::max();
 
     for (auto &entry: bucket.entries) {
 

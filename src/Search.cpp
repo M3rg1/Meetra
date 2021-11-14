@@ -91,7 +91,7 @@ namespace Search {
         run = true;
         InitSearch(s, board);
 
-        if (use_book && !settings.fixed && !chess960 && board.FullMoveClock() <= BOOK_DEPTH / 2) {
+        if (use_book && !settings.fixed && !board.IsChess960() && board.FullMoveClock() <= BOOK_DEPTH / 2) {
             if (auto moves = Book::Probe(board); !moves.empty()) {
                 StopSearch();
                 std::ranges::sample(
@@ -107,10 +107,14 @@ namespace Search {
 
         auto root_moves = GenRootMoves(board);
 
-        if (root_moves.empty() || (root_moves.size() == 1 && !settings.fixed)) {
+        if (root_moves.empty()) {
             StopSearch();
             Uci::Send("bestmove " + board.MoveToName(root_moves.empty() ? ZERO_MOVE : root_moves.front().move));
             return;
+        }
+
+        if (root_moves.size() == 1 && !settings.fixed) {
+            std::max(settings.allowed_time, static_cast<TimeRep>(1000));
         }
 
         // it's important to first initialize all threads and only then start them

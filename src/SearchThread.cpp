@@ -336,7 +336,9 @@ namespace Search {
 
     bool SearchThread::DidBeatMove(const RootMove &move) const {
         auto rm = std::ranges::find(root_moves, move);
-        if (rm->depth < move.depth) {
+        if (rm == root_moves.end()) {
+            return false;
+        } else if (rm->depth < move.depth) {
             return false;
         } else if (rm->depth > move.depth) {
             return true;
