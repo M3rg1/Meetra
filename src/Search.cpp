@@ -114,7 +114,7 @@ namespace Search {
         }
 
         if (root_moves.size() == 1 && !settings.fixed) {
-            std::max(settings.allowed_time, static_cast<TimeRep>(1000));
+            std::min(settings.allowed_time, static_cast<TimeRep>(1000));
         }
 
         // it's important to first initialize all threads and only then start them
