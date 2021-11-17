@@ -49,7 +49,6 @@ private:
     bool double_check;
 
     GenPhase gen_phase;
-    Bitboard phase_mask;
 
     Move killers[2];
     ScoredMove move_eval[MAX_LEGAL_MOVES];

@@ -113,32 +113,30 @@ void MoveGen::NextPhase() {
 
 template<GenPhase P, Color C>
 void MoveGen::GenMovesForPhase() {
-
     if constexpr (P == DOUBLE_CHECK) {
         GenMovesForPieceType<KING, C>(enemy_pieces | empty_squares);
-        return;
     } else if constexpr (P == PROMOTION) {
         GenPawnPromotions<C, LEFT>();
         GenPawnPromotions<C, RIGHT>();
         GenPawnPromotions<C, FORWARD>();
-        return;
     } else if constexpr (P == CAPTURE) {
-        phase_mask = legal_moves & enemy_pieces;
         GenPawnCaptures<C, LEFT>();
         GenPawnCaptures<C, RIGHT>();
         GenEpMoves<C>();
         GenMovesForPieceType<KING, C>(enemy_pieces);
+        GenMovesForPieceType<KNIGHT, C>(legal_moves & enemy_pieces);
+        GenMovesForPieceType<BISHOP, C>(legal_moves & enemy_pieces);
+        GenMovesForPieceType<ROOK, C>(legal_moves & enemy_pieces);
+        GenMovesForPieceType<QUEEN, C>(legal_moves & enemy_pieces);
     } else if constexpr (P == QUIET) {
-        phase_mask = legal_moves & empty_squares;
         GenCastlingMoves<C>();
         GenPawnQuiets<C>();
         GenMovesForPieceType<KING, C>(empty_squares);
+        GenMovesForPieceType<KNIGHT, C>(legal_moves & empty_squares);
+        GenMovesForPieceType<BISHOP, C>(legal_moves & empty_squares);
+        GenMovesForPieceType<ROOK, C>(legal_moves & empty_squares);
+        GenMovesForPieceType<QUEEN, C>(legal_moves & empty_squares);
     }
-
-    GenMovesForPieceType<KNIGHT, C>(phase_mask);
-    GenMovesForPieceType<BISHOP, C>(phase_mask);
-    GenMovesForPieceType<ROOK, C>(phase_mask);
-    GenMovesForPieceType<QUEEN, C>(phase_mask);
 }
 
 template<PieceType PT, Color C>
