@@ -109,7 +109,7 @@ namespace Search {
 
         if (root_moves.empty()) {
             StopSearch();
-            Uci::Send("bestmove " + board.MoveToName(ZERO_MOVE);
+            Uci::Send("bestmove " + board.MoveToName(ZERO_MOVE));
             return;
         }
 
