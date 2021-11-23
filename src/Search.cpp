@@ -100,7 +100,7 @@ namespace Search {
                         1,
                         std::mt19937{std::random_device{}()}
                 );
-                Uci::Send("bestmove " + board.MoveToName(moves.back()));
+                Uci::Send("bestmove " + board.MoveToName(moves.front()));
                 return;
             }
         }
@@ -109,7 +109,7 @@ namespace Search {
 
         if (root_moves.empty()) {
             StopSearch();
-            Uci::Send("bestmove " + board.MoveToName(root_moves.empty() ? ZERO_MOVE : root_moves.front().move));
+            Uci::Send("bestmove " + board.MoveToName(ZERO_MOVE);
             return;
         }
 

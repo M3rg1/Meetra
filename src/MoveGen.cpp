@@ -158,14 +158,14 @@ void MoveGen::GenMovesForPieceType(Bitboard legality_mask) {
 template<Color C>
 void MoveGen::GenPawnQuiets() {
 
-    constexpr Direction push_dir = PawnMove<C, FORWARD>();
-    Bitboard one_fwd = Bitboards::Shift<push_dir>(board.GetPieces(PAWN, C)) & empty_squares & ~PromRank<C>();
-    Bitboard two_fwd = Bitboards::Shift<push_dir>(one_fwd) & empty_squares & TwoFwdRank<C>() & legal_moves;
+    constexpr Direction dir = PawnMove<C, FORWARD>();
+    Bitboard one_fwd = Bitboards::Shift<dir>(board.GetPieces(PAWN, C)) & empty_squares & ~PromRank<C>();
+    Bitboard two_fwd = Bitboards::Shift<dir>(one_fwd) & empty_squares & TwoFwdRank<C>() & legal_moves;
     one_fwd &= legal_moves;
 
     while (two_fwd) {
         Square dest_s = Bitboards::PopLsb(two_fwd);
-        Square origin_s = dest_s - push_dir - push_dir;
+        Square origin_s = dest_s - dir - dir;
         if (!DiscoveryCheck(origin_s, dest_s)) {
             PutMove(NewMove(origin_s, dest_s, TWO_FORWARD));
         }
@@ -173,7 +173,7 @@ void MoveGen::GenPawnQuiets() {
 
     while (one_fwd) {
         Square dest_s = Bitboards::PopLsb(one_fwd);
-        Square origin_s = dest_s - push_dir;
+        Square origin_s = dest_s - dir;
         if (!DiscoveryCheck(origin_s, dest_s)) {
             PutMove(NewMove(origin_s, dest_s));
         }
@@ -183,13 +183,12 @@ void MoveGen::GenPawnQuiets() {
 template<Color C, PawnMoveDir D>
 void MoveGen::GenPawnCaptures() {
 
-    constexpr Direction capture_dir = PawnMove<C, D>();
-    Bitboard captures =
-            Bitboards::Shift<capture_dir>(board.GetPieces(PAWN, C)) & legal_moves & enemy_pieces & ~PromRank<C>();
+    constexpr Direction dir = PawnMove<C, D>();
+    Bitboard captures = Bitboards::Shift<dir>(board.GetPieces(PAWN, C)) & legal_moves & enemy_pieces & ~PromRank<C>();
 
     while (captures) {
         Square dest_s = Bitboards::PopLsb(captures);
-        Square origin_s = dest_s - capture_dir;
+        Square origin_s = dest_s - dir;
         if (!DiscoveryCheck(origin_s, dest_s)) {
             PutMove(NewMove(origin_s, dest_s));
         }
