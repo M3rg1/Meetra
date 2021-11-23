@@ -94,12 +94,7 @@ namespace Search {
         if (use_book && !settings.fixed && !board.IsChess960() && board.FullMoveClock() <= BOOK_DEPTH / 2) {
             if (auto moves = Book::Probe(board); !moves.empty()) {
                 StopSearch();
-                std::ranges::sample(
-                        moves,
-                        std::back_inserter(moves),
-                        1,
-                        std::mt19937{std::random_device{}()}
-                );
+                std::ranges::shuffle(moves, std::mt19937{std::random_device{}()});
                 Uci::Send("bestmove " + board.MoveToName(moves.front()));
                 return;
             }
