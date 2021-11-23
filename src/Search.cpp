@@ -120,8 +120,8 @@ namespace Search {
         chess960 = false;
         use_book = false;
         show_currline = false;
-        multi_pv = 1;
         show_currmove = true;
+        multi_pv = 1;
         plies_muted = 0;
         last_update_time = 0;
         move_overhead = DEFAULT_OVERHEAD;
