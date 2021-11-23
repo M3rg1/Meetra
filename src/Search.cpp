@@ -37,17 +37,14 @@ namespace Search {
     }
 
     void InitSearch(const Settings &s, const Board &board) {
-
         start_time = Time::Now();
         last_update_time = 0;
-
-        settings = s;
-
-        tt.NewSearch();
         mt_depth = 0;
 
+        settings = s;
         settings.allowed_depth = std::min(s.allowed_depth, MAX_SEARCH_DEPTH);
 
+        tt.NewSearch();
         InitSearchTimer(board);
     }
 
