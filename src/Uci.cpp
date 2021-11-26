@@ -44,7 +44,6 @@ namespace Uci {
     void StopCommand();
     void BoardCommand(const Board &board);
     void TestCommand();
-    void QuitCommand();
     void UnknownCommand();
     Search::Settings ParseSearchOptions(std::istringstream &iss);
 
@@ -72,13 +71,11 @@ namespace Uci {
                  + board.PrettyPrint());
         }
 
-        std::string command, input;
+        std::string input;
+        while (std::getline(std::cin, input)) {
 
-        do {
-
-            command.clear();
-            std::getline(std::cin, input);
             std::istringstream iss(input);
+            std::string command;
             iss >> command;
 
             if (command == "uci") UciCommand();
@@ -91,11 +88,12 @@ namespace Uci {
             else if (command == "perft") PerftCommand(iss, board);
             else if (command == "board") BoardCommand(board);
             else if (command == "test") TestCommand();
-            else if (command == "quit") QuitCommand();
+            else if (command == "quit") break;
             else if (command.empty()) continue;
             else UnknownCommand();
+        }
 
-        } while (command != "quit" && !std::cin.eof());
+        Search::Shutdown();
     }
 
     void BoardCommand(const Board &board) {
@@ -104,10 +102,6 @@ namespace Uci {
 
     void TestCommand() {
         Testing::RunTests();
-    }
-
-    void QuitCommand() {
-        Search::Shutdown();
     }
 
     void UnknownCommand() {
