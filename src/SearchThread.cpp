@@ -156,9 +156,6 @@ namespace Search {
             tt_move = ZERO_MOVE;
         }
 
-        killers[ply + 1][0] = ZERO_MOVE;
-        killers[ply + 1][1] = ZERO_MOVE;
-
         bool prune = !board.IsInCheck() && !IsMateScore(beta) && !IsMateScore(alpha) && !IsMateScore(eval);
 
         // reverse futility pruning
@@ -170,7 +167,10 @@ namespace Search {
             return eval;
         }
 
+        killers[ply + 1][0] = ZERO_MOVE;
+        killers[ply + 1][1] = ZERO_MOVE;
         PVLine line;
+
         // null move pruning
         if (NodeType == NONPV
             && prune
