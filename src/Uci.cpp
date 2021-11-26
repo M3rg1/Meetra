@@ -92,8 +92,6 @@ namespace Uci {
             else if (command.empty()) continue;
             else UnknownCommand();
         }
-
-        Search::Shutdown();
     }
 
     void BoardCommand(const Board &board) {

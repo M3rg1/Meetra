@@ -14,5 +14,7 @@ int main() {
 
     Uci::Listen();
 
+    Search::Shutdown();
+
     return 0;
 }
