@@ -89,6 +89,10 @@ template Move MoveGen::GetBestMove<NORMAL>();
 template<Color C, GenType T>
 void MoveGen::NextPhase() {
     switch (gen_phase) {
+        case DOUBLE_CHECK:
+            GenMovesForPhase<DOUBLE_CHECK, C>();
+            gen_phase = END;
+            break;
         case PROMOTION:
             GenMovesForPhase<PROMOTION, C>();
             gen_phase = CAPTURE;
@@ -103,10 +107,6 @@ void MoveGen::NextPhase() {
             break;
         case END:
             PutMove(ZERO_MOVE);
-            break;
-        case DOUBLE_CHECK:
-            GenMovesForPhase<DOUBLE_CHECK, C>();
-            gen_phase = END;
             break;
     }
 }
