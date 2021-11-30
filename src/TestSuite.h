@@ -69,7 +69,7 @@ namespace Testing {
             iss >> depth;
             iss >> token >> expected;
             iss >> token >> fen;
-            while (iss >> token && token != "#") {
+            while (iss >> token && !token.starts_with('#')) {
                 fen += ' ' + token;
             }
         }
