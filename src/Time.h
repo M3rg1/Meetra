@@ -16,8 +16,8 @@ namespace Time {
     }
 
     template<typename UNITS>
-    TimeRep ElapsedTime(TimePoint since) {
-        return std::chrono::duration_cast<UNITS>(Now() - since).count();
+    TimeRep ElapsedSince(TimePoint t) {
+        return std::chrono::duration_cast<UNITS>(Now() - t).count();
     }
 
 }

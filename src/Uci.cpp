@@ -133,7 +133,7 @@ namespace Uci {
 
         auto nodes = Testing::Perft<true>(depth, board);
 
-        auto elapsed_ns = Time::ElapsedTime<Time::ns>(start) + 1;
+        auto elapsed_ns = Time::ElapsedSince<Time::ns>(start) + 1;
         auto elapsed_ms = elapsed_ns / 1000000;
         auto nps = static_cast<uint64_t>((static_cast<double>(nodes) / static_cast<double>(elapsed_ns)) * 1000000000.0);
 

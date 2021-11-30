@@ -6,7 +6,7 @@
 namespace Search {
 
     bool EnoughTimeLeft() {
-        if (settings.fixed || settings.allowed_time > Time::ElapsedTime<Time::ms>(start_time) * 2) {
+        if (settings.fixed || settings.allowed_time > Time::ElapsedSince<Time::ms>(start_time) * 2) {
             return true;
         }
         return false;
