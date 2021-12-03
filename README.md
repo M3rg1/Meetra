@@ -15,7 +15,7 @@ make
 ```
 
 #### Usage
-The engine is not supposed to be run from the command line. To use it, download any GUI that supports the [UCI protocol](http://wbec-ridderkerk.nl/html/UCIProtocol.html), and proceed with engine installation according to their repective guides.
+The engine is not supposed to be run from the command line. To use it, download any GUI that supports the [UCI protocol](http://wbec-ridderkerk.nl/html/UCIProtocol.html), and proceed with engine installation according to their respective guides.
 
 For example, some free GUIs with UCI support:
 - [Arena](http://www.playwitharena.de/) (recommended)
@@ -63,9 +63,10 @@ For example, some free GUIs with UCI support:
         - [lockless shared hash table](https://www.chessprogramming.org/Shared_Hash_Table) (no xor checks either, data races can and do occur, every move is validated for pseudo legality)
     - [Null move pruning](https://www.chessprogramming.org/Null_Move_Pruning)
     - [Reverse futility pruning](https://www.chessprogramming.org/Reverse_Futility_Pruning)
+    - [Late move reductions](https://www.chessprogramming.org/Late_Move_Reductions)
     - [Quiesence search](https://www.chessprogramming.org/Quiescence_Search) (no TT probing, with check extensions)
 - **Evaluation**
-    - [Piece-square tables](https://www.chessprogramming.org/Piece-Square_Tables) with [tapered evalution](https://www.chessprogramming.org/Tapered_Eval) using the [PeSTO's Evaluation Function](https://www.chessprogramming.org/PeSTO%27s_Evaluation_Function)
+    - [Piece-square tables](https://www.chessprogramming.org/Piece-Square_Tables) with [tapered evaluation](https://www.chessprogramming.org/Tapered_Eval) using the [PeSTO's Evaluation Function](https://www.chessprogramming.org/PeSTO%27s_Evaluation_Function)
 - **Opening book**
     - Custom binary book format 
     - Binary search for book probing
