@@ -279,9 +279,6 @@ namespace Search {
         if (board.Move50Rule() || board.IsRepetition()) {
             return -DRAW_SCORE;
         }
-
-        MoveGen move_gen(board);
-
         if (!board.IsInCheck()) {
             Score static_eval = board.GetEval();
             if (static_eval > alpha) {
@@ -293,6 +290,7 @@ namespace Search {
         }
 
         Score best_score = NEGATIVE_INF;
+        MoveGen move_gen(board);
         while (Move move = move_gen.GetBestMove<QSEARCH>()) {
 
             if (!board.MakeMove(move)) {
