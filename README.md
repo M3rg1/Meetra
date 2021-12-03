@@ -27,9 +27,9 @@ For example, some free GUIs with UCI support:
 - Chess 960 (Fisher random chess)
 - Multi PV
 - Up to 64 threads
-- Up to 32GB transposition table
+- Up to 32 GB transposition table
 - Infinite search, limited nodes search, fixed depth search
-- Own book (the books currently available arent very good though)
+- Own book (the books currently available aren't very good though)
 - **Additional UCI commands**
     - Mute plies - the engine won't be sending any output to the GUI up to the specified depth
     - Move overhead - how much time should be set aside for communication delay between the engine and GUI, and any other potential delays (best kept at default value)
