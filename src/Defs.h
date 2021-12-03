@@ -15,6 +15,7 @@ constexpr Hash64 NEW_HASH64 = 0;
 
 using Bitboard = uint64_t;
 constexpr Bitboard EMPTY_BB = 0;
+constexpr Bitboard FULL_BB = 0xFFFFFFFFFFFFFFFF;
 
 enum TTFlags : int {
     NOT_FOUND, ALPHA, BETA, EXACT, CUTOFF

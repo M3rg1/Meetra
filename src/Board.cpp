@@ -6,11 +6,6 @@
 #include <iomanip>
 #include <bit>
 
-constexpr Bitboard castling_mask[COLOR_NR]{
-        0x00000000000000FF,
-        0xFF00000000000000
-};
-
 Board::Board() {
     NewPosition(STARTPOS_FEN, false);
 }
@@ -56,7 +51,7 @@ bool Board::IsBoardValid() const {
     }
 
     if (CrAvailable(WHITE, SHORT) || CrAvailable(WHITE, LONG)) {
-        if (!(white_king & castling_mask[WHITE])) {
+        if (!(white_king & Bitboards::castling_rank_mask[WHITE])) {
             return false;
         }
         if (!chess960 && Bitboards::Lsb(white_king) != E1) {
@@ -65,7 +60,7 @@ bool Board::IsBoardValid() const {
     }
 
     if (CrAvailable(BLACK, SHORT) || CrAvailable(BLACK, LONG)) {
-        if (!(black_king & castling_mask[BLACK])) {
+        if (!(black_king & Bitboards::castling_rank_mask[BLACK])) {
             return false;
         }
         if (!chess960 && Bitboards::Lsb(black_king) != E8) {
@@ -274,7 +269,7 @@ bool Board::MakeMove(Move m) {
 
     if (moved_pt == KING) {
 
-        state.cr &= castling_mask[next_col];
+        state.cr &= Bitboards::castling_rank_mask[next_col];
         Zobrist::UpdateCr(state.hash, previous_cr, GetCr());
 
         if (move_type == CASTLING) {
@@ -397,7 +392,7 @@ bool Board::ParseFen(const std::string &fen) {
     if (iss >> token && token != "-") {
         for (char c: token) {
             Color col = std::isupper(c) ? WHITE : BLACK;
-            Bitboard rooks = GetPieces(ROOK, col) & castling_mask[col];
+            Bitboard rooks = GetPieces(ROOK, col) & Bitboards::castling_rank_mask[col];
             c = std::tolower(c, std::locale());
             if (c == 'k' || c == 'q' || ('a' <= c && c <= 'h')) {
                 Bitboard r_bb = SqToBB(c == 'k' ? Bitboards::Msb(rooks) :

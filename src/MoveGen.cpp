@@ -32,7 +32,7 @@ MoveGen::MoveGen(const Board &board) :
         enemy_pieces(board.GetPieces_c(enemy_color)),
         checkers(board.GetCheckers()),
         blockers(board.PinnedToSquare(king_s, enemy_color)),
-        legal_moves(0xFFFFFFFFFFFFFFFF),
+        legal_moves(FULL_BB),
         double_check(false),
         gen_phase(PROMOTION),
         killers{ZERO_MOVE, ZERO_MOVE},
@@ -40,7 +40,7 @@ MoveGen::MoveGen(const Board &board) :
 
     if (checkers) {
         if (Bitboards::MoreThanOne(checkers)) {
-            legal_moves = 0;
+            legal_moves = EMPTY_BB;
             gen_phase = DOUBLE_CHECK;
             double_check = true;
             return;
@@ -243,14 +243,14 @@ void MoveGen::GenCastlingMoves() {
 template<Color C, CastlingSide S>
 bool MoveGen::CanCastle() const {
 
-    Bitboard rook_bb = board.RookSqBB(C, S);
-    if (!rook_bb) {
+    if (!board.CrAvailable(C, S)) {
         return false;
     }
 
     // (for chess 960) we need to calculate all the squares that we travel through and make sure they are empty
     constexpr Square r_dest = S == LONG ? C == WHITE ? D1 : D8 : C == WHITE ? F1 : F8;
     constexpr Square k_dest = S == LONG ? C == WHITE ? C1 : C8 : C == WHITE ? G1 : G8;
+    Bitboard rook_bb = board.RookSqBB(C, S);
     Bitboard occ = all_pieces ^ rook_bb ^ SqToBB(king_s);
     Bitboard walk_sq = Bitboards::GetRayToSquares(Bitboards::Lsb(rook_bb), r_dest) |
                        Bitboards::GetRayToSquares(king_s, k_dest) |

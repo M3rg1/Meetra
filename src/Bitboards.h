@@ -40,6 +40,11 @@ namespace Bitboards {
             0x804020100000000, 0x402010000000000, 0x201000000000000, 0x100000000000000
     };
 
+    constexpr Bitboard castling_rank_mask[COLOR_NR]{
+            0x00000000000000FF,
+            0xFF00000000000000
+    };
+
     struct Magic {
         Bitboard *attacks;
         Bitboard inner_mask;
