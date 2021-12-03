@@ -183,7 +183,6 @@ namespace Search {
         }
 
         tt_flag = ALPHA;
-        Score score;
         Score best_score = NEGATIVE_INF;
         Move best_move;
         size_t moves_searched = 0;
@@ -217,10 +216,10 @@ namespace Search {
                 }
             }
 
+            Score score;
             if (NodeType != PV || moves_searched > 0) {
                 score = -ABSearch<NONPV>(-alpha - 1, -alpha, depth - 1 - reduction, ply + 1, line);
             }
-
             if (NodeType == PV && (moves_searched == 0 || (score > alpha && score < beta))) {
                 line.Clear();
                 score = -ABSearch<PV>(-beta, -alpha, depth - 1, ply + 1, line);
@@ -278,6 +277,7 @@ namespace Search {
         if (board.Move50Rule() || board.IsRepetition()) {
             return -DRAW_SCORE;
         }
+
         if (!board.IsInCheck()) {
             Score static_eval = board.GetEval();
             if (static_eval > alpha) {
