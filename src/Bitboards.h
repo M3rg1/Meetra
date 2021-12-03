@@ -41,8 +41,8 @@ namespace Bitboards {
     };
 
     constexpr Bitboard castling_rank_mask[COLOR_NR]{
-            0x00000000000000FF,
-            0xFF00000000000000
+            rank_masks[RANK_1],
+            rank_masks[RANK_8]
     };
 
     struct Magic {
