@@ -21,7 +21,7 @@ namespace Bitboards {
         Bitboard bitboard = SqToBB(s);
         File f = SqToFile(s);
         Rank r = SqToRank(s);
-        Bitboard move_mask = anti_diag_masks[r + 7 - f];
+        Bitboard move_mask = anti_diag_mask[r + 7 - f];
         return (((occ & move_mask) - (bitboard << 1)) ^ ReverseBits(ReverseBits(occ & move_mask)
                                                                     - (ReverseBits(bitboard) << 1))) & move_mask;
     }
@@ -30,7 +30,7 @@ namespace Bitboards {
         Bitboard b = SqToBB(s);
         File f = SqToFile(s);
         Rank r = SqToRank(s);
-        Bitboard move_mask = diag_masks[f + r];
+        Bitboard move_mask = diag_mask[f + r];
         return (((occ & move_mask) - (b << 1))
                 ^ ReverseBits(ReverseBits(occ & move_mask) - (ReverseBits(b) << 1))) & move_mask;
     }
@@ -38,14 +38,14 @@ namespace Bitboards {
     Bitboard GenHorizontalMoves(Square s, Bitboard occ) {
         Bitboard b = SqToBB(s);
         Rank r = SqToRank(s);
-        return ((occ - (b << 1)) ^ ReverseBits(ReverseBits(occ) - (ReverseBits(b) << 1))) & rank_masks[r];
+        return ((occ - (b << 1)) ^ ReverseBits(ReverseBits(occ) - (ReverseBits(b) << 1))) & rank_mask[r];
     }
 
     Bitboard GenVerticalMoves(Square s, Bitboard occ) {
         Bitboard b = SqToBB(s);
         File f = SqToFile(s);
-        return (((occ & file_masks[f]) - (b << 1))
-                ^ ReverseBits(ReverseBits(occ & file_masks[f]) - (ReverseBits(b) << 1))) & file_masks[f];
+        return (((occ & file_mask[f]) - (b << 1))
+                ^ ReverseBits(ReverseBits(occ & file_mask[f]) - (ReverseBits(b) << 1))) & file_mask[f];
     }
 
     Bitboard GenBishopMoves(Square s, Bitboard occ) {
@@ -88,16 +88,16 @@ namespace Bitboards {
     void InitMagic() {
         for (Square s = A1; s < SQUARE_NR; ++s) {
 
-            Bitboard inner = (GenHorizontalMoves(s, EMPTY_BB) & ~file_masks[FILE_A] & ~file_masks[FILE_H])
-                             | (GenVerticalMoves(s, EMPTY_BB) & ~rank_masks[RANK_1] & ~rank_masks[RANK_8]);
+            Bitboard inner = (GenHorizontalMoves(s, EMPTY_BB) & ~file_mask[FILE_A] & ~file_mask[FILE_H])
+                             | (GenVerticalMoves(s, EMPTY_BB) & ~rank_mask[RANK_1] & ~rank_mask[RANK_8]);
 
             r_magics[s].shift = 64 - r_magic_shift[s];
             r_magics[s].inner_mask = inner;
             r_magics[s].magic_num = rook_magic_num[s];
             r_magics[s].attacks = s == A1 ? r_table : r_magics[s - 1].attacks + (1 << r_magic_shift[s - 1]);
 
-            inner = GenBishopMoves(s, EMPTY_BB) & ~file_masks[FILE_A] & ~rank_masks[RANK_1] & ~file_masks[FILE_H]
-                    & ~rank_masks[RANK_8];
+            inner = GenBishopMoves(s, EMPTY_BB) & ~file_mask[FILE_A] & ~rank_mask[RANK_1] & ~file_mask[FILE_H]
+                    & ~rank_mask[RANK_8];
 
             b_magics[s].shift = 64 - b_magic_shift[s];
             b_magics[s].inner_mask = inner;
@@ -119,7 +119,7 @@ namespace Bitboards {
                 }
             }
             File f = SqToFile(s);
-            moves &= f > FILE_D ? ~file_masks[FILE_A] & ~file_masks[FILE_B] : ~file_masks[FILE_G] & ~file_masks[FILE_H];
+            moves &= f > FILE_D ? ~file_mask[FILE_A] & ~file_mask[FILE_B] : ~file_mask[FILE_G] & ~file_mask[FILE_H];
             output[s] = moves;
         }
     }
@@ -139,10 +139,10 @@ namespace Bitboards {
         File f2 = SqToFile(s2);
         Rank r2 = SqToRank(s2);
 
-        return r1 == r2 ? rank_masks[r1] :
-               f1 == f2 ? file_masks[f1] :
-               f1 + r1 == f2 + r2 ? diag_masks[f1 + r1] :
-               f1 - r1 == f2 - r2 ? anti_diag_masks[r1 + 7 - f1] :
+        return r1 == r2 ? rank_mask[r1] :
+               f1 == f2 ? file_mask[f1] :
+               f1 + r1 == f2 + r2 ? diag_mask[f1 + r1] :
+               f1 - r1 == f2 - r2 ? anti_diag_mask[r1 + 7 - f1] :
                EMPTY_BB;
     }
 
@@ -163,10 +163,10 @@ namespace Bitboards {
 
         Bitboard mask = SqToBB(max) - (SqToBB(min) << 1);
 
-        return r_max == r_min ? rank_masks[r_max] & mask :
-               f_max == f_min ? file_masks[f_max] & mask :
-               f_min + r_min == f_max + r_max ? diag_masks[f_max + r_max] & mask :
-               f_min - r_min == f_max - r_max ? anti_diag_masks[r_max + 7 - f_max] & mask :
+        return r_max == r_min ? rank_mask[r_max] & mask :
+               f_max == f_min ? file_mask[f_max] & mask :
+               f_min + r_min == f_max + r_max ? diag_mask[f_max + r_max] & mask :
+               f_min - r_min == f_max - r_max ? anti_diag_mask[r_max + 7 - f_max] & mask :
                EMPTY_BB;
     }
 

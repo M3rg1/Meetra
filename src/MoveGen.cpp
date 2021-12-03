@@ -2,18 +2,8 @@
 
 template<Color C, PawnMoveDir DIR>
 constexpr Direction PawnMove() {
-    return C == WHITE ? DIR == LEFT ? NORTH_WEST : DIR == RIGHT ? NORTH_EAST : NORTH :
-           DIR == LEFT ? SOUTH_EAST : DIR == RIGHT ? SOUTH_WEST : SOUTH;
-}
-
-template<Color C>
-constexpr Bitboard PromRank() {
-    return C == WHITE ? 0xFF00000000000000 : 0xFF000000000000FF;
-}
-
-template<Color C>
-constexpr Bitboard TwoFwdRank() {
-    return C == WHITE ? 0x00000000FF000000 : 0x000000FF00000000;
+    return C == WHITE ? DIR == LEFT ? NORTH_WEST : DIR == RIGHT ? NORTH_EAST : NORTH
+                      : DIR == LEFT ? SOUTH_EAST : DIR == RIGHT ? SOUTH_WEST : SOUTH;
 }
 
 MoveGen::MoveGen(const Board &board, const Move killer_moves[2]) : MoveGen(board) {
@@ -159,8 +149,8 @@ template<Color C>
 void MoveGen::GenPawnQuiets() {
 
     constexpr Direction dir = PawnMove<C, FORWARD>();
-    Bitboard one_fwd = Bitboards::Shift<dir>(board.GetPieces(PAWN, C)) & empty_squares & ~PromRank<C>();
-    Bitboard two_fwd = Bitboards::Shift<dir>(one_fwd) & empty_squares & TwoFwdRank<C>() & legal_moves;
+    Bitboard one_fwd = Bitboards::Shift<dir>(board.GetPieces(PAWN, C)) & empty_squares & ~Bitboards::prom_mask[C];
+    Bitboard two_fwd = Bitboards::Shift<dir>(one_fwd) & empty_squares & Bitboards::two_fwd_mask[C] & legal_moves;
     one_fwd &= legal_moves;
 
     while (two_fwd) {
@@ -184,7 +174,8 @@ template<Color C, PawnMoveDir D>
 void MoveGen::GenPawnCaptures() {
 
     constexpr Direction dir = PawnMove<C, D>();
-    Bitboard captures = Bitboards::Shift<dir>(board.GetPieces(PAWN, C)) & legal_moves & enemy_pieces & ~PromRank<C>();
+    Bitboard captures = Bitboards::Shift<dir>(board.GetPieces(PAWN, C)) & legal_moves & enemy_pieces
+                        & ~Bitboards::prom_mask[C];
 
     while (captures) {
         Square dest_s = Bitboards::PopLsb(captures);
@@ -199,7 +190,7 @@ template<Color C, PawnMoveDir D>
 void MoveGen::GenPawnPromotions() {
 
     constexpr Direction dir = PawnMove<C, D>();
-    Bitboard promotions = Bitboards::Shift<dir>(board.GetPieces(PAWN, C)) & legal_moves & PromRank<C>();
+    Bitboard promotions = Bitboards::Shift<dir>(board.GetPieces(PAWN, C)) & legal_moves & Bitboards::prom_mask[C];
     promotions &= D == FORWARD ? empty_squares : enemy_pieces;
 
     while (promotions) {
@@ -301,7 +292,7 @@ bool MoveGen::IsPseudoLegal(Move m) const {
     // special checks for pawn moves
     if (moved_pt == PAWN) {
 
-        Bitboard prom_mask = my_color == WHITE ? PromRank<WHITE>() : PromRank<BLACK>();
+        Bitboard prom_mask = Bitboards::prom_mask[my_color];
         if (move_type == PROMOTE_QUEEN || move_type == PROMOTE_ROOK || move_type == PROMOTE_BISHOP
             || move_type == PROMOTE_KNIGHT) {
             if (!(prom_mask & SqToBB(to)) || DiscoveryCheck(from, to)) {
@@ -323,8 +314,7 @@ bool MoveGen::IsPseudoLegal(Move m) const {
 
         if (move_type == TWO_FORWARD) {
             Square between = from + (my_color == WHITE ? NORTH : SOUTH);
-            Bitboard mask = my_color == WHITE ? TwoFwdRank<WHITE>() : TwoFwdRank<BLACK>();
-            if ((to ^ from) != 16 || !(SqToBB(to) & mask) || (SqToBB(between) & all_pieces)
+            if ((to ^ from) != 16 || !(SqToBB(to) & Bitboards::two_fwd_mask[my_color]) || (SqToBB(between) & all_pieces)
                 || DiscoveryCheck(from, to)) {
                 return false;
             }
