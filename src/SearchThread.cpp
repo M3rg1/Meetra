@@ -289,8 +289,8 @@ namespace Search {
             }
         }
 
-        Score best_score = NEGATIVE_INF;
         MoveGen move_gen(board);
+        Score best_score = NEGATIVE_INF;
         while (Move move = move_gen.GetBestMove<QSEARCH>()) {
 
             if (!board.MakeMove(move)) {
