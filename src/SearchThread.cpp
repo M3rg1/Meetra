@@ -51,12 +51,11 @@ namespace Search {
 
                 board.UnmakeMove(curr_rm->move);
 
-                nodes_explored.fetch_add(1, std::memory_order_relaxed);
-
                 if (!Run()) {
                     break;
                 }
 
+                nodes_explored.fetch_add(1, std::memory_order_relaxed);
                 ++curr_rm->nodes;
 
                 curr_rm->previous_score = curr_rm->score;
@@ -289,8 +288,8 @@ namespace Search {
             }
         }
 
-        Score best_score = NEGATIVE_INF;
         MoveGen move_gen(board);
+        Score best_score = NEGATIVE_INF;
         while (Move move = move_gen.GetBestMove<QSEARCH>()) {
 
             if (!board.MakeMove(move)) {
