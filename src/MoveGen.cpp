@@ -243,9 +243,9 @@ bool MoveGen::CanCastle() const {
     constexpr Square k_dest = S == LONG ? C == WHITE ? C1 : C8 : C == WHITE ? G1 : G8;
     Bitboard rook_bb = board.RookSqBB(C, S);
     Bitboard occ = all_pieces ^ rook_bb ^ SqToBB(king_s);
-    Bitboard walk_sq = Bitboards::GetRayToSquares(Bitboards::Lsb(rook_bb), r_dest) |
-                       Bitboards::GetRayToSquares(king_s, k_dest) |
-                       SqToBB(r_dest) | SqToBB(k_dest);
+    Bitboard walk_sq = Bitboards::GetRayToSquares(Bitboards::Lsb(rook_bb), r_dest)
+                       | Bitboards::GetRayToSquares(king_s, k_dest)
+                       | SqToBB(r_dest) | SqToBB(k_dest);
 
     return (occ & walk_sq) == EMPTY_BB;
 }
