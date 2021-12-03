@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <regex>
 #include <iomanip>
+#include <bit>
 
 constexpr Bitboard castling_mask[COLOR_NR]{
         0x00000000000000FF,
