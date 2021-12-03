@@ -118,7 +118,7 @@ namespace Testing {
         std::string line;
 
         while (getline(test_file, line)) {
-            if (line.empty() || line[line.find_first_not_of(' ')] == '#') {
+            if (std::ranges::all_of(line, ::isspace) || line[line.find_first_not_of(' ')] == '#') {
                 continue;
             }
             tests.emplace_back(line);
@@ -131,17 +131,18 @@ namespace Testing {
 
         auto tests = LoadTests();
         if (tests.empty()) {
+            Uci::Send("No tests to run.");
             return;
         }
 
-        int errors = 0;
+        std::vector<int> errors;
         uint64_t nodes = 0;
         auto start = Time::Now();
 
         for (size_t i = 0; i < tests.size(); ++i) {
             Uci::Send("Running test " + std::to_string(i + 1) + " ...");
             if (!tests[i].Run()) {
-                ++errors;
+                errors.emplace_back(i);
             }
             nodes += tests[i].result;
         }
@@ -153,8 +154,16 @@ namespace Testing {
         std::ostringstream oss;
         oss << "==========================================\n\n"
             << "Total time elapsed: " << elapsed_ms << "ms\n"
-            << "NPS: " << nps << "\n"
-            << "Errors found: " << errors;
+            << "Average NPS: " << nps << "\n";
+        if (!errors.empty()) {
+            oss << "Errors found in tests:\n";
+            for (auto e: errors) {
+                oss << (e + 1) << ". FEN: " << tests[e].fen << '\n';
+            }
+            oss << "========\nTotal errors: " << errors.size();
+        } else {
+            oss << "All tests OK";
+        }
 
         Uci::Send(oss.str());
     }

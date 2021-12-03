@@ -522,8 +522,10 @@ Move Board::MoveFromName(std::string_view move_name) const {
             oss << (chess960 ? std::toupper(FileToChar(SqToFile(RookSq(WHITE, SHORT))), std::locale()) : 'K');
         if (CrAvailable(WHITE, LONG))
             oss << (chess960 ? std::toupper(FileToChar(SqToFile(RookSq(WHITE, LONG))), std::locale()) : 'Q');
-        if (CrAvailable(BLACK, SHORT)) oss << (chess960 ? FileToChar(SqToFile(RookSq(BLACK, SHORT))) : 'k');
-        if (CrAvailable(BLACK, LONG)) oss << (chess960 ? FileToChar(SqToFile(RookSq(BLACK, LONG))) : 'q');
+        if (CrAvailable(BLACK, SHORT))
+            oss << (chess960 ? FileToChar(SqToFile(RookSq(BLACK, SHORT))) : 'k');
+        if (CrAvailable(BLACK, LONG))
+            oss << (chess960 ? FileToChar(SqToFile(RookSq(BLACK, LONG))) : 'q');
     }
 
     oss << ' ' << (EpSquare() ? SqToStr(EpSquare()) : "-") << ' ' << Ply() << ' ' << FullMoveClock();

@@ -58,7 +58,7 @@ namespace Bitboards {
 
 #pragma endregion
 
-#pragma region ===== "Fancy" Magic Bitboards initialization =====
+#pragma region ===== Fancy Magic Bitboards initialization =====
 
     void SetBlockersRecursive(Magic &m, Square origin, Bitboard blockers, Bitboard explore_occ,
                               Bitboard (*move_generator)(Square, Bitboard)) {

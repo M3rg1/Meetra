@@ -99,9 +99,13 @@ namespace Search {
 
         auto root_moves = GenRootMoves(board);
 
-        if (root_moves.empty()) {
+        if (root_moves.empty()
+            || settings.allowed_depth == 0
+            || settings.allowed_nodes == 0
+            || settings.allowed_time <= 1) {
             StopSearch();
-            Uci::Send("bestmove " + board.MoveToName(ZERO_MOVE));
+            auto best_move = root_moves.empty() ? ZERO_MOVE : root_moves.front().move;
+            Uci::Send("bestmove " + board.MoveToName(best_move));
             return;
         }
 

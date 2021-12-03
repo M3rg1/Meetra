@@ -1,15 +1,10 @@
 #include <sstream>
-#include <utility>
 #include "SearchThread.h"
 #include "Uci.h"
 #include "MoveGen.h"
 #include "Search.h"
 
 namespace Search {
-
-    bool IsMateScore(Score s) {
-        return std::abs(s) <= MATE_SCORE && std::abs(s) >= MIN_MATE_EVAL;
-    }
 
     // the main search function - root position AB search, iterative deepening framework
     void SearchThread::Search() {
@@ -57,11 +52,12 @@ namespace Search {
                 board.UnmakeMove(curr_rm->move);
 
                 nodes_explored.fetch_add(1, std::memory_order_relaxed);
-                ++curr_rm->nodes;
 
                 if (!Run()) {
                     break;
                 }
+
+                ++curr_rm->nodes;
 
                 curr_rm->previous_score = curr_rm->score;
                 curr_rm->depth = depth_reached;
@@ -156,11 +152,9 @@ namespace Search {
             tt_move = ZERO_MOVE;
         }
 
-        bool prune = !board.IsInCheck() && !IsMateScore(beta) && !IsMateScore(alpha) && !IsMateScore(eval);
-
         // reverse futility pruning
         if (NodeType == NONPV
-            && prune
+            && !board.IsInCheck()
             && depth <= FUTILITY_DEPTH
             && eval - FUTILITY_FACTOR * depth >= beta
                 ) {
@@ -173,7 +167,7 @@ namespace Search {
 
         // null move pruning
         if (NodeType == NONPV
-            && prune
+            && !board.IsInCheck()
             && depth >= NULL_DEPTH
             && eval >= beta
             && eval >= static_eval
@@ -210,7 +204,7 @@ namespace Search {
             // late move reduction
             Depth reduction = 0;
             if (NodeType != PV
-                && prune
+                && !board.IsInCheck()
                 && depth >= 3
                 && moves_searched >= 2
                 && !board.CapturedPiece()
@@ -235,13 +229,13 @@ namespace Search {
 
             board.UnmakeMove(move);
 
-            nodes_explored.fetch_add(1, std::memory_order_relaxed);
-            ++curr_rm->nodes;
-            ++moves_searched;
-
             if (!Run()) {
                 return 0;
             }
+
+            nodes_explored.fetch_add(1, std::memory_order_relaxed);
+            ++curr_rm->nodes;
+            ++moves_searched;
 
             if (score > best_score) {
                 if (score > alpha) {
@@ -446,20 +440,18 @@ namespace Search {
     SearchThread::SearchThread(int id) :
             id(id),
             active(true),
-            thread([&](std::stop_token stop_token) { InitThread(std::move(stop_token)); }) {}
-
-    void SearchThread::InitThread(std::stop_token stop_token) {
-        while (true) {
-            {
-                std::unique_lock lock(mtx);
-                active = false;
-                cond_var.notify_all();
-                cond_var.wait(lock, stop_token, [&] { return active; });
-            }
-            if (stop_token.stop_requested()) { return; }
-            Search();
-        }
-    }
+            thread([&](std::stop_token stop_token) {
+                while (true) {
+                    {
+                        std::unique_lock lock(mtx);
+                        active = false;
+                        cond_var.notify_all();
+                        cond_var.wait(lock, stop_token, [&] { return active; });
+                    }
+                    if (stop_token.stop_requested()) { return; }
+                    Search();
+                }
+            }) {}
 
     void SearchThread::WaitForFinish() {
         std::unique_lock lock(mtx);

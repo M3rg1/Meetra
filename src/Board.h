@@ -53,7 +53,7 @@ public:
     [[nodiscard]] inline int FullMoveClock() const { return state.moves; }
     [[nodiscard]] inline bool Move50Rule() const { return Ply() >= 100; };
     [[nodiscard]] inline Bitboard RookSqBB(Color c, CastlingSide s) const { return state.cr & origin_rooks[c][s]; }
-    [[nodiscard]] inline Bitboard RookSq(Color c, CastlingSide s) const { return Bitboards::Lsb(RookSqBB(c, s)); }
+    [[nodiscard]] inline Square RookSq(Color c, CastlingSide s) const { return Bitboards::Lsb(RookSqBB(c, s)); }
     [[nodiscard]] inline int GetPhase() const { return state.evaluator.GetPhase(); }
     [[nodiscard]] inline bool IsInCheck() const { return state.checkers; }
     [[nodiscard]] inline Bitboard GetCheckers() const { return state.checkers; }

@@ -41,8 +41,6 @@ namespace Search {
         [[nodiscard]] std::string GetUpdateSearchInfo() const;
         [[nodiscard]] inline bool IsMainThread() const { return id == 0; }
 
-        void InitThread(std::stop_token stop_token);
-
         Board board;
         Move killers[MAX_SEARCH_DEPTH + 2][2];
         std::vector<RootMove> root_moves;
