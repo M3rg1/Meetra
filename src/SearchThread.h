@@ -43,7 +43,7 @@ namespace Search {
         [[nodiscard]] inline bool IsMainThread() const { return id == 0; }
 
         Board board;
-        Move killers[MAX_SEARCH_DEPTH + 2][2];
+        Move killers[MAX_SEARCH_DEPTH + 2][KILLER_SLOTS];
         std::vector<RootMove> root_moves;
         RootMove *curr_rm;
         size_t curr_rm_num;
