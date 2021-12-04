@@ -77,7 +77,7 @@ namespace Search {
             }
         }
 
-        Uci::Send(best_thread->GetSearchInfo());
+        Uci::Send(best_thread->GetFullSearchInfo());
         Uci::Send("bestmove " + best_thread->GetBestRmName());
     }
 

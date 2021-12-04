@@ -26,7 +26,7 @@ namespace Search {
         [[nodiscard]] bool DidBeatMove(const RootMove &move) const;
         [[nodiscard]] RootMove GetBestRootMove() const;
         [[nodiscard]] std::string GetBestRmName() const;
-        [[nodiscard]] std::string GetSearchInfo() const;
+        [[nodiscard]] std::string GetFullSearchInfo() const;
         [[nodiscard]] inline uint64_t Nodes() const { return nodes_explored.load(std::memory_order_relaxed); }
 
     private:
@@ -38,7 +38,7 @@ namespace Search {
         void CheckTimers();
         [[nodiscard]] std::string GetCurrLineInfo() const;
         [[nodiscard]] std::string GetCurrMoveInfo() const;
-        [[nodiscard]] std::string GetUpdateSearchInfo() const;
+        [[nodiscard]] std::string GetBriefSearchInfo() const;
         [[nodiscard]] inline bool IsMainThread() const { return id == 0; }
 
         Board board;

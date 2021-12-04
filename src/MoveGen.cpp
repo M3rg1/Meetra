@@ -277,48 +277,58 @@ bool MoveGen::IsPseudoLegal(Move m) const {
         return my_color == WHITE ? ValidateCastling<WHITE>(m) : ValidateCastling<BLACK>(m);
     }
 
-    // destination is either empty or occupied by enemy piece, but not a king (king captures can crash the engine)
+    // destination is either empty or occupied by enemy piece, but not a king
     Square to = ToSquare(m);
     Piece dest_piece = board.GetPieceOnSquare(to);
     if (dest_piece != NO_PIECE && (ColorOfPiece(dest_piece) == my_color || TypeOfPiece(dest_piece) == KING)) {
         return false;
     }
 
-    // make sure we only move to the allowed squares
-    if (moved_pt != KING && moved_pt != PAWN && !(SqToBB(to) & legal_moves)) {
+    if (moved_pt == KING) {
+        if (SqToBB(to) & (enemy_pieces | empty_squares)) {
+            return true;
+        }
         return false;
     }
 
-    // special checks for pawn moves
+    if (move_type == EN_PASSANT) {
+        if (ep_s != to || moved_pt != PAWN) {
+            return false;
+        }
+        return true;
+    }
+
+    if (!(SqToBB(to) & legal_moves) || DiscoveryCheck(from, to)) {
+        return false;
+    }
+
+    // special validations for pawn moves
     if (moved_pt == PAWN) {
 
-        Bitboard prom_mask = Bitboards::prom_mask[my_color];
-        if (move_type == PROMOTE_QUEEN || move_type == PROMOTE_ROOK || move_type == PROMOTE_BISHOP
-            || move_type == PROMOTE_KNIGHT) {
-            if (!(prom_mask & SqToBB(to)) || DiscoveryCheck(from, to)) {
-                return false;
-            }
-            return true;
-        }
-
-        if (prom_mask & SqToBB(to)) {
+        // going backwards with a pawn all the way back
+        if (SqToBB(to) & Bitboards::prom_mask[OtherColor(my_color)]) {
             return false;
         }
 
-        if (move_type == EN_PASSANT) {
-            if (ep_s != to) {
+        if (move_type == TWO_FORWARD) {
+            // TODO make sure the 16 move is the correct direction and the inbetween square is empty
+            if ((from ^ to) != 16 || !(Bitboards::two_fwd_mask[my_color] & SqToBB(to))) {
                 return false;
             }
             return true;
         }
 
-        if (move_type == TWO_FORWARD) {
-            Square between = from + (my_color == WHITE ? NORTH : SOUTH);
-            if ((to ^ from) != 16 || !(SqToBB(to) & Bitboards::two_fwd_mask[my_color]) || (SqToBB(between) & all_pieces)
-                || DiscoveryCheck(from, to)) {
+        if (move_type == PROMOTE_QUEEN || move_type == PROMOTE_ROOK || move_type == PROMOTE_BISHOP
+            || move_type == PROMOTE_KNIGHT) {
+            if (!(Bitboards::prom_mask[my_color] & SqToBB(to))) {
                 return false;
             }
             return true;
+        }
+
+        // promotion has been already handled, cannot go to the promotion rank now
+        if (Bitboards::prom_mask[my_color] & SqToBB(to)) {
+            return false;
         }
     }
 

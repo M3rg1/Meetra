@@ -83,7 +83,7 @@ namespace Search {
                 }
 
                 if (depth_reached > plies_muted && depth_reached < settings.allowed_depth) {
-                    Uci::Send(GetSearchInfo());
+                    Uci::Send(GetFullSearchInfo());
                 }
             }
         } // end iterative deepening loop
@@ -104,7 +104,7 @@ namespace Search {
         seldepth_reached = std::max(ply, seldepth_reached);
 
         if (board.Move50Rule()) {
-            // it could be a checkmate (or stalemate) on the 50th move
+            // it could be checkmate (or stalemate) on the 50th move
             MoveGen mg(board);
             bool legal_moves = false;
             while (Move m = mg.GetAnyMove()) {
@@ -206,7 +206,6 @@ namespace Search {
                 && depth >= 3
                 && moves_searched >= 2
                 && !board.CapturedPiece()
-                && !board.IsInCheck()
                 && !IsPromotion(move)
                     ) {
                 if (moves_searched >= 7) {
@@ -347,7 +346,7 @@ namespace Search {
         return board.MoveToName(GetBestRootMove().move);
     }
 
-    std::string SearchThread::GetUpdateSearchInfo() const {
+    std::string SearchThread::GetBriefSearchInfo() const {
 
         auto nodes = NodesTotal();
         auto elapsed_ns = Time::ElapsedSince<Time::ns>(start_time) + 1;
@@ -366,7 +365,7 @@ namespace Search {
         return oss.str();
     }
 
-    std::string SearchThread::GetSearchInfo() const {
+    std::string SearchThread::GetFullSearchInfo() const {
 
         auto nodes = NodesTotal();
         auto elapsed_ns = Time::ElapsedSince<Time::ns>(start_time) + 1;
@@ -427,7 +426,7 @@ namespace Search {
             StopSearch();
         } else if (depth_reached > plies_muted && last_update_time + UPDATE_INFO_INTERVAL < elapsed) {
             last_update_time = elapsed;
-            Uci::Send(GetUpdateSearchInfo());
+            Uci::Send(GetBriefSearchInfo());
             if (show_currline) {
                 Uci::Send(GetCurrLineInfo());
             }
@@ -463,10 +462,7 @@ namespace Search {
         depth_reached = 0;
         seldepth_reached = 0;
         nodes_explored = 0;
-        for (auto &e: killers) {
-            e[0] = ZERO_MOVE;
-            e[1] = ZERO_MOVE;
-        }
+        std::ranges::for_each(killers, [&](auto &k) { std::ranges::fill(k, ZERO_MOVE); });
     }
 
     void SearchThread::StartThread() {

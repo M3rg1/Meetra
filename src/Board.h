@@ -20,7 +20,7 @@ public:
     bool MakeUciMove(std::string_view move_string);
 
     [[nodiscard]] bool IsMoveLegal(Move m) const;
-    [[nodiscard]] bool IsBoardValid() const;
+    [[nodiscard]] bool IsValid() const;
     [[nodiscard]] bool AllSquaresSafe(Bitboard squares, Color attacker, Bitboard occ) const;
     [[nodiscard]] bool IsAttackedByAny(Square s, Color attacked_by, Bitboard occ) const;
     [[nodiscard]] bool IsAttackedBySliders(Square s, Color attacked_by, Bitboard occ) const;

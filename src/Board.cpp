@@ -5,6 +5,7 @@
 #include <regex>
 #include <iomanip>
 #include <bit>
+#include "Uci.h"
 
 Board::Board() {
     NewPosition(STARTPOS_FEN, false);
@@ -23,7 +24,7 @@ bool Board::NewPosition(const std::string &fen, bool isChess960) {
     std::ranges::fill(origin_rooks[BLACK], EMPTY_BB);
     std::ranges::fill(origin_rooks[WHITE], EMPTY_BB);
 
-    if (!ParseFen(fen) || !IsBoardValid()) {
+    if (!ParseFen(fen) || !IsValid()) {
         *this = previous;
         return false;
     }
@@ -37,7 +38,7 @@ bool Board::NewPosition(const std::string &fen, bool isChess960) {
     return true;
 }
 
-bool Board::IsBoardValid() const {
+bool Board::IsValid() const {
 
     Bitboard white_king = GetPieces(KING, WHITE);
     Bitboard black_king = GetPieces(KING, BLACK);
@@ -45,6 +46,9 @@ bool Board::IsBoardValid() const {
         return false;
     }
 
+    // TODO - fen that is in checkmate position is fine -> we just need to make sure to return 0000 move
+    //  thought is fine to have this check here for debugging ourselves, but nevertheless we should allow
+    //  such FENs
     Square enemy_king_square = ColorToMove() == WHITE ? Bitboards::Lsb(black_king) : Bitboards::Lsb(white_king);
     if (IsAttackedByAny(enemy_king_square, ColorToMove(), GetPieces_pt(ALL_TYPES))) {
         return false;
@@ -70,7 +74,7 @@ bool Board::IsBoardValid() const {
 
     if (EpSquare()) {
         Square capture_s = ColorToMove() == WHITE ? EpSquare() + SOUTH : EpSquare() + NORTH;
-        Bitboard rank_mask = ColorToMove() == WHITE ? Bitboards::RankMask(RANK_5) : Bitboards::RankMask(RANK_4);
+        Bitboard rank_mask = Bitboards::two_fwd_mask[OtherColor(ColorToMove())];
         if (GetPieceOnSquare(capture_s) != NewPiece(PAWN, OtherColor(ColorToMove()))
             || !(rank_mask & SqToBB(capture_s))) {
             return false;
