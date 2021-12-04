@@ -41,6 +41,7 @@ constexpr size_t TT_ENTRIES_PER_BUCKET = 4;
 constexpr Score FUTILITY_FACTOR = 90;
 constexpr Depth FUTILITY_DEPTH = 6;
 constexpr Depth NULL_DEPTH = 4;
+constexpr size_t KILLER_SLOTS = 2;
 
 // perft testing
 inline const std::string TEST_FILE_PATH = "tools/PerftTests.txt";

@@ -34,6 +34,7 @@ namespace Search {
         template<Node NodeType>
         Score ABSearch(Score alpha, Score beta, Depth depth, Depth ply, PVLine &pv_line);
         Score QSearch(Score alpha, Score beta, Depth ply);
+        void UpdateKillers(Move move, Depth ply);
 
         void CheckTimers();
         [[nodiscard]] std::string GetCurrLineInfo() const;

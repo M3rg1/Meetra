@@ -50,9 +50,9 @@ private:
 
     GenPhase gen_phase;
 
-    Move killers[2];
+    Move killers[KILLER_SLOTS];
     ScoredMove move_eval[MAX_LEGAL_MOVES];
-    int moves_cnt;
+    size_t moves_cnt;
 
     [[nodiscard]] inline bool Empty() const { return moves_cnt == 0; }
     inline Move PopBack() { return move_eval[--moves_cnt].move; }

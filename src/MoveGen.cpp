@@ -1,4 +1,6 @@
 #include "MoveGen.h"
+#include <algorithm>
+#include <ranges>
 
 template<Color C, PawnMoveDir DIR>
 constexpr Direction PawnMove() {
@@ -6,9 +8,8 @@ constexpr Direction PawnMove() {
                       : DIR == LEFT ? SOUTH_EAST : DIR == RIGHT ? SOUTH_WEST : SOUTH;
 }
 
-MoveGen::MoveGen(const Board &board, const Move killer_moves[2]) : MoveGen(board) {
-    killers[0] = killer_moves[0];
-    killers[1] = killer_moves[1];
+MoveGen::MoveGen(const Board &board, const Move killer_moves[KILLER_SLOTS]) : MoveGen(board) {
+    std::copy_n(killer_moves, KILLER_SLOTS, std::begin(killers));
 }
 
 MoveGen::MoveGen(const Board &board) :
@@ -25,7 +26,7 @@ MoveGen::MoveGen(const Board &board) :
         legal_moves(FULL_BB),
         double_check(false),
         gen_phase(PROMOTION),
-        killers{ZERO_MOVE, ZERO_MOVE},
+        killers{},
         moves_cnt(0) {
 
     if (checkers) {
@@ -43,12 +44,14 @@ MoveGen::MoveGen(const Board &board) :
 }
 
 void MoveGen::EvalMoves() {
-    for (int i = 0; i < moves_cnt; ++i) {
-        if (move_eval[i].move == killers[0]) {
-            move_eval[i].score = 90000;
-        } else if (move_eval[i].move == killers[1]) {
-            move_eval[i].score = 80000;
-        } else {
+    for (size_t i = 0, j = 0; i < moves_cnt; ++i, j = 0) {
+        for (; j < KILLER_SLOTS; ++j) {
+            if (move_eval[i].move == killers[j]) {
+                move_eval[i].score = static_cast<Score>((KILLER_SLOTS - j) * 10000);
+                break;
+            }
+        }
+        if (j >= KILLER_SLOTS) {
             move_eval[i].score = board.GetMoveEval(move_eval[i].move);
         }
     }

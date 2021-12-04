@@ -160,8 +160,7 @@ namespace Search {
             return eval;
         }
 
-        killers[ply + 1][0] = ZERO_MOVE;
-        killers[ply + 1][1] = ZERO_MOVE;
+        std::ranges::fill(killers[ply + 1], ZERO_MOVE);
         PVLine line;
 
         // null move pruning
@@ -237,10 +236,7 @@ namespace Search {
             if (score > best_score) {
                 if (score > alpha) {
                     if (score >= beta) {
-                        if (killers[ply][0] != move && board.IsQuiet(move)) {
-                            killers[ply][1] = killers[ply][0];
-                            killers[ply][0] = move;
-                        }
+                        UpdateKillers(move, ply);
                         tt.Save(board.GetHash(), score, depth, move, BETA, ply);
                         return score;
                     }
@@ -322,6 +318,15 @@ namespace Search {
         }
 
         return best_score;
+    }
+
+    void SearchThread::UpdateKillers(Move move, Depth ply) {
+        if (board.IsQuiet(move) && std::ranges::find(killers[ply], move) == std::end(killers[ply])) {
+            for (size_t i = KILLER_SLOTS - 1; i > 0; --i) {
+                killers[ply][i] = killers[ply][i - 1];
+            }
+            killers[ply][0] = move;
+        }
     }
 
     bool SearchThread::DidBeatMove(const RootMove &move) const {
