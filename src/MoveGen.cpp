@@ -1,6 +1,5 @@
 #include "MoveGen.h"
 #include <algorithm>
-#include <ranges>
 
 template<Color C, PawnMoveDir DIR>
 constexpr Direction PawnMove() {
@@ -8,8 +7,8 @@ constexpr Direction PawnMove() {
                       : DIR == LEFT ? SOUTH_EAST : DIR == RIGHT ? SOUTH_WEST : SOUTH;
 }
 
-MoveGen::MoveGen(const Board &board, const Move killer_moves[KILLER_SLOTS]) : MoveGen(board) {
-    std::copy_n(killer_moves, KILLER_SLOTS, std::begin(killers));
+MoveGen::MoveGen(const Board &board, const Move killer_moves[]) : MoveGen(board) {
+    std::copy_n(killer_moves, KILLER_SLOTS, killers);
 }
 
 MoveGen::MoveGen(const Board &board) :

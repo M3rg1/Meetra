@@ -119,7 +119,6 @@ namespace Search {
     }
 
     void Init() {
-        tt.Init();
         run = false;
         chess960 = false;
         use_book = false;
@@ -130,6 +129,7 @@ namespace Search {
         last_update_time = 0;
         move_overhead = DEFAULT_OVERHEAD;
         SetNumThreads(DEFAULT_SEARCH_THREADS);
+        tt.Init();
     }
 
     void Shutdown() {

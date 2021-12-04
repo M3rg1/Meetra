@@ -10,7 +10,7 @@ class MoveGen {
 public:
 
     explicit MoveGen(const Board &board);
-    MoveGen(const Board &board, const Move killer_moves[2]);
+    MoveGen(const Board &board, const Move killer_moves[]);
 
     inline void PutTTMove(Move tt_move) {
         move_eval[moves_cnt].move = tt_move;
