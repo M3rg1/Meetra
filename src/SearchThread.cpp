@@ -151,9 +151,11 @@ namespace Search {
             tt_move = ZERO_MOVE;
         }
 
+        bool prune = !board.IsInCheck();
+
         // reverse futility pruning
         if (NodeType == NONPV
-            && !board.IsInCheck()
+            && prune
             && depth <= FUTILITY_DEPTH
             && eval - FUTILITY_FACTOR * depth >= beta
                 ) {
@@ -165,7 +167,7 @@ namespace Search {
 
         // null move pruning
         if (NodeType == NONPV
-            && !board.IsInCheck()
+            && prune
             && depth >= NULL_DEPTH
             && eval >= beta
             && eval >= static_eval
@@ -201,9 +203,10 @@ namespace Search {
             // late move reduction
             Depth reduction = 0;
             if (NodeType != PV
-                && !board.IsInCheck()
+                && prune
                 && depth >= 3
                 && moves_searched >= 2
+                && !board.IsInCheck()
                 && !board.CapturedPiece()
                 && !IsPromotion(move)
                     ) {
