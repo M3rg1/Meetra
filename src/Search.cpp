@@ -36,7 +36,7 @@ namespace Search {
         }
     }
 
-    void InitSearch(const Settings &s, const Board &board) {
+    void InitNewSearch(const Settings &s, const Board &board) {
         start_time = Time::Now();
         last_update_time = 0;
         mt_depth = 0;
@@ -86,7 +86,7 @@ namespace Search {
         Search::WaitFinished();
 
         run = true;
-        InitSearch(s, board);
+        InitNewSearch(s, board);
 
         if (use_book && !settings.fixed && !board.IsChess960() && board.FullMoveClock() <= BOOK_DEPTH / 2) {
             if (auto moves = Book::Probe(board); !moves.empty()) {
