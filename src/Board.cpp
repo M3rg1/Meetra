@@ -356,7 +356,7 @@ bool Board::IsRepetition() const {
 Move Board::RookCastlingMove(Square king_to, Color c) const {
     CastlingSide side = SqToFile(king_to) == FILE_G ? SHORT : LONG;
     Square from = Bitboards::Lsb(origin_rooks[c][side]);
-    Square to = side == SHORT ? king_to - 1 : king_to + 1;
+    Square to = side == SHORT ? king_to + WEST : king_to + EAST;
     return NewMove(from, to);
 }
 
