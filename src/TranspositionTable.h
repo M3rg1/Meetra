@@ -16,7 +16,7 @@ public:
     void Save(Hash64 hash, Score score, Depth depth, Move move, TTFlag flag, Depth ply);
     void NewSearch();
     void Clear();
-    TTFlag Probe(Hash64 hash, Score alpha, Score beta, Depth depth, Depth ply, Score &score, Move &move) const;
+    TTFlag Probe(Hash64 hash, Score alpha, Score beta, Depth depth, Depth ply, Score &score, Move &move);
     [[nodiscard]] inline double Usage() const {
         double usage = static_cast<double>(used_entries.load(std::memory_order_relaxed))
                        / static_cast<double>(buckets_count * TT_ENTRIES_PER_BUCKET);

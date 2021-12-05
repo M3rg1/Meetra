@@ -71,7 +71,7 @@ void TranspositionTable::Save(Hash64 hash, Score score, Depth depth, Move move, 
 }
 
 TTFlag TranspositionTable::Probe(Hash64 hash, Score alpha, Score beta, Depth depth, Depth ply, Score &score,
-                                 Move &move) const {
+                                 Move &move) {
 
     TTBucket &bucket = table[hash % buckets_count];
     TTFlag flag = NOT_FOUND;
