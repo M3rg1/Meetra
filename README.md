@@ -60,7 +60,7 @@ For example, some free GUIs with UCI support:
         - 8 bytes per entry
         - 4 entries per bucket
         - age, depth and node type replacement scheme
-        - [lockless shared hash table](https://www.chessprogramming.org/Shared_Hash_Table) (no xor checks either, data races can and do occur, every move is validated for pseudo legality)
+        - [shared hash table](https://www.chessprogramming.org/Shared_Hash_Table)
     - [Null move pruning](https://www.chessprogramming.org/Null_Move_Pruning)
     - [Reverse futility pruning](https://www.chessprogramming.org/Reverse_Futility_Pruning)
     - [Late move reductions](https://www.chessprogramming.org/Late_Move_Reductions)

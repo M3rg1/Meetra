@@ -1,9 +1,14 @@
 #include "MoveGen.h"
-#include <algorithm>
 
 template<Color C, PawnMoveDir DIR>
 constexpr Direction PawnMove() {
     return C == WHITE ? DIR == LEFT ? NORTH_WEST : DIR == RIGHT ? NORTH_EAST : NORTH
+                      : DIR == LEFT ? SOUTH_EAST : DIR == RIGHT ? SOUTH_WEST : SOUTH;
+}
+
+template<PawnMoveDir DIR>
+constexpr Direction PawnMove(Color c) {
+    return c == WHITE ? DIR == LEFT ? NORTH_WEST : DIR == RIGHT ? NORTH_EAST : NORTH
                       : DIR == LEFT ? SOUTH_EAST : DIR == RIGHT ? SOUTH_WEST : SOUTH;
 }
 
@@ -260,29 +265,39 @@ bool MoveGen::IsPseudoLegal(Move m) const {
         return false;
     }
 
-    // there exists a piece on the origin square and its of the correct color
+    MoveType move_type = GetMoveType(m);
+
+    if (move_type != NO_FLAG) {
+        if (move_type == TWO_FORWARD) {
+            return my_color == WHITE ? ValidateTwoFwd<WHITE>(m) : ValidateTwoFwd<BLACK>(m);
+        } else if (move_type == CASTLING) {
+            return my_color == WHITE ? ValidateCastling<WHITE>(m) : ValidateCastling<BLACK>(m);
+        } else if (move_type == EN_PASSANT) {
+            return my_color == WHITE ? ValidateEp<WHITE>(m) : ValidateEp<BLACK>(m);
+        } else if (IsPromotion(m)) {
+            return my_color == WHITE ? ValidateProm<WHITE>(m) : ValidateProm<BLACK>(m);
+        }
+        return false;
+    }
+
     Square from = FromSquare(m);
     Piece moved_piece = board.GetPieceOnSquare(from);
+    // there exists a piece on the origin square and its of the correct color
     if (moved_piece == NO_PIECE || ColorOfPiece(moved_piece) != my_color) {
         return false;
     }
 
-    // in double check - only king moves are allowed
     PieceType moved_pt = TypeOfPiece(moved_piece);
+    // in double check - only king moves are allowed
     if (double_check && moved_pt != KING) {
         return false;
     }
 
-    // castling is a bit more complex because of chess960 - just generate the castling move and compare them
-    MoveType move_type = GetMoveType(m);
-    if (move_type == CASTLING) {
-        return my_color == WHITE ? ValidateCastling<WHITE>(m) : ValidateCastling<BLACK>(m);
-    }
-
-    // destination is either empty or occupied by enemy piece, but not a king
     Square to = ToSquare(m);
-    Piece dest_piece = board.GetPieceOnSquare(to);
-    if (dest_piece != NO_PIECE && (ColorOfPiece(dest_piece) == my_color || TypeOfPiece(dest_piece) == KING)) {
+    Piece captured_piece = board.GetPieceOnSquare(to);
+    // destination is either empty or occupied by enemy piece, but not a king
+    if (captured_piece != NO_PIECE
+        && (ColorOfPiece(captured_piece) == my_color || TypeOfPiece(captured_piece) == KING)) {
         return false;
     }
 
@@ -293,48 +308,29 @@ bool MoveGen::IsPseudoLegal(Move m) const {
         return false;
     }
 
-    if (move_type == EN_PASSANT) {
-        if (ep_s != to || moved_pt != PAWN) {
-            return false;
-        }
-        return true;
-    }
-
     if (!(SqToBB(to) & legal_moves) || DiscoveryCheck(from, to)) {
         return false;
     }
 
-    // special validations for pawn moves
     if (moved_pt == PAWN) {
 
-        // going backwards with a pawn all the way back
-        if (SqToBB(to) & Bitboards::prom_mask[OtherColor(my_color)]) {
+        if (SqToBB(to) & (Bitboards::prom_mask[my_color] | Bitboards::prom_mask[OtherColor(my_color)])) {
             return false;
         }
 
-        if (move_type == TWO_FORWARD) {
-            // TODO make sure the 16 move is the correct direction and the inbetween square is empty
-            if ((from ^ to) != 16 || !(Bitboards::two_fwd_mask[my_color] & SqToBB(to))) {
+        if (captured_piece == NO_PIECE) {
+            if (Bitboards::Shift(SqToBB(from), PawnMove<FORWARD>(my_color)) != SqToBB(to)) {
                 return false;
             }
-            return true;
-        }
-
-        if (move_type == PROMOTE_QUEEN || move_type == PROMOTE_ROOK || move_type == PROMOTE_BISHOP
-            || move_type == PROMOTE_KNIGHT) {
-            if (!(Bitboards::prom_mask[my_color] & SqToBB(to))) {
+        } else {
+            if (Bitboards::Shift(SqToBB(from), PawnMove<LEFT>(my_color)) != SqToBB(to)
+                && Bitboards::Shift(SqToBB(from), PawnMove<RIGHT>(my_color)) != SqToBB(to)) {
                 return false;
             }
-            return true;
-        }
-
-        // promotion has been already handled, cannot go to the promotion rank now
-        if (Bitboards::prom_mask[my_color] & SqToBB(to)) {
-            return false;
         }
     }
 
-    return move_type == NO_FLAG;
+    return true;
 }
 
 template<Color C>
@@ -350,6 +346,74 @@ bool MoveGen::ValidateCastling(Move m) const {
     if (CanCastle<C, LONG>()) {
         if (m == NewMove(king_s, C == WHITE ? C1 : C8, CASTLING)) {
             return true;
+        }
+    }
+    return false;
+}
+
+template<Color C>
+bool MoveGen::ValidateEp(Move m) const {
+    if (ep_s) {
+        Bitboard attackers = Bitboards::GetAttacks<PAWN>(ep_s, EMPTY_BB, OtherColor(C)) & board.GetPieces(PAWN, C) & SqToBB(FromSquare(m));;
+        while (attackers) {
+            Square from = Bitboards::PopLsb(attackers);
+            if (NewMove(from, ep_s, EN_PASSANT) == m) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+template<Color C>
+bool MoveGen::ValidateProm(Move m) const {
+    if (ValidatePromHelper<C, FORWARD>(m) || ValidatePromHelper<C, LEFT>(m) || ValidatePromHelper<C, RIGHT>(m)) {
+        return true;
+    }
+    return false;
+}
+
+template<Color C, PawnMoveDir D>
+bool MoveGen::ValidatePromHelper(Move m) const {
+
+    MoveType mt = GetMoveType(m);
+    if (mt != PROMOTE_QUEEN && mt != PROMOTE_ROOK && mt != PROMOTE_BISHOP && mt != PROMOTE_KNIGHT) {
+        return false;
+    }
+
+    m &= 0xFFF;
+    constexpr Direction dir = PawnMove<C, D>();
+    Bitboard pos = board.GetPieces(PAWN, C) & SqToBB(FromSquare(m));
+    Bitboard promotions = Bitboards::Shift<dir>(pos) & legal_moves & Bitboards::prom_mask[C];
+    promotions &= D == FORWARD ? empty_squares : enemy_pieces;
+
+    while (promotions) {
+        Square dest_s = Bitboards::PopLsb(promotions);
+        Square origin_s = dest_s - dir;
+        if (!DiscoveryCheck(origin_s, dest_s)) {
+            if (NewMove(origin_s, dest_s) == m) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+template<Color C>
+bool MoveGen::ValidateTwoFwd(Move m) const {
+
+    constexpr Direction dir = PawnMove<C, FORWARD>();
+    Bitboard pos = board.GetPieces(PAWN, C) & SqToBB(FromSquare(m));
+    Bitboard one_fwd = Bitboards::Shift<dir>(pos) & empty_squares & ~Bitboards::prom_mask[C];
+    Bitboard two_fwd = Bitboards::Shift<dir>(one_fwd) & empty_squares & Bitboards::two_fwd_mask[C] & legal_moves;
+
+    while (two_fwd) {
+        Square dest_s = Bitboards::PopLsb(two_fwd);
+        Square origin_s = dest_s - dir - dir;
+        if (!DiscoveryCheck(origin_s, dest_s)) {
+            if (NewMove(origin_s, dest_s, TWO_FORWARD) == m) {
+                return true;
+            }
         }
     }
     return false;

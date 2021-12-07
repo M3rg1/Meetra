@@ -97,10 +97,18 @@ private:
     template<Color C, CastlingSide S>
     [[nodiscard]] bool CanCastle() const;
 
+    [[nodiscard]] bool DiscoveryCheck(Square origin, Square destination) const;
+
     template<Color C>
     [[nodiscard]] bool ValidateCastling(Move m) const;
-
-    [[nodiscard]] bool DiscoveryCheck(Square origin, Square destination) const;
+    template<Color C>
+    [[nodiscard]] bool ValidateEp(Move m) const;
+    template<Color C>
+    [[nodiscard]] bool ValidateTwoFwd(Move m) const;
+    template<Color C>
+    [[nodiscard]] bool ValidateProm(Move m) const;
+    template<Color C, PawnMoveDir D>
+    [[nodiscard]] bool ValidatePromHelper(Move m) const;
 };
 
 #endif //MEETRA_MOVEGEN_H

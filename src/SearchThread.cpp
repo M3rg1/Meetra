@@ -3,6 +3,7 @@
 #include "Uci.h"
 #include "MoveGen.h"
 #include "Search.h"
+#include <ranges>
 
 namespace Search {
 
@@ -11,9 +12,6 @@ namespace Search {
 
         // iterative deepening
         for (depth_reached = 1; depth_reached <= settings.allowed_depth && Run(); ++depth_reached) {
-
-            // seldepth is always at least the current depth being searched
-            seldepth_reached = depth_reached;
 
             // if a helper thread falls behind the main thread, skip current depth and go deeper
             if (!IsMainThread() && depth_reached <= mt_depth) {
@@ -28,7 +26,7 @@ namespace Search {
             for (curr_rm_num = 0; curr_rm_num < root_moves.size(); ++curr_rm_num) {
 
                 curr_rm = &root_moves[curr_rm_num];
-                curr_rm->seldepth = depth_reached;
+                curr_rm->seldepth = depth_reached; // seldepth is always at least the current depth
 
                 if (IsMainThread() && show_currmove && Time::ElapsedSince<Time::ms>(start_time) > CURRMOVE_DELAY) {
                     Uci::Send(GetCurrMoveInfo());
@@ -101,7 +99,6 @@ namespace Search {
         }
 
         curr_rm->seldepth = std::max(ply, curr_rm->seldepth);
-        seldepth_reached = std::max(ply, seldepth_reached);
 
         if (board.Move50Rule()) {
             // it could be checkmate (or stalemate) on the 50th move
@@ -266,7 +263,6 @@ namespace Search {
     Score SearchThread::QSearch(Score alpha, Score beta, Depth ply) {
 
         curr_rm->seldepth = std::max(ply, curr_rm->seldepth);
-        seldepth_reached = std::max(ply, seldepth_reached);
 
         if (ply >= 3 * depth_reached || ply >= MAX_SEARCH_DEPTH) {
             return board.GetEval();
@@ -352,6 +348,12 @@ namespace Search {
         return board.MoveToName(GetBestRootMove().move);
     }
 
+    Depth SearchThread::GetMaxSeldepth() const {
+        return std::ranges::max_element(root_moves, [&](const auto &m1, const auto &m2) {
+            return m2.depth == depth_reached && m1.seldepth < m2.seldepth;
+        })->seldepth;
+    }
+
     std::string SearchThread::GetBriefSearchInfo() const {
 
         auto nodes = NodesTotal();
@@ -362,7 +364,7 @@ namespace Search {
         std::ostringstream oss;
 
         oss << "info depth " << depth_reached
-            << " seldepth " << seldepth_reached
+            << " seldepth " << GetMaxSeldepth()
             << " nodes " << nodes
             << " time " << elapsed_ms
             << " nps " << nps
@@ -466,7 +468,6 @@ namespace Search {
         curr_rm = &root_moves[0];
         curr_rm_num = 0;
         depth_reached = 0;
-        seldepth_reached = 0;
         nodes_explored = 0;
         std::ranges::for_each(killers, [&](auto &k) { std::ranges::fill(k, ZERO_MOVE); });
     }

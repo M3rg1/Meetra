@@ -46,9 +46,6 @@ bool Board::IsValid() const {
         return false;
     }
 
-    // TODO - fen that is in checkmate position is fine -> we just need to make sure to return 0000 move
-    //  thought is fine to have this check here for debugging ourselves, but nevertheless we should allow
-    //  such FENs
     Square enemy_king_square = ColorToMove() == WHITE ? Bitboards::Lsb(black_king) : Bitboards::Lsb(white_king);
     if (IsAttackedByAny(enemy_king_square, ColorToMove(), GetPieces_pt(ALL_TYPES))) {
         return false;
@@ -252,9 +249,7 @@ bool Board::MakeMove(Move m) {
     Zobrist::UpdateCr(state.hash, previous_cr, GetCr());
 
     if (moved_pt == PAWN) {
-
         ResetPly();
-
         if (move_type == TWO_FORWARD) {
             SetEpSquare(this_col == WHITE ? to + SOUTH : to + NORTH);
             Zobrist::AddEp(state.hash, EpSquare());
@@ -269,13 +264,9 @@ bool Board::MakeMove(Move m) {
                 return false;
             }
         }
-    }
-
-    if (moved_pt == KING) {
-
+    } else  if (moved_pt == KING) {
         state.cr &= Bitboards::castling_mask[next_col];
         Zobrist::UpdateCr(state.hash, previous_cr, GetCr());
-
         if (move_type == CASTLING) {
             Move r_move = RookCastlingMove(to, this_col);
             Square r_to = ToSquare(r_move);

@@ -136,6 +136,18 @@ namespace Bitboards {
                D == SOUTH_WEST ? (b & ~0x0101010101010101ULL) >> 9 :
                EMPTY_BB;
     }
+
+    constexpr Bitboard Shift(Bitboard b, Direction d) {
+        return d == NORTH ? b << 8 :
+               d == SOUTH ? b >> 8 :
+               d == EAST ? (b & ~0x8080808080808080ULL) << 1 :
+               d == WEST ? (b & ~0x0101010101010101ULL) >> 1 :
+               d == NORTH_EAST ? (b & ~0x8080808080808080ULL) << 9 :
+               d == NORTH_WEST ? (b & ~0x0101010101010101ULL) << 7 :
+               d == SOUTH_EAST ? (b & ~0x8080808080808080ULL) >> 7 :
+               d == SOUTH_WEST ? (b & ~0x0101010101010101ULL) >> 9 :
+               EMPTY_BB;
+    }
 }
 
 #endif //MEETRA_BITBOARDS_H

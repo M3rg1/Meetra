@@ -40,6 +40,7 @@ namespace Search {
         [[nodiscard]] std::string GetCurrLineInfo() const;
         [[nodiscard]] std::string GetCurrMoveInfo() const;
         [[nodiscard]] std::string GetBriefSearchInfo() const;
+        [[nodiscard]] Depth GetMaxSeldepth() const;
         [[nodiscard]] inline bool IsMainThread() const { return id == 0; }
 
         Board board;
@@ -48,7 +49,6 @@ namespace Search {
         RootMove *curr_rm;
         size_t curr_rm_num;
         Depth depth_reached;
-        Depth seldepth_reached;
         std::atomic<uint64_t> nodes_explored;
 
         int id;
