@@ -116,8 +116,10 @@ namespace Search {
             return -DRAW_SCORE;
         } else if (board.IsRepetition()) {
             return -DRAW_SCORE;
+        } else if (ply >= MAX_SEARCH_DEPTH) {
+            return board.GetEval();
         } else if (depth <= 0) {
-            if (NodeType == PV && board.IsInCheck() && ply < MAX_SEARCH_DEPTH) {
+            if (NodeType == PV && board.IsInCheck()) {
                 depth = 1;
             } else {
                 return QSearch(alpha, beta, ply);
