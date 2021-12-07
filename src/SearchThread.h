@@ -31,6 +31,8 @@ namespace Search {
 
     private:
 
+        void InitThread(std::stop_token stop_token);
+
         template<Node NodeType>
         Score ABSearch(Score alpha, Score beta, Depth depth, Depth ply, PVLine &pv_line);
         Score QSearch(Score alpha, Score beta, Depth ply);

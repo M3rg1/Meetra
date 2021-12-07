@@ -3,7 +3,6 @@
 #include "Uci.h"
 #include "MoveGen.h"
 #include "Search.h"
-#include <ranges>
 
 namespace Search {
 
@@ -446,18 +445,20 @@ namespace Search {
     SearchThread::SearchThread(int id) :
             id(id),
             active(true),
-            thread([&](std::stop_token stop_token) {
-                while (true) {
-                    {
-                        std::unique_lock lock(mtx);
-                        active = false;
-                        cond_var.notify_all();
-                        cond_var.wait(lock, stop_token, [&] { return active; });
-                    }
-                    if (stop_token.stop_requested()) { return; }
-                    Search();
-                }
-            }) {}
+            thread(std::bind_front(&SearchThread::InitThread, this)) {};
+
+    void SearchThread::InitThread(std::stop_token stop_token) {
+        while (true) {
+            {
+                std::unique_lock lock(mtx);
+                active = false;
+                cond_var.notify_all();
+                cond_var.wait(lock, stop_token, [&] { return active; });
+            }
+            if (stop_token.stop_requested()) { return; }
+            Search();
+        }
+    }
 
     void SearchThread::WaitForFinish() {
         std::unique_lock lock(mtx);
