@@ -6,11 +6,12 @@
 #include "Defs.h"
 #include "Board.h"
 #include "MoveGen.h"
-#include "Uci.h"
 #include <fstream>
 #include <sstream>
 #include "Timer.h"
 #include "Config.h"
+#include <syncstream>
+#include <iostream>
 
 namespace Testing {
 
@@ -25,7 +26,7 @@ namespace Testing {
                 if (board.IsMoveLegal(m)) {
                     ++total_nodes;
                     if constexpr (DIV) {
-                        Uci::Send(board.MoveToName(m) + ": " + std::to_string(1));
+                        std::osyncstream(std::cout) << board.MoveToName(m) << ": 1" << std::endl;
                     }
                 }
             }
@@ -41,7 +42,7 @@ namespace Testing {
             board.UnmakeMove(m);
             total_nodes += nodes;
             if constexpr (DIV) {
-                Uci::Send(board.MoveToName(m) + ": " + std::to_string(nodes));
+                std::osyncstream(std::cout) << board.MoveToName(m) << ": " << nodes << std::endl;
             }
         }
 
@@ -78,7 +79,8 @@ namespace Testing {
 
             Board board;
             if (!board.NewPosition(fen, chess960)) {
-                Uci::Send("Position: " + fen + "\nError parsing FEN, skipping test.\n=== ERROR ===\n");
+                std::osyncstream(std::cout)
+                        << "Position: " << fen << "\nError parsing FEN, skipping test.\n=== ERROR ===\n" << std::endl;
                 return false;
             }
 
@@ -91,16 +93,14 @@ namespace Testing {
             auto nps = static_cast<uint64_t>((static_cast<double>(result) / static_cast<double>(elapsed_ns))
                                              * 1000000000.0);
 
-            std::ostringstream oss;
-            oss << "Position: " << fen << '\n'
-                << "Depth: " << depth
-                << " | Expected: " << expected
-                << " | Got: " << result
-                << " | Time elapsed: " << elapsed_ms << "ms"
-                << " | NPS: " << nps << '\n'
-                << (result != expected ? "=== ERROR ===" : "=== OK ===") << '\n';
-
-            Uci::Send(oss.str());
+            std::osyncstream(std::cout)
+                    << "Position: " << fen << '\n'
+                    << "Depth: " << depth
+                    << " | Expected: " << expected
+                    << " | Got: " << result
+                    << " | Time elapsed: " << elapsed_ms << "ms"
+                    << " | NPS: " << nps << '\n'
+                    << (result != expected ? "=== ERROR ===" : "=== OK ===") << '\n' << std::endl;
 
             return result == expected;
         }
@@ -110,7 +110,7 @@ namespace Testing {
 
         std::fstream test_file(TEST_FILE_PATH, std::ios::in);
         if (!test_file.is_open()) {
-            Uci::Send("Could not open the test file!");
+            std::osyncstream(std::cout) << "Could not open the test file!" << std::endl;
             return {};
         }
 
@@ -131,7 +131,7 @@ namespace Testing {
 
         auto tests = LoadTests();
         if (tests.empty()) {
-            Uci::Send("No tests to run.");
+            std::osyncstream(std::cout) << "No tests to run." << std::endl;
             return;
         }
 
@@ -140,7 +140,7 @@ namespace Testing {
         auto start = Time::Now();
 
         for (size_t i = 0; i < tests.size(); ++i) {
-            Uci::Send("Running test " + std::to_string(i + 1) + " ...");
+            std::osyncstream(std::cout) << "Running test " << i + 1 << " ..." << std::endl;
             if (!tests[i].Run()) {
                 errors.emplace_back(i);
             }
@@ -151,10 +151,10 @@ namespace Testing {
         auto elapsed_ms = elapsed_ns / 1000000;
         auto nps = static_cast<uint64_t>((static_cast<double>(nodes) / static_cast<double>(elapsed_ns)) * 1000000000.0);
 
-        std::ostringstream oss;
+        std::osyncstream oss(std::cout);
         oss << "==========================================\n\n"
             << "Total time elapsed: " << elapsed_ms << "ms\n"
-            << "Average NPS: " << nps << "\n";
+            << "Average NPS: " << nps << '\n';
         if (!errors.empty()) {
             oss << "Errors found in tests:\n";
             for (auto e: errors) {
@@ -164,8 +164,7 @@ namespace Testing {
         } else {
             oss << "All tests OK";
         }
-
-        Uci::Send(oss.str());
+        oss << std::endl;
     }
 
 }

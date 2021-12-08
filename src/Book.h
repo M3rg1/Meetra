@@ -6,9 +6,10 @@
 #include "Board.h"
 #include <filesystem>
 #include <fstream>
-#include "Uci.h"
 #include "Defs.h"
 #include "Config.h"
+#include <iostream>
+#include <syncstream>
 
 namespace Book {
 
@@ -65,7 +66,7 @@ namespace Book {
 
         std::ifstream book_stream(BOOK_PATH, std::ios::in | std::ios::binary);
         if (!book_stream.is_open()) {
-            Uci::SendInfo("Could not open book.");
+            std::osyncstream(std::cout) << "info Could not open book." << std::endl;
             return {};
         }
 

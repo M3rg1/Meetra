@@ -13,24 +13,20 @@ namespace Uci {
                              "| |\\/| / -_) -_)  _| '_/ _` |\n"  \
                              "|_|  |_\\___\\___|\\__|_| \\__,_|";
 
-    const std::string NAME(PROJECT_NAME);
-    const std::string VERSION(PROJECT_VER);
-    const std::string AUTHOR(PROJECT_AUTHOR);
-
     std::string GetOptions() {
         std::ostringstream oss;
         oss << "option name Clear Hash type button\n"
             << "option name UCI_ShowCurrLine type check default false\n"
             << "option name Show current move type check default true\n"
             << "option name Hash type spin default " << DEFAULT_HASH_SIZE << " min " << MIN_HASH_SIZE
-            << " max " << MAX_HASH_SIZE << "\n"
+            << " max " << MAX_HASH_SIZE << '\n'
             << "option name MultiPV type spin default 1 min 1 max 32\n"
             << "option name Mute plies type spin default 0 min 0 max 128\n"
             << "option name OwnBook type check default false\n"
             << "option name Threads type spin default " << DEFAULT_SEARCH_THREADS << " min 1 max "
-            << MAX_SEARCH_THREADS << "\n"
+            << MAX_SEARCH_THREADS << '\n'
             << "option name Move overhead type spin default " << DEFAULT_OVERHEAD << " min "
-            << MIN_OVERHEAD << " max " << MAX_OVERHEAD << "\n"
+            << MIN_OVERHEAD << " max " << MAX_OVERHEAD << '\n'
             << "option name UCI_Chess960 type check default false\n"
             << "option name Send updates frequency type spin default " << DEFAULT_UPDATE_INTERVAL << " min "
             << MIN_UPDATE_INTERVAL;
@@ -55,29 +51,22 @@ namespace Uci {
         std::cin.tie(nullptr);
     }
 
-    void Send(std::string_view data) {
-        std::osyncstream(std::cout) << data << std::endl;
-    }
-
-    void SendInfo(std::string_view data) {
-        std::osyncstream(std::cout) << "info string " << data << std::endl;
-    }
-
     void Listen() {
 
         Board board;
 
         if (isatty(STDOUT_FILENO)) {
-            Send(LOGO + "\n"
-                 + " v. " + VERSION + "\n"
-                 + " Made by " + AUTHOR + "\n\n"
-                 + board.PrettyPrint());
+            std::osyncstream(std::cout)
+                    << LOGO << '\n'
+                    << " v. " << PROJECT_VER << '\n'
+                    << " Made by " << PROJECT_AUTHOR << "\n\n"
+                    << board.PrettyPrint() << std::endl;
         }
 
         std::string input;
         while (std::getline(std::cin, input)) {
 
-            std::istringstream iss(input);
+            std::istringstream iss(std::move(input));
             std::string command;
             iss >> command;
 
@@ -98,7 +87,7 @@ namespace Uci {
     }
 
     void BoardCommand(const Board &board) {
-        Uci::Send('\n' + board.PrettyPrint());
+        std::osyncstream(std::cout) << '\n' << board.PrettyPrint() << std::endl;
     }
 
     void TestCommand() {
@@ -106,21 +95,21 @@ namespace Uci {
     }
 
     void UnknownCommand() {
-        Send("Unknown command, please see the engine documentation for available commands.");
+        std::osyncstream(std::cout) << "Unknown command, please see the engine documentation for available commands."
+                                    << std::endl;
     }
 
     void UciCommand() {
-        Send(
-                "id name " + NAME + " v. " + VERSION + '\n'
-                + "id author " + AUTHOR + '\n'
-                + GetOptions() + '\n'
-                + "uciok"
-        );
+        std::osyncstream(std::cout)
+                << "id name " << PROJECT_NAME << " v. " << PROJECT_VER << '\n'
+                << "id author " << PROJECT_AUTHOR << '\n'
+                << GetOptions() << '\n'
+                << "uciok" << std::endl;
     }
 
     void GoCommand(std::istringstream &iss, const Board &board) {
         if (Search::run) {
-            SendInfo("Search is already in progress!");
+            std::osyncstream(std::cout) << "info Search is already in progress!" << std::endl;
             return;
         }
         Search::Settings settings = ParseSearchOptions(iss);
@@ -140,16 +129,14 @@ namespace Uci {
         auto elapsed_ms = elapsed_ns / 1000000;
         auto nps = static_cast<uint64_t>((static_cast<double>(nodes) / static_cast<double>(elapsed_ns)) * 1000000000.0);
 
-        std::ostringstream oss;
-        oss << "\nTime elapsed: " << elapsed_ms << "ms"
-            << " | Nodes explored: " << nodes
-            << " | NPS: " << nps;
-
-        Send(oss.str());
+        std::osyncstream(std::cout) << "\nTime elapsed: " << elapsed_ms << "ms"
+                                    << " | Nodes explored: " << nodes
+                                    << " | NPS: " << nps
+                                    << std::endl;
     }
 
     void IsReadyCommand() {
-        Send("readyok");
+        std::osyncstream(std::cout) << "readyok" << std::endl;
     }
 
     void PositionCommand(std::istringstream &iss, Board &board) {
@@ -166,13 +153,13 @@ namespace Uci {
         }
 
         if (!board.NewPosition(fen, Search::chess960)) {
-            SendInfo("Invalid fen: " + fen);
+            std::osyncstream(std::cout) << "info Invalid fen: " << fen << std::endl;
             return;
         }
 
         while (iss >> token) {
             if (!board.MakeUciMove(token)) {
-                SendInfo("Invalid move: " + token);
+                std::osyncstream(std::cout) << "info Invalid move: " << token << std::endl;
                 return;
             }
         }
@@ -185,7 +172,7 @@ namespace Uci {
 
     void UciNewGameCommand() {
         if (Search::run) {
-            SendInfo("Search is already in progress!");
+            std::osyncstream(std::cout) << "info Search is already in progress!" << std::endl;
             return;
         }
         Search::ClearTT();
@@ -202,7 +189,7 @@ namespace Uci {
     void SetOptionCommand(std::istringstream &iss) {
 
         if (Search::run) {
-            SendInfo("Cannot change settings while search is ongoing!");
+            std::osyncstream(std::cout) << "info Cannot change settings while search is ongoing!" << std::endl;
             return;
         }
 
@@ -239,7 +226,8 @@ namespace Uci {
         } else if (option == "send updates frequency" && IsNumber(value)) {
             Search::SetUpdateInterval(std::stoll(value));
         } else {
-            SendInfo("Unknown option or invalid value: " + option + ' ' + value);
+            std::osyncstream(std::cout) << "info Unknown option or invalid value: " << option << ' ' << value
+                                        << std::endl;
         }
     }
 
@@ -266,7 +254,7 @@ namespace Uci {
                 iss >> settings.allowed_depth;
                 settings.fixed = true;
             } else {
-                SendInfo("Unknown search option: " + option);
+                std::osyncstream(std::cout) << "info Unknown search option: " << option << std::endl;
             }
         }
 

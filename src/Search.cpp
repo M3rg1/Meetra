@@ -1,6 +1,8 @@
 #include "Search.h"
 #include "MoveGen.h"
 #include <random>
+#include <syncstream>
+#include <iostream>
 #include "Book.h"
 
 namespace Search {
@@ -77,8 +79,8 @@ namespace Search {
             }
         }
 
-        Uci::Send(best_thread->GetFullSearchInfo());
-        Uci::Send("bestmove " + best_thread->GetBestRmName());
+        best_thread->SendFullSearchInfo();
+        best_thread->SendBestMove();
     }
 
     void StartSearch(Settings s, Board board) {
@@ -92,7 +94,7 @@ namespace Search {
             if (auto moves = Book::Probe(board); !moves.empty()) {
                 StopSearch();
                 std::ranges::shuffle(moves, std::mt19937{std::random_device{}()});
-                Uci::Send("bestmove " + board.MoveToName(moves.front()));
+                std::osyncstream(std::cout) << "bestmove " << board.MoveToName(moves.front()) << std::endl;
                 return;
             }
         }
@@ -105,7 +107,7 @@ namespace Search {
             || settings.allowed_time <= 1) {
             StopSearch();
             auto best_move = root_moves.empty() ? ZERO_MOVE : root_moves.front().move;
-            Uci::Send("bestmove " + board.MoveToName(best_move));
+            std::osyncstream(std::cout) << "bestmove " << board.MoveToName(best_move) << std::endl;
             return;
         }
 
@@ -142,7 +144,8 @@ namespace Search {
 
         if (num_threads > MAX_SEARCH_THREADS || num_threads < 1) {
             num_threads = std::clamp(num_threads, static_cast<size_t>(1), MAX_SEARCH_THREADS);
-            Uci::SendInfo("Invalid threads count! Initializing to: " + std::to_string(num_threads) + " threads");
+            std::osyncstream(std::cout) << "info Invalid threads count! Initializing to: " << num_threads << " threads"
+                                        << std::endl;
         }
 
         Shutdown();

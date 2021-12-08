@@ -5,7 +5,6 @@
 #include <regex>
 #include <iomanip>
 #include <bit>
-#include "Uci.h"
 
 Board::Board() {
     NewPosition(STARTPOS_FEN, false);

@@ -210,7 +210,7 @@ namespace Bitboards {
                     oss << " o ";
                 }
             }
-            oss << "\n";
+            oss << '\n';
         }
         oss << "    A  B  C  D  E  F  G  H";
         return oss.str();

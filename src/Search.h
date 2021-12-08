@@ -52,7 +52,6 @@ namespace Search {
             std::copy_n(other.moves, other.len, moves + len);
             len += other.len;
         }
-
     private:
         Move moves[MAX_SEARCH_DEPTH + 1];
         size_t len = 0;

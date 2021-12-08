@@ -1,6 +1,7 @@
 #include "TranspositionTable.h"
 #include "Search.h"
-#include "Uci.h"
+#include <syncstream>
+#include <iostream>
 
 Score RemoveMatePly(Score score, Depth ply) {
     return score > MIN_MATE_EVAL ? score + ply : score < -MIN_MATE_EVAL ? score - ply : score;
@@ -14,7 +15,7 @@ void TranspositionTable::Init(size_t size_mb) {
 
     if (size_mb > MAX_HASH_SIZE || size_mb < MIN_HASH_SIZE) {
         size_mb = std::clamp(size_mb, MIN_HASH_SIZE, MAX_HASH_SIZE);
-        Uci::SendInfo("Invalid TT size! Initializing to: " + std::to_string(size_mb) + "MB");
+        std::osyncstream(std::cout) << "Invalid TT size! Initializing to: " << size_mb << "MB" << std::endl;
     }
 
     buckets_count = (size_mb * 1048576) / sizeof(TTBucket);

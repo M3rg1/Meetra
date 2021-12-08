@@ -1,8 +1,9 @@
 #include <sstream>
 #include "SearchThread.h"
-#include "Uci.h"
 #include "MoveGen.h"
 #include "Search.h"
+#include <syncstream>
+#include <iostream>
 
 namespace Search {
 
@@ -28,7 +29,7 @@ namespace Search {
                 curr_rm->seldepth = depth_reached; // seldepth is always at least the current depth
 
                 if (IsMainThread() && show_currmove && Time::ElapsedSince<Time::ms>(start_time) > CURRMOVE_DELAY) {
-                    Uci::Send(GetCurrMoveInfo());
+                    SendCurrMoveInfo();
                 }
 
                 // if main thread already finished this depth, there's no reason for a helper thread to remain
@@ -80,7 +81,7 @@ namespace Search {
                 }
 
                 if (depth_reached > plies_muted && depth_reached < settings.allowed_depth) {
-                    Uci::Send(GetFullSearchInfo());
+                    SendFullSearchInfo();
                 }
             }
         } // end iterative deepening loop
@@ -345,8 +346,8 @@ namespace Search {
         return root_moves[0];
     }
 
-    std::string SearchThread::GetBestRmName() const {
-        return board.MoveToName(GetBestRootMove().move);
+    void SearchThread::SendBestMove() const {
+        std::osyncstream(std::cout) << "bestmove " << board.MoveToName(GetBestRootMove().move) << std::endl;
     }
 
     Depth SearchThread::GetMaxSeldepth() const {
@@ -355,26 +356,24 @@ namespace Search {
         })->seldepth;
     }
 
-    std::string SearchThread::GetBriefSearchInfo() const {
+    void SearchThread::SendBriefSearchInfo() const {
 
         auto nodes = NodesTotal();
         auto elapsed_ns = Time::ElapsedSince<Time::ns>(start_time) + 1;
         auto elapsed_ms = elapsed_ns / 1000000;
         auto nps = static_cast<uint64_t>((static_cast<double>(nodes) / static_cast<double>(elapsed_ns)) * 1000000000.0);
 
-        std::ostringstream oss;
-
-        oss << "info depth " << depth_reached
-            << " seldepth " << GetMaxSeldepth()
-            << " nodes " << nodes
-            << " time " << elapsed_ms
-            << " nps " << nps
-            << " hashfull " << static_cast<int>(tt.Usage() * 1000.0);
-
-        return oss.str();
+        std::osyncstream(std::cout)
+                << "info depth " << depth_reached
+                << " seldepth " << GetMaxSeldepth()
+                << " nodes " << nodes
+                << " time " << elapsed_ms
+                << " nps " << nps
+                << " hashfull " << static_cast<int>(tt.Usage() * 1000.0)
+                << std::endl;
     }
 
-    std::string SearchThread::GetFullSearchInfo() const {
+    void SearchThread::SendFullSearchInfo() const {
 
         auto nodes = NodesTotal();
         auto elapsed_ns = Time::ElapsedSince<Time::ns>(start_time) + 1;
@@ -382,8 +381,7 @@ namespace Search {
         auto nps = static_cast<uint64_t>((static_cast<double>(nodes) / static_cast<double>(elapsed_ns)) * 1000000000.0);
         auto pvs_to_send = std::min(multi_pv, root_moves.size());
 
-        std::ostringstream oss;
-
+        std::osyncstream oss(std::cout);
         for (size_t i = 0; i < pvs_to_send; ++i) {
             oss << "info";
             if (pvs_to_send > 1) oss << " multipv " << i + 1;
@@ -406,21 +404,21 @@ namespace Search {
             }
             if (i + 1 < pvs_to_send) oss << '\n';
         }
-
-        return oss.str();
+        oss << std::endl;
     }
 
-    std::string SearchThread::GetCurrMoveInfo() const {
-        return "info currmove " + board.MoveToName(curr_rm->move) + " currmovenumber " +
-               std::to_string(curr_rm_num + 1);
+    void SearchThread::SendCurrMoveInfo() const {
+        std::osyncstream(std::cout) << "info currmove " << board.MoveToName(curr_rm->move) << " currmovenumber "
+                                    << curr_rm_num + 1 << std::endl;
     }
 
-    std::string SearchThread::GetCurrLineInfo() const {
-        std::string ret = "info currline " + board.MoveToName(curr_rm->move);
+    void SearchThread::SendCurrLineInfo() const {
+        std::osyncstream oss(std::cout);
+        oss << "info currline " << board.MoveToName(curr_rm->move);
         for (size_t i = 0; i < curr_rm->pv.Size(); ++i) {
-            ret += ' ' + board.MoveToName(curr_rm->pv.At(i));
+            oss << ' ' << board.MoveToName(curr_rm->pv.At(i));
         }
-        return ret;
+        oss << std::endl;
     }
 
     void SearchThread::CheckTimers() {
@@ -435,9 +433,9 @@ namespace Search {
             StopSearch();
         } else if (depth_reached > plies_muted && last_update_time + update_interval < elapsed) {
             last_update_time = elapsed;
-            Uci::Send(GetBriefSearchInfo());
+            SendBriefSearchInfo();
             if (show_currline) {
-                Uci::Send(GetCurrLineInfo());
+                SendCurrLineInfo();
             }
         }
     }
