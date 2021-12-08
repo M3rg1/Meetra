@@ -23,7 +23,7 @@ For example, some free GUIs with UCI support:
 - [Banksia](https://banksiagui.com/)
 - ... and many more
 
-#### Supported features
+#### Supported UCI commands
 - Chess 960 (Fisher random chess)
 - Multi PV
 - Up to 64 threads
