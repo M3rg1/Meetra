@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.00)
+cmake_minimum_required(VERSION 3.16)
 project(Meetra VERSION 0.1)
 set(PROJECT_AUTHOR M3rg1)
 
