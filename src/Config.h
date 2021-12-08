@@ -21,7 +21,8 @@ constexpr TimeRep DEFAULT_SEARCH_TIME = 60000;
 constexpr TimeRep MIN_OVERHEAD = 0;
 constexpr TimeRep MAX_OVERHEAD = 10000;
 constexpr TimeRep DEFAULT_OVERHEAD = 10;
-constexpr TimeRep UPDATE_INFO_INTERVAL = 1000;
+constexpr TimeRep DEFAULT_UPDATE_INTERVAL = 1000;
+constexpr TimeRep MIN_UPDATE_INTERVAL = 10;
 constexpr TimeRep CURRMOVE_DELAY = 1000;
 
 // eval consts

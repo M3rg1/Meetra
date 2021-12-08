@@ -30,11 +30,12 @@ For example, some free GUIs with UCI support:
 - Up to 32 GB transposition table
 - Infinite search, limited nodes search, fixed depth search
 - Own book (the books currently available aren't very good though)
-- **Additional UCI commands**
+- **Additional custom UCI commands**
     - Mute plies - the engine won't be sending any output to the GUI up to the specified depth
-    - Move overhead - how much time should be set aside for communication delay between the engine and GUI, and any other potential delays (best kept at default value)
+    - Move overhead - how much time should be set aside for communication delay between the engine and GUI, and any other potential delays (best kept at default value) in milliseconds
     - Clear hash - clears any stored information from previous searches (the GUI will usually handle this)
     - Show current move - whether the engine will be sending information about which move in the root position is currently being searched
+    - Send updates frequency - how often will search information (nodes, nps, hashfull etc.) be sent to the GUI during an ongoing search in milliseconds
 
 
 #### Internal engine architecture

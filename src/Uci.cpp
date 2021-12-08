@@ -25,13 +25,15 @@ namespace Uci {
             << "option name Hash type spin default " << DEFAULT_HASH_SIZE << " min " << MIN_HASH_SIZE
             << " max " << MAX_HASH_SIZE << "\n"
             << "option name MultiPV type spin default 1 min 1 max 32\n"
-            << "option name Mute plies type spin default 0 min 0 max 64\n"
+            << "option name Mute plies type spin default 0 min 0 max 128\n"
             << "option name OwnBook type check default false\n"
             << "option name Threads type spin default " << DEFAULT_SEARCH_THREADS << " min 1 max "
             << MAX_SEARCH_THREADS << "\n"
             << "option name Move overhead type spin default " << DEFAULT_OVERHEAD << " min "
             << MIN_OVERHEAD << " max " << MAX_OVERHEAD << "\n"
-            << "option name UCI_Chess960 type check default false";
+            << "option name UCI_Chess960 type check default false\n"
+            << "option name Send updates frequency type spin default " << DEFAULT_UPDATE_INTERVAL << " min "
+            << MIN_UPDATE_INTERVAL;
         return oss.str();
     }
 
@@ -234,6 +236,8 @@ namespace Uci {
             Search::SetUseBook(value == "true");
         } else if (option == "uci_chess960" && IsBoolean(value)) {
             Search::SetChess960(value == "true");
+        } else if (option == "send updates frequency" && IsNumber(value)) {
+            Search::SetUpdateInterval(std::stoll(value));
         } else {
             SendInfo("Unknown option or invalid value: " + option + ' ' + value);
         }

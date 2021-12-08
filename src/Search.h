@@ -38,6 +38,7 @@ namespace Search {
     inline size_t multi_pv;
     inline TimeRep last_update_time;
     inline TimeRep move_overhead;
+    inline TimeRep update_interval;
     inline Time::TimePoint start_time;
     inline TranspositionTable tt;
     inline std::vector<std::unique_ptr<SearchThread>> threads;
@@ -97,6 +98,7 @@ namespace Search {
     inline void SetUseBook(bool use) { use_book = use; }
     inline void SetChess960(bool set) { chess960 = set; }
     inline void SetMoveOverhead(TimeRep overhead) { move_overhead = std::clamp(overhead, MIN_OVERHEAD, MAX_OVERHEAD); }
+    inline void SetUpdateInterval(TimeRep interval) { update_interval = std::max(interval, MIN_UPDATE_INTERVAL); };
     void SetNumThreads(size_t num_threads);
     uint64_t NodesTotal();
 }

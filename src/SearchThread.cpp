@@ -433,7 +433,7 @@ namespace Search {
 
         if (settings.allowed_time < elapsed || NodesTotal() > settings.allowed_nodes) {
             StopSearch();
-        } else if (depth_reached > plies_muted && last_update_time + UPDATE_INFO_INTERVAL < elapsed) {
+        } else if (depth_reached > plies_muted && last_update_time + update_interval < elapsed) {
             last_update_time = elapsed;
             Uci::Send(GetBriefSearchInfo());
             if (show_currline) {

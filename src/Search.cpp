@@ -128,6 +128,7 @@ namespace Search {
         plies_muted = 0;
         last_update_time = 0;
         move_overhead = DEFAULT_OVERHEAD;
+        update_interval = DEFAULT_UPDATE_INTERVAL;
         SetNumThreads(DEFAULT_SEARCH_THREADS);
         tt.Init();
     }
