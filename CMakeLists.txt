@@ -1,24 +1,18 @@
 cmake_minimum_required(VERSION 3.00)
-project(Meetra VERSION 1.0)
+project(Meetra VERSION 0.1)
 set(PROJECT_AUTHOR M3rg1)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 configure_file(Env.h.in ${CMAKE_BINARY_DIR}/generated/Env.h)
+set(INCLUDE_DIRS ${CMAKE_BINARY_DIR}/generated/)
 
 file(GLOB_RECURSE SRC_FILES CONFIGURE_DEPENDS "src/*.cpp")
-file(GLOB_RECURSE HEADER_FILES CONFIGURE_DEPENDS "src/*.h")
-
-set(INCLUDE_DIRS ${CMAKE_BINARY_DIR}/generated/)
-#[[foreach(HEADER_FILE ${HEADER_FILES})
-    get_filename_component(DIR ${HEADER_FILE} PATH)
-    list(APPEND INCLUDE_DIRS ${DIR})
-endforeach()
-list(REMOVE_DUPLICATES INCLUDE_DIRS)]]
 
 add_executable(${PROJECT_NAME} ${SRC_FILES})
 target_include_directories(${PROJECT_NAME} PRIVATE ${INCLUDE_DIRS})
+# https://stackoverflow.com/questions/6921695/how-can-i-build-a-c-project-with-multiple-interdependent-subdirectories
 
 #file(GLOB_RECURSE SRC_FILES src/*.cxx)
 #add_executable(${PROJECT_NAME} ${SRC_FILES})
