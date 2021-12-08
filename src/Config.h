@@ -7,7 +7,7 @@ constexpr size_t DEFAULT_SEARCH_THREADS = 1;
 constexpr size_t MAX_SEARCH_THREADS = 64;
 
 constexpr Depth BOOK_DEPTH = 20;
-inline const std::string BOOK_PATH = "tools/bestmove_r20d20_a5000.mtr.bin";
+inline const std::string BOOK_PATH = "books/bestmove_r20d20_a5000.mtr.bin";
 
 constexpr size_t MAX_LEGAL_MOVES = 256;
 constexpr size_t MAX_GAME_LENGTH = 1024;
@@ -44,7 +44,7 @@ constexpr Depth NULL_DEPTH = 4;
 constexpr size_t KILLER_SLOTS = 2;
 
 // perft testing
-inline const std::string TEST_FILE_PATH = "tools/PerftTests.txt";
+inline const std::string TEST_FILE_PATH = "tests/PerftTests.txt";
 
 
 #endif //MEETRA_CONFIG_H

@@ -1,5 +1,5 @@
-#ifndef MEETRA_TIME_H
-#define MEETRA_TIME_H
+#ifndef MEETRA_TIMER_H
+#define MEETRA_TIMER_H
 
 #include <chrono>
 #include "Defs.h"
@@ -22,4 +22,4 @@ namespace Time {
 
 }
 
-#endif //MEETRA_TIME_H
+#endif //MEETRA_TIMER_H

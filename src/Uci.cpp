@@ -2,6 +2,7 @@
 #include "Uci.h"
 #include "Search.h"
 #include "TestSuite.h"
+#include <Env.h>
 #include <unistd.h>
 #include <syncstream>
 
@@ -12,9 +13,9 @@ namespace Uci {
                              "| |\\/| / -_) -_)  _| '_/ _` |\n"  \
                              "|_|  |_\\___\\___|\\__|_| \\__,_|";
 
-    const std::string NAME = "Meetra";
-    const std::string VERSION = "0.0.1";
-    const std::string AUTHOR = "M3rg1";
+    const std::string NAME(PROJECT_NAME);
+    const std::string VERSION(PROJECT_VER);
+    const std::string AUTHOR(PROJECT_AUTHOR);
 
     std::string GetOptions() {
         std::ostringstream oss;

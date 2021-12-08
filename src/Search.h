@@ -6,7 +6,7 @@
 #include "Evaluator.h"
 #include "TranspositionTable.h"
 #include "SearchThread.h"
-#include "Time.h"
+#include "Timer.h"
 #include "Defs.h"
 #include "Config.h"
 
@@ -43,10 +43,6 @@ namespace Search {
     inline std::vector<std::unique_ptr<SearchThread>> threads;
 
     struct PVLine {
-    private:
-        Move moves[MAX_SEARCH_DEPTH + 1];
-        size_t len = 0;
-    public:
         [[nodiscard]] size_t Size() const { return len; }
         [[nodiscard]] Move At(size_t idx) const { return moves[idx]; }
         void PutMove(Move m) { moves[len++] = m; }
@@ -55,6 +51,10 @@ namespace Search {
             std::copy_n(other.moves, other.len, moves + len);
             len += other.len;
         }
+
+    private:
+        Move moves[MAX_SEARCH_DEPTH + 1];
+        size_t len = 0;
     };
 
     struct RootMove {
@@ -76,10 +76,6 @@ namespace Search {
 
         bool operator==(const RootMove &other) const {
             return move == other.move;
-        }
-
-        bool operator!=(const RootMove &other) const {
-            return !(*this == other);
         }
     };
 

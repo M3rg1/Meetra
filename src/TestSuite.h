@@ -9,7 +9,7 @@
 #include "Uci.h"
 #include <fstream>
 #include <sstream>
-#include "Time.h"
+#include "Timer.h"
 #include "Config.h"
 
 namespace Testing {
