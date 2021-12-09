@@ -142,8 +142,6 @@ namespace Search {
             if ((tt_flag & ALPHA && eval < tt_score) || (tt_flag & BETA && eval > tt_score)) {
                 eval = tt_score;
             }
-        } else {
-            tt_move = ZERO_MOVE;
         }
 
         // reverse futility pruning
