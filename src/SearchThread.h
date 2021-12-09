@@ -34,9 +34,10 @@ namespace Search {
         void InitThread(std::stop_token stop_token);
 
         template<Node NodeType>
-        Score ABSearch(Score alpha, Score beta, Depth depth, Depth ply, PVLine &pv_line);
+        Score ABSearch(Score alpha, Score beta, Depth depth, Depth ply, PVLine &parent_pv);
         Score QSearch(Score alpha, Score beta, Depth ply);
         void UpdateKillers(Move move, Depth ply);
+        [[nodiscard]] bool AnyLegalMoves() const;
 
         void CheckTimers();
         void SendCurrLineInfo() const;

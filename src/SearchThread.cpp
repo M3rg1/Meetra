@@ -92,7 +92,7 @@ namespace Search {
     }
 
     template<Node NodeType>
-    Score SearchThread::ABSearch(Score alpha, Score beta, Depth depth, Depth ply, PVLine &pv_line) {
+    Score SearchThread::ABSearch(Score alpha, Score beta, Depth depth, Depth ply, PVLine &parent_pv) {
 
         if (IsMainThread()) {
             CheckTimers();
@@ -102,15 +102,7 @@ namespace Search {
 
         if (board.Move50Rule()) {
             // it could be checkmate (or stalemate) on the 50th move
-            MoveGen mg(board);
-            bool legal_moves = false;
-            while (Move m = mg.GetAnyMove()) {
-                if (board.IsMoveLegal(m)) {
-                    legal_moves = true;
-                    break;
-                }
-            }
-            if (board.IsInCheck() && !legal_moves) {
+            if (board.IsInCheck() && !AnyLegalMoves()) {
                 return -MATE_SCORE + ply;
             }
             return -DRAW_SCORE;
@@ -126,6 +118,13 @@ namespace Search {
             }
         }
 
+        // mate distance pruning
+        alpha = std::max(-MATE_SCORE + ply, alpha);
+        beta = std::min(MATE_SCORE - (ply + 1), beta);
+        if (alpha >= beta) {
+            return alpha;
+        }
+
         MoveGen move_gen(board, killers[ply]);
         Score static_eval = board.GetEval();
         Score eval = static_eval;
@@ -134,51 +133,46 @@ namespace Search {
         TTFlag tt_flag = tt.Probe(board.GetHash(), alpha, beta, depth, ply, tt_score, tt_move);
 
         if (tt_flag != NOT_FOUND && move_gen.IsPseudoLegal(tt_move)) {
-
             // always re-search PV nodes
             if (NodeType != PV && tt_flag & CUTOFF) {
                 return tt_score;
             }
-
             move_gen.PutTTMove(tt_move);
-
             // improve static eval if possible
-            if ((tt_flag & ALPHA && eval > tt_score) || (tt_flag & BETA && eval < tt_score)) {
+            if ((tt_flag & ALPHA && eval < tt_score) || (tt_flag & BETA && eval > tt_score)) {
                 eval = tt_score;
             }
         } else {
             tt_move = ZERO_MOVE;
         }
 
-        bool prune = !board.IsInCheck();
-
         // reverse futility pruning
         if (NodeType == NONPV
-            && prune
+            && !board.IsInCheck()
             && depth <= FUTILITY_DEPTH
+            && eval < MIN_MATE_EVAL
             && eval - FUTILITY_FACTOR * depth >= beta
                 ) {
             return eval;
         }
 
         std::ranges::fill(killers[ply + 1], ZERO_MOVE);
-        PVLine line;
+        PVLine child_pv;
 
         // null move pruning
         if (NodeType == NONPV
-            && prune
+            && !board.IsInCheck()
             && depth >= NULL_DEPTH
             && eval >= beta
             && eval >= static_eval
+            && beta < MIN_MATE_EVAL
+            && alpha > -MIN_MATE_EVAL
                 ) {
             board.MakeNullMove();
-            Score null_score = -ABSearch<NULLMOVE>(-beta, -beta + 1, depth - NULL_DEPTH, ply + NULL_DEPTH, line);
+            Score null_score = -ABSearch<NULLMOVE>(-beta, -beta + 1, depth - NULL_DEPTH, ply + NULL_DEPTH, child_pv);
             board.UnmakeNullMove();
             if (null_score >= beta) {
-                Score verification = ABSearch<NULLMOVE>(beta - 1, beta, depth - NULL_DEPTH, ply + NULL_DEPTH, line);
-                if (verification >= beta) {
-                    return null_score;
-                }
+                return null_score >= MIN_MATE_EVAL ? beta : null_score;
             }
         }
 
@@ -186,6 +180,7 @@ namespace Search {
         Score best_score = NEGATIVE_INF;
         Move best_move;
         size_t moves_searched = 0;
+        bool prune = !board.IsInCheck();
 
         while (Move move = move_gen.GetBestMove<NORMAL>()) {
 
@@ -208,6 +203,7 @@ namespace Search {
                 && !board.IsInCheck()
                 && !board.CapturedPiece()
                 && !IsPromotion(move)
+                && best_score > -MIN_MATE_EVAL
                     ) {
                 if (moves_searched >= 7) {
                     reduction = depth / 3;
@@ -218,11 +214,11 @@ namespace Search {
 
             Score score;
             if (NodeType != PV || moves_searched > 0) {
-                score = -ABSearch<NONPV>(-alpha - 1, -alpha, depth - 1 - reduction, ply + 1, line);
+                score = -ABSearch<NONPV>(-alpha - 1, -alpha, depth - 1 - reduction, ply + 1, child_pv);
             }
             if (NodeType == PV && (moves_searched == 0 || (score > alpha && score < beta))) {
-                line.Clear();
-                score = -ABSearch<PV>(-beta, -alpha, depth - 1, ply + 1, line);
+                child_pv.Clear();
+                score = -ABSearch<PV>(-beta, -alpha, depth - 1, ply + 1, child_pv);
             }
 
             board.UnmakeMove(move);
@@ -237,14 +233,14 @@ namespace Search {
 
             if (score > best_score) {
                 if (score > alpha) {
+                    parent_pv.Clear();
+                    parent_pv.PutMove(move);
+                    parent_pv.PutLine(child_pv);
                     if (score >= beta) {
                         UpdateKillers(move, ply);
                         tt.Save(board.GetHash(), score, depth, move, BETA, ply);
                         return score;
                     }
-                    pv_line.Clear();
-                    pv_line.PutMove(move);
-                    pv_line.PutLine(line);
                     tt_flag = EXACT;
                     alpha = score;
                 }
@@ -274,18 +270,16 @@ namespace Search {
             return -DRAW_SCORE;
         }
 
-        if (!board.IsInCheck()) {
-            Score static_eval = board.GetEval();
-            if (static_eval > alpha) {
-                if (static_eval >= beta) {
-                    return static_eval;
-                }
-                alpha = static_eval;
+        Score best_score = board.GetEval();
+        if (!board.IsInCheck() && best_score > alpha) {
+            if (best_score >= beta) {
+                return best_score;
             }
+            alpha = best_score;
         }
 
         MoveGen move_gen(board);
-        Score best_score = NEGATIVE_INF;
+        size_t moves_searched = 0;
         while (Move move = move_gen.GetBestMove<QSEARCH>()) {
 
             if (!board.MakeMove(move)) {
@@ -299,6 +293,7 @@ namespace Search {
 
             nodes_explored.fetch_add(1, std::memory_order_relaxed);
             ++curr_rm->nodes;
+            ++moves_searched;
 
             if (score > best_score) {
                 if (score > alpha) {
@@ -311,11 +306,8 @@ namespace Search {
             }
         }
 
-        if (best_score == NEGATIVE_INF) {
-            if (board.IsInCheck()) {
-                return -MATE_SCORE + ply;
-            }
-            best_score = alpha;
+        if (moves_searched == 0 && board.IsInCheck()) {
+            return -MATE_SCORE + ply;
         }
 
         return best_score;
@@ -326,6 +318,16 @@ namespace Search {
             std::copy_n(killers[ply], KILLER_SLOTS - 1, killers[ply] + 1);
             killers[ply][0] = move;
         }
+    }
+
+    bool SearchThread::AnyLegalMoves() const {
+        MoveGen mg(board);
+        while (Move m = mg.GetAnyMove()) {
+            if (board.IsMoveLegal(m)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     bool SearchThread::DidBeatMove(const RootMove &move) const {

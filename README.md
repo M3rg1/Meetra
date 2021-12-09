@@ -2,7 +2,7 @@
 
 ##### Build requirements:
 - GCC 11 or newer
-- CMake 3.00 or newer
+- CMake 3.16 or newer
 
 
 Navigate to the root folder and run these commands:
@@ -49,6 +49,7 @@ For example, some free GUIs with UCI support:
     - Precomputed moves for all pieces
     - [Fancy Magic bitboards](https://www.chessprogramming.org/Magic_Bitboards) (initialized via [Hyperbola Quintessence](https://www.chessprogramming.org/Hyperbola_Quintessence))
 - **Move ordering**
+    - TT move first
     - [MVV-LVA](https://www.chessprogramming.org/MVV-LVA)
     - [Killer heuristic](https://www.chessprogramming.org/Killer_Heuristic) (with 2 slots)
 - **Search**
@@ -65,6 +66,7 @@ For example, some free GUIs with UCI support:
     - [Null move pruning](https://www.chessprogramming.org/Null_Move_Pruning)
     - [Reverse futility pruning](https://www.chessprogramming.org/Reverse_Futility_Pruning)
     - [Late move reductions](https://www.chessprogramming.org/Late_Move_Reductions)
+    - [Mate distance pruning](https://www.chessprogramming.org/Mate_Distance_Pruning)
     - [Quiesence search](https://www.chessprogramming.org/Quiescence_Search) (no TT probing, with check extensions)
 - **Evaluation**
     - [Piece-square tables](https://www.chessprogramming.org/Piece-Square_Tables) with [tapered evaluation](https://www.chessprogramming.org/Tapered_Eval) using the [PeSTO's Evaluation Function](https://www.chessprogramming.org/PeSTO%27s_Evaluation_Function)

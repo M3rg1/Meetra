@@ -29,7 +29,7 @@ namespace Uci {
             << MIN_OVERHEAD << " max " << MAX_OVERHEAD << '\n'
             << "option name UCI_Chess960 type check default false\n"
             << "option name Send updates frequency type spin default " << DEFAULT_UPDATE_INTERVAL << " min "
-            << MIN_UPDATE_INTERVAL;
+            << MIN_UPDATE_INTERVAL << " max " << std::numeric_limits<int>::max();
         return oss.str();
     }
 
