@@ -166,7 +166,7 @@ namespace Search {
             && beta < MIN_MATE_EVAL
             && alpha > -MIN_MATE_EVAL
                 ) {
-            Depth R = 3 + depth / 5;
+            Depth R = 4 + depth / 5;
             board.MakeNullMove();
             Score null_score = -ABSearch<NULLMOVE>(-beta, -beta + 1, depth - R, ply + 1, child_pv);
             board.UnmakeNullMove();
