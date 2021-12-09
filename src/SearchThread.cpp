@@ -178,7 +178,7 @@ namespace Search {
         Score best_score = NEGATIVE_INF;
         Move best_move;
         size_t moves_searched = 0;
-        bool prune = !board.IsInCheck();
+        bool do_lmr = !board.IsInCheck() && depth >= 3;
 
         while (Move move = move_gen.GetBestMove<NORMAL>()) {
 
@@ -195,8 +195,7 @@ namespace Search {
             // late move reduction
             Depth reduction = 0;
             if (NodeType != PV
-                && prune
-                && depth >= 3
+                && do_lmr
                 && moves_searched >= 2
                 && !board.IsInCheck()
                 && !board.CapturedPiece()
