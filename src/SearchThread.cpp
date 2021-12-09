@@ -128,7 +128,7 @@ namespace Search {
         MoveGen move_gen(board, killers[ply]);
         Score static_eval = board.GetEval();
         Score eval = static_eval;
-        Move tt_move;
+        Move tt_move = ZERO_MOVE;
         Score tt_score;
         TTFlag tt_flag = tt.Probe(board.GetHash(), alpha, beta, depth, ply, tt_score, tt_move);
 
