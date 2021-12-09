@@ -127,7 +127,7 @@ namespace Search {
 
         MoveGen move_gen(board, killers[ply]);
         Score static_eval = board.GetEval();
-        Score eval = static_eval;
+        Score eval = static_eval; // eval is not used if we are in check
         Move tt_move = ZERO_MOVE;
         Score tt_score;
         TTFlag tt_flag = tt.Probe(board.GetHash(), alpha, beta, depth, ply, tt_score, tt_move);
@@ -139,7 +139,7 @@ namespace Search {
             }
             move_gen.PutTTMove(tt_move);
             // improve static eval if possible
-            if ((tt_flag & ALPHA && eval < tt_score) || (tt_flag & BETA && eval > tt_score)) {
+            if ((tt_flag & UPPER && eval > tt_score) || (tt_flag & LOWER && eval < tt_score)) {
                 eval = tt_score;
             }
         }
@@ -167,14 +167,14 @@ namespace Search {
             && alpha > -MIN_MATE_EVAL
                 ) {
             board.MakeNullMove();
-            Score null_score = -ABSearch<NULLMOVE>(-beta, -beta + 1, depth - NULL_DEPTH, ply + NULL_DEPTH, child_pv);
+            Score null_score = -ABSearch<NULLMOVE>(-beta, -beta + 1, depth - NULL_R, ply + NULL_R, child_pv);
             board.UnmakeNullMove();
             if (null_score >= beta) {
                 return null_score >= MIN_MATE_EVAL ? beta : null_score;
             }
         }
 
-        tt_flag = ALPHA;
+        tt_flag = UPPER;
         Score best_score = NEGATIVE_INF;
         Move best_move;
         size_t moves_searched = 0;
@@ -235,7 +235,7 @@ namespace Search {
                     parent_pv.PutLine(child_pv);
                     if (score >= beta) {
                         UpdateKillers(move, ply);
-                        tt.Save(board.GetHash(), score, depth, move, BETA, ply);
+                        tt.Save(board.GetHash(), score, depth, move, LOWER, ply);
                         return score;
                     }
                     tt_flag = EXACT;

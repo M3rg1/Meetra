@@ -39,9 +39,10 @@ constexpr size_t MAX_HASH_SIZE = 32768;
 constexpr size_t TT_ENTRIES_PER_BUCKET = 4;
 
 // search stuff
-constexpr Score FUTILITY_FACTOR = 90;
-constexpr Depth FUTILITY_DEPTH = 6;
-constexpr Depth NULL_DEPTH = 4;
+constexpr Score FUTILITY_FACTOR = 80;
+constexpr Depth FUTILITY_DEPTH = 7;
+constexpr Depth NULL_DEPTH = 2;
+constexpr Depth NULL_R = 4;
 constexpr size_t KILLER_SLOTS = 2;
 
 // perft testing

@@ -18,7 +18,7 @@ constexpr Bitboard EMPTY_BB = 0;
 constexpr Bitboard FULL_BB = 0xFFFFFFFFFFFFFFFF;
 
 enum TTFlags : int {
-    NOT_FOUND, ALPHA, BETA, EXACT, CUTOFF
+    NOT_FOUND, UPPER, LOWER, EXACT, CUTOFF
 };
 using TTFlag = int;
 using TTEpoch = int;
