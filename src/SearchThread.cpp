@@ -160,14 +160,15 @@ namespace Search {
         // null move pruning
         if (NodeType == NONPV
             && !board.IsInCheck()
-            && depth >= NULL_DEPTH
+            && depth >= MIN_NULL_DEPTH
             && eval >= beta
             && eval >= static_eval
             && beta < MIN_MATE_EVAL
             && alpha > -MIN_MATE_EVAL
                 ) {
+            Depth R = 3 + depth / 5;
             board.MakeNullMove();
-            Score null_score = -ABSearch<NULLMOVE>(-beta, -beta + 1, depth - NULL_R, ply + NULL_R, child_pv);
+            Score null_score = -ABSearch<NULLMOVE>(-beta, -beta + 1, depth - R, ply + 1, child_pv);
             board.UnmakeNullMove();
             if (null_score >= beta) {
                 return null_score >= MIN_MATE_EVAL ? beta : null_score;

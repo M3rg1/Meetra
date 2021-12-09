@@ -197,7 +197,7 @@ void Board::MakeNullMove() {
     Zobrist::RemoveEp(state.hash, EpSquare());
     ClearEpSquare();
     ClearCapturedPiece();
-    ResetPly();
+    IncrementPly();
 }
 
 // Make a pseudo legal move.
