@@ -6,10 +6,12 @@ constexpr Direction PawnMove() {
                       : DIR == LEFT ? SOUTH_EAST : DIR == RIGHT ? SOUTH_WEST : SOUTH;
 }
 
-template<PawnMoveDir DIR>
-constexpr Direction PawnMove(Color c) {
-    return c == WHITE ? DIR == LEFT ? NORTH_WEST : DIR == RIGHT ? NORTH_EAST : NORTH
-                      : DIR == LEFT ? SOUTH_EAST : DIR == RIGHT ? SOUTH_WEST : SOUTH;
+bool ValidatePromMove(Move prom, Move to_validate) {
+    if ((prom | PROMOTE_QUEEN) == to_validate) return true;
+    if ((prom | PROMOTE_ROOK) == to_validate) return true;
+    if ((prom | PROMOTE_BISHOP) == to_validate) return true;
+    if ((prom | PROMOTE_KNIGHT) == to_validate) return true;
+    return false;
 }
 
 MoveGen::MoveGen(const Board &board, const Move killer_moves[]) : MoveGen(board) {
@@ -111,34 +113,39 @@ void MoveGen::NextPhase() {
 template<GenPhase P, Color C>
 void MoveGen::GenMovesForPhase() {
     if constexpr (P == DOUBLE_CHECK) {
-        GenMovesForPieceType<KING, C>(enemy_pieces | empty_squares);
+        MovesForPT<KING, C, GENERATE>(board.GetPieces(KING, C), enemy_pieces | empty_squares);
     } else if constexpr (P == PROMOTION) {
-        GenPawnPromotions<C, LEFT>();
-        GenPawnPromotions<C, RIGHT>();
-        GenPawnPromotions<C, FORWARD>();
+        Bitboard pawns = board.GetPieces(PAWN, C);
+        PawnProms<C, LEFT, GENERATE>(pawns);
+        PawnProms<C, RIGHT, GENERATE>(pawns);
+        PawnProms<C, FORWARD, GENERATE>(pawns);
     } else if constexpr (P == CAPTURE) {
-        GenPawnCaptures<C, LEFT>();
-        GenPawnCaptures<C, RIGHT>();
-        GenEpMoves<C>();
-        GenMovesForPieceType<KING, C>(enemy_pieces);
-        GenMovesForPieceType<KNIGHT, C>(legal_moves & enemy_pieces);
-        GenMovesForPieceType<BISHOP, C>(legal_moves & enemy_pieces);
-        GenMovesForPieceType<ROOK, C>(legal_moves & enemy_pieces);
-        GenMovesForPieceType<QUEEN, C>(legal_moves & enemy_pieces);
+        Bitboard mask = legal_moves & enemy_pieces;
+        Bitboard pawns = board.GetPieces(PAWN, C);
+        EpMoves<C, GENERATE>(pawns);
+        PawnCaptures<C, LEFT, GENERATE>(pawns);
+        PawnCaptures<C, RIGHT, GENERATE>(pawns);
+        MovesForPT<KING, C, GENERATE>(board.GetPieces(KING, C), enemy_pieces);
+        MovesForPT<KNIGHT, C, GENERATE>(board.GetPieces(KNIGHT, C), mask);
+        MovesForPT<BISHOP, C, GENERATE>(board.GetPieces(BISHOP, C), mask);
+        MovesForPT<ROOK, C, GENERATE>(board.GetPieces(ROOK, C), mask);
+        MovesForPT<QUEEN, C, GENERATE>(board.GetPieces(QUEEN, C), mask);
     } else if constexpr (P == QUIET) {
-        GenCastlingMoves<C>();
-        GenPawnQuiets<C>();
-        GenMovesForPieceType<KING, C>(empty_squares);
-        GenMovesForPieceType<KNIGHT, C>(legal_moves & empty_squares);
-        GenMovesForPieceType<BISHOP, C>(legal_moves & empty_squares);
-        GenMovesForPieceType<ROOK, C>(legal_moves & empty_squares);
-        GenMovesForPieceType<QUEEN, C>(legal_moves & empty_squares);
+        Bitboard mask = legal_moves & empty_squares;
+        Bitboard pawns = board.GetPieces(PAWN, C);
+        PawnOneFwd<C, GENERATE>(pawns);
+        PawnTwoFwd<C, GENERATE>(pawns);
+        CastlingMoves<C, GENERATE>();
+        MovesForPT<KING, C, GENERATE>(board.GetPieces(KING, C), empty_squares);
+        MovesForPT<KNIGHT, C, GENERATE>(board.GetPieces(KNIGHT, C), mask);
+        MovesForPT<BISHOP, C, GENERATE>(board.GetPieces(BISHOP, C), mask);
+        MovesForPT<ROOK, C, GENERATE>(board.GetPieces(ROOK, C), mask);
+        MovesForPT<QUEEN, C, GENERATE>(board.GetPieces(QUEEN, C), mask);
     }
 }
 
-template<PieceType PT, Color C>
-void MoveGen::GenMovesForPieceType(Bitboard legality_mask) {
-    Bitboard pieces = board.GetPieces(PT, C);
+template<PieceType PT, Color C, GenType Type>
+auto MoveGen::MovesForPT(Bitboard pieces, Bitboard legality_mask, Move to_validate) {
     while (pieces) {
         Square origin_s = Bitboards::PopLsb(pieces);
         Bitboard possible_moves = Bitboards::GetAttacks<PT>(origin_s, all_pieces) & legality_mask;
@@ -146,105 +153,119 @@ void MoveGen::GenMovesForPieceType(Bitboard legality_mask) {
             possible_moves &= Bitboards::GetRayToBorders(king_s, origin_s);
         }
         while (possible_moves) {
-            Square destination_s = Bitboards::PopLsb(possible_moves);
-            PutMove(NewMove(origin_s, destination_s));
+            Square dest_s = Bitboards::PopLsb(possible_moves);
+            if constexpr (Type == GENERATE) PutMove(NewMove(origin_s, dest_s));
+            if constexpr (Type == VALIDATE) if (NewMove(origin_s, dest_s) == to_validate) return true;
         }
     }
+    if constexpr (Type == VALIDATE) return false;
 }
 
-template<Color C>
-void MoveGen::GenPawnQuiets() {
+template<Color C, GenType Type>
+auto MoveGen::PawnOneFwd(Bitboard pieces, Move to_validate) {
 
     constexpr Direction dir = PawnMove<C, FORWARD>();
-    Bitboard one_fwd = Bitboards::Shift<dir>(board.GetPieces(PAWN, C)) & empty_squares & ~Bitboards::prom_mask[C];
-    Bitboard two_fwd = Bitboards::Shift<dir>(one_fwd) & empty_squares & Bitboards::two_fwd_mask[C] & legal_moves;
-    one_fwd &= legal_moves;
-
-    while (two_fwd) {
-        Square dest_s = Bitboards::PopLsb(two_fwd);
-        Square origin_s = dest_s - dir - dir;
-        if (!DiscoveryCheck(origin_s, dest_s)) {
-            PutMove(NewMove(origin_s, dest_s, TWO_FORWARD));
-        }
-    }
+    Bitboard one_fwd = Bitboards::Shift<dir>(pieces) & empty_squares & ~Bitboards::prom_mask[C] & legal_moves;
 
     while (one_fwd) {
         Square dest_s = Bitboards::PopLsb(one_fwd);
         Square origin_s = dest_s - dir;
         if (!DiscoveryCheck(origin_s, dest_s)) {
-            PutMove(NewMove(origin_s, dest_s));
+            if constexpr (Type == GENERATE) PutMove(NewMove(origin_s, dest_s));
+            if constexpr (Type == VALIDATE) if (NewMove(origin_s, dest_s) == to_validate) return true;
         }
     }
+    if constexpr (Type == VALIDATE) return false;
 }
 
-template<Color C, PawnMoveDir D>
-void MoveGen::GenPawnCaptures() {
+template<Color C, GenType Type>
+auto MoveGen::PawnTwoFwd(Bitboard pieces, Move to_validate) {
+
+    constexpr Direction dir = PawnMove<C, FORWARD>();
+    Bitboard two_fwd = Bitboards::Shift<dir>(Bitboards::Shift<dir>(pieces) & empty_squares) & empty_squares
+                       & Bitboards::two_fwd_mask[C] & legal_moves;
+
+    while (two_fwd) {
+        Square dest_s = Bitboards::PopLsb(two_fwd);
+        Square origin_s = dest_s - dir - dir;
+        if (!DiscoveryCheck(origin_s, dest_s)) {
+            if constexpr (Type == GENERATE) PutMove(NewMove(origin_s, dest_s, TWO_FORWARD));
+            if constexpr (Type == VALIDATE) if (NewMove(origin_s, dest_s, TWO_FORWARD) == to_validate) return true;
+        }
+    };
+    if constexpr (Type == VALIDATE) return false;
+}
+
+template<Color C, PawnMoveDir D, GenType Type>
+auto MoveGen::PawnCaptures(Bitboard pieces, Move to_validate) {
 
     constexpr Direction dir = PawnMove<C, D>();
-    Bitboard captures = Bitboards::Shift<dir>(board.GetPieces(PAWN, C)) & legal_moves & enemy_pieces
-                        & ~Bitboards::prom_mask[C];
+    Bitboard captures = Bitboards::Shift<dir>(pieces) & legal_moves & enemy_pieces & ~Bitboards::prom_mask[C];
 
     while (captures) {
         Square dest_s = Bitboards::PopLsb(captures);
         Square origin_s = dest_s - dir;
         if (!DiscoveryCheck(origin_s, dest_s)) {
-            PutMove(NewMove(origin_s, dest_s));
+            if constexpr (Type == GENERATE) PutMove(NewMove(origin_s, dest_s));
+            if constexpr (Type == VALIDATE) if (NewMove(origin_s, dest_s) == to_validate) return true;
         }
     }
+    if constexpr (Type == VALIDATE) return false;
 }
 
-template<Color C, PawnMoveDir D>
-void MoveGen::GenPawnPromotions() {
+template<Color C, PawnMoveDir D, GenType Type>
+auto MoveGen::PawnProms(Bitboard pieces, Move to_validate) {
 
     constexpr Direction dir = PawnMove<C, D>();
-    Bitboard promotions = Bitboards::Shift<dir>(board.GetPieces(PAWN, C)) & legal_moves & Bitboards::prom_mask[C];
+    Bitboard promotions = Bitboards::Shift<dir>(pieces) & legal_moves & Bitboards::prom_mask[C];
     promotions &= D == FORWARD ? empty_squares : enemy_pieces;
 
     while (promotions) {
         Square dest_s = Bitboards::PopLsb(promotions);
         Square origin_s = dest_s - dir;
         if (!DiscoveryCheck(origin_s, dest_s)) {
-            PutPromMoves(NewMove(origin_s, dest_s));
+            if constexpr (Type == GENERATE) PutPromMoves(NewMove(origin_s, dest_s));
+            if constexpr (Type == VALIDATE) if (ValidatePromMove(NewMove(origin_s, dest_s), to_validate)) return true;
         }
     }
+    if constexpr (Type == VALIDATE) return false;
 }
 
-// allow movement only on a line between piece and king, if piece is a blocker
-bool MoveGen::DiscoveryCheck(Square orig, Square dest) const {
-    return (blockers & SqToBB(orig)) && !(Bitboards::GetRayToBorders(king_s, orig) & SqToBB(dest));
-}
-
-template<Color C>
-void MoveGen::GenEpMoves() {
+template<Color C, GenType Type>
+auto MoveGen::EpMoves(Bitboard pieces, Move to_validate) {
     if (ep_s) {
-        Bitboard attackers = Bitboards::GetAttacks<PAWN>(ep_s, EMPTY_BB, OtherColor(C)) & board.GetPieces(PAWN, C);
+        Bitboard attackers = Bitboards::GetAttacks<PAWN>(ep_s, EMPTY_BB, OtherColor(C)) & pieces;
         while (attackers) {
-            Square from = Bitboards::PopLsb(attackers);
-            PutMove(NewMove(from, ep_s, EN_PASSANT));
+            Square origin_s = Bitboards::PopLsb(attackers);
+            if constexpr (Type == GENERATE) PutMove(NewMove(origin_s, ep_s, EN_PASSANT));
+            if constexpr (Type == VALIDATE) if (NewMove(origin_s, ep_s, EN_PASSANT) == to_validate) return true;
         }
     }
+    if constexpr (Type == VALIDATE) return false;
 }
 
-template<Color C>
-void MoveGen::GenCastlingMoves() {
+template<Color C, GenType Type>
+auto MoveGen::CastlingMoves(Move to_validate) {
     if (checkers) {
-        return;
+        if constexpr (Type == GENERATE) return;
+        if constexpr (Type == VALIDATE) return false;
     }
     if (CanCastle<C, SHORT>()) {
-        PutMove(NewMove(king_s, C == WHITE ? G1 : G8, CASTLING));
+        if constexpr (Type == GENERATE) PutMove(NewMove(king_s, C == WHITE ? G1 : G8, CASTLING));
+        if constexpr (Type == VALIDATE) if (NewMove(king_s, C == WHITE ? G1 : G8, CASTLING) == to_validate) return true;
     }
     if (CanCastle<C, LONG>()) {
-        PutMove(NewMove(king_s, C == WHITE ? C1 : C8, CASTLING));
+        if constexpr (Type == GENERATE) PutMove(NewMove(king_s, C == WHITE ? C1 : C8, CASTLING));
+        if constexpr (Type == VALIDATE) if (NewMove(king_s, C == WHITE ? C1 : C8, CASTLING) == to_validate) return true;
     }
+    if constexpr (Type == VALIDATE) return false;
 }
 
 template<Color C, CastlingSide S>
 bool MoveGen::CanCastle() const {
-
     if (!board.CrAvailable(C, S)) {
         return false;
     }
-
     // (for chess 960) we need to calculate all the squares that we travel through and make sure they are empty
     constexpr Square r_dest = S == LONG ? C == WHITE ? D1 : D8 : C == WHITE ? F1 : F8;
     constexpr Square k_dest = S == LONG ? C == WHITE ? C1 : C8 : C == WHITE ? G1 : G8;
@@ -257,164 +278,79 @@ bool MoveGen::CanCastle() const {
     return (occ & walk_sq) == EMPTY_BB;
 }
 
-// this function does not guarantee the move is actually pseudo legal, it only guarantees that when the move is made
-// and unmade, it won't crash the program. It does a lot of general validations that should catch most corrupted moves.
-bool MoveGen::IsPseudoLegal(Move m) const {
+// allow movement only on a line between piece and king, if piece is a blocker
+bool MoveGen::DiscoveryCheck(Square orig, Square dest) const {
+    return (blockers & SqToBB(orig)) && !(Bitboards::GetRayToBorders(king_s, orig) & SqToBB(dest));
+}
+
+// guarantees that the move can be generated by this generator
+bool MoveGen::IsPseudoLegal(Move m) {
 
     if (m == ZERO_MOVE) {
         return false;
     }
 
-    MoveType move_type = GetMoveType(m);
-
-    if (move_type != NO_FLAG) {
-        if (move_type == TWO_FORWARD) {
-            return my_color == WHITE ? ValidateTwoFwd<WHITE>(m) : ValidateTwoFwd<BLACK>(m);
-        } else if (move_type == CASTLING) {
-            return my_color == WHITE ? ValidateCastling<WHITE>(m) : ValidateCastling<BLACK>(m);
-        } else if (move_type == EN_PASSANT) {
-            return my_color == WHITE ? ValidateEp<WHITE>(m) : ValidateEp<BLACK>(m);
-        } else if (IsPromotion(m)) {
-            return my_color == WHITE ? ValidateProm<WHITE>(m) : ValidateProm<BLACK>(m);
-        }
-        return false;
-    }
-
-    Square from = FromSquare(m);
-    Piece moved_piece = board.GetPieceOnSquare(from);
-    // there exists a piece on the origin square and its of the correct color
+    Piece moved_piece = board.GetPieceOnSquare(FromSquare(m));
     if (moved_piece == NO_PIECE || ColorOfPiece(moved_piece) != my_color) {
         return false;
     }
 
-    PieceType moved_pt = TypeOfPiece(moved_piece);
-    // in double check - only king moves are allowed
-    if (double_check && moved_pt != KING) {
-        return false;
+    if (double_check) {
+        if (TypeOfPiece(moved_piece) != KING) return false;
+        return my_color == WHITE ?
+               MovesForPT<KING, WHITE, VALIDATE>(SqToBB(FromSquare(m)), empty_squares | enemy_pieces, m) :
+               MovesForPT<KING, BLACK, VALIDATE>(SqToBB(FromSquare(m)), empty_squares | enemy_pieces, m);
     }
 
-    Square to = ToSquare(m);
-    Piece captured_piece = board.GetPieceOnSquare(to);
-    // destination is either empty or occupied by enemy piece, but not a king
-    if (captured_piece != NO_PIECE
-        && (ColorOfPiece(captured_piece) == my_color || TypeOfPiece(captured_piece) == KING)) {
-        return false;
+    if (GetMoveType(m) == NO_FLAG) {
+        return my_color == WHITE ? NormalMoveIsPseudoLegal<WHITE>(m) : NormalMoveIsPseudoLegal<BLACK>(m);
+    } else {
+        return my_color == WHITE ? SpecialMoveIsPseudoLegal<WHITE>(m) : SpecialMoveIsPseudoLegal<BLACK>(m);
     }
-
-    if (moved_pt == KING) {
-        if (SqToBB(to) & (enemy_pieces | empty_squares)) {
-            return true;
-        }
-        return false;
-    }
-
-    if (!(SqToBB(to) & legal_moves) || DiscoveryCheck(from, to)) {
-        return false;
-    }
-
-    if (moved_pt == PAWN) {
-
-        if (SqToBB(to) & (Bitboards::prom_mask[my_color] | Bitboards::prom_mask[OtherColor(my_color)])) {
-            return false;
-        }
-
-        if (captured_piece == NO_PIECE) {
-            if (Bitboards::Shift(SqToBB(from), PawnMove<FORWARD>(my_color)) != SqToBB(to)) {
-                return false;
-            }
-        } else {
-            if (Bitboards::Shift(SqToBB(from), PawnMove<LEFT>(my_color)) != SqToBB(to)
-                && Bitboards::Shift(SqToBB(from), PawnMove<RIGHT>(my_color)) != SqToBB(to)) {
-                return false;
-            }
-        }
-    }
-
-    return true;
 }
 
 template<Color C>
-bool MoveGen::ValidateCastling(Move m) const {
-    if (checkers) {
-        return false;
-    }
-    if (CanCastle<C, SHORT>()) {
-        if (m == NewMove(king_s, C == WHITE ? G1 : G8, CASTLING)) {
-            return true;
-        }
-    }
-    if (CanCastle<C, LONG>()) {
-        if (m == NewMove(king_s, C == WHITE ? C1 : C8, CASTLING)) {
-            return true;
-        }
-    }
-    return false;
-}
-
-template<Color C>
-bool MoveGen::ValidateEp(Move m) const {
-    if (ep_s) {
-        Bitboard attackers = Bitboards::GetAttacks<PAWN>(ep_s, EMPTY_BB, OtherColor(C)) & board.GetPieces(PAWN, C) & SqToBB(FromSquare(m));;
-        while (attackers) {
-            Square from = Bitboards::PopLsb(attackers);
-            if (NewMove(from, ep_s, EN_PASSANT) == m) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
-template<Color C>
-bool MoveGen::ValidateProm(Move m) const {
-    if (ValidatePromHelper<C, FORWARD>(m) || ValidatePromHelper<C, LEFT>(m) || ValidatePromHelper<C, RIGHT>(m)) {
-        return true;
-    }
-    return false;
-}
-
-template<Color C, PawnMoveDir D>
-bool MoveGen::ValidatePromHelper(Move m) const {
+bool MoveGen::SpecialMoveIsPseudoLegal(Move m) {
 
     MoveType mt = GetMoveType(m);
-    if (mt != PROMOTE_QUEEN && mt != PROMOTE_ROOK && mt != PROMOTE_BISHOP && mt != PROMOTE_KNIGHT) {
-        return false;
-    }
+    Square from = FromSquare(m);
+    PieceType moved_pt = board.GetPieceTypeOnSq(from);
+    Bitboard pos = SqToBB(from);
 
-    m &= 0xFFF;
-    constexpr Direction dir = PawnMove<C, D>();
-    Bitboard pos = board.GetPieces(PAWN, C) & SqToBB(FromSquare(m));
-    Bitboard promotions = Bitboards::Shift<dir>(pos) & legal_moves & Bitboards::prom_mask[C];
-    promotions &= D == FORWARD ? empty_squares : enemy_pieces;
-
-    while (promotions) {
-        Square dest_s = Bitboards::PopLsb(promotions);
-        Square origin_s = dest_s - dir;
-        if (!DiscoveryCheck(origin_s, dest_s)) {
-            if (NewMove(origin_s, dest_s) == m) {
-                return true;
-            }
-        }
+    if (mt == TWO_FORWARD && moved_pt == PAWN) {
+        return PawnTwoFwd<C, VALIDATE>(pos, m);
+    } else if (mt == CASTLING && moved_pt == KING) {
+        return CastlingMoves<C, VALIDATE>(m);
+    } else if (mt == EN_PASSANT && moved_pt == PAWN) {
+        return EpMoves<C, VALIDATE>(pos, m);
+    } else if (IsPromotion(m) && moved_pt == PAWN) {
+        return PawnProms<C, LEFT, VALIDATE>(pos, m)
+               || PawnProms<C, RIGHT, VALIDATE>(pos, m)
+               || PawnProms<C, FORWARD, VALIDATE>(pos, m);
     }
     return false;
 }
 
 template<Color C>
-bool MoveGen::ValidateTwoFwd(Move m) const {
+bool MoveGen::NormalMoveIsPseudoLegal(Move m) {
 
-    constexpr Direction dir = PawnMove<C, FORWARD>();
-    Bitboard pos = board.GetPieces(PAWN, C) & SqToBB(FromSquare(m));
-    Bitboard one_fwd = Bitboards::Shift<dir>(pos) & empty_squares & ~Bitboards::prom_mask[C];
-    Bitboard two_fwd = Bitboards::Shift<dir>(one_fwd) & empty_squares & Bitboards::two_fwd_mask[C] & legal_moves;
+    Square from = FromSquare(m);
+    PieceType moved_pt = board.GetPieceTypeOnSq(from);
+    Bitboard pos = SqToBB(from);
 
-    while (two_fwd) {
-        Square dest_s = Bitboards::PopLsb(two_fwd);
-        Square origin_s = dest_s - dir - dir;
-        if (!DiscoveryCheck(origin_s, dest_s)) {
-            if (NewMove(origin_s, dest_s, TWO_FORWARD) == m) {
-                return true;
-            }
+    if (moved_pt == PAWN) {
+        if (board.GetPieceOnSquare(ToSquare(m)) == NO_PIECE) {
+            return PawnOneFwd<C, VALIDATE>(pos, m);
+        } else {
+            return PawnCaptures<C, LEFT, VALIDATE>(pos, m) || PawnCaptures<C, RIGHT, VALIDATE>(pos, m);
         }
     }
-    return false;
+
+    Bitboard mask = empty_squares | enemy_pieces & legal_moves;
+    return moved_pt == KNIGHT ? MovesForPT<KNIGHT, C, VALIDATE>(pos, mask, m) :
+           moved_pt == BISHOP ? MovesForPT<BISHOP, C, VALIDATE>(pos, mask, m) :
+           moved_pt == ROOK ? MovesForPT<ROOK, C, VALIDATE>(pos, mask, m) :
+           moved_pt == QUEEN ? MovesForPT<QUEEN, C, VALIDATE>(pos, mask, m) :
+           moved_pt == KING ? MovesForPT<KING, C, VALIDATE>(pos, empty_squares | enemy_pieces, m) :
+           false;
 }

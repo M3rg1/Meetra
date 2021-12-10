@@ -166,7 +166,6 @@ namespace Testing {
         }
         oss << std::endl;
     }
-
 }
 
 #endif //MEETRA_TESTSUITE_H

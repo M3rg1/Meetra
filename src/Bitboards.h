@@ -77,9 +77,6 @@ namespace Bitboards {
 
     void Init();
 
-    template<PieceType PT>
-    [[nodiscard]] Bitboard GetAttacks(Square s, Bitboard occ = EMPTY_BB, Color c = WHITE);
-
     [[nodiscard]] constexpr bool MoreThanOne(Bitboard b) { return (b & (b - 1)); }
     [[nodiscard]] constexpr bool ExactlyOne(Bitboard b) { return b && !MoreThanOne(b); }
     [[nodiscard]] constexpr Square Msb(Bitboard b) { return 63 ^ std::countl_zero(b); }
@@ -114,7 +111,7 @@ namespace Bitboards {
     }
 
     template<PieceType PT>
-    Bitboard GetAttacks(Square s, Bitboard occ, Color c) {
+    [[nodiscard]] Bitboard GetAttacks(Square s, Bitboard occ = EMPTY_BB, Color c = WHITE) {
         return PT == PAWN ? pawn_attacks[c][s] :
                PT == BISHOP ? GetBishopAttacks(s, occ) :
                PT == ROOK ? GetRookAttacks(s, occ) :
@@ -134,18 +131,6 @@ namespace Bitboards {
                D == NORTH_WEST ? (b & ~0x0101010101010101ULL) << 7 :
                D == SOUTH_EAST ? (b & ~0x8080808080808080ULL) >> 7 :
                D == SOUTH_WEST ? (b & ~0x0101010101010101ULL) >> 9 :
-               EMPTY_BB;
-    }
-
-    constexpr Bitboard Shift(Bitboard b, Direction d) {
-        return d == NORTH ? b << 8 :
-               d == SOUTH ? b >> 8 :
-               d == EAST ? (b & ~0x8080808080808080ULL) << 1 :
-               d == WEST ? (b & ~0x0101010101010101ULL) >> 1 :
-               d == NORTH_EAST ? (b & ~0x8080808080808080ULL) << 9 :
-               d == NORTH_WEST ? (b & ~0x0101010101010101ULL) << 7 :
-               d == SOUTH_EAST ? (b & ~0x8080808080808080ULL) >> 7 :
-               d == SOUTH_WEST ? (b & ~0x0101010101010101ULL) >> 9 :
                EMPTY_BB;
     }
 }

@@ -24,7 +24,7 @@ using TTFlag = int;
 using TTEpoch = int;
 
 enum GenType : int {
-    QSEARCH, NORMAL
+    QSEARCH, NORMAL, GENERATE, VALIDATE
 };
 
 enum GenPhase : int {

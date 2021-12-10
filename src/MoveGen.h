@@ -20,7 +20,7 @@ public:
     template<GenType T>
     [[nodiscard]] Move GetBestMove();
     [[nodiscard]] Move GetAnyMove();
-    [[nodiscard]] bool IsPseudoLegal(Move m) const;
+    [[nodiscard]] bool IsPseudoLegal(Move m);
 
 private:
 
@@ -76,39 +76,35 @@ private:
     template<GenPhase P, Color C>
     void GenMovesForPhase();
 
-    template<PieceType PT, Color C>
-    void GenMovesForPieceType(Bitboard legality_mask);
+    template<PieceType PT, Color C, GenType Type>
+    auto MovesForPT(Bitboard pieces, Bitboard legality_mask, Move to_validate = {});
 
-    template<Color C>
-    void GenEpMoves();
+    template<Color C, GenType Type>
+    auto EpMoves(Bitboard pieces, Move to_validate = {});
 
-    template<Color C, PawnMoveDir D>
-    void GenPawnPromotions();
+    template<Color C, PawnMoveDir D, GenType Type>
+    auto PawnProms(Bitboard pieces, Move to_validate = {});
 
-    template<Color C, PawnMoveDir D>
-    void GenPawnCaptures();
+    template<Color C, PawnMoveDir D, GenType Type>
+    auto PawnCaptures(Bitboard pieces, Move to_validate = {});
 
-    template<Color C>
-    void GenPawnQuiets();
+    template<Color C, GenType Type>
+    auto PawnOneFwd(Bitboard pieces, Move to_validate = {});
 
-    template<Color C>
-    void GenCastlingMoves();
+    template<Color C, GenType Type>
+    auto PawnTwoFwd(Bitboard pieces, Move to_validate = {});
+
+    template<Color C, GenType Type>
+    auto CastlingMoves(Move to_validate = {});
 
     template<Color C, CastlingSide S>
     [[nodiscard]] bool CanCastle() const;
-
     [[nodiscard]] bool DiscoveryCheck(Square origin, Square destination) const;
 
     template<Color C>
-    [[nodiscard]] bool ValidateCastling(Move m) const;
+    [[nodiscard]] bool SpecialMoveIsPseudoLegal(Move m);
     template<Color C>
-    [[nodiscard]] bool ValidateEp(Move m) const;
-    template<Color C>
-    [[nodiscard]] bool ValidateTwoFwd(Move m) const;
-    template<Color C>
-    [[nodiscard]] bool ValidateProm(Move m) const;
-    template<Color C, PawnMoveDir D>
-    [[nodiscard]] bool ValidatePromHelper(Move m) const;
+    [[nodiscard]] bool NormalMoveIsPseudoLegal(Move m);
 };
 
 #endif //MEETRA_MOVEGEN_H
