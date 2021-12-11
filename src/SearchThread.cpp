@@ -26,6 +26,7 @@ namespace Search {
             for (curr_rm_num = 0; curr_rm_num < root_moves.size(); ++curr_rm_num) {
 
                 curr_rm = &root_moves[curr_rm_num];
+                curr_rm->seldepth = depth_reached;
 
                 if (IsMainThread() && show_currmove && elapsed > CURRMOVE_DELAY) {
                     SendCurrMoveInfo();
