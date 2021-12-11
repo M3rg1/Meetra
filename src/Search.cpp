@@ -23,7 +23,7 @@ namespace Search {
     }
 
     bool IsSearchLimited() {
-        return settings.infinite || settings.limit_nodes|| settings.limit_depth || settings.limit_time;
+        return settings.infinite || settings.limit_nodes || settings.limit_depth || settings.limit_time;
     }
 
     uint64_t NodesTotal() {
@@ -149,8 +149,8 @@ namespace Search {
 
         if (num_threads > MAX_SEARCH_THREADS || num_threads < 1) {
             num_threads = std::clamp(num_threads, static_cast<size_t>(1), MAX_SEARCH_THREADS);
-            std::osyncstream(std::cout) << "info Invalid threads count! Initializing to: " << num_threads << " threads"
-                                        << std::endl;
+            std::osyncstream(std::cout)
+                    << "info Invalid threads count! Initializing to: " << num_threads << " threads" << std::endl;
         }
 
         Shutdown();
