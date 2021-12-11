@@ -316,7 +316,7 @@ namespace Search {
     }
 
     Score SearchThread::RandomizedDrawScore() const {
-        return DRAW_SCORE + 1 - (Nodes() & 2);
+        return DRAW_SCORE + static_cast<Score>(1 - (Nodes() & 2));
     }
 
     bool SearchThread::AnyLegalMoves() const {
