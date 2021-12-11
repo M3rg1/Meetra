@@ -88,10 +88,9 @@ namespace Testing {
 
             result = Perft<false>(depth, board);
 
-            auto elapsed_ns = Time::ElapsedSince<Time::ns>(start) + 1;
-            auto elapsed_ms = elapsed_ns / 1000000;
-            auto nps = static_cast<uint64_t>((static_cast<double>(result) / static_cast<double>(elapsed_ns))
-                                             * 1000000000.0);
+            auto elapsed_ns = Time::ElapsedSince<Time::ns>(start);
+            auto elapsed_ms = Time::NsToMs(elapsed_ns);
+            auto nps = Time::CalculateNps(result, elapsed_ns);
 
             std::osyncstream(std::cout)
                     << "Position: " << fen << '\n'
@@ -147,9 +146,9 @@ namespace Testing {
             nodes += tests[i].result;
         }
 
-        auto elapsed_ns = Time::ElapsedSince<Time::ns>(start) + 1;
-        auto elapsed_ms = elapsed_ns / 1000000;
-        auto nps = static_cast<uint64_t>((static_cast<double>(nodes) / static_cast<double>(elapsed_ns)) * 1000000000.0);
+        auto elapsed_ns = Time::ElapsedSince<Time::ns>(start);
+        auto elapsed_ms = Time::NsToMs(elapsed_ns);
+        auto nps = Time::CalculateNps(nodes, elapsed_ns);
 
         std::osyncstream oss(std::cout);
         oss << "==========================================\n\n"

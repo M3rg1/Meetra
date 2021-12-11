@@ -346,7 +346,7 @@ bool MoveGen::NormalMoveIsPseudoLegal(Move m) {
         }
     }
 
-    Bitboard mask = empty_squares | enemy_pieces & legal_moves;
+    Bitboard mask = (empty_squares | enemy_pieces) & legal_moves;
     return moved_pt == KNIGHT ? MovesForPT<KNIGHT, C, VALIDATE>(pos, mask, m) :
            moved_pt == BISHOP ? MovesForPT<BISHOP, C, VALIDATE>(pos, mask, m) :
            moved_pt == ROOK ? MovesForPT<ROOK, C, VALIDATE>(pos, mask, m) :

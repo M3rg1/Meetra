@@ -59,6 +59,7 @@ public:
     [[nodiscard]] inline Bitboard GetCheckers() const { return state.checkers; }
     [[nodiscard]] inline bool IsChess960() const { return chess960; }
     [[nodiscard]] Move RookCastlingMove(Square king_to, Color c) const;
+    [[nodiscard]] bool DrawByMaterial() const;
     [[nodiscard]] bool IsRepetition() const;
 #pragma endregion
 
@@ -101,6 +102,7 @@ private:
     BoardState state;
     BoardState history[MAX_GAME_LENGTH];
     size_t history_cnt;
+    size_t uci_moves_cnt;
 
     // original positions of rooks that are available for castling
     Bitboard origin_rooks[COLOR_NR][CS_NR];

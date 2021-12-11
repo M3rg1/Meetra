@@ -14,11 +14,13 @@ namespace Search {
 
     struct Settings {
 
-        bool fixed = false;
-
-        TimeRep allowed_time = std::numeric_limits<TimeRep>::max();
-        uint64_t allowed_nodes = std::numeric_limits<uint64_t>::max();
-        Depth allowed_depth = MAX_SEARCH_DEPTH;
+        bool limit_time = false;
+        bool limit_nodes = false;
+        bool limit_depth = false;
+        bool infinite = false;
+        TimeRep allowed_time = 0;
+        uint64_t allowed_nodes = 0;
+        Depth allowed_depth = 0;
 
         int moves_to_go = 0;
         TimeRep wtime = DEFAULT_SEARCH_TIME;
@@ -28,6 +30,8 @@ namespace Search {
     };
 
     inline Settings settings;
+    inline TimeRep time_limit;
+    inline TimeRep elapsed;
     inline std::atomic<bool> run;
     inline std::atomic<Depth> mt_depth;
     inline bool chess960; // each board still has its own value with which it was constructed
@@ -85,6 +89,7 @@ namespace Search {
     void Shutdown();
 
     [[nodiscard]] bool EnoughTimeLeft();
+    [[nodiscard]] bool IsSearchLimited();
     [[nodiscard]] inline bool Run() { return run.load(std::memory_order_relaxed); }
     inline void WaitFinished() { std::ranges::for_each(threads, [&](auto &t) { t->WaitForFinish(); }); }
     inline void StopSearch() { run = false; }

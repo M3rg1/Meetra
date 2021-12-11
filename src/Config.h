@@ -43,7 +43,7 @@ constexpr size_t TT_ENTRIES_PER_BUCKET = 4;
 #pragma region ===== Search =====
 constexpr TimeRep DEFAULT_SEARCH_TIME = 60000;
 constexpr Score FUTILITY_FACTOR = 90;
-constexpr Depth FUTILITY_DEPTH = 6;
+constexpr Depth FUTILITY_DEPTH = 7;
 constexpr Depth MIN_NULL_DEPTH = 4;
 constexpr size_t KILLER_SLOTS = 2;
 #pragma endregion

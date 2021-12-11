@@ -20,6 +20,14 @@ namespace Time {
         return std::chrono::duration_cast<UNITS>(Now() - t).count();
     }
 
+    inline uint64_t CalculateNps(uint64_t nodes, TimeRep elapsed_ns) {
+        return static_cast<uint64_t>((static_cast<double>(nodes) / static_cast<double>(elapsed_ns + 1)) * 1000000000.0);
+    }
+
+    inline TimeRep NsToMs(TimeRep ns) {
+        return ns / 1000000;
+    }
+
 }
 
 #endif //MEETRA_TIMER_H

@@ -125,9 +125,9 @@ namespace Uci {
 
         auto nodes = Testing::Perft<true>(depth, board);
 
-        auto elapsed_ns = Time::ElapsedSince<Time::ns>(start) + 1;
-        auto elapsed_ms = elapsed_ns / 1000000;
-        auto nps = static_cast<uint64_t>((static_cast<double>(nodes) / static_cast<double>(elapsed_ns)) * 1000000000.0);
+        auto elapsed_ns = Time::ElapsedSince<Time::ns>(start);
+        auto elapsed_ms = Time::NsToMs(elapsed_ns);
+        auto nps = Time::CalculateNps(nodes, elapsed_ns);
 
         std::osyncstream(std::cout) << "\nTime elapsed: " << elapsed_ms << "ms"
                                     << " | Nodes explored: " << nodes
@@ -226,8 +226,8 @@ namespace Uci {
         } else if (option == "send updates frequency" && IsNumber(value)) {
             Search::SetUpdateInterval(std::stoll(value));
         } else {
-            std::osyncstream(std::cout) << "info Unknown option or invalid value: " << option << ' ' << value
-                                        << std::endl;
+            std::osyncstream(std::cout)
+                    << "info Unknown option or invalid value: " << option << ' ' << value << std::endl;
         }
     }
 
@@ -242,20 +242,11 @@ namespace Uci {
             else if (option == "winc") iss >> settings.winc;
             else if (option == "binc") iss >> settings.binc;
             else if (option == "movestogo") iss >> settings.moves_to_go;
-            else if (option == "infinite") {
-                settings.fixed = true;
-            } else if (option == "nodes") {
-                iss >> settings.allowed_nodes;
-                settings.fixed = true;
-            } else if (option == "movetime") {
-                iss >> settings.allowed_time;
-                settings.fixed = true;
-            } else if (option == "depth") {
-                iss >> settings.allowed_depth;
-                settings.fixed = true;
-            } else {
-                std::osyncstream(std::cout) << "info Unknown search option: " << option << std::endl;
-            }
+            else if (option == "infinite") settings.infinite = true;
+            else if (option == "nodes") { iss >> settings.allowed_nodes; settings.limit_nodes = true; }
+            else if (option == "movetime") { iss >> settings.allowed_time; settings.limit_time = true; }
+            else if (option == "depth") { iss >> settings.allowed_depth; settings.limit_depth = true; }
+            else std::osyncstream(std::cout) << "info Unknown search option: " << option << std::endl;
         }
 
         return settings;

@@ -37,7 +37,12 @@ namespace Search {
         Score ABSearch(Score alpha, Score beta, Depth depth, Depth ply, PVLine &parent_pv);
         Score QSearch(Score alpha, Score beta, Depth ply);
         void UpdateKillers(Move move, Depth ply);
+        [[nodiscard]] Score RandomizedDrawScore() const;
         [[nodiscard]] bool AnyLegalMoves() const;
+
+        [[nodiscard]] bool MoveTimeLimitReached() const;
+        [[nodiscard]] bool DepthLimitReached() const;
+        [[nodiscard]] bool NodesLimitReached() const;
 
         void CheckTimers();
         void SendCurrLineInfo() const;

@@ -11,11 +11,11 @@ namespace Search {
     void SearchThread::Search() {
 
         // iterative deepening
-        for (depth_reached = 1; depth_reached <= settings.allowed_depth && Run(); ++depth_reached) {
+        for (depth_reached = 1; depth_reached <= MAX_SEARCH_DEPTH && Run(); ++depth_reached) {
 
             // if a helper thread falls behind the main thread, skip current depth and go deeper
             if (!IsMainThread() && depth_reached <= mt_depth) {
-                depth_reached = std::min(mt_depth + id, settings.allowed_depth);
+                depth_reached = std::min(mt_depth + id, settings.limit_depth ? settings.allowed_depth : MAX_SEARCH_DEPTH);
             }
 
             Score alpha = NEGATIVE_INF;
@@ -28,7 +28,7 @@ namespace Search {
                 curr_rm = &root_moves[curr_rm_num];
                 curr_rm->seldepth = depth_reached; // seldepth is always at least the current depth
 
-                if (IsMainThread() && show_currmove && Time::ElapsedSince<Time::ms>(start_time) > CURRMOVE_DELAY) {
+                if (IsMainThread() && show_currmove && elapsed > CURRMOVE_DELAY) {
                     SendCurrMoveInfo();
                 }
 
@@ -73,14 +73,11 @@ namespace Search {
             std::ranges::stable_sort(root_moves);
 
             if (IsMainThread() && Run()) {
-
                 mt_depth = depth_reached;
-
-                if (!EnoughTimeLeft()) {
+                if (!EnoughTimeLeft() || DepthLimitReached()) {
                     break;
                 }
-
-                if (depth_reached > plies_muted && depth_reached < settings.allowed_depth) {
+                if (depth_reached > plies_muted) {
                     SendFullSearchInfo();
                 }
             }
@@ -105,9 +102,9 @@ namespace Search {
             if (board.IsInCheck() && !AnyLegalMoves()) {
                 return -MATE_SCORE + ply;
             }
-            return -DRAW_SCORE;
-        } else if (board.IsRepetition()) {
-            return -DRAW_SCORE;
+            return RandomizedDrawScore();
+        } else if (board.IsRepetition() || board.DrawByMaterial()) {
+            return RandomizedDrawScore();
         } else if (ply >= MAX_SEARCH_DEPTH) {
             return board.GetEval();
         } else if (depth <= 0) {
@@ -248,7 +245,7 @@ namespace Search {
         } // end move loop
 
         if (moves_searched == 0) {
-            return board.IsInCheck() ? -MATE_SCORE + ply : -DRAW_SCORE;
+            return board.IsInCheck() ? -MATE_SCORE + ply : RandomizedDrawScore();
         }
 
         tt.Save(board.GetHash(), best_score, depth, best_move, tt_flag, ply);
@@ -264,12 +261,12 @@ namespace Search {
             return board.GetEval();
         }
 
-        if (board.Move50Rule() || board.IsRepetition()) {
-            return -DRAW_SCORE;
+        if (board.Move50Rule() || board.IsRepetition() || board.DrawByMaterial()) {
+            return RandomizedDrawScore();
         }
 
         Score best_score = board.GetEval();
-        if (!board.IsInCheck() && best_score > alpha) {
+        if (best_score > alpha && !board.IsInCheck()) {
             if (best_score >= beta) {
                 return best_score;
             }
@@ -318,6 +315,10 @@ namespace Search {
         }
     }
 
+    Score SearchThread::RandomizedDrawScore() const {
+        return DRAW_SCORE + 1 - (Nodes() & 2);
+    }
+
     bool SearchThread::AnyLegalMoves() const {
         MoveGen mg(board);
         while (Move m = mg.GetAnyMove()) {
@@ -359,15 +360,15 @@ namespace Search {
     void SearchThread::SendBriefSearchInfo() const {
 
         auto nodes = NodesTotal();
-        auto elapsed_ns = Time::ElapsedSince<Time::ns>(start_time) + 1;
-        auto elapsed_ms = elapsed_ns / 1000000;
-        auto nps = static_cast<uint64_t>((static_cast<double>(nodes) / static_cast<double>(elapsed_ns)) * 1000000000.0);
+        auto elapsed_ns = Time::ElapsedSince<Time::ns>(start_time);
+        auto nps = Time::CalculateNps(nodes, elapsed_ns);
+        elapsed = Time::NsToMs(elapsed_ns);
 
         std::osyncstream(std::cout)
                 << "info depth " << depth_reached
                 << " seldepth " << GetMaxSeldepth()
                 << " nodes " << nodes
-                << " time " << elapsed_ms
+                << " time " << elapsed
                 << " nps " << nps
                 << " hashfull " << static_cast<int>(tt.Usage() * 1000.0)
                 << std::endl;
@@ -376,11 +377,11 @@ namespace Search {
     void SearchThread::SendFullSearchInfo() const {
 
         auto nodes = NodesTotal();
-        auto elapsed_ns = Time::ElapsedSince<Time::ns>(start_time) + 1;
-        auto elapsed_ms = elapsed_ns / 1000000;
-        auto nps = static_cast<uint64_t>((static_cast<double>(nodes) / static_cast<double>(elapsed_ns)) * 1000000000.0);
-        auto pvs_to_send = std::min(multi_pv, root_moves.size());
+        auto elapsed_ns = Time::ElapsedSince<Time::ns>(start_time);
+        auto nps = Time::CalculateNps(nodes, elapsed_ns);
+        elapsed = Time::NsToMs(elapsed_ns);
 
+        auto pvs_to_send = std::min(multi_pv, root_moves.size());
         std::osyncstream oss(std::cout);
         for (size_t i = 0; i < pvs_to_send; ++i) {
             oss << "info";
@@ -388,12 +389,12 @@ namespace Search {
             oss << " depth " << root_moves[i].depth
                 << " seldepth " << root_moves[i].seldepth
                 << " nodes " << nodes
-                << " time " << elapsed_ms
+                << " time " << elapsed
                 << " nps " << nps
                 << " hashfull " << static_cast<int>(tt.Usage() * 1000.0)
                 << " score ";
 
-            Score score = root_moves[i].score;
+            Score score = root_moves[i].score == 1 || root_moves[i].score == -1 ? 0 : root_moves[i].score;
             if (score > MIN_MATE_EVAL) oss << "mate " << (MATE_SCORE - score) / 2;
             else if (score < -MIN_MATE_EVAL) oss << "mate " << -(MATE_SCORE + score) / 2;
             else oss << "cp " << score;
@@ -427,9 +428,9 @@ namespace Search {
             return;
         }
 
-        auto elapsed = Time::ElapsedSince<Time::ms>(start_time);
+        elapsed = Time::ElapsedSince<Time::ms>(start_time);
 
-        if (settings.allowed_time < elapsed || NodesTotal() > settings.allowed_nodes) {
+        if ((!IsSearchLimited() && elapsed > time_limit) || MoveTimeLimitReached() || NodesLimitReached()) {
             StopSearch();
         } else if (depth_reached > plies_muted && last_update_time + update_interval < elapsed) {
             last_update_time = elapsed;
@@ -479,5 +480,15 @@ namespace Search {
             active = true;
         }
         cond_var.notify_one();
+    }
+
+    bool SearchThread::MoveTimeLimitReached() const {
+        return settings.limit_time && elapsed >= settings.allowed_time;
+    }
+    bool SearchThread::DepthLimitReached() const {
+        return settings.limit_depth && depth_reached >= settings.allowed_depth;
+    }
+    bool SearchThread::NodesLimitReached() const {
+        return settings.limit_nodes && Nodes() >= settings.allowed_nodes;
     }
 }

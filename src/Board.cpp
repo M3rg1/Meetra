@@ -16,6 +16,7 @@ bool Board::NewPosition(const std::string &fen, bool isChess960) {
 
     chess960 = isChess960;
     history_cnt = 0;
+    uci_moves_cnt = 0;
     state = BoardState();
     std::ranges::fill(board, NO_PIECE);
     std::ranges::fill(color_bbs, EMPTY_BB);
@@ -263,7 +264,7 @@ bool Board::MakeMove(Move m) {
                 return false;
             }
         }
-    } else  if (moved_pt == KING) {
+    } else if (moved_pt == KING) {
         state.cr &= Bitboards::castling_mask[next_col];
         Zobrist::UpdateCr(state.hash, previous_cr, GetCr());
         if (move_type == CASTLING) {
@@ -334,13 +335,18 @@ bool Board::AllSquaresSafe(Bitboard squares, Color attacker, Bitboard occ) const
 bool Board::IsRepetition() const {
     int stop = std::max(static_cast<int>(HistorySize()) - Ply(), 0);
     for (int i = static_cast<int>(HistorySize()) - 2, rep = 0; i >= stop; i -= 2) {
-        if (history[i].hash == state.hash) {
-            if (++rep > 1) {
-                return true;
-            }
+        if (history[i].hash == state.hash && (i > static_cast<int>(uci_moves_cnt) || ++rep > 1)) {
+            return true;
         }
     }
     return false;
+}
+
+bool Board::DrawByMaterial() const {
+    return (GetPieces_pt(PAWN) | GetPieces_pt(ROOK) | GetPieces_pt(QUEEN)) == EMPTY_BB
+           && (!Bitboards::MoreThanOne(GetPieces_c(WHITE)) || !Bitboards::MoreThanOne(GetPieces_c(BLACK)))
+           && (!Bitboards::MoreThanOne(GetPieces_pt(KNIGHT) | GetPieces_pt(BISHOP))
+               || (GetPieces_pt(BISHOP) == EMPTY_BB && std::popcount(GetPieces_pt(KNIGHT)) <= 2));
 }
 
 Move Board::RookCastlingMove(Square king_to, Color c) const {
@@ -423,6 +429,7 @@ bool Board::MakeUciMove(std::string_view move_string) {
                 continue;
             }
             MakeMove(move);
+            ++uci_moves_cnt;
             return true;
         }
     }

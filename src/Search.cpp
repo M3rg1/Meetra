@@ -8,7 +8,7 @@
 namespace Search {
 
     bool EnoughTimeLeft() {
-        if (settings.fixed || settings.allowed_time > Time::ElapsedSince<Time::ms>(start_time) * 2) {
+        if (IsSearchLimited() || time_limit > elapsed * 2) {
             return true;
         }
         return false;
@@ -22,6 +22,10 @@ namespace Search {
         return reduction;
     }
 
+    bool IsSearchLimited() {
+        return settings.infinite || settings.limit_nodes|| settings.limit_depth || settings.limit_time;
+    }
+
     uint64_t NodesTotal() {
         return std::accumulate(threads.begin(),
                                threads.end(),
@@ -30,11 +34,11 @@ namespace Search {
     }
 
     void InitSearchTimer(const Board &board) {
-        if (!settings.fixed) {
+        if (!IsSearchLimited()) {
             auto time_left = board.ColorToMove() == WHITE ? settings.wtime : settings.btime;
-            settings.allowed_time = time_left / TimeReduction(board);
-            settings.allowed_time += board.ColorToMove() == WHITE ? settings.winc : settings.binc;
-            settings.allowed_time -= move_overhead;
+            time_limit = time_left / TimeReduction(board);
+            time_limit += board.ColorToMove() == WHITE ? settings.winc : settings.binc;
+            time_limit -= move_overhead;
         }
     }
 
@@ -42,10 +46,8 @@ namespace Search {
         start_time = Time::Now();
         last_update_time = 0;
         mt_depth = 0;
-
+        elapsed = 0;
         settings = s;
-        settings.allowed_depth = std::min(s.allowed_depth, MAX_SEARCH_DEPTH);
-
         tt.NewSearch();
         InitSearchTimer(board);
     }
@@ -58,6 +60,10 @@ namespace Search {
                 moves.emplace_back(move);
             }
         }
+        for (RootMove &rm: moves) {
+            rm.score = board.GetMoveEval(rm.move);
+        }
+        std::ranges::sort(moves);
         return moves;
     }
 
@@ -90,7 +96,7 @@ namespace Search {
         run = true;
         InitNewSearch(s, board);
 
-        if (use_book && !settings.fixed && !board.IsChess960() && board.FullMoveClock() <= BOOK_DEPTH / 2) {
+        if (use_book && !IsSearchLimited() && !board.IsChess960() && board.FullMoveClock() <= BOOK_DEPTH / 2) {
             if (auto moves = Book::Probe(board); !moves.empty()) {
                 StopSearch();
                 std::ranges::shuffle(moves, std::mt19937{std::random_device{}()});
@@ -102,17 +108,17 @@ namespace Search {
         auto root_moves = GenRootMoves(board);
 
         if (root_moves.empty()
-            || settings.allowed_depth == 0
-            || settings.allowed_nodes == 0
-            || settings.allowed_time <= 1) {
+            || (settings.limit_depth && settings.allowed_depth <= 0)
+            || (settings.limit_nodes && settings.allowed_nodes <= 0)
+            || (settings.limit_time && settings.allowed_time <= 0)) {
             StopSearch();
             auto best_move = root_moves.empty() ? ZERO_MOVE : root_moves.front().move;
             std::osyncstream(std::cout) << "bestmove " << board.MoveToName(best_move) << std::endl;
             return;
         }
 
-        if (root_moves.size() == 1 && !settings.fixed) {
-            std::min(settings.allowed_time, static_cast<TimeRep>(1000));
+        if (root_moves.size() == 1 && !IsSearchLimited()) {
+            std::min(time_limit, static_cast<TimeRep>(1000));
         }
 
         // it's important to first initialize all threads and only then start them
@@ -128,7 +134,6 @@ namespace Search {
         show_currmove = true;
         multi_pv = 1;
         plies_muted = 0;
-        last_update_time = 0;
         move_overhead = DEFAULT_OVERHEAD;
         update_interval = DEFAULT_UPDATE_INTERVAL;
         SetNumThreads(DEFAULT_SEARCH_THREADS);
@@ -151,7 +156,7 @@ namespace Search {
         Shutdown();
 
         for (size_t i = 0; i < num_threads; ++i) {
-            threads.emplace_back(new SearchThread(i));
+            threads.emplace_back(new SearchThread(static_cast<int>(i)));
         }
     }
 }
