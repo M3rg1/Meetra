@@ -107,14 +107,10 @@ namespace Search {
 
         auto root_moves = GenRootMoves(board);
 
-        if (root_moves.empty()
-            || (settings.limit_depth && settings.allowed_depth <= 0)
-            || (settings.limit_nodes && settings.allowed_nodes <= 0)
-            || (settings.limit_time && settings.allowed_time <= 0)) {
+        if (root_moves.empty()) {
             StopSearch();
-            auto best_move = root_moves.empty() ? ZERO_MOVE : root_moves.front().move;
-            std::osyncstream(std::cout) << "bestmove " << board.MoveToName(best_move) << std::endl;
-            return;
+            root_moves.emplace_back(ZERO_MOVE);
+            if (board.IsInCheck()) root_moves.front().score = MATE_SCORE;
         }
 
         if (root_moves.size() == 1 && !IsSearchLimited()) {
@@ -123,6 +119,7 @@ namespace Search {
 
         // it's important to first initialize all threads and only then start them
         std::ranges::for_each(threads, [&](auto &t) { t->InitNewSearch(board, root_moves); });
+        if (threads.front()->LimitReached()) StopSearch();
         std::ranges::for_each(threads, [&](auto &t) { t->StartThread(); });
     }
 

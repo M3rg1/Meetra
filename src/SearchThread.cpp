@@ -15,7 +15,8 @@ namespace Search {
 
             // if a helper thread falls behind the main thread, skip current depth and go deeper
             if (!IsMainThread() && depth_reached <= mt_depth) {
-                depth_reached = std::min(mt_depth + id, settings.limit_depth ? settings.allowed_depth : MAX_SEARCH_DEPTH);
+                depth_reached = std::min(mt_depth + id,
+                                         settings.limit_depth ? settings.allowed_depth : MAX_SEARCH_DEPTH);
             }
 
             Score alpha = NEGATIVE_INF;
@@ -26,7 +27,6 @@ namespace Search {
             for (curr_rm_num = 0; curr_rm_num < root_moves.size(); ++curr_rm_num) {
 
                 curr_rm = &root_moves[curr_rm_num];
-                curr_rm->seldepth = depth_reached; // seldepth is always at least the current depth
 
                 if (IsMainThread() && show_currmove && elapsed > CURRMOVE_DELAY) {
                     SendCurrMoveInfo();
@@ -72,15 +72,17 @@ namespace Search {
             // sort based on score -> previous score -> node count
             std::ranges::stable_sort(root_moves);
 
+            if (!EnoughTimeLeft() || LimitReached()) {
+                StopSearch();
+            }
+
             if (IsMainThread() && Run()) {
                 mt_depth = depth_reached;
-                if (!EnoughTimeLeft() || DepthLimitReached()) {
-                    break;
-                }
                 if (depth_reached > plies_muted) {
                     SendFullSearchInfo();
                 }
             }
+
         } // end iterative deepening loop
 
         if (IsMainThread()) {
@@ -489,6 +491,9 @@ namespace Search {
         return settings.limit_depth && depth_reached >= settings.allowed_depth;
     }
     bool SearchThread::NodesLimitReached() const {
-        return settings.limit_nodes && Nodes() >= settings.allowed_nodes;
+        return settings.limit_nodes && NodesTotal() >= settings.allowed_nodes;
+    }
+    bool SearchThread::LimitReached() const {
+        return !settings.infinite && (DepthLimitReached() || NodesLimitReached() || MoveTimeLimitReached());
     }
 }

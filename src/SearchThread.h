@@ -22,6 +22,7 @@ namespace Search {
         void StartThread();
         void Search();
         void WaitForFinish();
+        [[nodiscard]] bool LimitReached() const;
 
         [[nodiscard]] bool DidBeatMove(const RootMove &move) const;
         [[nodiscard]] RootMove GetBestRootMove() const;
