@@ -37,7 +37,6 @@ namespace Search {
                 if (curr_rm_num > 0) {
                     score = -ABSearch<NONPV>(-alpha - 1, -alpha, depth_reached - 1, 2, curr_rm->pv);
                 }
-
                 if (curr_rm_num == 0 || (score > alpha && score < beta)) {
                     score = -ABSearch<PV>(-beta, -alpha, depth_reached - 1, 2, curr_rm->pv);
                 }
