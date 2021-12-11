@@ -52,5 +52,4 @@ constexpr size_t KILLER_SLOTS = 2;
 inline const std::string TEST_FILE_PATH = "tests/PerftTests.txt";
 #pragma endregion
 
-
 #endif //MEETRA_CONFIG_H

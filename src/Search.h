@@ -102,7 +102,7 @@ namespace Search {
     inline void SetUseBook(bool use) { use_book = use; }
     inline void SetChess960(bool set) { chess960 = set; }
     inline void SetMoveOverhead(TimeRep overhead) { move_overhead = std::clamp(overhead, MIN_OVERHEAD, MAX_OVERHEAD); }
-    inline void SetUpdateInterval(TimeRep interval) { update_interval = std::max(interval, MIN_UPDATE_INTERVAL); };
+    inline void SetUpdateInterval(TimeRep interval) { update_interval = std::max(interval, MIN_UPDATE_INTERVAL); }
     void SetNumThreads(size_t num_threads);
     uint64_t NodesTotal();
 }

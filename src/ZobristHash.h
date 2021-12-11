@@ -10,7 +10,7 @@ namespace Zobrist {
     void Init();
 
     [[nodiscard]] Hash64 GenHash64(const Board &board);
-    [[nodiscard]] inline Hash16 MakeHash16(Hash64 hash64) { return hash64 >> 48; }
+    [[nodiscard]] inline Hash16 MakeHash16(Hash64 hash64) { return static_cast<Hash16>(hash64 >> 48); }
 
     void AddPiece(Hash64 &h, Piece p, Square s);
     void RemovePiece(Hash64 &h, Piece p, Square s);

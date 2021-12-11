@@ -39,8 +39,8 @@ public:
     [[nodiscard]] inline Score GetEval() const { return state.evaluator.GetBoardEval(); };
     [[nodiscard]] inline Score GetMoveEval(Move m) const { return state.evaluator.GetMoveEval(*this, m); };
     [[nodiscard]] inline Bitboard GetPieces(PieceType pt, Color c) const { return type_bbs[pt] & color_bbs[c]; }
-    [[nodiscard]] inline Bitboard GetPieces_pt(PieceType pt) const { return type_bbs[pt]; }
-    [[nodiscard]] inline Bitboard GetPieces_c(Color c) const { return color_bbs[c]; }
+    [[nodiscard]] inline Bitboard GetPieces(PieceType pt) const { return type_bbs[pt]; }
+    [[nodiscard]] inline Bitboard GetPieces(Color c) const { return color_bbs[c]; }
     [[nodiscard]] inline Piece GetPieceOnSquare(Square s) const { return board[s]; }
     [[nodiscard]] inline PieceType GetPieceTypeOnSq(Square s) const { return TypeOfPiece(GetPieceOnSquare(s)); }
     [[nodiscard]] inline Bitboard GetCr() const { return state.cr; }

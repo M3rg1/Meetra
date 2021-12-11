@@ -2,6 +2,7 @@
 #include "MagicNumbers.h"
 #include <sstream>
 #include <algorithm>
+#include <ranges>
 
 namespace Bitboards {
 
@@ -79,14 +80,14 @@ namespace Bitboards {
     }
 
     void GenMagics() {
-        for (Square s = A1; s < SQUARE_NR; ++s) {
+        for (Square s: Squares) {
             SetBlockersRecursive(r_magics[s], s, EMPTY_BB, GetRookRays(s), GenRookMoves);
             SetBlockersRecursive(b_magics[s], s, EMPTY_BB, GetBishopRays(s), GenBishopMoves);
         }
     }
 
     void InitMagic() {
-        for (Square s = A1; s < SQUARE_NR; ++s) {
+        for (Square s: Squares) {
 
             Bitboard inner = (GenHorizontalMoves(s, EMPTY_BB) & ~file_mask[FILE_A] & ~file_mask[FILE_H])
                              | (GenVerticalMoves(s, EMPTY_BB) & ~rank_mask[RANK_1] & ~rank_mask[RANK_8]);
@@ -111,7 +112,7 @@ namespace Bitboards {
 #pragma region ===== Precomputing king moves, knight moves, pawn attacks =====
 
     void GenPieceMoves(std::initializer_list<Direction> dirs, Bitboard output[SQUARE_NR]) {
-        for (Square s = A1; s < SQUARE_NR; ++s) {
+        for (Square s: Squares) {
             Bitboard moves = EMPTY_BB;
             for (auto d: dirs) {
                 if (s + d < SQUARE_NR && s + d >= A1) {
@@ -171,8 +172,8 @@ namespace Bitboards {
     }
 
     void GenRaysBetweenSquares() {
-        for (Square s1 = A1; s1 < SQUARE_NR; ++s1) {
-            for (Square s2 = A1; s2 < SQUARE_NR; ++s2) {
+        for (Square s1: Squares) {
+            for (Square s2: Squares) {
                 rays_to_squares[s1][s2] = GenRay(s1, s2);
                 rays_to_borders[s1][s2] = GenRayToEdge(s1, s2);
             }
@@ -201,9 +202,9 @@ namespace Bitboards {
 
     [[maybe_unused]] std::string PPBitboard(Bitboard b) {
         std::ostringstream oss;
-        for (Rank r = RANK_8; r >= RANK_1; --r) {
+        for (Rank r: Ranks | std::views::reverse) {
             oss << r + 1 << " |";
-            for (File f = FILE_A; f <= FILE_H; ++f) {
+            for (File f: Files) {
                 if ((b >> ((r * 8) + f)) & 1) {
                     oss << " x ";
                 } else {

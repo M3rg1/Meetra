@@ -17,82 +17,90 @@ using Bitboard = uint64_t;
 constexpr Bitboard EMPTY_BB = 0;
 constexpr Bitboard FULL_BB = 0xFFFFFFFFFFFFFFFF;
 
-enum TTFlags : int {
+using TTEpoch = int;
+enum TTFlag {
     NOT_FOUND, UPPER, LOWER, EXACT, CUTOFF
 };
-using TTFlag = int;
-using TTEpoch = int;
 
-enum GenType : int {
-    QSEARCH, NORMAL, GENERATE, VALIDATE
+enum GenType {
+    QSEARCH, NORMAL
 };
 
-enum GenPhase : int {
+enum GenMode {
+    GENERATE, VALIDATE
+};
+
+enum GenPhase {
     PROMOTION, CAPTURE, QUIET, END, DOUBLE_CHECK
 };
 
-enum Node : int {
-    PV, NONPV, NULLMOVE
+enum Node {
+    PV, NON_PV, NULL_MOVE
 };
 
-enum Colors : int {
+enum Color {
     WHITE, BLACK,
     COLOR_NR
 };
-using Color = int;
+constexpr Color Colors[] = {WHITE, BLACK};
+constexpr Color OtherColor(Color c) { return static_cast<Color>(c ^ 1); }
 
-constexpr Color OtherColor(Color c) { return c ^ 1; }
-
-enum PieceTypes : int {
+enum PieceType {
     NONE_PIECE_TYPE, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING,
     PIECE_TYPE_NR,
     ALL_TYPES = 7
 };
-using PieceType = int;
+constexpr PieceType PieceTypes[] = {PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING};
 
-enum Pieces : int {
+enum Piece {
     NO_PIECE = 0,
     W_PAWN = 1, W_KNIGHT = 2, W_BISHOP = 3, W_ROOK = 4, W_QUEEN = 5, W_KING = 6,
     B_PAWN = 9, B_KNIGHT = 10, B_BISHOP = 11, B_ROOK = 12, B_QUEEN = 13, B_KING = 14,
 };
-using Piece = int;
 
-constexpr Color ColorOfPiece(Piece p) { return p >> 3; }
-constexpr PieceType TypeOfPiece(Piece p) { return p & 7; }
-constexpr Piece NewPiece(PieceType pt, Color c) { return (c << 3) | pt; }
+constexpr Color ColorOfPiece(Piece p) { return static_cast<Color>(p >> 3); }
+constexpr PieceType TypeOfPiece(Piece p) { return static_cast<PieceType>(p & 7); }
+constexpr Piece NewPiece(PieceType pt, Color c) { return static_cast<Piece>((c << 3) | pt); }
 
 constexpr std::string_view piece_char = "oPNBRQK  pnbrqk";
 
 constexpr Piece CharToPiece(char c) { return static_cast<Piece>(piece_char.find(c)); }
 constexpr char PieceToChar(Piece p) { return piece_char[p]; }
 
-enum Ranks : int {
+enum Rank {
     RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8,
     RANK_NR
 };
-using Rank = int;
+constexpr Rank Ranks[] = {RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8};
 
-enum Files : int {
+enum File {
     FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H,
     FILE_NR
 };
-using File = int;
+constexpr File Files[] = {FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H};
 
-constexpr Rank CharToRank(char c) { return c - '1'; }
+constexpr int operator+(File f, Rank r) { return static_cast<int>(f) + static_cast<int>(r); }
+constexpr int operator+(Rank r, File f) { return f + r; }
+constexpr int operator-(File f, Rank r) { return static_cast<int>(f) - static_cast<int>(r); }
+constexpr int operator-(Rank r, File f) { return f - r; }
+
+constexpr Rank CharToRank(char c) { return static_cast<Rank>(c - '1'); }
 constexpr char RankToChar(Rank r) { return static_cast<char>(r + '1'); }
-constexpr File CharToFile(char c) { return c - 'a'; }
+constexpr File CharToFile(char c) { return static_cast<File>(c - 'a'); }
 constexpr char FileToChar(File f) { return static_cast<char>(f + 'a'); }
 
-enum PawnMoveDir : int {
+enum PawnMoveDir {
     LEFT, RIGHT, FORWARD,
 };
 
-enum Directions : int {
+enum Direction : int {
     NORTH = 8, NORTH_EAST = 9, EAST = 1, SOUTH_EAST = -7, SOUTH = -8, SOUTH_WEST = -9, WEST = -1, NORTH_WEST = 7
 };
-using Direction = int;
+constexpr Direction operator+(Direction d1, Direction d2) { return static_cast<Direction>(static_cast<int>(d1) + static_cast<int>(d2)); }
+constexpr Direction operator-(Direction d1, Direction d2) { return static_cast<Direction>(static_cast<int>(d1) - static_cast<int>(d2)); }
+constexpr Direction operator*(int i, Direction d) { return static_cast<Direction>(static_cast<int>(d) * i); }
 
-enum Squares : int {
+enum Square {
     A1, B1, C1, D1, E1, F1, G1, H1,
     A2, B2, C2, D2, E2, F2, G2, H2,
     A3, B3, C3, D3, E3, F3, G3, H3,
@@ -104,16 +112,29 @@ enum Squares : int {
     SQUARE_NR,
     NO_SQ = 0
 };
-using Square = int;
+constexpr Square Squares[] = {
+        A1, B1, C1, D1, E1, F1, G1, H1,
+        A2, B2, C2, D2, E2, F2, G2, H2,
+        A3, B3, C3, D3, E3, F3, G3, H3,
+        A4, B4, C4, D4, E4, F4, G4, H4,
+        A5, B5, C5, D5, E5, F5, G5, H5,
+        A6, B6, C6, D6, E6, F6, G6, H6,
+        A7, B7, C7, D7, E7, F7, G7, H7,
+        A8, B8, C8, D8, E8, F8, G8, H8
+};
+constexpr Square operator+(Square s, int i) { return static_cast<Square>(static_cast<int>(s) + i); }
+constexpr Square operator-(Square s, int i) { return static_cast<Square>(static_cast<int>(s) - i); }
+constexpr Square &operator+=(Square &s, int i) { return s = s + i; }
+constexpr Square &operator-=(Square &s, int i) { return s = s - i; }
 
 constexpr Bitboard SqToBB(Square s) { return 0x1ULL << s; }
-constexpr Square FiRaToSq(File f, Rank r) { return (r << 3) | f; }
-constexpr File SqToFile(Square s) { return s & 7; }
-constexpr Rank SqToRank(Square s) { return s >> 3; }
+constexpr Square FiRaToSq(File f, Rank r) { return static_cast<Square>((r << 3) | f); }
+constexpr File SqToFile(Square s) { return static_cast<File>(s & 7); }
+constexpr Rank SqToRank(Square s) { return static_cast<Rank>(s >> 3); }
 constexpr Square StrToSq(std::string_view name) { return FiRaToSq(CharToFile(name[0]), CharToRank(name[1])); }
 inline std::string SqToStr(Square s) { return {FileToChar(SqToFile(s)), RankToChar(SqToRank(s))}; }
 
-enum CastlingSide : int {
+enum CastlingSide {
     SHORT, LONG, CS_NR
 };
 
@@ -127,19 +148,17 @@ enum CastlingSide : int {
 using Move = int;
 constexpr Move ZERO_MOVE = 0;
 
-enum MoveTypes : int {
+enum MoveType {
     NO_FLAG = 0, EN_PASSANT = 1 << 12, CASTLING = 2 << 12, TWO_FORWARD = 3 << 12,
     PROMOTE_KNIGHT = 4 << 12, PROMOTE_BISHOP = 5 << 12, PROMOTE_ROOK = 6 << 12, PROMOTE_QUEEN = 7 << 12
 };
-using MoveType = int;
 
 constexpr Move NewMove(Square from, Square to) { return from | (to << 6); }
 constexpr Move NewMove(Square from, Square to, MoveType flag) { return NewMove(from, to) | flag; }
 
-constexpr PieceType PromotionTo(MoveType mt) { return (mt >> 12) - 2; }
-constexpr Square FromSquare(Move m) { return m & 0x3F; }
-constexpr Square ToSquare(Move m) { return (m >> 6) & 0x3F; }
+constexpr PieceType PromotionTo(MoveType mt) { return static_cast<PieceType>((mt >> 12) - 2); }
+constexpr Square FromSquare(Move m) { return static_cast<Square>(m & 0x3F); }
+constexpr Square ToSquare(Move m) { return static_cast<Square>((m >> 6) & 0x3F); }
 constexpr bool IsPromotion(Move m) { return m >> 14; }
-constexpr MoveType GetMoveType(Move m) { return m & 0xF000; }
-
+constexpr MoveType GetMoveType(Move m) { return static_cast<MoveType>(m & 0xF000); }
 #endif //MEETRA_DEFS_H

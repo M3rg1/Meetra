@@ -178,13 +178,13 @@ namespace Evaluation {
     inline Score eg_table[COLOR_NR][PIECE_TYPE_NR][SQUARE_NR];
 
     inline void Init() {
-        for (PieceType piece_type = NONE_PIECE_TYPE; piece_type < PIECE_TYPE_NR; ++piece_type) {
-            for (Square s = A1; s < SQUARE_NR; ++s) {
-                mg_table[WHITE][piece_type][s] = mg_value[piece_type] + mg_pesto_table[piece_type][s ^ 56];
-                eg_table[WHITE][piece_type][s] = eg_value[piece_type] + eg_pesto_table[piece_type][s ^ 56];
+        for (PieceType pt: PieceTypes) {
+            for (Square s: Squares) {
+                mg_table[WHITE][pt][s] = mg_value[pt] + mg_pesto_table[pt][s ^ 56];
+                eg_table[WHITE][pt][s] = eg_value[pt] + eg_pesto_table[pt][s ^ 56];
 
-                mg_table[BLACK][piece_type][s] = mg_value[piece_type] + mg_pesto_table[piece_type][s];
-                eg_table[BLACK][piece_type][s] = eg_value[piece_type] + eg_pesto_table[piece_type][s];
+                mg_table[BLACK][pt][s] = mg_value[pt] + mg_pesto_table[pt][s];
+                eg_table[BLACK][pt][s] = eg_value[pt] + eg_pesto_table[pt][s];
             }
         }
     }

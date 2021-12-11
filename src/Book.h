@@ -21,7 +21,7 @@ namespace Book {
     inline std::vector<Move> BinarySearch(std::ifstream &stream, size_t size_bytes, Hash64 hash) {
 
         std::vector<Move> moves;
-        std::streamoff right = size_bytes / sizeof(BookEntry);
+        std::streamoff right = static_cast<std::streamoff>(size_bytes / sizeof(BookEntry));
         std::streamoff left = 0;
         BookEntry book_entry;
 
@@ -62,7 +62,7 @@ namespace Book {
         return moves;
     }
 
-    inline std::vector<Move> Probe(const Board &board) {
+    inline std::vector<Move> Probe(Hash64 hash) {
 
         std::ifstream book_stream(BOOK_PATH, std::ios::in | std::ios::binary);
         if (!book_stream.is_open()) {
@@ -70,8 +70,8 @@ namespace Book {
             return {};
         }
 
-        size_t end = std::filesystem::file_size(BOOK_PATH);
-        return BinarySearch(book_stream, end, board.GetHash());
+        size_t size = std::filesystem::file_size(BOOK_PATH);
+        return BinarySearch(book_stream, size, hash);
     }
 }
 

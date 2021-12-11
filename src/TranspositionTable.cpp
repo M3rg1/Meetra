@@ -86,7 +86,7 @@ TTFlag TranspositionTable::Probe(Hash64 hash, Score alpha, Score beta, Depth dep
             if (entry.GetDepth() >= depth
                 && ((score <= alpha && (flag & UPPER)) || (score >= beta && (flag & LOWER)) || flag == EXACT)) {
                 entry.SetEpoch(current_epoch);
-                flag |= CUTOFF;
+                flag = static_cast<TTFlag>(flag | CUTOFF);
             }
             break;
         }

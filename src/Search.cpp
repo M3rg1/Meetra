@@ -97,7 +97,7 @@ namespace Search {
         InitNewSearch(s, board);
 
         if (use_book && !IsSearchLimited() && !board.IsChess960() && board.FullMoveClock() <= BOOK_DEPTH / 2) {
-            if (auto moves = Book::Probe(board); !moves.empty()) {
+            if (auto moves = Book::Probe(board.GetHash()); !moves.empty()) {
                 StopSearch();
                 std::ranges::shuffle(moves, std::mt19937{std::random_device{}()});
                 std::osyncstream(std::cout) << "bestmove " << board.MoveToName(moves.front()) << std::endl;

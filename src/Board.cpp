@@ -5,6 +5,7 @@
 #include <regex>
 #include <iomanip>
 #include <bit>
+#include <ranges>
 
 Board::Board() {
     NewPosition(STARTPOS_FEN, false);
@@ -33,7 +34,7 @@ bool Board::NewPosition(const std::string &fen, bool isChess960) {
     state.evaluator.SetBoard(*this);
 
     Square king_s = Bitboards::Lsb(GetPieces(KING, ColorToMove()));
-    state.checkers = AttackedBy(king_s, OtherColor(ColorToMove()), GetPieces_pt(ALL_TYPES));
+    state.checkers = AttackedBy(king_s, OtherColor(ColorToMove()), GetPieces(ALL_TYPES));
 
     return true;
 }
@@ -47,7 +48,7 @@ bool Board::IsValid() const {
     }
 
     Square enemy_king_square = ColorToMove() == WHITE ? Bitboards::Lsb(black_king) : Bitboards::Lsb(white_king);
-    if (IsAttackedByAny(enemy_king_square, ColorToMove(), GetPieces_pt(ALL_TYPES))) {
+    if (IsAttackedByAny(enemy_king_square, ColorToMove(), GetPieces(ALL_TYPES))) {
         return false;
     }
 
@@ -78,7 +79,7 @@ bool Board::IsValid() const {
         }
     }
 
-    if (GetPieces_pt(PAWN) & (Bitboards::RankMask(RANK_8) | Bitboards::RankMask(RANK_1))) {
+    if (GetPieces(PAWN) & (Bitboards::RankMask(RANK_8) | Bitboards::RankMask(RANK_1))) {
         return false;
     }
 
@@ -87,7 +88,7 @@ bool Board::IsValid() const {
 
 Bitboard Board::PinnedToSquare(Square s, Color blockers_color) const {
 
-    Bitboard all_pieces = GetPieces_pt(ALL_TYPES);
+    Bitboard all_pieces = GetPieces(ALL_TYPES);
     Bitboard queens = GetPieces(QUEEN, blockers_color);
     Bitboard bishops = GetPieces(BISHOP, blockers_color);
     Bitboard rooks = GetPieces(ROOK, blockers_color);
@@ -116,11 +117,11 @@ bool Board::IsMoveLegal(Move m) const {
             Square to = ToSquare(m);
             Move r_move = RookCastlingMove(to, ColorToMove());
             // the xor is for chess960, when king doesn't move, but the rook moving could open an attack on the king
-            Bitboard occ = GetPieces_pt(ALL_TYPES) ^ SqToBB(FromSquare(r_move));
+            Bitboard occ = GetPieces(ALL_TYPES) ^ SqToBB(FromSquare(r_move));
             Bitboard king_walk = Bitboards::GetRayToSquares(from, to) | SqToBB(to);
             return AllSquaresSafe(king_walk, OtherColor(ColorToMove()), occ);
         }
-        Bitboard occ = GetPieces_pt(ALL_TYPES) ^ SqToBB(FromSquare(m));
+        Bitboard occ = GetPieces(ALL_TYPES) ^ SqToBB(FromSquare(m));
         return !IsAttackedByAny(ToSquare(m), OtherColor(ColorToMove()), occ);
     }
 
@@ -130,7 +131,7 @@ bool Board::IsMoveLegal(Move m) const {
         Square to = ToSquare(m);
         Square capture_s = my_col == WHITE ? to + SOUTH : to + NORTH;
         Square king_s = Bitboards::Lsb(GetPieces(KING, my_col));
-        Bitboard occ = GetPieces_pt(ALL_TYPES) ^ SqToBB(capture_s) ^ (SqToBB(from) | SqToBB(to));
+        Bitboard occ = GetPieces(ALL_TYPES) ^ SqToBB(capture_s) ^ (SqToBB(from) | SqToBB(to));
         // ep move can't open us to attacks by anything other than slider pieces
         return !IsAttackedBySliders(king_s, OtherColor(my_col), occ);
     }
@@ -260,7 +261,7 @@ bool Board::MakeMove(Move m) {
             AddPiece(to, promoted_to);
             Zobrist::AddPiece(state.hash, promoted_to, to);
         } else if (move_type == EN_PASSANT) {
-            if (IsAttackedBySliders(Bitboards::Lsb(GetPieces(KING, this_col)), next_col, GetPieces_pt(ALL_TYPES))) {
+            if (IsAttackedBySliders(Bitboards::Lsb(GetPieces(KING, this_col)), next_col, GetPieces(ALL_TYPES))) {
                 return false;
             }
         }
@@ -275,16 +276,16 @@ bool Board::MakeMove(Move m) {
             chess960 ? AddPiece(r_to, NewPiece(ROOK, this_col)) : MovePiece(r_from, r_to);
             Zobrist::MovePiece(state.hash, NewPiece(ROOK, this_col), r_from, r_to);
             Bitboard king_walk = Bitboards::GetRayToSquares(from, to) | SqToBB(to);
-            if (!AllSquaresSafe(king_walk, next_col, GetPieces_pt(ALL_TYPES))) {
+            if (!AllSquaresSafe(king_walk, next_col, GetPieces(ALL_TYPES))) {
                 return false;
             }
-        } else if (IsAttackedByAny(to, next_col, GetPieces_pt(ALL_TYPES))) {
+        } else if (IsAttackedByAny(to, next_col, GetPieces(ALL_TYPES))) {
             return false;
         }
     }
 
     Square king_s = Bitboards::Lsb(GetPieces(KING, next_col));
-    state.checkers = AttackedBy(king_s, this_col, GetPieces_pt(ALL_TYPES));
+    state.checkers = AttackedBy(king_s, this_col, GetPieces(ALL_TYPES));
 
     return true;
 }
@@ -343,10 +344,10 @@ bool Board::IsRepetition() const {
 }
 
 bool Board::DrawByMaterial() const {
-    return (GetPieces_pt(PAWN) | GetPieces_pt(ROOK) | GetPieces_pt(QUEEN)) == EMPTY_BB
-           && (!Bitboards::MoreThanOne(GetPieces_c(WHITE)) || !Bitboards::MoreThanOne(GetPieces_c(BLACK)))
-           && (!Bitboards::MoreThanOne(GetPieces_pt(KNIGHT) | GetPieces_pt(BISHOP))
-               || (GetPieces_pt(BISHOP) == EMPTY_BB && std::popcount(GetPieces_pt(KNIGHT)) <= 2));
+    return (GetPieces(PAWN) | GetPieces(ROOK) | GetPieces(QUEEN)) == EMPTY_BB
+           && (!Bitboards::MoreThanOne(GetPieces(WHITE)) || !Bitboards::MoreThanOne(GetPieces(BLACK)))
+           && (!Bitboards::MoreThanOne(GetPieces(KNIGHT) | GetPieces(BISHOP))
+               || (GetPieces(BISHOP) == EMPTY_BB && std::popcount(GetPieces(KNIGHT)) <= 2));
 }
 
 Move Board::RookCastlingMove(Square king_to, Color c) const {
@@ -380,7 +381,7 @@ bool Board::ParseFen(const std::string &fen) {
             s -= 16;
         } else {
             AddPiece(s, CharToPiece(c));
-            ++s;
+            s += 1;
         }
     }
     if (s != H1 + 1) {
@@ -491,9 +492,9 @@ Move Board::MoveFromName(std::string_view move_name) const {
 
     std::ostringstream oss;
 
-    for (Rank r = RANK_8; r >= RANK_1; --r) {
+    for (Rank r: Ranks | std::views::reverse) {
         int empty_cnt = 0;
-        for (File f = FILE_A; f <= FILE_H; ++f) {
+        for (File f: Files) {
             Piece p = GetPieceOnSquare(FiRaToSq(f, r));
             if (p != NO_PIECE) {
                 if (empty_cnt > 0) {
@@ -535,9 +536,9 @@ Move Board::MoveFromName(std::string_view move_name) const {
 
     std::ostringstream oss;
 
-    for (Rank r = RANK_8; r >= RANK_1; --r) {
+    for (Rank r: Ranks | std::views::reverse) {
         oss << r + 1 << " |";
-        for (File f = FILE_A; f <= FILE_H; ++f) {
+        for (File f: Files) {
             oss << ' ' << PieceToChar(GetPieceOnSquare(FiRaToSq(f, r))) << (f == FILE_H ? "" : " ");
         }
         oss << '\n';

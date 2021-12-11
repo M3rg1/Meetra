@@ -79,8 +79,8 @@ namespace Bitboards {
 
     [[nodiscard]] constexpr bool MoreThanOne(Bitboard b) { return (b & (b - 1)); }
     [[nodiscard]] constexpr bool ExactlyOne(Bitboard b) { return b && !MoreThanOne(b); }
-    [[nodiscard]] constexpr Square Msb(Bitboard b) { return 63 ^ std::countl_zero(b); }
-    [[nodiscard]] constexpr Square Lsb(Bitboard b) { return std::countr_zero(b); }
+    [[nodiscard]] constexpr Square Msb(Bitboard b) { return static_cast<Square>(63 ^ std::countl_zero(b)); }
+    [[nodiscard]] constexpr Square Lsb(Bitboard b) { return static_cast<Square>(std::countr_zero(b)); }
     constexpr Square PopLsb(Bitboard &b) {
         Square s = Lsb(b);
         b &= b - 1;

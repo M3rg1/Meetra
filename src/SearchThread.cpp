@@ -1,4 +1,3 @@
-#include <sstream>
 #include "SearchThread.h"
 #include "MoveGen.h"
 #include "Search.h"
@@ -35,7 +34,7 @@ namespace Search {
                 board.MakeMove(curr_rm->move);
 
                 if (curr_rm_num > 0) {
-                    score = -ABSearch<NONPV>(-alpha - 1, -alpha, depth_reached - 1, 2, curr_rm->pv);
+                    score = -ABSearch<NON_PV>(-alpha - 1, -alpha, depth_reached - 1, 2, curr_rm->pv);
                 }
                 if (curr_rm_num == 0 || (score > alpha && score < beta)) {
                     score = -ABSearch<PV>(-beta, -alpha, depth_reached - 1, 2, curr_rm->pv);
@@ -145,7 +144,7 @@ namespace Search {
         }
 
         // reverse futility pruning
-        if (NodeType == NONPV
+        if (NodeType == NON_PV
             && !board.IsInCheck()
             && depth <= FUTILITY_DEPTH
             && eval < MIN_MATE_EVAL
@@ -158,7 +157,7 @@ namespace Search {
         PVLine child_pv;
 
         // null move pruning
-        if (NodeType == NONPV
+        if (NodeType == NON_PV
             && !board.IsInCheck()
             && depth >= MIN_NULL_DEPTH
             && eval >= beta
@@ -168,7 +167,7 @@ namespace Search {
                 ) {
             Depth R = 4 + depth / 5;
             board.MakeNullMove();
-            Score null_score = -ABSearch<NULLMOVE>(-beta, -beta + 1, depth - R, ply + 1, child_pv);
+            Score null_score = -ABSearch<NULL_MOVE>(-beta, -beta + 1, depth - R, ply + 1, child_pv);
             board.UnmakeNullMove();
             if (null_score >= beta) {
                 return null_score >= MIN_MATE_EVAL ? beta : null_score;
@@ -212,7 +211,7 @@ namespace Search {
 
             Score score;
             if (NodeType != PV || moves_searched > 0) {
-                score = -ABSearch<NONPV>(-alpha - 1, -alpha, depth - 1 - reduction, ply + 1, child_pv);
+                score = -ABSearch<NON_PV>(-alpha - 1, -alpha, depth - 1 - reduction, ply + 1, child_pv);
             }
             if (NodeType == PV && (moves_searched == 0 || (score > alpha && score < beta))) {
                 child_pv.Clear();
@@ -447,7 +446,7 @@ namespace Search {
     SearchThread::SearchThread(int id) :
             id(id),
             active(true),
-            thread(std::bind_front(&SearchThread::InitThread, this)) {};
+            thread(std::bind_front(&SearchThread::InitThread, this)) {}
 
     void SearchThread::InitThread(std::stop_token stop_token) {
         while (true) {

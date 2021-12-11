@@ -24,9 +24,9 @@ MoveGen::MoveGen(const Board &board) :
         enemy_color(OtherColor(my_color)),
         king_s(Bitboards::Lsb(board.GetPieces(KING, my_color))),
         ep_s(board.EpSquare()),
-        all_pieces(board.GetPieces_pt(ALL_TYPES)),
+        all_pieces(board.GetPieces(ALL_TYPES)),
         empty_squares(~all_pieces),
-        enemy_pieces(board.GetPieces_c(enemy_color)),
+        enemy_pieces(board.GetPieces(enemy_color)),
         checkers(board.GetCheckers()),
         blockers(board.PinnedToSquare(king_s, enemy_color)),
         legal_moves(FULL_BB),
@@ -144,7 +144,7 @@ void MoveGen::GenMovesForPhase() {
     }
 }
 
-template<PieceType PT, Color C, GenType Type>
+template<PieceType PT, Color C, GenMode M>
 auto MoveGen::MovesForPT(Bitboard pieces, Bitboard legality_mask, Move to_validate) {
     while (pieces) {
         Square origin_s = Bitboards::PopLsb(pieces);
@@ -154,14 +154,14 @@ auto MoveGen::MovesForPT(Bitboard pieces, Bitboard legality_mask, Move to_valida
         }
         while (possible_moves) {
             Square dest_s = Bitboards::PopLsb(possible_moves);
-            if constexpr (Type == GENERATE) PutMove(NewMove(origin_s, dest_s));
-            if constexpr (Type == VALIDATE) if (NewMove(origin_s, dest_s) == to_validate) return true;
+            if constexpr (M == GENERATE) PutMove(NewMove(origin_s, dest_s));
+            if constexpr (M == VALIDATE) if (NewMove(origin_s, dest_s) == to_validate) return true;
         }
     }
-    if constexpr (Type == VALIDATE) return false;
+    if constexpr (M == VALIDATE) return false;
 }
 
-template<Color C, GenType Type>
+template<Color C, GenMode M>
 auto MoveGen::PawnOneFwd(Bitboard pieces, Move to_validate) {
 
     constexpr Direction dir = PawnMove<C, FORWARD>();
@@ -171,14 +171,14 @@ auto MoveGen::PawnOneFwd(Bitboard pieces, Move to_validate) {
         Square dest_s = Bitboards::PopLsb(one_fwd);
         Square origin_s = dest_s - dir;
         if (!DiscoveryCheck(origin_s, dest_s)) {
-            if constexpr (Type == GENERATE) PutMove(NewMove(origin_s, dest_s));
-            if constexpr (Type == VALIDATE) if (NewMove(origin_s, dest_s) == to_validate) return true;
+            if constexpr (M == GENERATE) PutMove(NewMove(origin_s, dest_s));
+            if constexpr (M == VALIDATE) if (NewMove(origin_s, dest_s) == to_validate) return true;
         }
     }
-    if constexpr (Type == VALIDATE) return false;
+    if constexpr (M == VALIDATE) return false;
 }
 
-template<Color C, GenType Type>
+template<Color C, GenMode M>
 auto MoveGen::PawnTwoFwd(Bitboard pieces, Move to_validate) {
 
     constexpr Direction dir = PawnMove<C, FORWARD>();
@@ -189,14 +189,14 @@ auto MoveGen::PawnTwoFwd(Bitboard pieces, Move to_validate) {
         Square dest_s = Bitboards::PopLsb(two_fwd);
         Square origin_s = dest_s - dir - dir;
         if (!DiscoveryCheck(origin_s, dest_s)) {
-            if constexpr (Type == GENERATE) PutMove(NewMove(origin_s, dest_s, TWO_FORWARD));
-            if constexpr (Type == VALIDATE) if (NewMove(origin_s, dest_s, TWO_FORWARD) == to_validate) return true;
+            if constexpr (M == GENERATE) PutMove(NewMove(origin_s, dest_s, TWO_FORWARD));
+            if constexpr (M == VALIDATE) if (NewMove(origin_s, dest_s, TWO_FORWARD) == to_validate) return true;
         }
-    };
-    if constexpr (Type == VALIDATE) return false;
+    }
+    if constexpr (M == VALIDATE) return false;
 }
 
-template<Color C, PawnMoveDir D, GenType Type>
+template<Color C, PawnMoveDir D, GenMode M>
 auto MoveGen::PawnCaptures(Bitboard pieces, Move to_validate) {
 
     constexpr Direction dir = PawnMove<C, D>();
@@ -206,14 +206,14 @@ auto MoveGen::PawnCaptures(Bitboard pieces, Move to_validate) {
         Square dest_s = Bitboards::PopLsb(captures);
         Square origin_s = dest_s - dir;
         if (!DiscoveryCheck(origin_s, dest_s)) {
-            if constexpr (Type == GENERATE) PutMove(NewMove(origin_s, dest_s));
-            if constexpr (Type == VALIDATE) if (NewMove(origin_s, dest_s) == to_validate) return true;
+            if constexpr (M == GENERATE) PutMove(NewMove(origin_s, dest_s));
+            if constexpr (M == VALIDATE) if (NewMove(origin_s, dest_s) == to_validate) return true;
         }
     }
-    if constexpr (Type == VALIDATE) return false;
+    if constexpr (M == VALIDATE) return false;
 }
 
-template<Color C, PawnMoveDir D, GenType Type>
+template<Color C, PawnMoveDir D, GenMode M>
 auto MoveGen::PawnProms(Bitboard pieces, Move to_validate) {
 
     constexpr Direction dir = PawnMove<C, D>();
@@ -224,41 +224,41 @@ auto MoveGen::PawnProms(Bitboard pieces, Move to_validate) {
         Square dest_s = Bitboards::PopLsb(promotions);
         Square origin_s = dest_s - dir;
         if (!DiscoveryCheck(origin_s, dest_s)) {
-            if constexpr (Type == GENERATE) PutPromMoves(NewMove(origin_s, dest_s));
-            if constexpr (Type == VALIDATE) if (ValidatePromMove(NewMove(origin_s, dest_s), to_validate)) return true;
+            if constexpr (M == GENERATE) PutPromMoves(NewMove(origin_s, dest_s));
+            if constexpr (M == VALIDATE) if (ValidatePromMove(NewMove(origin_s, dest_s), to_validate)) return true;
         }
     }
-    if constexpr (Type == VALIDATE) return false;
+    if constexpr (M == VALIDATE) return false;
 }
 
-template<Color C, GenType Type>
+template<Color C, GenMode M>
 auto MoveGen::EpMoves(Bitboard pieces, Move to_validate) {
     if (ep_s) {
         Bitboard attackers = Bitboards::GetAttacks<PAWN>(ep_s, EMPTY_BB, OtherColor(C)) & pieces;
         while (attackers) {
             Square origin_s = Bitboards::PopLsb(attackers);
-            if constexpr (Type == GENERATE) PutMove(NewMove(origin_s, ep_s, EN_PASSANT));
-            if constexpr (Type == VALIDATE) if (NewMove(origin_s, ep_s, EN_PASSANT) == to_validate) return true;
+            if constexpr (M == GENERATE) PutMove(NewMove(origin_s, ep_s, EN_PASSANT));
+            if constexpr (M == VALIDATE) if (NewMove(origin_s, ep_s, EN_PASSANT) == to_validate) return true;
         }
     }
-    if constexpr (Type == VALIDATE) return false;
+    if constexpr (M == VALIDATE) return false;
 }
 
-template<Color C, GenType Type>
+template<Color C, GenMode M>
 auto MoveGen::CastlingMoves(Move to_validate) {
     if (checkers) {
-        if constexpr (Type == GENERATE) return;
-        if constexpr (Type == VALIDATE) return false;
+        if constexpr (M == GENERATE) return;
+        if constexpr (M == VALIDATE) return false;
     }
     if (CanCastle<C, SHORT>()) {
-        if constexpr (Type == GENERATE) PutMove(NewMove(king_s, C == WHITE ? G1 : G8, CASTLING));
-        if constexpr (Type == VALIDATE) if (NewMove(king_s, C == WHITE ? G1 : G8, CASTLING) == to_validate) return true;
+        if constexpr (M == GENERATE) PutMove(NewMove(king_s, C == WHITE ? G1 : G8, CASTLING));
+        if constexpr (M == VALIDATE) if (NewMove(king_s, C == WHITE ? G1 : G8, CASTLING) == to_validate) return true;
     }
     if (CanCastle<C, LONG>()) {
-        if constexpr (Type == GENERATE) PutMove(NewMove(king_s, C == WHITE ? C1 : C8, CASTLING));
-        if constexpr (Type == VALIDATE) if (NewMove(king_s, C == WHITE ? C1 : C8, CASTLING) == to_validate) return true;
+        if constexpr (M == GENERATE) PutMove(NewMove(king_s, C == WHITE ? C1 : C8, CASTLING));
+        if constexpr (M == VALIDATE) if (NewMove(king_s, C == WHITE ? C1 : C8, CASTLING) == to_validate) return true;
     }
-    if constexpr (Type == VALIDATE) return false;
+    if constexpr (M == VALIDATE) return false;
 }
 
 template<Color C, CastlingSide S>
@@ -347,6 +347,5 @@ bool MoveGen::NormalMoveIsPseudoLegal(Move m) {
            moved_pt == BISHOP ? MovesForPT<BISHOP, C, VALIDATE>(pos, mask, m) :
            moved_pt == ROOK ? MovesForPT<ROOK, C, VALIDATE>(pos, mask, m) :
            moved_pt == QUEEN ? MovesForPT<QUEEN, C, VALIDATE>(pos, mask, m) :
-           moved_pt == KING ? MovesForPT<KING, C, VALIDATE>(pos, empty_squares | enemy_pieces, m) :
-           false;
+           moved_pt == KING && MovesForPT<KING, C, VALIDATE>(pos, empty_squares | enemy_pieces, m);
 }
