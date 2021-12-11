@@ -32,11 +32,6 @@ namespace Search {
                     SendCurrMoveInfo();
                 }
 
-                // if main thread already finished this depth, there's no reason for a helper thread to remain
-                if (!IsMainThread() && depth_reached < mt_depth) {
-                    break;
-                }
-
                 board.MakeMove(curr_rm->move);
 
                 if (curr_rm_num > 0) {
@@ -67,18 +62,25 @@ namespace Search {
                 } else {
                     curr_rm->score = NEGATIVE_INF;
                 }
+
+                // if main thread already finished this depth, there's no reason for a helper thread to remain
+                if (!IsMainThread() && depth_reached < mt_depth) {
+                    break;
+                }
             } // end alpha beta loop
 
             // sort based on score -> previous score -> node count
             std::ranges::stable_sort(root_moves);
 
-            if (!EnoughTimeLeft() || LimitReached()) {
+            if (LimitReached()) {
                 StopSearch();
             }
 
             if (IsMainThread() && Run()) {
                 mt_depth = depth_reached;
-                if (depth_reached > plies_muted) {
+                if (!EnoughTimeLeft()) {
+                    StopSearch();
+                } else if (depth_reached > plies_muted) {
                     SendFullSearchInfo();
                 }
             }
