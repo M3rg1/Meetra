@@ -39,6 +39,7 @@ namespace Search {
                     score = -ABSearch<NON_PV>(-alpha - 1, -alpha, depth_reached - 1, 2);
                 }
                 if (curr_rm_num == 0 || (score > alpha && score < beta)) {
+                    pv[2].Clear();
                     score = -ABSearch<PV>(-beta, -alpha, depth_reached - 1, 2);
                 }
 
