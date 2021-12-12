@@ -114,7 +114,7 @@ namespace Bitboards {
     void GenPieceMoves(std::initializer_list<Direction> dirs, Bitboard output[SQUARE_NR]) {
         for (Square s: Squares) {
             Bitboard moves = EMPTY_BB;
-            for (auto d: dirs) {
+            for (const auto &d: dirs) {
                 if (s + d < SQUARE_NR && s + d >= A1) {
                     moves |= SqToBB(s + d);
                 }
