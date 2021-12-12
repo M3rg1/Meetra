@@ -313,7 +313,7 @@ namespace Search {
 
     void SearchThread::UpdateKillers(Move move, Depth ply) {
         if (board.IsQuiet(move) && std::ranges::find(killers[ply], move) == std::end(killers[ply])) {
-            std::ranges::copy_backward(killers[ply], killers[ply] + KILLER_SLOTS - 1, killers[ply] + 1);
+            std::copy_backward(killers[ply], killers[ply] + KILLER_SLOTS - 1, killers[ply] + 1);
             killers[ply][0] = move;
         }
     }
