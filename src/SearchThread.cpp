@@ -198,16 +198,19 @@ namespace Search {
                 && !IsPromotion(move)
                 && best_score > -MIN_MATE_EVAL
                     ) {
-                if (NodeType != PV && moves_searched >= 7) {
-                    reduction = depth / 3;
-                } else {
-                    reduction = 1;
-                }
+                reduction = 1;
+                if (moves_searched >= 7) reduction += depth / 3;
+                if (NodeType != PV) ++reduction;
+                if (std::ranges::find(killers[ply], move) != std::end(killers[ply])) --reduction;
+                reduction = std::clamp(reduction, 1, depth - 2);
             }
 
-            Score score;
-            if (NodeType != PV || moves_searched > 0) {
-                score = -ABSearch<NON_PV>(-alpha - 1, -alpha, depth - 1 - reduction, ply + 1);
+            Score score = NEGATIVE_INF;
+            if (reduction > 0) {
+                score = -ABSearch<NON_PV>(-alpha - 1, -alpha, depth - reduction - 1, ply + 1);
+            }
+            if (score > alpha || (reduction == 0 && (NodeType != PV || moves_searched > 0))) {
+                score = -ABSearch<NON_PV>(-alpha - 1, -alpha, depth - 1, ply + 1);
             }
             if (NodeType == PV && (moves_searched == 0 || (score > alpha && score < beta))) {
                 pv[ply + 1].Clear();
@@ -265,12 +268,15 @@ namespace Search {
             return RandomizedDrawScore();
         }
 
-        Score best_score = board.GetEval();
-        if (best_score > alpha && !board.IsInCheck()) {
-            if (best_score >= beta) {
-                return best_score;
+        Score best_score = NEGATIVE_INF;
+        if (!board.IsInCheck()) {
+            best_score = board.GetEval();
+            if (best_score > alpha) {
+                if (best_score >= beta) {
+                    return best_score;
+                }
+                alpha = best_score;
             }
-            alpha = best_score;
         }
 
         MoveGen move_gen(board);
