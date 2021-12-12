@@ -54,7 +54,7 @@ MoveGen::MoveGen(const Board &board) :
 void MoveGen::EvalMoves() {
     for (auto &m_e: std::span(move_eval, moves_cnt)) {
         if (auto k = std::ranges::find(killers, m_e.move); k != std::end(killers)) {
-            m_e.score = static_cast<Score>(std::distance(k, std::end(killers)) * 10000);
+            m_e.score = static_cast<Score>(std::distance(k, std::end(killers)) * KILLER_EVAL_BONUS);
         } else {
             m_e.score = board.GetMoveEval(m_e.move);
         }

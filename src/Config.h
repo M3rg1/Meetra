@@ -47,6 +47,7 @@ constexpr Score NEGATIVE_INF = -32000;
 constexpr Score MATE_SCORE = 31000;
 constexpr Score DRAW_SCORE = 0;
 constexpr Score MIN_MATE_EVAL = MATE_SCORE - MAX_SEARCH_DEPTH;
+constexpr Score KILLER_EVAL_BONUS = 5000;
 #pragma endregion
 
 #pragma region ===== Transposition table =====
