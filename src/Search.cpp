@@ -8,7 +8,7 @@
 namespace Search {
 
     bool EnoughTimeLeft() {
-        if (IsSearchLimited() || time_limit > elapsed * 2) {
+        if (IsSearchLimited() || time_limit > ElapsedSince(start_time) * 2) {
             return true;
         }
         return false;
@@ -17,7 +17,7 @@ namespace Search {
     int TimeReduction(const Board &b) {
         int reduction = std::max(45 + std::min(b.GetPhase(), 20) - b.FullMoveClock(), 20);
         if (settings.moves_to_go) {
-            reduction = std::min(settings.moves_to_go + 1, reduction - 3);
+            reduction = std::min(static_cast<int>(settings.moves_to_go + 1), reduction - 3);
         }
         return reduction;
     }
@@ -29,7 +29,7 @@ namespace Search {
     uint64_t NodesTotal() {
         return std::accumulate(threads.begin(),
                                threads.end(),
-                               0ULL,
+                               static_cast<uint64_t>(0),
                                [&](auto sum, const auto &t) { return sum + t->Nodes(); });
     }
 
@@ -43,10 +43,9 @@ namespace Search {
     }
 
     void InitNewSearch(const Settings &s, const Board &board) {
-        start_time = Time::Now();
+        start_time = Now();
         last_update_time = 0;
         mt_depth = 0;
-        elapsed = 0;
         settings = s;
         tt.NewSearch();
         InitSearchTimer(board);
@@ -119,18 +118,18 @@ namespace Search {
 
         // it's important to first initialize all threads and only then start them
         std::ranges::for_each(threads, [&](auto &t) { t->InitNewSearch(board, root_moves); });
-        if (threads.front()->LimitReached()) StopSearch();
+        if (threads.front()->LimitReached()) StopSearch(); // 0 nodes or 0 movetime or 0 depth search - stop immediately
         std::ranges::for_each(threads, [&](auto &t) { t->StartThread(); });
     }
 
     void Init() {
         run = false;
-        chess960 = false;
-        use_book = false;
-        show_currline = false;
-        show_currmove = true;
-        multi_pv = 1;
-        plies_muted = 0;
+        chess960 = DEFAULT_CHESS960;
+        use_book = DEFAULT_USE_BOOK;
+        show_currline = DEFAULT_SHOW_CURRLINE;
+        show_currmove = DEFAULT_SHOW_CURRMOVE;
+        multi_pv = DEFAULT_MULTI_PV;
+        plies_muted = DEFAULT_MUTE_PLIES;
         move_overhead = DEFAULT_OVERHEAD;
         update_interval = DEFAULT_UPDATE_INTERVAL;
         SetNumThreads(DEFAULT_SEARCH_THREADS);
@@ -145,7 +144,7 @@ namespace Search {
     void SetNumThreads(size_t num_threads) {
 
         if (num_threads > MAX_SEARCH_THREADS || num_threads < 1) {
-            num_threads = std::clamp(num_threads, static_cast<size_t>(1), MAX_SEARCH_THREADS);
+            num_threads = std::clamp(num_threads, MIN_SEARCH_THREADS, MAX_SEARCH_THREADS);
             std::osyncstream(std::cout)
                     << "info Invalid threads count! Initializing to: " << num_threads << " threads" << std::endl;
         }

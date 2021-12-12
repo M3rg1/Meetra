@@ -35,11 +35,9 @@ void Evaluator::MakeMove(const Board &board, Move m) {
 
     Color col = board.ColorToMove();
     Color enemy_col = OtherColor(col);
-
     Square to = ToSquare(m);
     Square from = FromSquare(m);
     Square capture_s = GetMoveType(m) == EN_PASSANT ? (col == WHITE ? to + SOUTH : to + NORTH) : to;
-
     PieceType moved_pt = board.GetPieceTypeOnSq(from);
     PieceType taken_pt = board.GetPieceTypeOnSq(capture_s);
 
@@ -78,11 +76,9 @@ Score Evaluator::GetBoardEval() const {
 Score Evaluator::GetMoveEval(const Board &board, Move m) const {
 
     Color col = board.ColorToMove();
-
     Square to = ToSquare(m);
     Square from = FromSquare(m);
     Square capture_s = GetMoveType(m) == EN_PASSANT ? (col == WHITE ? to + SOUTH : to + NORTH) : to;
-
     PieceType moved_pt = board.GetPieceTypeOnSq(from);
     PieceType taken_pt = board.GetPieceTypeOnSq(capture_s);
 

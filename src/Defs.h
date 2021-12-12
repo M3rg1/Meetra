@@ -2,8 +2,16 @@
 #define MEETRA_DEFS_H
 
 #include <string>
+#include <chrono>
 
-using TimeRep = int64_t;
+using TimeRep = std::chrono::milliseconds::rep;
+
+inline TimeRep Now() {
+    return std::chrono::duration_cast<std::chrono::milliseconds>
+            (std::chrono::steady_clock::now().time_since_epoch()).count();
+}
+inline TimeRep ElapsedSince(TimeRep t) { return Now() - t; }
+inline uint64_t GetNps(uint64_t nodes, TimeRep t) { return (nodes * 1000) / (t + 1); }
 
 using Depth = int;
 
@@ -96,8 +104,12 @@ enum PawnMoveDir {
 enum Direction : int {
     NORTH = 8, NORTH_EAST = 9, EAST = 1, SOUTH_EAST = -7, SOUTH = -8, SOUTH_WEST = -9, WEST = -1, NORTH_WEST = 7
 };
-constexpr Direction operator+(Direction d1, Direction d2) { return static_cast<Direction>(static_cast<int>(d1) + static_cast<int>(d2)); }
-constexpr Direction operator-(Direction d1, Direction d2) { return static_cast<Direction>(static_cast<int>(d1) - static_cast<int>(d2)); }
+constexpr Direction operator+(Direction d1, Direction d2) {
+    return static_cast<Direction>(static_cast<int>(d1) + static_cast<int>(d2));
+}
+constexpr Direction operator-(Direction d1, Direction d2) {
+    return static_cast<Direction>(static_cast<int>(d1) - static_cast<int>(d2));
+}
 constexpr Direction operator*(int i, Direction d) { return static_cast<Direction>(static_cast<int>(d) * i); }
 
 enum Square {
@@ -161,4 +173,13 @@ constexpr Square FromSquare(Move m) { return static_cast<Square>(m & 0x3F); }
 constexpr Square ToSquare(Move m) { return static_cast<Square>((m >> 6) & 0x3F); }
 constexpr bool IsPromotion(Move m) { return m >> 14; }
 constexpr MoveType GetMoveType(Move m) { return static_cast<MoveType>(m & 0xF000); }
+
+template<typename T>
+struct Iterator {
+    T *p;
+    T &operator*() { return *p; }
+    bool operator!=(const Iterator &rhs) { return p != rhs.p; }
+    void operator++() { ++p; }
+};
+
 #endif //MEETRA_DEFS_H

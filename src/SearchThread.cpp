@@ -3,6 +3,7 @@
 #include "Search.h"
 #include <syncstream>
 #include <iostream>
+#include <ranges>
 
 namespace Search {
 
@@ -26,9 +27,10 @@ namespace Search {
             for (curr_rm_num = 0; curr_rm_num < root_moves.size(); ++curr_rm_num) {
 
                 curr_rm = &root_moves[curr_rm_num];
-                curr_rm->seldepth = depth_reached;
+                curr_rm->seldepth = 1;
 
-                if (IsMainThread() && show_currmove && elapsed > CURRMOVE_DELAY) {
+                if (IsMainThread() && show_currmove && depth_reached > plies_muted
+                    && ElapsedSince(start_time) > CURRMOVE_DELAY) {
                     SendCurrMoveInfo();
                 }
 
@@ -71,7 +73,7 @@ namespace Search {
             // sort based on score -> previous score -> node count
             std::ranges::stable_sort(root_moves);
 
-            if (LimitReached()) {
+            if (DepthLimitReached()) {
                 StopSearch();
             }
 
@@ -95,7 +97,7 @@ namespace Search {
     Score SearchThread::ABSearch(Score alpha, Score beta, Depth depth, Depth ply, PVLine &parent_pv) {
 
         if (IsMainThread()) {
-            CheckTimers();
+            CheckTermination();
         }
 
         curr_rm->seldepth = std::max(ply, curr_rm->seldepth);
@@ -362,10 +364,9 @@ namespace Search {
 
     void SearchThread::SendBriefSearchInfo() const {
 
+        auto elapsed = ElapsedSince(start_time);
         auto nodes = NodesTotal();
-        auto elapsed_ns = Time::ElapsedSince<Time::ns>(start_time);
-        auto nps = Time::CalculateNps(nodes, elapsed_ns);
-        elapsed = Time::NsToMs(elapsed_ns);
+        auto nps = GetNps(nodes, elapsed);
 
         std::osyncstream(std::cout)
                 << "info depth " << depth_reached
@@ -379,10 +380,9 @@ namespace Search {
 
     void SearchThread::SendFullSearchInfo() const {
 
+        auto elapsed = ElapsedSince(start_time);
         auto nodes = NodesTotal();
-        auto elapsed_ns = Time::ElapsedSince<Time::ns>(start_time);
-        auto nps = Time::CalculateNps(nodes, elapsed_ns);
-        elapsed = Time::NsToMs(elapsed_ns);
+        auto nps = GetNps(nodes, elapsed);
 
         auto pvs_to_send = std::min(multi_pv, root_moves.size());
         std::osyncstream oss(std::cout);
@@ -403,8 +403,8 @@ namespace Search {
             else oss << "cp " << score;
 
             oss << " pv " << board.MoveToName(root_moves[i].move);
-            for (size_t j = 0; j < root_moves[i].pv.Size(); ++j) {
-                oss << ' ' << board.MoveToName(root_moves[i].pv.At(j));
+            for (const auto &m : root_moves[i].pv) {
+                oss << ' ' << board.MoveToName(m);
             }
             if (i + 1 < pvs_to_send) oss << '\n';
         }
@@ -419,21 +419,28 @@ namespace Search {
     void SearchThread::SendCurrLineInfo() const {
         std::osyncstream oss(std::cout);
         oss << "info currline " << board.MoveToName(curr_rm->move);
-        for (size_t i = 0; i < curr_rm->pv.Size(); ++i) {
-            oss << ' ' << board.MoveToName(curr_rm->pv.At(i));
+        for (const auto &m : curr_rm->pv) {
+            oss << ' ' << board.MoveToName(m);
         }
         oss << std::endl;
     }
 
-    void SearchThread::CheckTimers() {
+    void SearchThread::CheckTermination() {
 
+        // make sure to be precise when in node limited search
+        if (NodesLimitReached()) {
+            StopSearch();
+            return;
+        }
+
+        // querying time is expensive, don't do it too often
         if ((Nodes() & 4095) != 0) {
             return;
         }
 
-        elapsed = Time::ElapsedSince<Time::ms>(start_time);
+        auto elapsed = ElapsedSince(start_time);
 
-        if ((!IsSearchLimited() && elapsed > time_limit) || MoveTimeLimitReached() || NodesLimitReached()) {
+        if ((!IsSearchLimited() && elapsed > time_limit) || MoveTimeLimitReached()) {
             StopSearch();
         } else if (depth_reached > plies_muted && last_update_time + update_interval < elapsed) {
             last_update_time = elapsed;
@@ -486,7 +493,7 @@ namespace Search {
     }
 
     bool SearchThread::MoveTimeLimitReached() const {
-        return settings.limit_time && elapsed >= settings.allowed_time;
+        return settings.limit_time && ElapsedSince(start_time) >= settings.allowed_time;
     }
     bool SearchThread::DepthLimitReached() const {
         return settings.limit_depth && depth_reached >= settings.allowed_depth;

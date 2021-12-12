@@ -1,4 +1,7 @@
 #include "MoveGen.h"
+#include <algorithm>
+#include <ranges>
+#include <span>
 
 template<Color C, PawnMoveDir DIR>
 constexpr Direction PawnMove() {
@@ -50,15 +53,11 @@ MoveGen::MoveGen(const Board &board) :
 }
 
 void MoveGen::EvalMoves() {
-    for (size_t i = 0, j = 0; i < moves_cnt; ++i, j = 0) {
-        for (; j < KILLER_SLOTS; ++j) {
-            if (move_eval[i].move == killers[j]) {
-                move_eval[i].score = static_cast<Score>((KILLER_SLOTS - j) * 10000);
-                break;
-            }
-        }
-        if (j >= KILLER_SLOTS) {
-            move_eval[i].score = board.GetMoveEval(move_eval[i].move);
+    for (auto &m_e: std::span(move_eval, moves_cnt)) {
+        if (auto k = std::ranges::find(killers, m_e.move); k != std::end(killers)) {
+            m_e.score = static_cast<Score>(std::distance(k, std::end(killers)) * 10000);
+        } else {
+            m_e.score = board.GetMoveEval(m_e.move);
         }
     }
 }

@@ -6,7 +6,6 @@
 #include "Evaluator.h"
 #include "TranspositionTable.h"
 #include "SearchThread.h"
-#include "Timer.h"
 #include "Defs.h"
 #include "Config.h"
 
@@ -22,7 +21,7 @@ namespace Search {
         uint64_t allowed_nodes = 0;
         Depth allowed_depth = 0;
 
-        int moves_to_go = 0;
+        size_t moves_to_go = 0;
         TimeRep wtime = DEFAULT_SEARCH_TIME;
         TimeRep btime = DEFAULT_SEARCH_TIME;
         TimeRep winc = 0;
@@ -30,8 +29,8 @@ namespace Search {
     };
 
     inline Settings settings;
+    inline TimeRep start_time;
     inline TimeRep time_limit;
-    inline TimeRep elapsed;
     inline std::atomic<bool> run;
     inline std::atomic<Depth> mt_depth;
     inline bool chess960; // each board still has its own value with which it was constructed
@@ -43,13 +42,13 @@ namespace Search {
     inline TimeRep last_update_time;
     inline TimeRep move_overhead;
     inline TimeRep update_interval;
-    inline Time::TimePoint start_time;
     inline TranspositionTable tt;
     inline std::vector<std::unique_ptr<SearchThread>> threads;
 
     struct PVLine {
+        [[nodiscard]] auto begin() const { return Iterator<const Move>{moves}; }
+        [[nodiscard]] auto end() const { return Iterator<const Move>{moves + Size()}; }
         [[nodiscard]] size_t Size() const { return len; }
-        [[nodiscard]] Move At(size_t idx) const { return moves[idx]; }
         void PutMove(Move m) { moves[len++] = m; }
         void Clear() { len = 0; }
         void PutLine(const PVLine &other) {
@@ -96,8 +95,8 @@ namespace Search {
     inline void ClearTT() { tt.Clear(); }
     inline void ShowShowCurrLine(bool show) { show_currline = show; }
     inline void ShowCurrMoveInfo(bool show) { show_currmove = show; }
-    inline void SetPliesMuted(Depth ply_muted) { plies_muted = ply_muted; }
-    inline void SetMultiPv(size_t pv_num) { multi_pv = std::max(static_cast<size_t>(1), pv_num); }
+    inline void SetPliesMuted(Depth ply_muted) { plies_muted = std::clamp(ply_muted, MIN_MUTE_PLIES, MAX_MUTE_PLIES); }
+    inline void SetMultiPv(size_t pv_num) { multi_pv = std::clamp(pv_num, MIN_MULTI_PV, MAX_MULTI_PV); }
     inline void SetTTSize(size_t size_mb) { tt.Init(size_mb); }
     inline void SetUseBook(bool use) { use_book = use; }
     inline void SetChess960(bool set) { chess960 = set; }

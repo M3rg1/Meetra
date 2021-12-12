@@ -8,7 +8,6 @@
 #include "MoveGen.h"
 #include <fstream>
 #include <sstream>
-#include "Timer.h"
 #include "Config.h"
 #include <syncstream>
 #include <iostream>
@@ -84,20 +83,19 @@ namespace Testing {
                 return false;
             }
 
-            auto start = Time::Now();
+            auto start = Now();
 
             result = Perft<false>(depth, board);
 
-            auto elapsed_ns = Time::ElapsedSince<Time::ns>(start);
-            auto elapsed_ms = Time::NsToMs(elapsed_ns);
-            auto nps = Time::CalculateNps(result, elapsed_ns);
+            auto elapsed = ElapsedSince(start);
+            auto nps = GetNps(result, elapsed);
 
             std::osyncstream(std::cout)
                     << "Position: " << fen << '\n'
                     << "Depth: " << depth
                     << " | Expected: " << expected
                     << " | Got: " << result
-                    << " | Time elapsed: " << elapsed_ms << "ms"
+                    << " | Time elapsed: " << elapsed << "ms"
                     << " | NPS: " << nps << '\n'
                     << (result != expected ? "=== ERROR ===" : "=== OK ===") << '\n' << std::endl;
 
@@ -136,7 +134,7 @@ namespace Testing {
 
         std::vector<int> errors;
         uint64_t nodes = 0;
-        auto start = Time::Now();
+        auto start = Now();
 
         for (size_t i = 0; i < tests.size(); ++i) {
             std::osyncstream(std::cout) << "Running test " << i + 1 << " ..." << std::endl;
@@ -146,13 +144,12 @@ namespace Testing {
             nodes += tests[i].result;
         }
 
-        auto elapsed_ns = Time::ElapsedSince<Time::ns>(start);
-        auto elapsed_ms = Time::NsToMs(elapsed_ns);
-        auto nps = Time::CalculateNps(nodes, elapsed_ns);
+        auto elapsed = ElapsedSince(start);
+        auto nps = GetNps(nodes, elapsed);
 
         std::osyncstream oss(std::cout);
         oss << "==========================================\n\n"
-            << "Total time elapsed: " << elapsed_ms << "ms\n"
+            << "Total time elapsed: " << elapsed << "ms\n"
             << "Average NPS: " << nps << '\n';
         if (!errors.empty()) {
             oss << "Errors found in tests:\n";

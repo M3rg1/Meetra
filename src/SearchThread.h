@@ -45,7 +45,7 @@ namespace Search {
         [[nodiscard]] bool DepthLimitReached() const;
         [[nodiscard]] bool NodesLimitReached() const;
 
-        void CheckTimers();
+        void CheckTermination();
         void SendCurrLineInfo() const;
         void SendCurrMoveInfo() const;
         void SendBriefSearchInfo() const;

@@ -15,21 +15,24 @@ namespace Uci {
 
     std::string GetOptions() {
         std::ostringstream oss;
-        oss << "option name Clear Hash type button\n"
-            << "option name UCI_ShowCurrLine type check default false\n"
-            << "option name Show current move type check default true\n"
+        oss << std::boolalpha
+            << "option name Clear Hash type button\n"
+            << "option name UCI_ShowCurrLine type check default " << DEFAULT_SHOW_CURRLINE << '\n'
+            << "option name Show current move type check default " << DEFAULT_SHOW_CURRMOVE << '\n'
             << "option name Hash type spin default " << DEFAULT_HASH_SIZE << " min " << MIN_HASH_SIZE
             << " max " << MAX_HASH_SIZE << '\n'
-            << "option name MultiPV type spin default 1 min 1 max 32\n"
-            << "option name Mute plies type spin default 0 min 0 max 128\n"
-            << "option name OwnBook type check default false\n"
-            << "option name Threads type spin default " << DEFAULT_SEARCH_THREADS << " min 1 max "
-            << MAX_SEARCH_THREADS << '\n'
+            << "option name MultiPV type spin default " << DEFAULT_MULTI_PV << " min " << MIN_MULTI_PV << " max "
+            << MAX_MULTI_PV << '\n'
+            << "option name Mute plies type spin default " << DEFAULT_MUTE_PLIES << " min " << MIN_MUTE_PLIES << " max "
+            << MAX_MUTE_PLIES << '\n'
+            << "option name OwnBook type check default " << DEFAULT_USE_BOOK << '\n'
+            << "option name Threads type spin default " << DEFAULT_SEARCH_THREADS << " min " << MIN_SEARCH_THREADS
+            << " max " << MAX_SEARCH_THREADS << '\n'
             << "option name Move overhead type spin default " << DEFAULT_OVERHEAD << " min "
             << MIN_OVERHEAD << " max " << MAX_OVERHEAD << '\n'
-            << "option name UCI_Chess960 type check default false\n"
+            << "option name UCI_Chess960 type check default " << DEFAULT_CHESS960 << '\n'
             << "option name Send updates frequency type spin default " << DEFAULT_UPDATE_INTERVAL << " min "
-            << MIN_UPDATE_INTERVAL << " max " << std::numeric_limits<int>::max();
+            << MIN_UPDATE_INTERVAL << " max " << MAX_UPDATE_INTERVAL;
         return oss.str();
     }
 
@@ -121,15 +124,14 @@ namespace Uci {
         Depth depth = 0;
         iss >> depth;
 
-        auto start = Time::Now();
+        auto start = Now();
 
         auto nodes = Testing::Perft<true>(depth, board);
 
-        auto elapsed_ns = Time::ElapsedSince<Time::ns>(start);
-        auto elapsed_ms = Time::NsToMs(elapsed_ns);
-        auto nps = Time::CalculateNps(nodes, elapsed_ns);
+        auto elapsed = ElapsedSince(start);
+        auto nps = GetNps(nodes, elapsed);
 
-        std::osyncstream(std::cout) << "\nTime elapsed: " << elapsed_ms << "ms"
+        std::osyncstream(std::cout) << "\nTime elapsed: " << elapsed << "ms"
                                     << " | Nodes explored: " << nodes
                                     << " | NPS: " << nps
                                     << std::endl;
@@ -243,9 +245,18 @@ namespace Uci {
             else if (option == "binc") iss >> settings.binc;
             else if (option == "movestogo") iss >> settings.moves_to_go;
             else if (option == "infinite") settings.infinite = true;
-            else if (option == "nodes") { iss >> settings.allowed_nodes; settings.limit_nodes = true; }
-            else if (option == "movetime") { iss >> settings.allowed_time; settings.limit_time = true; }
-            else if (option == "depth") { iss >> settings.allowed_depth; settings.limit_depth = true; }
+            else if (option == "nodes") {
+                iss >> settings.allowed_nodes;
+                settings.limit_nodes = true;
+            }
+            else if (option == "movetime") {
+                iss >> settings.allowed_time;
+                settings.limit_time = true;
+            }
+            else if (option == "depth") {
+                iss >> settings.allowed_depth;
+                settings.limit_depth = true;
+            }
             else std::osyncstream(std::cout) << "info Unknown search option: " << option << std::endl;
         }
 
