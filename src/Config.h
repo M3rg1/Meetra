@@ -22,7 +22,7 @@ constexpr bool DEFAULT_SHOW_CURRMOVE = true;
 
 constexpr TimeRep DEFAULT_OVERHEAD = 10;
 constexpr TimeRep MIN_OVERHEAD = 0;
-constexpr TimeRep MAX_OVERHEAD = 10000;
+constexpr TimeRep MAX_OVERHEAD = 100000;
 
 constexpr TimeRep DEFAULT_UPDATE_INTERVAL = 1000;
 constexpr TimeRep MIN_UPDATE_INTERVAL = 10;

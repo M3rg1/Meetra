@@ -28,11 +28,14 @@ namespace Search {
         TimeRep binc = 0;
     };
 
+    // static vars in search thread?
     inline Settings settings;
     inline TimeRep start_time;
     inline TimeRep time_limit;
     inline std::atomic<bool> run;
     inline std::atomic<Depth> mt_depth;
+
+    // uci options
     inline bool chess960; // each board still has its own value with which it was constructed
     inline bool use_book;
     inline bool show_currline;
@@ -42,45 +45,10 @@ namespace Search {
     inline TimeRep last_update_time;
     inline TimeRep move_overhead;
     inline TimeRep update_interval;
+
+    // also static vars in search thread?
     inline TranspositionTable tt;
     inline std::vector<std::unique_ptr<SearchThread>> threads;
-
-    struct PVLine {
-        [[nodiscard]] auto begin() const { return Iterator<const Move>{moves}; }
-        [[nodiscard]] auto end() const { return Iterator<const Move>{moves + Size()}; }
-        [[nodiscard]] size_t Size() const { return len; }
-        void PutMove(Move m) { moves[len++] = m; }
-        void Clear() { len = 0; }
-        void PutLine(const PVLine &other) {
-            std::copy_n(other.moves, other.len, moves + len);
-            len += other.len;
-        }
-    private:
-        Move moves[MAX_SEARCH_DEPTH + 1];
-        size_t len = 0;
-    };
-
-    struct RootMove {
-        Move move;
-        PVLine pv{};
-        Score score = NEGATIVE_INF;
-        Score previous_score = NEGATIVE_INF;
-        Depth depth = 0;
-        Depth seldepth = 0;
-        uint64_t nodes = 0;
-
-        explicit RootMove(Move m) : move(m) {}
-
-        std::strong_ordering operator<=>(const RootMove &other) const {
-            return other.score != score ? other.score <=> score :
-                   other.previous_score != previous_score ? other.previous_score <=> previous_score :
-                   other.nodes <=> nodes;
-        }
-
-        bool operator==(const RootMove &other) const {
-            return move == other.move;
-        }
-    };
 
     void Init();
     void StartSearch(Settings settings, Board board);

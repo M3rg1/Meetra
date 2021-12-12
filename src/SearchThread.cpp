@@ -36,10 +36,10 @@ namespace Search {
                 board.MakeMove(curr_rm->move);
 
                 if (curr_rm_num > 0) {
-                    score = -ABSearch<NON_PV>(-alpha - 1, -alpha, depth_reached - 1, 2, curr_rm->pv);
+                    score = -ABSearch<NON_PV>(-alpha - 1, -alpha, depth_reached - 1, 2);
                 }
                 if (curr_rm_num == 0 || (score > alpha && score < beta)) {
-                    score = -ABSearch<PV>(-beta, -alpha, depth_reached - 1, 2, curr_rm->pv);
+                    score = -ABSearch<PV>(-beta, -alpha, depth_reached - 1, 2);
                 }
 
                 board.UnmakeMove(curr_rm->move);
@@ -54,11 +54,13 @@ namespace Search {
                 curr_rm->previous_score = curr_rm->score;
                 curr_rm->depth = depth_reached;
 
-                if (multi_pv > 1) {
+                if (score > alpha) {
+                    curr_rm->pv.Clear();
+                    curr_rm->pv.PutLine(pv[2]);
                     curr_rm->score = score;
-                } else if (score > alpha) {
-                    curr_rm->score = score;
-                    alpha = score;
+                    if (multi_pv == 1) {
+                        alpha = score;
+                    }
                 } else {
                     curr_rm->score = NEGATIVE_INF;
                 }
@@ -93,7 +95,7 @@ namespace Search {
     }
 
     template<Node NodeType>
-    Score SearchThread::ABSearch(Score alpha, Score beta, Depth depth, Depth ply, PVLine &parent_pv) {
+    Score SearchThread::ABSearch(Score alpha, Score beta, Depth depth, Depth ply) {
 
         if (IsMainThread()) {
             CheckTermination();
@@ -155,7 +157,6 @@ namespace Search {
         }
 
         std::ranges::fill(killers[ply + 1], ZERO_MOVE);
-        PVLine child_pv;
 
         // null move pruning
         if (NodeType == NON_PV
@@ -168,7 +169,7 @@ namespace Search {
                 ) {
             Depth R = NULL_BASE_REDUCTION + depth / 5;
             board.MakeNullMove();
-            Score null_score = -ABSearch<NULL_MOVE>(-beta, -beta + 1, depth - R, ply + 1, child_pv);
+            Score null_score = -ABSearch<NULL_MOVE>(-beta, -beta + 1, depth - R, ply + 1);
             board.UnmakeNullMove();
             if (null_score >= beta) {
                 return null_score >= MIN_MATE_EVAL ? beta : null_score;
@@ -212,11 +213,11 @@ namespace Search {
 
             Score score;
             if (NodeType != PV || moves_searched > 0) {
-                score = -ABSearch<NON_PV>(-alpha - 1, -alpha, depth - 1 - reduction, ply + 1, child_pv);
+                score = -ABSearch<NON_PV>(-alpha - 1, -alpha, depth - 1 - reduction, ply + 1);
             }
             if (NodeType == PV && (moves_searched == 0 || (score > alpha && score < beta))) {
-                child_pv.Clear();
-                score = -ABSearch<PV>(-beta, -alpha, depth - 1, ply + 1, child_pv);
+                pv[ply + 1].Clear();
+                score = -ABSearch<PV>(-beta, -alpha, depth - 1, ply + 1);
             }
 
             board.UnmakeMove(move);
@@ -231,9 +232,11 @@ namespace Search {
 
             if (score > best_score) {
                 if (score > alpha) {
-                    parent_pv.Clear();
-                    parent_pv.PutMove(move);
-                    parent_pv.PutLine(child_pv);
+                    if constexpr (NodeType == PV) {
+                        pv[ply].Clear();
+                        pv[ply].PutMove(move);
+                        pv[ply].PutLine(pv[ply + 1]);
+                    }
                     if (score >= beta) {
                         UpdateKillers(move, ply);
                         tt.Save(board.GetHash(), score, depth, move, LOWER, ply);
@@ -401,7 +404,7 @@ namespace Search {
             else oss << "cp " << score;
 
             oss << " pv " << board.MoveToName(root_moves[i].move);
-            for (const auto &m : root_moves[i].pv) {
+            for (const auto &m: root_moves[i].pv) {
                 oss << ' ' << board.MoveToName(m);
             }
             if (i + 1 < pvs_to_send) oss << '\n';
@@ -417,7 +420,7 @@ namespace Search {
     void SearchThread::SendCurrLineInfo() const {
         std::osyncstream oss(std::cout);
         oss << "info currline " << board.MoveToName(curr_rm->move);
-        for (const auto &m : curr_rm->pv) {
+        for (const auto &m: curr_rm->pv) {
             oss << ' ' << board.MoveToName(m);
         }
         oss << std::endl;
