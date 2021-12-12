@@ -1,6 +1,5 @@
 #include "MoveGen.h"
 #include <algorithm>
-#include <ranges>
 #include <span>
 
 template<Color C, PawnMoveDir DIR>

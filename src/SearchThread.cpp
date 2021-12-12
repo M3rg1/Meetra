@@ -3,7 +3,6 @@
 #include "Search.h"
 #include <syncstream>
 #include <iostream>
-#include <ranges>
 
 namespace Search {
 
@@ -135,7 +134,6 @@ namespace Search {
         TTFlag tt_flag = tt.Probe(board.GetHash(), alpha, beta, depth, ply, tt_score, tt_move);
 
         if (tt_flag != NOT_FOUND && move_gen.IsPseudoLegal(tt_move)) {
-            // always re-search PV nodes
             if (NodeType != PV && tt_flag & CUTOFF) {
                 return tt_score;
             }

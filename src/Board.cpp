@@ -298,7 +298,6 @@ void Board::UnmakeMove(Move m) {
 
     state = history[--history_cnt];
 
-    // ches960 castling is a special case
     if (chess960 && GetMoveType(m) == CASTLING) {
         Move rook_move = RookCastlingMove(to, ColorToMove());
         RemovePiece(ToSquare(rook_move));
