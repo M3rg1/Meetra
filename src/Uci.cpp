@@ -248,16 +248,13 @@ namespace Uci {
             else if (option == "nodes") {
                 iss >> settings.allowed_nodes;
                 settings.limit_nodes = true;
-            }
-            else if (option == "movetime") {
+            } else if (option == "movetime") {
                 iss >> settings.allowed_time;
                 settings.limit_time = true;
-            }
-            else if (option == "depth") {
+            } else if (option == "depth") {
                 iss >> settings.allowed_depth;
                 settings.limit_depth = true;
-            }
-            else std::osyncstream(std::cout) << "info Unknown search option: " << option << std::endl;
+            } else std::osyncstream(std::cout) << "info Unknown search option: " << option << std::endl;
         }
 
         return settings;
