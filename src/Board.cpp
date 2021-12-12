@@ -332,6 +332,12 @@ bool Board::AllSquaresSafe(Bitboard squares, Color attacker, Bitboard occ) const
     return true;
 }
 
+bool Board::IsDraw() const {
+    return (Move50Rule() && !(IsInCheck() && !AnyLegalMoves())) // could be checkmate on 50th move
+           || IsRepetition()
+           || (!IsInCheck() && DrawByMaterial());
+}
+
 bool Board::IsRepetition() const {
     int stop = std::max(static_cast<int>(HistorySize()) - Ply(), 0);
     for (int i = static_cast<int>(HistorySize()) - 2, rep = 0; i >= stop; i -= 2) {
@@ -347,6 +353,16 @@ bool Board::DrawByMaterial() const {
            && (!Bitboards::MoreThanOne(GetPieces(WHITE)) || !Bitboards::MoreThanOne(GetPieces(BLACK)))
            && (!Bitboards::MoreThanOne(GetPieces(KNIGHT) | GetPieces(BISHOP))
                || (GetPieces(BISHOP) == EMPTY_BB && std::popcount(GetPieces(KNIGHT)) <= 2));
+}
+
+bool Board::AnyLegalMoves() const {
+    MoveGen mg(*this);
+    while (Move m = mg.GetAnyMove()) {
+        if (IsMoveLegal(m)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 Move Board::RookCastlingMove(Square king_to, Color c) const {

@@ -35,7 +35,7 @@ namespace Search {
 
                 board.MakeMove(curr_rm->move);
 
-                if (curr_rm_num > 0) {
+                if (curr_rm_num > 0 && multi_pv == 1) {
                     score = -ABSearch<NON_PV>(-alpha - 1, -alpha, depth_reached - 1, 2);
                 }
                 if (curr_rm_num == 0 || (score > alpha && score < beta)) {
@@ -103,13 +103,7 @@ namespace Search {
 
         curr_rm->seldepth = std::max(ply, curr_rm->seldepth);
 
-        if (board.Move50Rule()) {
-            // it could be checkmate (or stalemate) on the 50th move
-            if (board.IsInCheck() && !AnyLegalMoves()) {
-                return -MATE_SCORE + ply;
-            }
-            return RandomizedDrawScore();
-        } else if (board.IsRepetition() || board.DrawByMaterial()) {
+        if (board.IsDraw()) {
             return RandomizedDrawScore();
         } else if (ply >= MAX_SEARCH_DEPTH) {
             return board.GetEval();
@@ -323,16 +317,6 @@ namespace Search {
 
     Score SearchThread::RandomizedDrawScore() const {
         return DRAW_SCORE + static_cast<Score>(1 - (Nodes() & 2));
-    }
-
-    bool SearchThread::AnyLegalMoves() const {
-        MoveGen mg(board);
-        while (Move m = mg.GetAnyMove()) {
-            if (board.IsMoveLegal(m)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     bool SearchThread::DidBeatMove(const RootMove &move) const {

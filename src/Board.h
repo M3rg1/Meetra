@@ -60,7 +60,9 @@ public:
     [[nodiscard]] inline bool IsChess960() const { return chess960; }
     [[nodiscard]] Move RookCastlingMove(Square king_to, Color c) const;
     [[nodiscard]] bool DrawByMaterial() const;
+    [[nodiscard]] bool AnyLegalMoves() const;
     [[nodiscard]] bool IsRepetition() const;
+    [[nodiscard]] bool IsDraw() const;
 #pragma endregion
 
 private:
