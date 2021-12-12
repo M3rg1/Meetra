@@ -48,6 +48,7 @@ constexpr Score MATE_SCORE = 31000;
 constexpr Score DRAW_SCORE = 0;
 constexpr Score MIN_MATE_EVAL = MATE_SCORE - MAX_SEARCH_DEPTH;
 constexpr Score KILLER_EVAL_BONUS = 5000;
+constexpr Score TT_EVAL_BONUS = 100000;
 #pragma endregion
 
 #pragma region ===== Transposition table =====
@@ -62,8 +63,11 @@ constexpr size_t MAX_HASH_SIZE = 32768;
 constexpr TimeRep CURRMOVE_DELAY = 1000;
 constexpr TimeRep DEFAULT_SEARCH_TIME = 60000;
 constexpr Score FUTILITY_FACTOR = 90;
-constexpr Depth FUTILITY_DEPTH = 7;
-constexpr Depth MIN_NULL_DEPTH = 4;
+constexpr Depth FUTILITY_MAX_DEPTH = 6;
+constexpr Depth NULL_MIN_DEPTH = 4;
+constexpr Depth NULL_BASE_REDUCTION = 4;
+constexpr Depth LMR_MIN_DEPTH = 3;
+constexpr size_t LMR_MIN_MOVES_SEARCHED = 2;
 constexpr size_t KILLER_SLOTS = 2;
 #pragma endregion
 

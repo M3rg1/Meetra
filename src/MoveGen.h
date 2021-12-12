@@ -14,7 +14,7 @@ public:
 
     inline void PutTTMove(Move tt_move) {
         move_eval[moves_cnt].move = tt_move;
-        move_eval[moves_cnt++].score = 100000;
+        move_eval[moves_cnt++].score = TT_EVAL_BONUS;
     }
 
     template<GenType T>

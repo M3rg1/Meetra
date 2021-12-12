@@ -29,7 +29,7 @@ namespace Search {
     uint64_t NodesTotal() {
         return std::accumulate(threads.begin(),
                                threads.end(),
-                               static_cast<uint64_t>(0),
+                               uint64_t{},
                                [&](auto sum, const auto &t) { return sum + t->Nodes(); });
     }
 

@@ -147,7 +147,7 @@ namespace Search {
         // reverse futility pruning
         if (NodeType == NON_PV
             && !board.IsInCheck()
-            && depth <= FUTILITY_DEPTH
+            && depth <= FUTILITY_MAX_DEPTH
             && eval < MIN_MATE_EVAL
             && eval - FUTILITY_FACTOR * depth >= beta
                 ) {
@@ -160,13 +160,13 @@ namespace Search {
         // null move pruning
         if (NodeType == NON_PV
             && !board.IsInCheck()
-            && depth >= MIN_NULL_DEPTH
+            && depth >= NULL_MIN_DEPTH
             && eval >= beta
             && eval >= static_eval
             && beta < MIN_MATE_EVAL
             && alpha > -MIN_MATE_EVAL
                 ) {
-            Depth R = 4 + depth / 5;
+            Depth R = NULL_BASE_REDUCTION + depth / 5;
             board.MakeNullMove();
             Score null_score = -ABSearch<NULL_MOVE>(-beta, -beta + 1, depth - R, ply + 1, child_pv);
             board.UnmakeNullMove();
@@ -179,7 +179,7 @@ namespace Search {
         Score best_score = NEGATIVE_INF;
         Move best_move;
         size_t moves_searched = 0;
-        bool do_lmr = !board.IsInCheck() && depth >= 3;
+        bool do_lmr = !board.IsInCheck() && depth >= LMR_MIN_DEPTH;
 
         while (Move move = move_gen.GetBestMove<NORMAL>()) {
 
@@ -197,7 +197,7 @@ namespace Search {
             Depth reduction = 0;
             if (NodeType != PV
                 && do_lmr
-                && moves_searched >= 2
+                && moves_searched >= LMR_MIN_MOVES_SEARCHED
                 && !board.IsInCheck()
                 && !board.CapturedPiece()
                 && !IsPromotion(move)
