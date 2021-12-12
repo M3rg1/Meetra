@@ -191,15 +191,14 @@ namespace Search {
 
             // late move reduction
             Depth reduction = 0;
-            if (NodeType != PV
-                && do_lmr
+            if (do_lmr
                 && moves_searched >= LMR_MIN_MOVES_SEARCHED
                 && !board.IsInCheck()
                 && !board.CapturedPiece()
                 && !IsPromotion(move)
                 && best_score > -MIN_MATE_EVAL
                     ) {
-                if (moves_searched >= 7) {
+                if (NodeType != PV && moves_searched >= 7) {
                     reduction = depth / 3;
                 } else {
                     reduction = 1;
@@ -262,7 +261,7 @@ namespace Search {
             return board.GetEval();
         }
 
-        if (board.Move50Rule() || board.IsRepetition() || board.DrawByMaterial()) {
+        if (board.IsDraw()) {
             return RandomizedDrawScore();
         }
 
@@ -317,7 +316,7 @@ namespace Search {
     }
 
     Score SearchThread::RandomizedDrawScore() const {
-        return DRAW_SCORE + static_cast<Score>(1 - (Nodes() & 2));
+        return DRAW_SCORE + 1 - static_cast<Score>(Nodes() & 2);
     }
 
     bool SearchThread::DidBeatMove(const RootMove &move) const {
