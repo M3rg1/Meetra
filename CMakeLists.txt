@@ -25,7 +25,7 @@ find_package(Threads REQUIRED)
 file(GLOB_RECURSE SRC_FILES CONFIGURE_DEPENDS "src/*.cpp")
 add_executable(${PROJECT_NAME} ${SRC_FILES})
 target_include_directories(${PROJECT_NAME} PRIVATE ${INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} Threads::Threads -static)
+target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads -static)
 
 # -march=native
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -fno-exceptions")
