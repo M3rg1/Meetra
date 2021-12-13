@@ -14,7 +14,6 @@ else()
     message(STATUS "IPO / LTO not supported: <${error}>")
 endif()
 
-
 configure_file(Env.h.in ${CMAKE_BINARY_DIR}/generated/Env.h)
 set(INCLUDE_DIRS ${CMAKE_BINARY_DIR}/generated/)
 file(GLOB_RECURSE SRC_FILES CONFIGURE_DEPENDS "src/*.cpp")
