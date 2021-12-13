@@ -22,17 +22,6 @@ namespace Search {
         return reduction;
     }
 
-    bool IsSearchLimited() {
-        return settings.infinite || settings.limit_nodes || settings.limit_depth || settings.limit_time;
-    }
-
-    uint64_t NodesTotal() {
-        return std::accumulate(threads.begin(),
-                               threads.end(),
-                               uint64_t{},
-                               [&](auto sum, const auto &t) { return sum + t->Nodes(); });
-    }
-
     void InitSearchTimer(const Board &board) {
         if (!IsSearchLimited()) {
             auto time_left = board.ColorToMove() == WHITE ? settings.wtime : settings.btime;
@@ -49,6 +38,17 @@ namespace Search {
         settings = s;
         tt.NewSearch();
         InitSearchTimer(board);
+    }
+
+    bool IsSearchLimited() {
+        return settings.infinite || settings.limit_nodes || settings.limit_depth || settings.limit_time;
+    }
+
+    uint64_t NodesTotal() {
+        return std::accumulate(threads.begin(),
+                               threads.end(),
+                               uint64_t{},
+                               [&](auto sum, const auto &t) { return sum + t->Nodes(); });
     }
 
     std::vector<RootMove> GenRootMoves(const Board &board) {

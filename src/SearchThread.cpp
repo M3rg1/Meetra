@@ -198,7 +198,6 @@ namespace Search {
                 && !IsPromotion(move)
                 && best_score > -MIN_MATE_EVAL
                     ) {
-                reduction = 1;
                 if (moves_searched >= 7) reduction += depth / 3;
                 if (NodeType != PV) ++reduction;
                 if (std::ranges::find(killers[ply], move) != std::end(killers[ply])) --reduction;

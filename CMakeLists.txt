@@ -14,22 +14,26 @@ else()
     message(STATUS "IPO / LTO not supported: <${error}>")
 endif()
 
-configure_file(Env.h.in ${CMAKE_BINARY_DIR}/generated/Env.h)
 
+configure_file(Env.h.in ${CMAKE_BINARY_DIR}/generated/Env.h)
 set(INCLUDE_DIRS ${CMAKE_BINARY_DIR}/generated/)
+file(GLOB_RECURSE SRC_FILES CONFIGURE_DEPENDS "src/*.cpp")
 
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads REQUIRED)
 
-file(GLOB_RECURSE SRC_FILES CONFIGURE_DEPENDS "src/*.cpp")
-add_executable(${PROJECT_NAME} ${SRC_FILES})
-target_include_directories(${PROJECT_NAME} PRIVATE ${INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads -static)
+set(LINK_LIBS Threads::Threads)
 
-# -march=native
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -fno-exceptions")
-set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -pedantic -Wextra -D_FORTIFY_SOURCE=2 -D_GLIBCXX_ASSERTIONS -fasynchronous-unwind-tables -fexceptions -Wno-unknown-pragmas")
+add_executable(${PROJECT_NAME} ${SRC_FILES})
+target_include_directories(${PROJECT_NAME} PUBLIC ${INCLUDE_DIRS})
+target_link_libraries(${PROJECT_NAME} ${LINK_LIBS})
+
+if(MINGW)
+    set(CMAKE_EXE_LINKER_FLAGS -static)
+endif()
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -fno-exceptions -march=native")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -pedantic -Wextra -Wshadow -Wno-unknown-pragmas")
 
 message("CMAKE_CXX_FLAGS_DEBUG is ${CMAKE_CXX_FLAGS_DEBUG}")
 message("CMAKE_CXX_FLAGS_RELEASE is ${CMAKE_CXX_FLAGS_RELEASE}")
