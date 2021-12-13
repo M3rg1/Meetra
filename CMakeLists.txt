@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.20)
 project(Meetra VERSION 0.1)
 set(PROJECT_AUTHOR M3rg1)
 
@@ -11,7 +11,8 @@ if(supported)
     message(STATUS "IPO / LTO enabled")
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 else()
-    message(STATUS "IPO / LTO not supported: <${error}>")
+    message(STATUS "IPO / LTO not supported")
+    message(DEBUG "<${error}>")
 endif()
 
 configure_file(Env.h.in ${CMAKE_BINARY_DIR}/generated/Env.h)
@@ -34,8 +35,8 @@ endif()
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -fno-exceptions -march=native")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -pedantic -Wextra -Wshadow -Wno-unknown-pragmas")
 
-message("CMAKE_CXX_FLAGS_DEBUG is ${CMAKE_CXX_FLAGS_DEBUG}")
-message("CMAKE_CXX_FLAGS_RELEASE is ${CMAKE_CXX_FLAGS_RELEASE}")
+message(STATUS "CMAKE_CXX_FLAGS_DEBUG are: ${CMAKE_CXX_FLAGS_DEBUG}")
+message(STATUS "CMAKE_CXX_FLAGS_RELEASE are: ${CMAKE_CXX_FLAGS_RELEASE}")
 
-message("Install to: ${CMAKE_INSTALL_PREFIX}")
+message(STATUS "Install to: ${CMAKE_INSTALL_PREFIX}")
 install(TARGETS ${PROJECT_NAME} DESTINATION bin)
