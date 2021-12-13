@@ -14,7 +14,7 @@ namespace Search {
     struct PVLine {
         [[nodiscard]] auto begin() const { return Iterator<const Move>{moves}; }
         [[nodiscard]] auto end() const { return Iterator<const Move>{moves + Size()}; }
-        [[nodiscard]] size_t Size() const { return len; }
+        [[nodiscard]] int Size() const { return len; }
         void PutMove(Move m) { moves[len++] = m; }
         void Clear() { len = 0; }
         void PutLine(const PVLine &other) {
@@ -23,7 +23,7 @@ namespace Search {
         }
     private:
         Move moves[MAX_SEARCH_DEPTH + 1];
-        size_t len = 0;
+        int len = 0;
     };
 
     struct RootMove {
@@ -91,7 +91,7 @@ namespace Search {
         PVLine pv[MAX_SEARCH_DEPTH + 1];
         std::vector<RootMove> root_moves;
         RootMove *curr_rm;
-        size_t curr_rm_num;
+        int curr_rm_num;
         Depth depth_reached;
         std::atomic<uint64_t> nodes_explored;
 

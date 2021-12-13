@@ -14,7 +14,7 @@ namespace Search {
 
             // if a helper thread falls behind the main thread, skip current depth and go deeper
             if (!IsMainThread() && depth_reached <= mt_depth) {
-                depth_reached = std::min(mt_depth + id,
+                depth_reached = std::min(static_cast<Depth>(mt_depth + id),
                                          settings.limit_depth ? settings.allowed_depth : MAX_SEARCH_DEPTH);
             }
 
@@ -23,7 +23,7 @@ namespace Search {
             Score score;
 
             // alpha beta search over root moves
-            for (curr_rm_num = 0; curr_rm_num < root_moves.size(); ++curr_rm_num) {
+            for (curr_rm_num = 0; curr_rm_num < static_cast<int>(root_moves.size()); ++curr_rm_num) {
 
                 curr_rm = &root_moves[curr_rm_num];
                 curr_rm->seldepth = 1;
@@ -174,8 +174,8 @@ namespace Search {
         tt_flag = UPPER;
         Score best_score = NEGATIVE_INF;
         Move best_move;
-        size_t moves_searched = 0;
-        bool do_lmr = !board.IsInCheck() && depth >= LMR_MIN_DEPTH;
+        auto moves_searched = 0;
+        auto do_lmr = !board.IsInCheck() && depth >= LMR_MIN_DEPTH;
 
         while (Move move = move_gen.GetBestMove<NORMAL>()) {
 
@@ -280,7 +280,7 @@ namespace Search {
         }
 
         MoveGen move_gen(board);
-        size_t moves_searched = 0;
+        auto moves_searched = 0;
         while (Move move = move_gen.GetBestMove<QSEARCH>()) {
 
             if (!board.MakeMove(move)) {
@@ -326,15 +326,12 @@ namespace Search {
     }
 
     bool SearchThread::DidBeatMove(const RootMove &move) const {
-        auto rm = std::ranges::find(root_moves, move);
-        if (rm == root_moves.end()) {
-            return false;
-        } else if (rm->depth < move.depth) {
-            return false;
-        } else if (rm->depth > move.depth) {
-            return true;
-        } else if (GetBestRootMove().move != move.move) {
-            return true;
+        if (auto rm = std::ranges::find(root_moves, move); rm != root_moves.end()) {
+            if (rm->depth < move.depth) {
+                return false;
+            } else if (rm->depth > move.depth || GetBestRootMove().move != move.move) {
+                return true;
+            }
         }
         return false;
     }
@@ -375,9 +372,9 @@ namespace Search {
         auto nodes = NodesTotal();
         auto nps = GetNps(nodes, elapsed);
 
-        auto pvs_to_send = std::min(multi_pv, root_moves.size());
+        auto pvs_to_send = std::min(multi_pv, static_cast<int>(root_moves.size()));
         std::osyncstream oss(std::cout);
-        for (size_t i = 0; i < pvs_to_send; ++i) {
+        for (auto i = 0; i < pvs_to_send; ++i) {
             oss << "info";
             if (pvs_to_send > 1) oss << " multipv " << i + 1;
             oss << " depth " << root_moves[i].depth

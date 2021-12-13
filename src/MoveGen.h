@@ -52,7 +52,7 @@ private:
 
     Move killers[KILLER_SLOTS];
     ScoredMove move_eval[MAX_LEGAL_MOVES];
-    size_t moves_cnt;
+    int moves_cnt;
 
     [[nodiscard]] inline bool Empty() const { return moves_cnt == 0; }
     inline Move PopBack() { return move_eval[--moves_cnt].move; }

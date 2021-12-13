@@ -11,14 +11,14 @@ Score AddMatePly(Score score, Depth ply) {
     return score > MIN_MATE_EVAL ? score - ply : score < -MIN_MATE_EVAL ? score + ply : score;
 }
 
-void TranspositionTable::Init(size_t size_mb) {
+void TranspositionTable::Init(int size_mb) {
 
     if (size_mb > MAX_HASH_SIZE || size_mb < MIN_HASH_SIZE) {
         size_mb = std::clamp(size_mb, MIN_HASH_SIZE, MAX_HASH_SIZE);
         std::osyncstream(std::cout) << "Invalid TT size! Initializing to: " << size_mb << "MB" << std::endl;
     }
 
-    buckets_count = (size_mb * 1048576) / sizeof(TTBucket);
+    buckets_count = (size_mb * 1048576ULL) / sizeof(TTBucket);
     table = std::make_unique<TTBucket[]>(buckets_count);
     Clear();
 }
@@ -42,7 +42,7 @@ void TranspositionTable::Save(Hash64 hash, Score score, Depth depth, Move move, 
     TTBucket &bucket = table[hash % buckets_count];
     TTEntry *entry_to_write;
     Hash16 hash16 = Zobrist::MakeHash16(hash);
-    int worst_entry_score = std::numeric_limits<int>::max();
+    auto worst_entry_score = 1000000;
 
     for (auto &entry: bucket.entries) {
 
@@ -55,7 +55,7 @@ void TranspositionTable::Save(Hash64 hash, Score score, Depth depth, Move move, 
             }
         }
 
-        int entry_score = entry.GetDepth() - 4 * (current_epoch - entry.GetEpoch());
+        auto entry_score = entry.GetDepth() - 4 * (current_epoch - entry.GetEpoch());
         if (entry.GetFlag() == EXACT) {
             entry_score += 2;
         }

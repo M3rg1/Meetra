@@ -12,7 +12,7 @@ class TranspositionTable {
 
 public:
 
-    void Init(size_t size_mb = DEFAULT_HASH_SIZE);
+    void Init(int size_mb = DEFAULT_HASH_SIZE);
     void Save(Hash64 hash, Score score, Depth depth, Move move, TTFlag flag, Depth ply);
     void NewSearch();
     void Clear();
@@ -59,7 +59,7 @@ private:
     };
 
     TTEpoch current_epoch;
-    std::atomic<size_t> used_entries;
+    std::atomic<int_fast64_t> used_entries;
     size_t buckets_count;
     std::unique_ptr<TTBucket[]> table;
 };

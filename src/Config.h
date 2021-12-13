@@ -8,8 +8,8 @@ inline const std::string BOOK_PATH = "books/bestmove_r20d20_a5000.mtr.bin"; // T
 inline const std::string TEST_FILE_PATH = "tests/PerftTests.txt";
 
 #pragma region ===== Global limits =====
-constexpr size_t MAX_LEGAL_MOVES = 256;
-constexpr size_t MAX_GAME_LENGTH = 1024;
+constexpr int MAX_LEGAL_MOVES = 256;
+constexpr int MAX_GAME_LENGTH = 1024;
 constexpr Depth MAX_SEARCH_DEPTH = 128;
 inline const std::string STARTPOS_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 #pragma endregion
@@ -28,13 +28,13 @@ constexpr TimeRep DEFAULT_UPDATE_INTERVAL = 1000;
 constexpr TimeRep MIN_UPDATE_INTERVAL = 10;
 constexpr TimeRep MAX_UPDATE_INTERVAL = 1000000000;
 
-constexpr size_t DEFAULT_SEARCH_THREADS = 1;
-constexpr size_t MIN_SEARCH_THREADS = 1;
-constexpr size_t MAX_SEARCH_THREADS = 64;
+constexpr int DEFAULT_SEARCH_THREADS = 1;
+constexpr int MIN_SEARCH_THREADS = 1;
+constexpr int MAX_SEARCH_THREADS = 64;
 
-constexpr size_t DEFAULT_MULTI_PV = 1;
-constexpr size_t MIN_MULTI_PV = 1;
-constexpr size_t MAX_MULTI_PV = 32;
+constexpr int DEFAULT_MULTI_PV = 1;
+constexpr int MIN_MULTI_PV = 1;
+constexpr int MAX_MULTI_PV = 32;
 
 constexpr Depth DEFAULT_MUTE_PLIES = 0;
 constexpr Depth MIN_MUTE_PLIES = 0;
@@ -53,10 +53,10 @@ constexpr Score TT_EVAL_BONUS = 100000;
 
 #pragma region ===== Transposition table =====
 constexpr uint64_t ZOBRIST_SEED = 7299078832781365792;
-constexpr size_t TT_ENTRIES_PER_BUCKET = 4;
-constexpr size_t DEFAULT_HASH_SIZE = 128;
-constexpr size_t MIN_HASH_SIZE = 8; // this should never be 0
-constexpr size_t MAX_HASH_SIZE = 32768;
+constexpr int TT_ENTRIES_PER_BUCKET = 4;
+constexpr int DEFAULT_HASH_SIZE = 128;
+constexpr int MIN_HASH_SIZE = 8; // this should never be 0
+constexpr int MAX_HASH_SIZE = 32768;
 #pragma endregion
 
 #pragma region ===== Search =====
@@ -67,8 +67,8 @@ constexpr Depth FUTILITY_MAX_DEPTH = 6;
 constexpr Depth NULL_MIN_DEPTH = 4;
 constexpr Depth NULL_BASE_REDUCTION = 4;
 constexpr Depth LMR_MIN_DEPTH = 3;
-constexpr size_t LMR_MIN_MOVES_SEARCHED = 2;
-constexpr size_t KILLER_SLOTS = 2;
+constexpr int LMR_MIN_MOVES_SEARCHED = 2;
+constexpr int KILLER_SLOTS = 2;
 #pragma endregion
 
 #endif //MEETRA_CONFIG_H

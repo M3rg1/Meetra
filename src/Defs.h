@@ -11,14 +11,14 @@ inline TimeRep Now() {
             (std::chrono::steady_clock::now().time_since_epoch()).count();
 }
 inline TimeRep ElapsedSince(TimeRep t) { return Now() - t; }
-inline uint64_t GetNps(uint64_t nodes, TimeRep t) { return (nodes * 1000) / (t + 1); }
+inline uint64_t GetNps(uint64_t nodes, TimeRep t) { return (nodes / (t + 1)) * 1000; }
 
 using Depth = int;
 
 using Score = int;
 
 using Hash64 = uint64_t;
-using Hash16 = int;
+using Hash16 = uint16_t;
 constexpr Hash64 NEW_HASH64 = 0;
 
 using Bitboard = uint64_t;
@@ -101,7 +101,7 @@ enum PawnMoveDir {
     LEFT, RIGHT, FORWARD,
 };
 
-enum Direction : int {
+enum Direction {
     NORTH = 8, NORTH_EAST = 9, EAST = 1, SOUTH_EAST = -7, SOUTH = -8, SOUTH_WEST = -9, WEST = -1, NORTH_WEST = 7
 };
 constexpr Direction operator+(Direction d1, Direction d2) {
@@ -157,7 +157,7 @@ enum CastlingSide {
  * 12-15 MoveType flag
  * if the 14th bit is 1, it's a promotion move -> prom bits  N = 0010.., B = 1010.., R = 0110.., Q = 1110..
  */
-using Move = int;
+using Move = uint_fast16_t;
 constexpr Move ZERO_MOVE = 0;
 
 enum MoveType {

@@ -21,7 +21,7 @@ namespace Search {
         uint64_t allowed_nodes = 0;
         Depth allowed_depth = 0;
 
-        size_t moves_to_go = 0;
+        int moves_to_go = 0;
         TimeRep wtime = DEFAULT_SEARCH_TIME;
         TimeRep btime = DEFAULT_SEARCH_TIME;
         TimeRep winc = 0;
@@ -41,7 +41,7 @@ namespace Search {
     inline bool show_currline;
     inline bool show_currmove;
     inline Depth plies_muted;
-    inline size_t multi_pv;
+    inline int multi_pv;
     inline TimeRep last_update_time;
     inline TimeRep move_overhead;
     inline TimeRep update_interval;
@@ -64,13 +64,13 @@ namespace Search {
     inline void ShowShowCurrLine(bool show) { show_currline = show; }
     inline void ShowCurrMoveInfo(bool show) { show_currmove = show; }
     inline void SetPliesMuted(Depth ply_muted) { plies_muted = std::clamp(ply_muted, MIN_MUTE_PLIES, MAX_MUTE_PLIES); }
-    inline void SetMultiPv(size_t pv_num) { multi_pv = std::clamp(pv_num, MIN_MULTI_PV, MAX_MULTI_PV); }
-    inline void SetTTSize(size_t size_mb) { tt.Init(size_mb); }
+    inline void SetMultiPv(int pv_num) { multi_pv = std::clamp(pv_num, MIN_MULTI_PV, MAX_MULTI_PV); }
+    inline void SetTTSize(int size_mb) { tt.Init(size_mb); }
     inline void SetUseBook(bool use) { use_book = use; }
     inline void SetChess960(bool set) { chess960 = set; }
     inline void SetMoveOverhead(TimeRep overhead) { move_overhead = std::clamp(overhead, MIN_OVERHEAD, MAX_OVERHEAD); }
     inline void SetUpdateInterval(TimeRep interval) { update_interval = std::clamp(interval, MIN_UPDATE_INTERVAL, MAX_UPDATE_INTERVAL); }
-    void SetNumThreads(size_t num_threads);
+    void SetNumThreads(int num_threads);
     uint64_t NodesTotal();
 }
 

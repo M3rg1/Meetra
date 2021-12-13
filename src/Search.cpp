@@ -53,17 +53,17 @@ namespace Search {
 
     std::vector<RootMove> GenRootMoves(const Board &board) {
         MoveGen move_gen(board);
-        std::vector<RootMove> moves;
+        std::vector<RootMove> root_moves;
         while (Move move = move_gen.GetBestMove<NORMAL>()) {
             if (board.IsMoveLegal(move)) {
-                moves.emplace_back(move);
+                root_moves.emplace_back(move);
             }
         }
-        for (RootMove &rm: moves) {
+        for (auto &rm: root_moves) {
             rm.score = board.GetMoveEval(rm.move);
         }
-        std::ranges::sort(moves);
-        return moves;
+        std::ranges::sort(root_moves);
+        return root_moves;
     }
 
     void FinishSearch() {
@@ -113,7 +113,7 @@ namespace Search {
         }
 
         if (root_moves.size() == 1 && !IsSearchLimited()) {
-            std::min(time_limit, static_cast<TimeRep>(1000));
+            time_limit = std::min(time_limit, static_cast<TimeRep>(1000));
         }
 
         // it's important to first initialize all threads and only then start them
@@ -141,7 +141,7 @@ namespace Search {
         threads.clear();
     }
 
-    void SetNumThreads(size_t num_threads) {
+    void SetNumThreads(int num_threads) {
 
         if (num_threads > MAX_SEARCH_THREADS || num_threads < 1) {
             num_threads = std::clamp(num_threads, MIN_SEARCH_THREADS, MAX_SEARCH_THREADS);
@@ -151,8 +151,8 @@ namespace Search {
 
         Shutdown();
 
-        for (size_t i = 0; i < num_threads; ++i) {
-            threads.emplace_back(new SearchThread(static_cast<int>(i)));
+        for (auto i = 0; i < num_threads; ++i) {
+            threads.emplace_back(new SearchThread(i));
         }
     }
 }

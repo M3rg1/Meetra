@@ -8,12 +8,11 @@ constexpr Direction PawnMove() {
                       : DIR == LEFT ? SOUTH_EAST : DIR == RIGHT ? SOUTH_WEST : SOUTH;
 }
 
-bool ValidatePromMove(Move prom, Move to_validate) {
-    if ((prom | PROMOTE_QUEEN) == to_validate) return true;
-    if ((prom | PROMOTE_ROOK) == to_validate) return true;
-    if ((prom | PROMOTE_BISHOP) == to_validate) return true;
-    if ((prom | PROMOTE_KNIGHT) == to_validate) return true;
-    return false;
+bool ValidatePromMove(Move m, Move to_validate) {
+    return ((m | PROMOTE_QUEEN) == to_validate)
+           || ((m | PROMOTE_ROOK) == to_validate)
+           || ((m | PROMOTE_BISHOP) == to_validate)
+           || ((m | PROMOTE_KNIGHT) == to_validate);
 }
 
 MoveGen::MoveGen(const Board &board, const Move killer_moves[]) : MoveGen(board) {
@@ -53,7 +52,7 @@ MoveGen::MoveGen(const Board &board) :
 
 void MoveGen::EvalMoves() {
     for (auto &m_e: std::span(move_eval, moves_cnt)) {
-        if (auto k = std::ranges::find(killers, m_e.move); k != std::end(killers)) {
+        if (const auto k = std::ranges::find(killers, m_e.move); k != std::end(killers)) {
             m_e.score = static_cast<Score>(std::distance(k, std::end(killers)) * KILLER_EVAL_BONUS);
         } else {
             m_e.score = board.GetMoveEval(m_e.move);

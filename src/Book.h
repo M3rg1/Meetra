@@ -18,7 +18,7 @@ namespace Book {
         uint16_t move;
     };
 
-    inline std::vector<Move> BinarySearch(std::ifstream &stream, size_t size_bytes, Hash64 hash) {
+    inline std::vector<Move> BinarySearch(std::ifstream &stream, uintmax_t size_bytes, Hash64 hash) {
 
         std::vector<Move> moves;
         std::streamoff right = static_cast<std::streamoff>(size_bytes / sizeof(BookEntry));
@@ -70,7 +70,7 @@ namespace Book {
             return {};
         }
 
-        size_t size = std::filesystem::file_size(BOOK_PATH);
+        auto size = std::filesystem::file_size(BOOK_PATH);
         return BinarySearch(book_stream, size, hash);
     }
 }
