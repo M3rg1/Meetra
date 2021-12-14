@@ -11,7 +11,7 @@ inline TimeRep Now() {
             (std::chrono::steady_clock::now().time_since_epoch()).count();
 }
 inline TimeRep ElapsedSince(TimeRep t) { return Now() - t; }
-inline uint64_t GetNps(uint64_t nodes, TimeRep t) { return (nodes / (t + 1)) * 1000; }
+inline uint64_t GetNps(uint64_t nodes, TimeRep t) { return (nodes * 1000 / (t + 1)); }
 
 using Depth = int;
 

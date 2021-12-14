@@ -15,12 +15,12 @@ bool ValidatePromMove(Move m, Move to_validate) {
            || ((m | PROMOTE_KNIGHT) == to_validate);
 }
 
-MoveGen::MoveGen(const Board &board, const Move killer_moves[]) : MoveGen(board) {
+MoveGen::MoveGen(const Board &b, const Move killer_moves[]) : MoveGen(b) {
     std::copy_n(killer_moves, KILLER_SLOTS, killers);
 }
 
-MoveGen::MoveGen(const Board &board) :
-        board(board),
+MoveGen::MoveGen(const Board &b) :
+        board(b),
         my_color(board.ColorToMove()),
         enemy_color(OtherColor(my_color)),
         king_s(Bitboards::Lsb(board.GetPieces(KING, my_color))),
