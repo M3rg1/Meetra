@@ -6,7 +6,7 @@
 
 namespace Bitboards {
 
-    constexpr std::array<uint64_t, SQUARE_NR> bishop_magic_num{
+    constexpr std::array<uint64_t, SQUARE_NR> b_magic_num{
             0xffedf9fd7cfcffff,
             0xfc0962854a77f576,
             0x401240100c201,
@@ -73,7 +73,7 @@ namespace Bitboards {
             0x43ff9e4ef4ca2c89
     };
 
-    constexpr std::array<uint64_t, SQUARE_NR> rook_magic_num{
+    constexpr std::array<uint64_t, SQUARE_NR> r_magic_num{
             0x11800040001481a0,
             0x2040400010002000,
             0xa280200308801000,

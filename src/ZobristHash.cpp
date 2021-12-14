@@ -8,6 +8,7 @@
 namespace Zobrist {
 
     std::array<std::array<uint64_t, B_KING + 1>, SQUARE_NR> piece_keys;
+    // TODO reduce cache pressure, make this smaller
     std::array<uint64_t, SQUARE_NR> castling_keys;
     std::array<uint64_t, RANK_NR>  ep_keys;
     uint64_t color_key;

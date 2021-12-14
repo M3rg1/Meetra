@@ -6,7 +6,7 @@
 int main() {
 
     Uci::Init();
-    Bitboards::Init();
+    //Bitboards::Init();
     Zobrist::Init();
     Search::Init();
 

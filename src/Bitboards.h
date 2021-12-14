@@ -4,6 +4,7 @@
 #include "Defs.h"
 #include <bit>
 #include <array>
+#include "MagicNumbers.h"
 
 namespace Bitboards {
 
@@ -28,6 +29,16 @@ namespace Bitboards {
             0x4040404040404040,
             0x8080808080808080
     };
+
+    [[nodiscard]] constexpr bool MoreThanOne(Bitboard b) { return (b & (b - 1)); }
+    [[nodiscard]] constexpr bool ExactlyOne(Bitboard b) { return b && !MoreThanOne(b); }
+    [[nodiscard]] constexpr Square Msb(Bitboard b) { return static_cast<Square>(63 ^ std::countl_zero(b)); }
+    [[nodiscard]] constexpr Square Lsb(Bitboard b) { return static_cast<Square>(std::countr_zero(b)); }
+    constexpr Square PopLsb(Bitboard &b) {
+        Square s = Lsb(b);
+        b &= b - 1;
+        return s;
+    }
 
     constexpr std::array<Bitboard, 15> diag_mask{
             0x1, 0x102, 0x10204, 0x1020408, 0x102040810, 0x10204081020, 0x1020408102040,
@@ -57,17 +68,102 @@ namespace Bitboards {
     };
 
     struct Magic {
-        Bitboard *attacks;
+        Bitboard* attacks;
         Bitboard inner_mask;
         uint64_t magic_num;
         uint8_t shift;
     };
 
-    inline std::array<Magic, SQUARE_NR> b_magics;
-    inline std::array<Magic, SQUARE_NR> r_magics;
+    constexpr Bitboard GetRookRays(Square s) { return file_mask[SqToFile(s)] | rank_mask[SqToRank(s)]; }
+
+    constexpr Bitboard GetBishopRays(Square s) {
+        File f = SqToFile(s);
+        Rank r = SqToRank(s);
+        return diag_mask[f + r] | anti_diag_mask[r + 7 - f];
+    }
+
+#pragma region hide
+
+    constexpr Bitboard ReverseBits(Bitboard b) {
+        b = ((b >> 1) & 0x5555555555555555ULL) | ((b & 0x5555555555555555ULL) << 1);
+        b = ((b >> 2) & 0x3333333333333333ULL) | ((b & 0x3333333333333333ULL) << 2);
+        b = ((b >> 4) & 0x0F0F0F0F0F0F0F0FULL) | ((b & 0x0F0F0F0F0F0F0F0FULL) << 4);
+        b = ((b >> 8) & 0x00FF00FF00FF00FFULL) | ((b & 0x00FF00FF00FF00FFULL) << 8);
+        b = ((b >> 16) & 0x0000FFFF0000FFFFULL) | ((b & 0x0000FFFF0000FFFFULL) << 16);
+        b = (b >> 32) | (b << 32);
+        return b;
+    }
+
+    constexpr Bitboard GenDiagMoves(Square s, Bitboard occ) {
+        Bitboard bitboard = SqToBB(s);
+        File f = SqToFile(s);
+        Rank r = SqToRank(s);
+        Bitboard move_mask = anti_diag_mask[r + 7 - f];
+        return (((occ & move_mask) - (bitboard << 1)) ^ ReverseBits(ReverseBits(occ & move_mask)
+                                                                    - (ReverseBits(bitboard) << 1))) & move_mask;
+    }
+
+    constexpr Bitboard GenAntiDiagMoves(Square s, Bitboard occ) {
+        Bitboard b = SqToBB(s);
+        File f = SqToFile(s);
+        Rank r = SqToRank(s);
+        Bitboard move_mask = diag_mask[f + r];
+        return (((occ & move_mask) - (b << 1))
+                ^ ReverseBits(ReverseBits(occ & move_mask) - (ReverseBits(b) << 1))) & move_mask;
+    }
+
+    constexpr Bitboard GenHorizontalMoves(Square s, Bitboard occ) {
+        Bitboard b = SqToBB(s);
+        Rank r = SqToRank(s);
+        return ((occ - (b << 1)) ^ ReverseBits(ReverseBits(occ) - (ReverseBits(b) << 1))) & rank_mask[r];
+    }
+
+    constexpr Bitboard GenVerticalMoves(Square s, Bitboard occ) {
+        Bitboard b = SqToBB(s);
+        File f = SqToFile(s);
+        return (((occ & file_mask[f]) - (b << 1))
+                ^ ReverseBits(ReverseBits(occ & file_mask[f]) - (ReverseBits(b) << 1))) & file_mask[f];
+    }
+
+    constexpr Bitboard GenBishopMoves(Square s, Bitboard occ) {
+        return GenAntiDiagMoves(s, occ) | GenDiagMoves(s, occ);
+    }
+
+    constexpr Bitboard GenRookMoves(Square s, Bitboard occ) {
+        return GenVerticalMoves(s, occ) | GenHorizontalMoves(s, occ);
+    }
+#pragma endregion
+
+    constexpr void SetAttacks(Magic &m, Square origin, auto &generator) {
+        Bitboard occ = EMPTY_BB;
+        do {
+            auto idx = ((occ & m.inner_mask) * m.magic_num) >> m.shift;
+            m.attacks[idx] = generator(origin, occ);
+            occ = (occ - m.inner_mask) & m.inner_mask;
+        } while (occ);
+    }
+
+    constexpr auto InitMagic(auto &table, auto &magic_shift, auto &magic_num, auto &generator) {
+        std::array<Magic, SQUARE_NR> magics{};
+        for (Square s: Squares) {
+            Bitboard inner = ((rank_mask[RANK_1] | rank_mask[RANK_8]) & ~rank_mask[SqToRank(s)])
+                             | ((file_mask[FILE_A] | file_mask[FILE_H]) & ~file_mask[SqToFile(s)]);
+            magics[s].shift = 64 - magic_shift[s];
+            magics[s].inner_mask = generator(s, EMPTY_BB) & ~inner;
+            magics[s].magic_num = magic_num[s];
+            magics[s].attacks = s == A1 ? table.data() : magics[s - 1].attacks + (1 << magic_shift[s - 1]);
+            SetAttacks(magics[s], s, generator);
+        }
+        return magics;
+    }
 
     inline std::array<Bitboard, 88064> r_table;
     inline std::array<Bitboard, 4800> b_table;
+
+    inline std::array<Magic, SQUARE_NR> b_magics = InitMagic(b_table, b_magic_shift, b_magic_num, GenBishopMoves);
+    inline std::array<Magic, SQUARE_NR> r_magics = InitMagic(r_table, r_magic_shift, r_magic_num, GenRookMoves);
+
+
 
     constexpr Bitboard GenRayToEdge(Square s1, Square s2) {
 
@@ -151,28 +247,14 @@ namespace Bitboards {
 
     void Init();
 
-    [[nodiscard]] constexpr bool MoreThanOne(Bitboard b) { return (b & (b - 1)); }
-    [[nodiscard]] constexpr bool ExactlyOne(Bitboard b) { return b && !MoreThanOne(b); }
-    [[nodiscard]] constexpr Square Msb(Bitboard b) { return static_cast<Square>(63 ^ std::countl_zero(b)); }
-    [[nodiscard]] constexpr Square Lsb(Bitboard b) { return static_cast<Square>(std::countr_zero(b)); }
-    constexpr Square PopLsb(Bitboard &b) {
-        Square s = Lsb(b);
-        b &= b - 1;
-        return s;
-    }
+
 
     [[maybe_unused]] [[nodiscard]] std::string PPBitboard(Bitboard b);
 
     inline Bitboard GetRayToBorders(Square s1, Square s2) { return rays_to_borders[s1][s2]; }
     inline Bitboard GetRayToSquares(Square s1, Square s2) { return rays_to_squares[s1][s2]; }
     constexpr Bitboard RankMask(Rank r) { return rank_mask[r]; }
-    constexpr Bitboard GetRookRays(Square s) { return file_mask[SqToFile(s)] | rank_mask[SqToRank(s)]; }
 
-    constexpr Bitboard GetBishopRays(Square s) {
-        File f = SqToFile(s);
-        Rank r = SqToRank(s);
-        return diag_mask[f + r] | anti_diag_mask[r + 7 - f];
-    }
 
     inline Bitboard GetRookAttacks(Square s, Bitboard occ) {
         Magic m = r_magics[s];
