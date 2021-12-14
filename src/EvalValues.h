@@ -161,7 +161,7 @@ namespace Evaluation {
             eg_king_table
     };
 
-    constexpr int phase_inc[PIECE_TYPE_NR]{0, 0, 1, 1, 2, 4, 0};
+    constexpr std::array phase_inc{0, 0, 1, 1, 2, 4, 0};
 
     consteval auto InitTable(auto table_init, auto values_init) {
         std::array<std::array<std::array<Score, SQUARE_NR>, PIECE_TYPE_NR>, COLOR_NR> table{};
