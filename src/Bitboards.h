@@ -56,15 +56,24 @@ namespace Bitboards {
             rank_mask[RANK_5]
     };
 
-    struct Magic {
+    struct BlackMagic {
         Bitboard *attacks;
-        Bitboard inner_mask;
+        Bitboard mask;
         uint64_t magic_num;
-        uint8_t shift;
     };
 
-    inline std::array<Magic, SQUARE_NR> b_magics;
-    inline std::array<Magic, SQUARE_NR> r_magics;
+    inline BlackMagic r_magics[64];
+    inline BlackMagic b_magics[64];
+
+    inline Bitboard GetRookAttacks(Square s, Bitboard occ) {
+        BlackMagic m = r_magics[s];
+        return m.attacks[((occ | m.mask) * m.magic_num) >> (64 - 12)];
+    }
+
+    inline Bitboard GetBishopAttacks(Square s, Bitboard occ) {
+        BlackMagic m = b_magics[s];
+        return m.attacks[((occ | m.mask) * m.magic_num) >> (64 - 9)];
+    }
 
     inline std::array<Bitboard, 64> king_moves;
     inline std::array<Bitboard, 64> knight_moves;
@@ -73,8 +82,7 @@ namespace Bitboards {
     inline std::array<std::array<Bitboard, SQUARE_NR>, SQUARE_NR> rays_to_squares;
     inline std::array<std::array<Bitboard, SQUARE_NR>, SQUARE_NR> rays_to_borders;
 
-    inline std::array<Bitboard, 88064> r_table;
-    inline std::array<Bitboard, 4800> b_table;
+    inline std::array<Bitboard, 87988> magic_lookup;
 
     void Init();
 
@@ -98,16 +106,6 @@ namespace Bitboards {
         File f = SqToFile(s);
         Rank r = SqToRank(s);
         return diag_mask[f + r] | anti_diag_mask[r + 7 - f];
-    }
-
-    inline Bitboard GetRookAttacks(Square s, Bitboard occ) {
-        Magic m = r_magics[s];
-        return m.attacks[((occ & m.inner_mask) * m.magic_num) >> m.shift];
-    }
-
-    inline Bitboard GetBishopAttacks(Square s, Bitboard occ) {
-        Magic m = b_magics[s];
-        return m.attacks[((occ & m.inner_mask) * m.magic_num) >> m.shift];
     }
 
     template<PieceType PT>

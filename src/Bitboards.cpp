@@ -61,21 +61,19 @@ namespace Bitboards {
 
 #pragma region ===== Magic Bitboards initialization =====
 
-    void InitMagic(auto &magics, auto &table, auto &magic_shift, auto &magic_num, auto &generator) {
-        for (auto curr = table.data(); Square s: Squares) {
-            magics[s].inner_mask = ~(((rank_mask[RANK_1] | rank_mask[RANK_8]) & ~rank_mask[SqToRank(s)])
-                                     | ((file_mask[FILE_A] | file_mask[FILE_H]) & ~file_mask[SqToFile(s)]))
-                                   & generator(s, EMPTY_BB);
-            magics[s].shift = 64 - magic_shift[s];
-            magics[s].magic_num = magic_num[s];
-            magics[s].attacks = curr;
+    void InitMagic(auto &magics, auto &table, auto &magic_init, int shift, auto &generator) {
+        for (Square s: Squares) {
+            magics[s].mask = ~(~(((rank_mask[RANK_1] | rank_mask[RANK_8]) & ~rank_mask[SqToRank(s)])
+                                 | ((file_mask[FILE_A] | file_mask[FILE_H]) & ~file_mask[SqToFile(s)]))
+                               & generator(s, EMPTY_BB));
+            magics[s].magic_num = magic_init[s].factor;
+            magics[s].attacks = table.data() + magic_init[s].position;
             Bitboard occ = EMPTY_BB;
             do {
-                auto idx = ((occ & magics[s].inner_mask) * magics[s].magic_num) >> magics[s].shift;
+                auto idx = ((occ | magics[s].mask) * magics[s].magic_num) >> shift;
                 magics[s].attacks[idx] = generator(s, occ);
-                occ = (occ - magics[s].inner_mask) & magics[s].inner_mask;
+                occ = (occ - (~magics[s].mask)) & (~magics[s].mask);
             } while (occ);
-            curr += 1 << magic_shift[s];
         }
     }
 
@@ -152,8 +150,8 @@ namespace Bitboards {
 
     void Init() {
         GenRays();
-        InitMagic(r_magics, r_table, r_magic_shift, r_magic_num, GenRookMoves);
-        InitMagic(b_magics, b_table, b_magic_shift, b_magic_num, GenBishopMoves);
+        InitMagic(r_magics, magic_lookup, rook_magics, 64 - 12, GenRookMoves);
+        InitMagic(b_magics, magic_lookup, bishop_magics, 64 - 9, GenBishopMoves);
         GenPieceMoves({NORTH_EAST, NORTH_WEST}, pawn_attacks[WHITE]);
         GenPieceMoves({SOUTH_EAST, SOUTH_WEST}, pawn_attacks[BLACK]);
         GenPieceMoves({NORTH, NORTH_EAST, EAST, SOUTH_EAST, SOUTH, SOUTH_WEST, WEST, NORTH_WEST}, king_moves);
