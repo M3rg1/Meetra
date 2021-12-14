@@ -68,7 +68,7 @@ namespace Bitboards {
     };
 
     struct Magic {
-        Bitboard* attacks;
+        const Bitboard *attacks;
         Bitboard inner_mask;
         uint64_t magic_num;
         uint8_t shift;
@@ -134,16 +134,25 @@ namespace Bitboards {
     }
 #pragma endregion
 
-    constexpr void SetAttacks(Magic &m, Square origin, auto &generator) {
-        Bitboard occ = EMPTY_BB;
-        do {
-            auto idx = ((occ & m.inner_mask) * m.magic_num) >> m.shift;
-            m.attacks[idx] = generator(origin, occ);
-            occ = (occ - m.inner_mask) & m.inner_mask;
-        } while (occ);
+    template<auto size>
+    consteval auto GenTable(auto &magic_shift, auto &magic_num, auto &generator) {
+        std::array<Bitboard, size> table{};
+        for (auto curr = table.data(); Square s: Squares) {
+            Bitboard occ = EMPTY_BB;
+            Bitboard inner = ~(((rank_mask[RANK_1] | rank_mask[RANK_8]) & ~rank_mask[SqToRank(s)])
+                               | ((file_mask[FILE_A] | file_mask[FILE_H]) & ~file_mask[SqToFile(s)]))
+                             & generator(s, EMPTY_BB);
+            do {
+                auto idx = ((occ & inner) * magic_num[s]) >> (64 - magic_shift[s]);
+                curr[idx] = generator(s, occ);
+                occ = (occ - inner) & inner;
+            } while (occ);
+            curr += 1 << magic_shift[s];
+        }
+        return table;
     }
 
-    constexpr auto InitMagic(auto &table, auto &magic_shift, auto &magic_num, auto &generator) {
+    consteval auto InitMagic(auto &table, auto &magic_shift, auto &magic_num, auto &generator) {
         std::array<Magic, SQUARE_NR> magics{};
         for (Square s: Squares) {
             Bitboard inner = ((rank_mask[RANK_1] | rank_mask[RANK_8]) & ~rank_mask[SqToRank(s)])
@@ -152,18 +161,15 @@ namespace Bitboards {
             magics[s].inner_mask = generator(s, EMPTY_BB) & ~inner;
             magics[s].magic_num = magic_num[s];
             magics[s].attacks = s == A1 ? table.data() : magics[s - 1].attacks + (1 << magic_shift[s - 1]);
-            SetAttacks(magics[s], s, generator);
         }
         return magics;
     }
 
-    inline std::array<Bitboard, 88064> r_table;
-    inline std::array<Bitboard, 4800> b_table;
+    constexpr auto r_table = GenTable<88064>(r_magic_shift, r_magic_num, GenRookMoves);
+    constexpr auto b_table = GenTable<4800>(b_magic_shift, b_magic_num, GenBishopMoves);
 
-    inline std::array<Magic, SQUARE_NR> b_magics = InitMagic(b_table, b_magic_shift, b_magic_num, GenBishopMoves);
-    inline std::array<Magic, SQUARE_NR> r_magics = InitMagic(r_table, r_magic_shift, r_magic_num, GenRookMoves);
-
-
+    constexpr auto r_magics = InitMagic(r_table, r_magic_shift, r_magic_num, GenRookMoves);
+    constexpr auto b_magics = InitMagic(b_table, b_magic_shift, b_magic_num, GenBishopMoves);
 
     constexpr Bitboard GenRayToEdge(Square s1, Square s2) {
 
@@ -247,14 +253,11 @@ namespace Bitboards {
 
     void Init();
 
-
-
     [[maybe_unused]] [[nodiscard]] std::string PPBitboard(Bitboard b);
 
     inline Bitboard GetRayToBorders(Square s1, Square s2) { return rays_to_borders[s1][s2]; }
     inline Bitboard GetRayToSquares(Square s1, Square s2) { return rays_to_squares[s1][s2]; }
     constexpr Bitboard RankMask(Rank r) { return rank_mask[r]; }
-
 
     inline Bitboard GetRookAttacks(Square s, Bitboard occ) {
         Magic m = r_magics[s];
