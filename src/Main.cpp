@@ -2,14 +2,14 @@
 #include "Bitboards.h"
 #include "ZobristHash.h"
 #include "Search.h"
+#include <iostream>
 
 int main() {
 
     Uci::Init();
-    //Bitboards::Init();
+    Bitboards::Init();
     Zobrist::Init();
     Search::Init();
-
     Uci::Listen();
 
     Search::Shutdown();
