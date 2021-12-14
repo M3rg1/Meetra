@@ -163,7 +163,7 @@ namespace Evaluation {
 
     constexpr std::array phase_inc{0, 0, 1, 1, 2, 4, 0};
 
-    consteval auto InitTable(auto table_init, auto values_init) {
+    consteval auto InitTable(auto &table_init, auto &values_init) {
         std::array<std::array<std::array<Score, SQUARE_NR>, PIECE_TYPE_NR>, COLOR_NR> table{};
         for (PieceType pt: PieceTypes) {
             for (Square s: Squares) {

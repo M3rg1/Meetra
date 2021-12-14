@@ -79,7 +79,7 @@ bool Board::IsValid() const {
         }
     }
 
-    if (GetPieces(PAWN) & (Bitboards::RankMask(RANK_8) | Bitboards::RankMask(RANK_1))) {
+    if (GetPieces(PAWN) & (Bitboards::rank_mask[RANK_8] | Bitboards::rank_mask[RANK_1])) {
         return false;
     }
 

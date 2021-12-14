@@ -140,7 +140,7 @@ constexpr Square operator-(Square s, int i) { return static_cast<Square>(static_
 constexpr Square &operator+=(Square &s, int i) { return s = s + i; }
 constexpr Square &operator-=(Square &s, int i) { return s = s - i; }
 
-constexpr Bitboard SqToBB(Square s) { return 0x1ULL << s; }
+constexpr Bitboard SqToBB(Square s) { return static_cast<Bitboard>(0x1ULL << s); }
 constexpr Square FiRaToSq(File f, Rank r) { return static_cast<Square>((r << 3) | f); }
 constexpr File SqToFile(Square s) { return static_cast<File>(s & 7); }
 constexpr Rank SqToRank(Square s) { return static_cast<Rank>(s >> 3); }
