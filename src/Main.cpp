@@ -2,7 +2,6 @@
 #include "Bitboards.h"
 #include "ZobristHash.h"
 #include "Search.h"
-#include "EvalValues.h"
 
 int main() {
 
@@ -10,7 +9,6 @@ int main() {
     Bitboards::Init();
     Zobrist::Init();
     Search::Init();
-    Evaluation::Init();
 
     Uci::Listen();
 

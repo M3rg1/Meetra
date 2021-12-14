@@ -3,10 +3,11 @@
 
 #include "Defs.h"
 #include <bit>
+#include <array>
 
 namespace Bitboards {
 
-    constexpr Bitboard rank_mask[RANK_NR]{
+    constexpr std::array<Bitboard, RANK_NR> rank_mask{
             0x00000000000000FF,
             0x000000000000FF00,
             0x0000000000FF0000,
@@ -17,7 +18,7 @@ namespace Bitboards {
             0xFF00000000000000
     };
 
-    constexpr Bitboard file_mask[FILE_NR]{
+    constexpr std::array<Bitboard, FILE_NR> file_mask{
             0x0101010101010101,
             0x0202020202020202,
             0x0404040404040404,
@@ -28,29 +29,29 @@ namespace Bitboards {
             0x8080808080808080
     };
 
-    constexpr Bitboard diag_mask[15]{
+    constexpr std::array<Bitboard, 15> diag_mask{
             0x1, 0x102, 0x10204, 0x1020408, 0x102040810, 0x10204081020, 0x1020408102040,
             0x102040810204080, 0x204081020408000, 0x408102040800000, 0x810204080000000,
             0x1020408000000000, 0x2040800000000000, 0x4080000000000000, 0x8000000000000000
     };
 
-    constexpr Bitboard anti_diag_mask[15]{
+    constexpr std::array<Bitboard, 15> anti_diag_mask{
             0x80, 0x8040, 0x804020, 0x80402010, 0x8040201008, 0x804020100804, 0x80402010080402,
             0x8040201008040201, 0x4020100804020100, 0x2010080402010000, 0x1008040201000000,
             0x804020100000000, 0x402010000000000, 0x201000000000000, 0x100000000000000
     };
 
-    constexpr Bitboard castling_mask[COLOR_NR]{
+    constexpr std::array<Bitboard, COLOR_NR> castling_mask{
             rank_mask[RANK_1],
             rank_mask[RANK_8]
     };
 
-    constexpr Bitboard prom_mask[COLOR_NR]{
+    constexpr std::array<Bitboard, COLOR_NR> prom_mask{
             rank_mask[RANK_8],
             rank_mask[RANK_1]
     };
 
-    constexpr Bitboard two_fwd_mask[COLOR_NR]{
+    constexpr std::array<Bitboard, COLOR_NR> two_fwd_mask{
             rank_mask[RANK_4],
             rank_mask[RANK_5]
     };
@@ -62,18 +63,18 @@ namespace Bitboards {
         uint8_t shift;
     };
 
-    inline Magic b_magics[SQUARE_NR];
-    inline Magic r_magics[SQUARE_NR];
+    inline std::array<Magic, SQUARE_NR> b_magics;
+    inline std::array<Magic, SQUARE_NR> r_magics;
 
-    inline Bitboard king_moves[SQUARE_NR];
-    inline Bitboard knight_moves[SQUARE_NR];
-    inline Bitboard pawn_attacks[COLOR_NR][SQUARE_NR];
+    inline std::array<Bitboard, 64> king_moves;
+    inline std::array<Bitboard, 64> knight_moves;
+    inline std::array<std::array<Bitboard, SQUARE_NR>, COLOR_NR> pawn_attacks;
 
-    inline Bitboard rays_to_squares[SQUARE_NR][SQUARE_NR];
-    inline Bitboard rays_to_borders[SQUARE_NR][SQUARE_NR];
+    inline std::array<std::array<Bitboard, SQUARE_NR>, SQUARE_NR> rays_to_squares;
+    inline std::array<std::array<Bitboard, SQUARE_NR>, SQUARE_NR> rays_to_borders;
 
-    inline Bitboard r_table[88064];
-    inline Bitboard b_table[4800];
+    inline std::array<Bitboard, 88064> r_table;
+    inline std::array<Bitboard, 4800> b_table;
 
     void Init();
 

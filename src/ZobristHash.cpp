@@ -3,12 +3,13 @@
 #include "Bitboards.h"
 #include "Board.h"
 #include <algorithm>
+#include <array>
 
 namespace Zobrist {
 
-    uint64_t piece_keys[SQUARE_NR][B_KING + 1];
-    uint64_t castling_keys[SQUARE_NR];
-    uint64_t ep_keys[RANK_NR];
+    std::array<std::array<uint64_t, B_KING + 1>, SQUARE_NR> piece_keys;
+    std::array<uint64_t, SQUARE_NR> castling_keys;
+    std::array<uint64_t, RANK_NR>  ep_keys;
     uint64_t color_key;
 
     void Init() {

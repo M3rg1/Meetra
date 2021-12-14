@@ -29,22 +29,22 @@ namespace Search {
     };
 
     // static vars in search thread?
-    inline Settings settings;
-    inline TimeRep start_time;
-    inline TimeRep time_limit;
-    inline std::atomic<bool> run;
-    inline std::atomic<Depth> mt_depth;
+    inline Settings settings{};
+    inline TimeRep start_time{0};
+    inline TimeRep time_limit{0};
+    inline std::atomic<bool> run{false};
+    inline std::atomic<Depth> mt_depth{0};
 
     // uci options
-    inline bool chess960; // each board still has its own value with which it was constructed
-    inline bool use_book;
-    inline bool show_currline;
-    inline bool show_currmove;
-    inline Depth plies_muted;
-    inline int multi_pv;
+    inline bool chess960 = DEFAULT_CHESS960; // each board still has its own value with which it was constructed
+    inline bool use_book = DEFAULT_USE_BOOK;
+    inline bool show_currline = DEFAULT_SHOW_CURRLINE;
+    inline bool show_currmove = DEFAULT_SHOW_CURRMOVE;
+    inline Depth plies_muted = DEFAULT_MUTE_PLIES;
+    inline int multi_pv = DEFAULT_MULTI_PV;
     inline TimeRep last_update_time;
-    inline TimeRep move_overhead;
-    inline TimeRep update_interval;
+    inline TimeRep move_overhead = DEFAULT_OVERHEAD;
+    inline TimeRep update_interval = DEFAULT_UPDATE_INTERVAL;
 
     // also static vars in search thread?
     inline TranspositionTable tt;
@@ -69,7 +69,9 @@ namespace Search {
     inline void SetUseBook(bool use) { use_book = use; }
     inline void SetChess960(bool set) { chess960 = set; }
     inline void SetMoveOverhead(TimeRep overhead) { move_overhead = std::clamp(overhead, MIN_OVERHEAD, MAX_OVERHEAD); }
-    inline void SetUpdateInterval(TimeRep interval) { update_interval = std::clamp(interval, MIN_UPDATE_INTERVAL, MAX_UPDATE_INTERVAL); }
+    inline void SetUpdateInterval(TimeRep interval) {
+        update_interval = std::clamp(interval, MIN_UPDATE_INTERVAL, MAX_UPDATE_INTERVAL);
+    }
     void SetNumThreads(int num_threads);
     uint64_t NodesTotal();
 }

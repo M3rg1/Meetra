@@ -151,7 +151,7 @@ namespace Search {
             return eval;
         }
 
-        std::ranges::fill(killers[ply + 1], ZERO_MOVE);
+        killers[ply + 1].fill(ZERO_MOVE);
 
         // null move pruning
         if (NodeType == NON_PV
@@ -315,7 +315,7 @@ namespace Search {
 
     void SearchThread::UpdateKillers(Move move, Depth ply) {
         if (board.IsQuiet(move) && std::ranges::find(killers[ply], move) == std::end(killers[ply])) {
-            std::copy_backward(killers[ply], killers[ply] + KILLER_SLOTS - 1, killers[ply] + 1);
+            std::copy_backward(killers[ply].begin(), killers[ply].begin() + KILLER_SLOTS - 1, killers[ply].begin() + 1);
             killers[ply][0] = move;
         }
     }
@@ -468,7 +468,7 @@ namespace Search {
         curr_rm_num = 0;
         depth_reached = 0;
         nodes_explored = 0;
-        std::ranges::for_each(killers, [&](auto &k) { std::ranges::fill(k, ZERO_MOVE); });
+        std::ranges::for_each(killers, [&](auto &k) { k.fill(ZERO_MOVE); });
     }
 
     void SearchThread::StartThread() {

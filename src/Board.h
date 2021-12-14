@@ -102,16 +102,16 @@ private:
     bool chess960 = false;
 
     BoardState state;
-    BoardState history[MAX_GAME_LENGTH];
+    std::array<BoardState, MAX_GAME_LENGTH> history;
     int history_cnt;
     int uci_moves_cnt;
 
     // original positions of rooks that are available for castling
-    Bitboard origin_rooks[COLOR_NR][CS_NR];
+    std::array<std::array<Bitboard, CS_NR>, COLOR_NR> origin_rooks;
 
-    Piece board[SQUARE_NR];
-    Bitboard color_bbs[COLOR_NR];
-    Bitboard type_bbs[PIECE_TYPE_NR + 1];
+    std::array<Piece, SQUARE_NR> board;
+    std::array<Bitboard, COLOR_NR> color_bbs;
+    std::array<Bitboard, PIECE_TYPE_NR + 1> type_bbs;
 #pragma endregion
 };
 

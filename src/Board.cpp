@@ -19,11 +19,11 @@ bool Board::NewPosition(const std::string &fen, bool isChess960) {
     history_cnt = 0;
     uci_moves_cnt = 0;
     state = BoardState();
-    std::ranges::fill(board, NO_PIECE);
-    std::ranges::fill(color_bbs, EMPTY_BB);
-    std::ranges::fill(type_bbs, EMPTY_BB);
-    std::ranges::fill(origin_rooks[BLACK], EMPTY_BB);
-    std::ranges::fill(origin_rooks[WHITE], EMPTY_BB);
+    board.fill(NO_PIECE);
+    color_bbs.fill(EMPTY_BB);
+    type_bbs.fill(EMPTY_BB);
+    origin_rooks[BLACK].fill(EMPTY_BB);
+    origin_rooks[WHITE].fill(EMPTY_BB);
 
     if (!ParseFen(fen) || !IsValid()) {
         *this = previous;

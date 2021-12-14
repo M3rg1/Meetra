@@ -15,11 +15,9 @@ bool ValidatePromMove(Move m, Move to_validate) {
            || ((m | PROMOTE_KNIGHT) == to_validate);
 }
 
-MoveGen::MoveGen(const Board &b, const Move killer_moves[]) : MoveGen(b) {
-    std::copy_n(killer_moves, KILLER_SLOTS, killers);
-}
+MoveGen::MoveGen(const Board &b) : MoveGen(b, {}) {};
 
-MoveGen::MoveGen(const Board &b) :
+MoveGen::MoveGen(const Board &b, const std::array<Move, KILLER_SLOTS> &killer_moves) :
         board(b),
         my_color(board.ColorToMove()),
         enemy_color(OtherColor(my_color)),
@@ -33,7 +31,7 @@ MoveGen::MoveGen(const Board &b) :
         legal_moves(FULL_BB),
         double_check(false),
         gen_phase(PROMOTION),
-        killers{},
+        killers(killer_moves),
         moves_cnt(0) {
 
     if (checkers) {
@@ -51,9 +49,9 @@ MoveGen::MoveGen(const Board &b) :
 }
 
 void MoveGen::EvalMoves() {
-    for (auto &m_e: std::span(move_eval, moves_cnt)) {
-        if (const auto k = std::ranges::find(killers, m_e.move); k != std::end(killers)) {
-            m_e.score = static_cast<Score>(std::distance(k, std::end(killers)) * KILLER_EVAL_BONUS);
+    for (auto &m_e: std::span(move_eval.begin(), moves_cnt)) {
+        if (const auto k = std::ranges::find(killers, m_e.move); k != killers.end()) {
+            m_e.score = static_cast<Score>(std::distance(k, killers.end()) * KILLER_EVAL_BONUS);
         } else {
             m_e.score = board.GetMoveEval(m_e.move);
         }
@@ -68,7 +66,7 @@ Move MoveGen::GetBestMove() {
             EvalMoves();
         }
     }
-    auto it = std::max_element(move_eval, move_eval + moves_cnt);
+    auto it = std::max_element(move_eval.begin(), move_eval.begin() + moves_cnt);
     return PopRef(*it);
 }
 

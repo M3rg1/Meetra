@@ -8,8 +8,8 @@ using namespace Evaluation;
 
 void Evaluator::SetBoard(const Board &board) {
 
-    std::ranges::fill(mg, 0);
-    std::ranges::fill(eg, 0);
+    mg.fill(0);
+    eg.fill(0);
     phase = 0;
 
     for (Color c : Colors) {

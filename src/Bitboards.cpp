@@ -95,7 +95,7 @@ namespace Bitboards {
             r_magics[s].shift = 64 - r_magic_shift[s];
             r_magics[s].inner_mask = inner;
             r_magics[s].magic_num = rook_magic_num[s];
-            r_magics[s].attacks = s == A1 ? r_table : r_magics[s - 1].attacks + (1 << r_magic_shift[s - 1]);
+            r_magics[s].attacks = s == A1 ? r_table.data() : r_magics[s - 1].attacks + (1 << r_magic_shift[s - 1]);
 
             inner = GenBishopMoves(s, EMPTY_BB) & ~file_mask[FILE_A] & ~rank_mask[RANK_1] & ~file_mask[FILE_H]
                     & ~rank_mask[RANK_8];
@@ -103,7 +103,7 @@ namespace Bitboards {
             b_magics[s].shift = 64 - b_magic_shift[s];
             b_magics[s].inner_mask = inner;
             b_magics[s].magic_num = bishop_magic_num[s];
-            b_magics[s].attacks = s == A1 ? b_table : b_magics[s - 1].attacks + (1 << b_magic_shift[s - 1]);
+            b_magics[s].attacks = s == A1 ? b_table.data() : b_magics[s - 1].attacks + (1 << b_magic_shift[s - 1]);
         }
     }
 
@@ -111,7 +111,7 @@ namespace Bitboards {
 
 #pragma region ===== Precomputing king moves, knight moves, pawn attacks =====
 
-    void GenPieceMoves(std::initializer_list<Direction> dirs, Bitboard output[SQUARE_NR]) {
+    void GenPieceMoves(std::initializer_list<Direction> dirs, std::array<Bitboard, 64> &output) {
         for (Square s: Squares) {
             Bitboard moves = EMPTY_BB;
             for (const auto &d: dirs) {

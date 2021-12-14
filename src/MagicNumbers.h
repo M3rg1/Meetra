@@ -2,10 +2,11 @@
 #define MEETRA_MAGICNUMBERS_H
 
 #include "Defs.h"
+#include <array>
 
 namespace Bitboards {
 
-    constexpr uint64_t bishop_magic_num[SQUARE_NR] = {
+    constexpr std::array<uint64_t, SQUARE_NR> bishop_magic_num{
             0xffedf9fd7cfcffff,
             0xfc0962854a77f576,
             0x401240100c201,
@@ -72,7 +73,7 @@ namespace Bitboards {
             0x43ff9e4ef4ca2c89
     };
 
-    constexpr uint64_t rook_magic_num[SQUARE_NR] = {
+    constexpr std::array<uint64_t, SQUARE_NR> rook_magic_num{
             0x11800040001481a0,
             0x2040400010002000,
             0xa280200308801000,
@@ -139,7 +140,7 @@ namespace Bitboards {
             0x7645FFFECBFEA79E
     };
 
-    constexpr uint8_t r_magic_shift[SQUARE_NR] = {
+    constexpr std::array<uint8_t, SQUARE_NR> r_magic_shift{
             12, 11, 11, 11, 11, 11, 11, 12,
             11, 10, 10, 10, 10, 10, 10, 11,
             11, 10, 10, 10, 10, 10, 10, 11,
@@ -150,7 +151,7 @@ namespace Bitboards {
             11, 10, 10, 10, 10, 11, 10, 11,
     };
 
-    constexpr uint8_t b_magic_shift[SQUARE_NR] = {
+    constexpr std::array<uint8_t, SQUARE_NR> b_magic_shift{
             5, 4, 5, 5, 5, 5, 4, 5,
             4, 4, 5, 5, 5, 5, 4, 4,
             4, 4, 7, 7, 7, 7, 4, 4,

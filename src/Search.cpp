@@ -123,15 +123,6 @@ namespace Search {
     }
 
     void Init() {
-        run = false;
-        chess960 = DEFAULT_CHESS960;
-        use_book = DEFAULT_USE_BOOK;
-        show_currline = DEFAULT_SHOW_CURRLINE;
-        show_currmove = DEFAULT_SHOW_CURRMOVE;
-        multi_pv = DEFAULT_MULTI_PV;
-        plies_muted = DEFAULT_MUTE_PLIES;
-        move_overhead = DEFAULT_OVERHEAD;
-        update_interval = DEFAULT_UPDATE_INTERVAL;
         SetNumThreads(DEFAULT_SEARCH_THREADS);
         tt.Init();
     }

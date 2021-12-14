@@ -2,6 +2,7 @@
 #define MEETRA_EVALUATOR_H
 
 #include "Defs.h"
+#include <array>
 
 class Board;
 
@@ -17,8 +18,8 @@ public:
 
 private:
 
-    Score mg[COLOR_NR];
-    Score eg[COLOR_NR];
+    std::array<Score, COLOR_NR> mg;
+    std::array<Score, COLOR_NR> eg;
     int phase;
 
     Score mg_score;

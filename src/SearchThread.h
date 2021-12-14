@@ -87,8 +87,8 @@ namespace Search {
         [[nodiscard]] inline bool IsMainThread() const { return id == 0; }
 
         Board board;
-        Move killers[MAX_SEARCH_DEPTH + 1][KILLER_SLOTS];
-        PVLine pv[MAX_SEARCH_DEPTH + 1];
+        std::array<std::array<Move, KILLER_SLOTS>, MAX_SEARCH_DEPTH + 1> killers;
+        std::array<PVLine, MAX_SEARCH_DEPTH + 1> pv;
         std::vector<RootMove> root_moves;
         RootMove *curr_rm;
         int curr_rm_num;

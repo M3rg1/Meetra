@@ -4,13 +4,14 @@
 #include "Defs.h"
 #include "Board.h"
 #include "Config.h"
+#include <array>
 
 class MoveGen {
 
 public:
 
-    explicit MoveGen(const Board &board);
-    MoveGen(const Board &board, const Move killer_moves[]);
+    explicit MoveGen(const Board &b);
+    MoveGen(const Board &b, const std::array<Move, KILLER_SLOTS> &killer_moves);
 
     inline void PutTTMove(Move tt_move) {
         move_eval[moves_cnt].move = tt_move;
@@ -50,8 +51,8 @@ private:
 
     GenPhase gen_phase;
 
-    Move killers[KILLER_SLOTS];
-    ScoredMove move_eval[MAX_LEGAL_MOVES];
+    std::array<Move, KILLER_SLOTS> killers;
+    std::array<ScoredMove, MAX_LEGAL_MOVES> move_eval;
     int moves_cnt;
 
     [[nodiscard]] inline bool Empty() const { return moves_cnt == 0; }

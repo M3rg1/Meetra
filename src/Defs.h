@@ -3,6 +3,7 @@
 
 #include <string>
 #include <chrono>
+#include <array>
 
 using TimeRep = std::chrono::milliseconds::rep;
 
@@ -50,7 +51,7 @@ enum Color {
     WHITE, BLACK,
     COLOR_NR
 };
-constexpr Color Colors[] = {WHITE, BLACK};
+constexpr std::array Colors{WHITE, BLACK};
 constexpr Color OtherColor(Color c) { return static_cast<Color>(c ^ 1); }
 
 enum PieceType {
@@ -58,7 +59,7 @@ enum PieceType {
     PIECE_TYPE_NR,
     ALL_TYPES = 7
 };
-constexpr PieceType PieceTypes[] = {PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING};
+constexpr std::array PieceTypes{PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING};
 
 enum Piece {
     NO_PIECE = 0,
@@ -79,13 +80,13 @@ enum Rank {
     RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8,
     RANK_NR
 };
-constexpr Rank Ranks[] = {RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8};
+constexpr std::array Ranks{RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8};
 
 enum File {
     FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H,
     FILE_NR
 };
-constexpr File Files[] = {FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H};
+constexpr std::array Files{FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H};
 
 constexpr int operator+(File f, Rank r) { return static_cast<int>(f) + static_cast<int>(r); }
 constexpr int operator+(Rank r, File f) { return f + r; }
@@ -124,7 +125,7 @@ enum Square {
     SQUARE_NR,
     NO_SQ = 0
 };
-constexpr Square Squares[] = {
+constexpr std::array Squares{
         A1, B1, C1, D1, E1, F1, G1, H1,
         A2, B2, C2, D2, E2, F2, G2, H2,
         A3, B3, C3, D3, E3, F3, G3, H3,
