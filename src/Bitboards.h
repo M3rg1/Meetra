@@ -59,11 +59,10 @@ namespace Bitboards {
             rank_mask[RANK_5]
     };
 
-    struct Magic {
+    struct BlackMagic {
         const Bitboard *attacks;
-        Bitboard inner_mask;
+        Bitboard mask;
         uint64_t magic_num;
-        uint8_t shift;
     };
 
     constexpr Bitboard ReverseBits(Bitboard b) {
@@ -126,7 +125,7 @@ namespace Bitboards {
 
     constexpr Bitboard sliding_attack(Square sq, Bitboard occupied, std::initializer_list<Direction> dirs) {
         Bitboard attacks = EMPTY_BB;
-        for (Direction d : dirs) {
+        for (Direction d: dirs) {
             Square s = sq;
             while (safe_destination(s, d) && !(occupied & SqToBB(s))) {
                 attacks |= SqToBB(s += d);
@@ -145,42 +144,50 @@ namespace Bitboards {
         return sliding_attack(s, occ, {NORTH, SOUTH, EAST, WEST});
     }
 
-    template<auto size>
-    consteval auto GenTable(auto &magic_shift, auto &magic_num, auto &generator) {
-        std::array<Bitboard, size> table{};
-        for (auto curr = table.data(); Square s: Squares) {
+    consteval auto GenTable() {
+        std::array<Bitboard, 87988> table{};
+        for (Square s: Squares) {
             Bitboard occ = EMPTY_BB;
-            Bitboard inner = ~(((rank_mask[RANK_1] | rank_mask[RANK_8]) & ~rank_mask[SqToRank(s)])
-                               | ((file_mask[FILE_A] | file_mask[FILE_H]) & ~file_mask[SqToFile(s)]))
-                             & generator(s, EMPTY_BB);
+            Bitboard mask = ~(((rank_mask[RANK_1] | rank_mask[RANK_8]) & ~rank_mask[SqToRank(s)])
+                              | ((file_mask[FILE_A] | file_mask[FILE_H]) & ~file_mask[SqToFile(s)]))
+                            & GenRookMoves(s, EMPTY_BB);
             do {
-                auto idx = ((occ & inner) * magic_num[s]) >> (64 - magic_shift[s]);
-                curr[idx] = generator(s, occ);
-                occ = (occ - inner) & inner;
+                auto idx = ((occ | (~mask)) * rook_magics[s].factor) >> (64 - 12);
+                (table.data() + rook_magics[s].position)[idx] = GenRookMoves(s, occ);
+                occ = (occ - mask) & mask;
             } while (occ);
-            curr += 1 << magic_shift[s];
+
+            occ = EMPTY_BB;
+            mask = ~(((rank_mask[RANK_1] | rank_mask[RANK_8]) & ~rank_mask[SqToRank(s)])
+                     | ((file_mask[FILE_A] | file_mask[FILE_H]) & ~file_mask[SqToFile(s)]))
+                   & GenBishopMoves(s, EMPTY_BB);
+
+            do {
+                auto idx = ((occ | (~mask)) * bishop_magics[s].factor) >> (64 - 9);
+                (table.data() + bishop_magics[s].position)[idx] = GenBishopMoves(s, occ);
+                occ = (occ - mask) & mask;
+            } while (occ);
+
         }
         return table;
     }
 
-    constexpr auto r_table = GenTable<88064>(r_magic_shift, r_magic_num, GenRookMoves);
-    constexpr auto b_table = GenTable<4800>(b_magic_shift, b_magic_num, GenBishopMoves);
+    constexpr auto lookup_table = GenTable();
 
-    consteval auto InitMagic(auto &table, auto &magic_shift, auto &magic_num, auto &generator) {
-        std::array<Magic, SQUARE_NR> magics{};
+    consteval auto InitMagic(auto &table, auto &magic_init, auto &generator) {
+        std::array<BlackMagic, SQUARE_NR> magics{};
         for (Square s: Squares) {
-            Bitboard inner = ((rank_mask[RANK_1] | rank_mask[RANK_8]) & ~rank_mask[SqToRank(s)])
-                             | ((file_mask[FILE_A] | file_mask[FILE_H]) & ~file_mask[SqToFile(s)]);
-            magics[s].shift = 64 - magic_shift[s];
-            magics[s].inner_mask = generator(s, EMPTY_BB) & ~inner;
-            magics[s].magic_num = magic_num[s];
-            magics[s].attacks = s == A1 ? table.data() : magics[s - 1].attacks + (1 << magic_shift[s - 1]);
+            magics[s].mask = ~(~(((rank_mask[RANK_1] | rank_mask[RANK_8]) & ~rank_mask[SqToRank(s)])
+                                 | ((file_mask[FILE_A] | file_mask[FILE_H]) & ~file_mask[SqToFile(s)]))
+                               & generator(s, EMPTY_BB));
+            magics[s].magic_num = magic_init[s].factor;
+            magics[s].attacks = table.data() + magic_init[s].position;
         }
         return magics;
     }
 
-    constexpr auto r_magics = InitMagic(r_table, r_magic_shift, r_magic_num, GenRookMoves);
-    constexpr auto b_magics = InitMagic(b_table, b_magic_shift, b_magic_num, GenBishopMoves);
+    constexpr auto r_magics = InitMagic(lookup_table, rook_magics, GenRookMoves);
+    constexpr auto b_magics = InitMagic(lookup_table, bishop_magics, GenBishopMoves);
 
     constexpr Bitboard GenRaysToEdge(Square s1, Square s2) {
 
@@ -268,13 +275,13 @@ namespace Bitboards {
     constexpr Bitboard GetRayToSquares(Square s1, Square s2) { return rays_to_squares[s1][s2]; }
 
     constexpr Bitboard GetRookAttacks(Square s, Bitboard occ) {
-        Magic m = r_magics[s];
-        return m.attacks[((occ & m.inner_mask) * m.magic_num) >> m.shift];
+        BlackMagic m = r_magics[s];
+        return m.attacks[((occ | m.mask) * m.magic_num) >> (64 - 12)];
     }
 
     constexpr Bitboard GetBishopAttacks(Square s, Bitboard occ) {
-        Magic m = b_magics[s];
-        return m.attacks[((occ & m.inner_mask) * m.magic_num) >> m.shift];
+        BlackMagic m = b_magics[s];
+        return m.attacks[((occ | m.mask) * m.magic_num) >> (64 - 9)];
     }
 
     template<PieceType PT>
