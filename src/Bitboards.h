@@ -107,12 +107,42 @@ namespace Bitboards {
         return ((occ - (b << 1)) ^ ReverseBits(ReverseBits(occ) - (ReverseBits(b) << 1))) & rank_mask[r];
     }
 
+
+    /// safe_destination() returns the bitboard of target square for the given step
+/// from the given square. If the step is off the board, returns empty bitboard.
+
+    constexpr int distance_f(Square x, Square y) { return std::abs(SqToFile(x) - SqToFile(y)); }
+    constexpr int distance_r(Square x, Square y) { return std::abs(SqToRank(x) - SqToRank(y)); }
+    constexpr int distance_s(Square x, Square y) { return std::max(distance_f(x, y), distance_r(x, y)); }
+
+    constexpr bool is_ok(Square s) {
+        return s >= A1 && s <= H8;
+    }
+
+    constexpr Bitboard safe_destination(Square s, Direction dir) {
+        Square to = s + dir;
+        return is_ok(to) && distance_s(s, to) <= 2 ? SqToBB(to) : EMPTY_BB;
+    }
+
+    constexpr Bitboard sliding_attack(Square sq, Bitboard occupied, std::initializer_list<Direction> dirs) {
+        Bitboard attacks = EMPTY_BB;
+        for (Direction d : dirs) {
+            Square s = sq;
+            while (safe_destination(s, d) && !(occupied & SqToBB(s))) {
+                attacks |= SqToBB(s += d);
+            }
+        }
+        return attacks;
+    }
+
     constexpr Bitboard GenBishopMoves(Square s, Bitboard occ) {
-        return GenAntiDiagMoves(s, occ) | GenDiagMoves(s, occ);
+        //return GenAntiDiagMoves(s, occ) | GenDiagMoves(s, occ);
+        return sliding_attack(s, occ, {NORTH_EAST, SOUTH_EAST, SOUTH_WEST, NORTH_WEST});
     }
 
     constexpr Bitboard GenRookMoves(Square s, Bitboard occ) {
-        return GenVerticalMoves(s, occ) | GenHorizontalMoves(s, occ);
+        //return GenVerticalMoves(s, occ) | GenHorizontalMoves(s, occ);
+        return sliding_attack(s, occ, {NORTH, SOUTH, EAST, WEST});
     }
 
     template<auto size>

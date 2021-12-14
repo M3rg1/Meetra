@@ -32,7 +32,7 @@ target_link_libraries(${PROJECT_NAME} ${LINK_LIBS})
 if(MINGW)
     set(CMAKE_EXE_LINKER_FLAGS -static)
 endif()
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -fno-exceptions -march=native")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -fno-exceptions -march=native -fconstexpr-ops-limit=1000000000")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -pedantic -Wextra -Wshadow -Wno-unknown-pragmas")
 
 message(STATUS "CMAKE_CXX_FLAGS_DEBUG are: ${CMAKE_CXX_FLAGS_DEBUG}")
