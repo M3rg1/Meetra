@@ -41,17 +41,17 @@ namespace Bitboards {
             0x804020100000000, 0x402010000000000, 0x201000000000000, 0x100000000000000
     };
 
-    constexpr std::array<Bitboard, COLOR_NR> castling_mask{
+    constexpr std::array castling_mask{
             rank_mask[RANK_1],
             rank_mask[RANK_8]
     };
 
-    constexpr std::array<Bitboard, COLOR_NR> prom_mask{
+    constexpr std::array prom_mask{
             rank_mask[RANK_8],
             rank_mask[RANK_1]
     };
 
-    constexpr std::array<Bitboard, COLOR_NR> two_fwd_mask{
+    constexpr std::array two_fwd_mask{
             rank_mask[RANK_4],
             rank_mask[RANK_5]
     };
@@ -66,15 +66,88 @@ namespace Bitboards {
     inline std::array<Magic, SQUARE_NR> b_magics;
     inline std::array<Magic, SQUARE_NR> r_magics;
 
-    inline std::array<Bitboard, 64> king_moves;
-    inline std::array<Bitboard, 64> knight_moves;
-    inline std::array<std::array<Bitboard, SQUARE_NR>, COLOR_NR> pawn_attacks;
-
-    inline std::array<std::array<Bitboard, SQUARE_NR>, SQUARE_NR> rays_to_squares;
-    inline std::array<std::array<Bitboard, SQUARE_NR>, SQUARE_NR> rays_to_borders;
-
     inline std::array<Bitboard, 88064> r_table;
     inline std::array<Bitboard, 4800> b_table;
+
+    constexpr Bitboard GenRayToEdge(Square s1, Square s2) {
+
+        if (s1 == s2) {
+            return EMPTY_BB;
+        }
+
+        File f1 = SqToFile(s1);
+        Rank r1 = SqToRank(s1);
+        File f2 = SqToFile(s2);
+        Rank r2 = SqToRank(s2);
+
+        return r1 == r2 ? rank_mask[r1] :
+               f1 == f2 ? file_mask[f1] :
+               f1 + r1 == f2 + r2 ? diag_mask[f1 + r1] :
+               f1 - r1 == f2 - r2 ? anti_diag_mask[r1 + 7 - f1] :
+               EMPTY_BB;
+    }
+
+    constexpr Bitboard GenRay(Square s1, Square s2) {
+
+        if (s1 == s2) {
+            return EMPTY_BB;
+        }
+
+        Square max = std::max(s1, s2);
+        Square min = std::min(s1, s2);
+
+        Rank r_max = SqToRank(max);
+        File f_max = SqToFile(max);
+
+        Rank r_min = SqToRank(min);
+        File f_min = SqToFile(min);
+
+        Bitboard mask = SqToBB(max) - (SqToBB(min) << 1);
+
+        return r_max == r_min ? rank_mask[r_max] & mask :
+               f_max == f_min ? file_mask[f_max] & mask :
+               f_min + r_min == f_max + r_max ? diag_mask[f_max + r_max] & mask :
+               f_min - r_min == f_max - r_max ? anti_diag_mask[r_max + 7 - f_max] & mask :
+               EMPTY_BB;
+    }
+
+    consteval auto GenRaysBetweenSquares(Bitboard (*RayGen)(Square, Square)) {
+        std::array<std::array<Bitboard, SQUARE_NR>, SQUARE_NR> arr{};
+        for (Square s1: Squares) {
+            for (Square s2: Squares) {
+                arr[s1][s2] = RayGen(s1, s2);
+            }
+        }
+        return arr;
+    }
+
+    constexpr auto rays_to_squares = GenRaysBetweenSquares(GenRay);
+    constexpr auto rays_to_borders = GenRaysBetweenSquares(GenRayToEdge);
+
+    consteval auto GenPieceMoves(std::initializer_list<Direction> dirs) {
+        std::array<Bitboard, SQUARE_NR> moves{};
+        for (Square s: Squares) {
+            for (const auto &d: dirs) {
+                if (s + d < SQUARE_NR && s + d >= A1) {
+                    moves[s] |= SqToBB(s + d);
+                }
+            }
+            File f = SqToFile(s);
+            moves[s] &= f > FILE_D ? ~file_mask[FILE_A] & ~file_mask[FILE_B] : ~file_mask[FILE_G] & ~file_mask[FILE_H];
+        }
+        return moves;
+    }
+
+    constexpr auto king_moves = GenPieceMoves(
+            {NORTH, NORTH_EAST, EAST, SOUTH_EAST, SOUTH, SOUTH_WEST, WEST, NORTH_WEST});
+    constexpr auto knight_moves = GenPieceMoves({NORTH + 2 * EAST, 2 * NORTH + EAST, NORTH + 2 * WEST, 2 * NORTH + WEST,
+                                                 SOUTH + 2 * EAST, 2 * SOUTH + EAST, SOUTH + 2 * WEST, 2 * SOUTH + WEST}
+    );
+
+    constexpr std::array pawn_attacks = {
+            GenPieceMoves({NORTH_EAST, NORTH_WEST}),
+            GenPieceMoves({SOUTH_EAST, SOUTH_WEST})
+    };
 
     void Init();
 

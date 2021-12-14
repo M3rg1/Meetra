@@ -109,95 +109,14 @@ namespace Bitboards {
 
 #pragma endregion
 
-#pragma region ===== Precomputing king moves, knight moves, pawn attacks =====
-
-    void GenPieceMoves(std::initializer_list<Direction> dirs, std::array<Bitboard, 64> &output) {
-        for (Square s: Squares) {
-            Bitboard moves = EMPTY_BB;
-            for (const auto &d: dirs) {
-                if (s + d < SQUARE_NR && s + d >= A1) {
-                    moves |= SqToBB(s + d);
-                }
-            }
-            File f = SqToFile(s);
-            moves &= f > FILE_D ? ~file_mask[FILE_A] & ~file_mask[FILE_B] : ~file_mask[FILE_G] & ~file_mask[FILE_H];
-            output[s] = moves;
-        }
-    }
-
-#pragma endregion
-
-#pragma region ===== Generate helper rays =====
-
-    Bitboard GenRayToEdge(Square s1, Square s2) {
-
-        if (s1 == s2) {
-            return EMPTY_BB;
-        }
-
-        File f1 = SqToFile(s1);
-        Rank r1 = SqToRank(s1);
-        File f2 = SqToFile(s2);
-        Rank r2 = SqToRank(s2);
-
-        return r1 == r2 ? rank_mask[r1] :
-               f1 == f2 ? file_mask[f1] :
-               f1 + r1 == f2 + r2 ? diag_mask[f1 + r1] :
-               f1 - r1 == f2 - r2 ? anti_diag_mask[r1 + 7 - f1] :
-               EMPTY_BB;
-    }
-
-    Bitboard GenRay(Square s1, Square s2) {
-
-        if (s1 == s2) {
-            return EMPTY_BB;
-        }
-
-        Square max = std::max(s1, s2);
-        Square min = std::min(s1, s2);
-
-        Rank r_max = SqToRank(max);
-        File f_max = SqToFile(max);
-
-        Rank r_min = SqToRank(min);
-        File f_min = SqToFile(min);
-
-        Bitboard mask = SqToBB(max) - (SqToBB(min) << 1);
-
-        return r_max == r_min ? rank_mask[r_max] & mask :
-               f_max == f_min ? file_mask[f_max] & mask :
-               f_min + r_min == f_max + r_max ? diag_mask[f_max + r_max] & mask :
-               f_min - r_min == f_max - r_max ? anti_diag_mask[r_max + 7 - f_max] & mask :
-               EMPTY_BB;
-    }
-
-    void GenRaysBetweenSquares() {
-        for (Square s1: Squares) {
-            for (Square s2: Squares) {
-                rays_to_squares[s1][s2] = GenRay(s1, s2);
-                rays_to_borders[s1][s2] = GenRayToEdge(s1, s2);
-            }
-        }
-    }
-
-#pragma enregion
-
 #pragma region ===== Misc =====
 
     void Init() {
-        GenRaysBetweenSquares();
+        //GenRaysBetweenSquares();
         InitMagic();
         // rook + bishop (+ queen) moves
         GenMagics();
         // white pawns
-        GenPieceMoves({NORTH_EAST, NORTH_WEST}, pawn_attacks[WHITE]);
-        // black pawns
-        GenPieceMoves({SOUTH_EAST, SOUTH_WEST}, pawn_attacks[BLACK]);
-        // kings
-        GenPieceMoves({NORTH, NORTH_EAST, EAST, SOUTH_EAST, SOUTH, SOUTH_WEST, WEST, NORTH_WEST}, king_moves);
-        // knights
-        GenPieceMoves({NORTH + 2 * EAST, 2 * NORTH + EAST, NORTH + 2 * WEST, 2 * NORTH + WEST,
-                       SOUTH + 2 * EAST, 2 * SOUTH + EAST, SOUTH + 2 * WEST, 2 * SOUTH + WEST}, knight_moves);
     }
 
     [[maybe_unused]] std::string PPBitboard(Bitboard b) {
