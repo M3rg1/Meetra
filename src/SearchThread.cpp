@@ -83,7 +83,7 @@ namespace Search {
                 mt_depth = depth_reached;
                 if (!EnoughTimeLeft()) {
                     StopSearch();
-                } else if (depth_reached > plies_muted) {
+                } else if (depth_reached > plies_muted && depth_reached < MAX_SEARCH_DEPTH) {
                     SendFullSearchInfo();
                 }
             }
