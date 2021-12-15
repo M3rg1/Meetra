@@ -6,7 +6,7 @@
 
 namespace Bitboards {
 
-    bool SquareOnBoard(Square s, Square to) {
+    bool MoveOk(Square s, Square to) {
         int f = std::abs(SqToFile(s) - SqToFile(to));
         int r = std::abs(SqToRank(s) - SqToRank(to));
         return f <= 1 && r <= 1 && to >= A1 && to <= H8;
@@ -17,7 +17,7 @@ namespace Bitboards {
         for (Direction d: dirs) {
             Square from = s;
             Square to = s + d;
-            while (!(occ & SqToBB(from)) && SquareOnBoard(from, to)) {
+            while (!(occ & SqToBB(from)) && MoveOk(from, to)) {
                 attacks |= SqToBB(to);
                 from = to;
                 to += d;

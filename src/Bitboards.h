@@ -62,18 +62,8 @@ namespace Bitboards {
         uint64_t magic_num;
     };
 
-    inline BlackMagic r_magics[64];
-    inline BlackMagic b_magics[64];
-
-    inline Bitboard GetRookAttacks(Square s, Bitboard occ) {
-        BlackMagic m = r_magics[s];
-        return m.attacks[((occ | m.mask) * m.magic_num) >> (64 - 12)];
-    }
-
-    inline Bitboard GetBishopAttacks(Square s, Bitboard occ) {
-        BlackMagic m = b_magics[s];
-        return m.attacks[((occ | m.mask) * m.magic_num) >> (64 - 9)];
-    }
+    inline std::array<BlackMagic, SQUARE_NR> r_magics;
+    inline std::array<BlackMagic, SQUARE_NR> b_magics;
 
     inline std::array<Bitboard, 64> king_moves;
     inline std::array<Bitboard, 64> knight_moves;
@@ -86,6 +76,17 @@ namespace Bitboards {
 
     void Init();
 
+    inline Bitboard GetRookAttacks(Square s, Bitboard occ) {
+        BlackMagic m = r_magics[s];
+        return m.attacks[((occ | m.mask) * m.magic_num) >> (64 - 12)];
+    }
+
+    inline Bitboard GetBishopAttacks(Square s, Bitboard occ) {
+        BlackMagic m = b_magics[s];
+        return m.attacks[((occ | m.mask) * m.magic_num) >> (64 - 9)];
+    }
+
+    [[maybe_unused]] [[nodiscard]] std::string PPBitboard(Bitboard b);
     [[nodiscard]] constexpr bool MoreThanOne(Bitboard b) { return (b & (b - 1)); }
     [[nodiscard]] constexpr bool ExactlyOne(Bitboard b) { return b && !MoreThanOne(b); }
     [[nodiscard]] constexpr Square Msb(Bitboard b) { return static_cast<Square>(63 ^ std::countl_zero(b)); }
@@ -95,8 +96,6 @@ namespace Bitboards {
         b &= b - 1;
         return s;
     }
-
-    [[maybe_unused]] [[nodiscard]] std::string PPBitboard(Bitboard b);
 
     inline Bitboard GetRayToBorders(Square s1, Square s2) { return rays_to_borders[s1][s2]; }
     inline Bitboard GetRayToSquares(Square s1, Square s2) { return rays_to_squares[s1][s2]; }
