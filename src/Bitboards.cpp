@@ -5,13 +5,14 @@
 
 namespace Bitboards {
 
-    bool MoveOk(Square s, Square to) {
-        int f = std::abs(SqToFile(s) - SqToFile(to));
-        int r = std::abs(SqToRank(s) - SqToRank(to));
-        return f <= 1 && r <= 1 && to >= A1 && to <= H8;
-    }
-
     Bitboard GenSliderMoves(Square s, Bitboard occ, std::initializer_list<Direction> dirs) {
+
+        auto MoveOk = [](Square s, Square to) {
+            int f = std::abs(SqToFile(s) - SqToFile(to));
+            int r = std::abs(SqToRank(s) - SqToRank(to));
+            return f <= 1 && r <= 1 && to >= A1 && to <= H8;
+        };
+
         Bitboard attacks = EMPTY_BB;
         for (Direction d: dirs) {
             Square from = s;
