@@ -8,9 +8,8 @@
 namespace Zobrist {
 
     std::array<std::array<uint64_t, B_KING + 1>, SQUARE_NR> piece_keys;
-    // TODO reduce cache pressure, make this smaller
-    std::array<uint64_t, SQUARE_NR> castling_keys;
-    std::array<uint64_t, RANK_NR>  ep_keys;
+    std::array<uint64_t, FILE_NR> castling_keys;
+    std::array<uint64_t, FILE_NR>  ep_keys;
     uint64_t color_key;
 
     void Init() {
@@ -43,7 +42,7 @@ namespace Zobrist {
     void UpdateCr(Hash64 &h, Bitboard previous, Bitboard current) {
         Bitboard cr_change = previous ^ current;
         while (cr_change) {
-            h ^= castling_keys[Bitboards::PopLsb(cr_change)];
+            h ^= castling_keys[SqToFile(Bitboards::PopLsb(cr_change))];
         }
     }
 
