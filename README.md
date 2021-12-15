@@ -55,13 +55,12 @@ For example, some free GUIs with UCI support:
 - **Move generation**
     - [Staged  move generator](https://www.chessprogramming.org/Move_Generation#Staged_move_generation) (TT move,
       promotions, captures, quiet moves)
-    - Precomputed moves for all pieces
-    - [Fancy Magic bitboards](https://www.chessprogramming.org/Magic_Bitboards) (initialized
-      via [Hyperbola Quintessence](https://www.chessprogramming.org/Hyperbola_Quintessence))
+    - [Black Magic bitboards](https://www.chessprogramming.org/Magic_Bitboards)
+  - Precomputed moves for all pieces
 - **Move ordering**
     - TT move first
     - [MVV-LVA](https://www.chessprogramming.org/MVV-LVA)
-    - [Killer heuristic](https://www.chessprogramming.org/Killer_Heuristic) (with 2 slots)
+    - [Killer heuristic](https://www.chessprogramming.org/Killer_Heuristic) (2 slots)
 - **Search**
     - [Iterative deepening framework](https://www.chessprogramming.org/Iterative_Deepening)
     - [Fail soft alpha-beta framework](https://www.chessprogramming.org/Alpha-Beta)
