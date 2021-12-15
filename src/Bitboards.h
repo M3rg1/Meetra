@@ -107,7 +107,7 @@ namespace Bitboards {
     }
 
     template<PieceType PT>
-    [[nodiscard]] Bitboard GetAttacks(Square s, Bitboard occ = EMPTY_BB, Color c = WHITE) {
+    Bitboard GetAttacks(Square s, Bitboard occ = EMPTY_BB, Color c = WHITE) {
         return PT == PAWN ? pawn_attacks[c][s] :
                PT == BISHOP ? GetBishopAttacks(s, occ) :
                PT == ROOK ? GetRookAttacks(s, occ) :
