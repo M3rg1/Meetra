@@ -65,83 +65,32 @@ namespace Bitboards {
         uint64_t magic_num;
     };
 
-    constexpr Bitboard ReverseBits(Bitboard b) {
-        b = ((b >> 1) & 0x5555555555555555ULL) | ((b & 0x5555555555555555ULL) << 1);
-        b = ((b >> 2) & 0x3333333333333333ULL) | ((b & 0x3333333333333333ULL) << 2);
-        b = ((b >> 4) & 0x0F0F0F0F0F0F0F0FULL) | ((b & 0x0F0F0F0F0F0F0F0FULL) << 4);
-        b = ((b >> 8) & 0x00FF00FF00FF00FFULL) | ((b & 0x00FF00FF00FF00FFULL) << 8);
-        b = ((b >> 16) & 0x0000FFFF0000FFFFULL) | ((b & 0x0000FFFF0000FFFFULL) << 16);
-        b = (b >> 32) | (b << 32);
-        return b;
+    constexpr bool MoveOk(Square s, Square to) {
+        int f = std::abs(SqToFile(s) - SqToFile(to));
+        int r = std::abs(SqToRank(s) - SqToRank(to));
+        return f <= 1 && r <= 1 && to >= A1 && to <= H8;
     }
 
-    constexpr Bitboard GenDiagMoves(Square s, Bitboard occ) {
-        Bitboard bitboard = SqToBB(s);
-        File f = SqToFile(s);
-        Rank r = SqToRank(s);
-        Bitboard move_mask = anti_diag_mask[r + 7 - f];
-        return (((occ & move_mask) - (bitboard << 1))
-                ^ ReverseBits(ReverseBits(occ & move_mask) - (ReverseBits(bitboard) << 1))) & move_mask;
-    }
-
-    constexpr Bitboard GenAntiDiagMoves(Square s, Bitboard occ) {
-        Bitboard b = SqToBB(s);
-        File f = SqToFile(s);
-        Rank r = SqToRank(s);
-        Bitboard move_mask = diag_mask[f + r];
-        return (((occ & move_mask) - (b << 1))
-                ^ ReverseBits(ReverseBits(occ & move_mask) - (ReverseBits(b) << 1))) & move_mask;
-    }
-
-    constexpr Bitboard GenVerticalMoves(Square s, Bitboard occ) {
-        Bitboard b = SqToBB(s);
-        File f = SqToFile(s);
-        return (((occ & file_mask[f]) - (b << 1))
-                ^ ReverseBits(ReverseBits(occ & file_mask[f]) - (ReverseBits(b) << 1))) & file_mask[f];
-    }
-
-    constexpr Bitboard GenHorizontalMoves(Square s, Bitboard occ) {
-        Bitboard b = SqToBB(s);
-        Rank r = SqToRank(s);
-        return ((occ - (b << 1)) ^ ReverseBits(ReverseBits(occ) - (ReverseBits(b) << 1))) & rank_mask[r];
-    }
-
-
-    /// safe_destination() returns the bitboard of target square for the given step
-/// from the given square. If the step is off the board, returns empty bitboard.
-
-    constexpr int distance_f(Square x, Square y) { return std::abs(SqToFile(x) - SqToFile(y)); }
-    constexpr int distance_r(Square x, Square y) { return std::abs(SqToRank(x) - SqToRank(y)); }
-    constexpr int distance_s(Square x, Square y) { return std::max(distance_f(x, y), distance_r(x, y)); }
-
-    constexpr bool is_ok(Square s) {
-        return s >= A1 && s <= H8;
-    }
-
-    constexpr Bitboard safe_destination(Square s, Direction dir) {
-        Square to = s + dir;
-        return is_ok(to) && distance_s(s, to) <= 2 ? SqToBB(to) : EMPTY_BB;
-    }
-
-    constexpr Bitboard sliding_attack(Square sq, Bitboard occupied, std::initializer_list<Direction> dirs) {
+    constexpr Bitboard GenSliderMoves(Square s, Bitboard occ, std::initializer_list<Direction> dirs) {
         Bitboard attacks = EMPTY_BB;
         for (Direction d: dirs) {
-            Square s = sq;
-            while (safe_destination(s, d) && !(occupied & SqToBB(s))) {
-                attacks |= SqToBB(s += d);
+            Square from = s;
+            Square to = s + d;
+            while (!(occ & SqToBB(from)) && MoveOk(from, to)) {
+                attacks |= SqToBB(to);
+                from = to;
+                to += d;
             }
         }
         return attacks;
     }
 
     constexpr Bitboard GenBishopMoves(Square s, Bitboard occ) {
-        //return GenAntiDiagMoves(s, occ) | GenDiagMoves(s, occ);
-        return sliding_attack(s, occ, {NORTH_EAST, SOUTH_EAST, SOUTH_WEST, NORTH_WEST});
+        return GenSliderMoves(s, occ, {NORTH_EAST, SOUTH_EAST, SOUTH_WEST, NORTH_WEST});
     }
 
     constexpr Bitboard GenRookMoves(Square s, Bitboard occ) {
-        //return GenVerticalMoves(s, occ) | GenHorizontalMoves(s, occ);
-        return sliding_attack(s, occ, {NORTH, SOUTH, EAST, WEST});
+        return GenSliderMoves(s, occ, {NORTH, SOUTH, EAST, WEST});
     }
 
     consteval auto GenTable() {
@@ -174,20 +123,20 @@ namespace Bitboards {
 
     constexpr auto lookup_table = GenTable();
 
-    consteval auto InitMagic(auto &table, auto &magic_init, auto &generator) {
+    consteval auto InitMagic(auto &magic_init, auto &generator) {
         std::array<BlackMagic, SQUARE_NR> magics{};
         for (Square s: Squares) {
             magics[s].mask = ~(~(((rank_mask[RANK_1] | rank_mask[RANK_8]) & ~rank_mask[SqToRank(s)])
                                  | ((file_mask[FILE_A] | file_mask[FILE_H]) & ~file_mask[SqToFile(s)]))
                                & generator(s, EMPTY_BB));
             magics[s].magic_num = magic_init[s].factor;
-            magics[s].attacks = table.data() + magic_init[s].position;
+            magics[s].attacks = lookup_table.data() + magic_init[s].position;
         }
         return magics;
     }
 
-    constexpr auto r_magics = InitMagic(lookup_table, rook_magics, GenRookMoves);
-    constexpr auto b_magics = InitMagic(lookup_table, bishop_magics, GenBishopMoves);
+    constexpr auto r_magics = InitMagic(rook_magics, GenRookMoves);
+    constexpr auto b_magics = InitMagic(bishop_magics, GenBishopMoves);
 
     constexpr Bitboard GenRaysToEdge(Square s1, Square s2) {
 
