@@ -101,7 +101,6 @@ namespace Bitboards {
     inline Bitboard GetRayToBorders(Square s1, Square s2) { return rays_to_borders[s1][s2]; }
     inline Bitboard GetRayToSquares(Square s1, Square s2) { return rays_to_squares[s1][s2]; }
     constexpr Bitboard GetRookRays(Square s) { return file_mask[SqToFile(s)] | rank_mask[SqToRank(s)]; }
-
     constexpr Bitboard GetBishopRays(Square s) {
         File f = SqToFile(s);
         Rank r = SqToRank(s);

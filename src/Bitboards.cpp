@@ -6,60 +6,33 @@
 
 namespace Bitboards {
 
-#pragma region ===== Hyperbola Quintessence (used for magics initialization) =====
-
-    Bitboard ReverseBits(Bitboard b) {
-        b = ((b >> 1) & 0x5555555555555555ULL) | ((b & 0x5555555555555555ULL) << 1);
-        b = ((b >> 2) & 0x3333333333333333ULL) | ((b & 0x3333333333333333ULL) << 2);
-        b = ((b >> 4) & 0x0F0F0F0F0F0F0F0FULL) | ((b & 0x0F0F0F0F0F0F0F0FULL) << 4);
-        b = ((b >> 8) & 0x00FF00FF00FF00FFULL) | ((b & 0x00FF00FF00FF00FFULL) << 8);
-        b = ((b >> 16) & 0x0000FFFF0000FFFFULL) | ((b & 0x0000FFFF0000FFFFULL) << 16);
-        b = (b >> 32) | (b << 32);
-        return b;
+    bool SquareOnBoard(Square s, Square to) {
+        int f = std::abs(SqToFile(s) - SqToFile(to));
+        int r = std::abs(SqToRank(s) - SqToRank(to));
+        return f <= 1 && r <= 1 && to >= A1 && to <= H8;
     }
 
-    Bitboard GenDiagMoves(Square s, Bitboard occ) {
-        Bitboard bitboard = SqToBB(s);
-        File f = SqToFile(s);
-        Rank r = SqToRank(s);
-        Bitboard move_mask = anti_diag_mask[r + 7 - f];
-        return (((occ & move_mask) - (bitboard << 1)) ^ ReverseBits(ReverseBits(occ & move_mask)
-                                                                    - (ReverseBits(bitboard) << 1))) & move_mask;
-    }
-
-    Bitboard GenAntiDiagMoves(Square s, Bitboard occ) {
-        Bitboard b = SqToBB(s);
-        File f = SqToFile(s);
-        Rank r = SqToRank(s);
-        Bitboard move_mask = diag_mask[f + r];
-        return (((occ & move_mask) - (b << 1))
-                ^ ReverseBits(ReverseBits(occ & move_mask) - (ReverseBits(b) << 1))) & move_mask;
-    }
-
-    Bitboard GenHorizontalMoves(Square s, Bitboard occ) {
-        Bitboard b = SqToBB(s);
-        Rank r = SqToRank(s);
-        return ((occ - (b << 1)) ^ ReverseBits(ReverseBits(occ) - (ReverseBits(b) << 1))) & rank_mask[r];
-    }
-
-    Bitboard GenVerticalMoves(Square s, Bitboard occ) {
-        Bitboard b = SqToBB(s);
-        File f = SqToFile(s);
-        return (((occ & file_mask[f]) - (b << 1))
-                ^ ReverseBits(ReverseBits(occ & file_mask[f]) - (ReverseBits(b) << 1))) & file_mask[f];
+    Bitboard GenSliderMoves(Square s, Bitboard occ, std::initializer_list<Direction> dirs) {
+        Bitboard attacks = EMPTY_BB;
+        for (Direction d: dirs) {
+            Square from = s;
+            Square to = s + d;
+            while (!(occ & SqToBB(from)) && SquareOnBoard(from, to)) {
+                attacks |= SqToBB(to);
+                from = to;
+                to += d;
+            }
+        }
+        return attacks;
     }
 
     Bitboard GenBishopMoves(Square s, Bitboard occ) {
-        return GenAntiDiagMoves(s, occ) | GenDiagMoves(s, occ);
+        return GenSliderMoves(s, occ, {NORTH_EAST, SOUTH_EAST, SOUTH_WEST, NORTH_WEST});
     }
 
     Bitboard GenRookMoves(Square s, Bitboard occ) {
-        return GenVerticalMoves(s, occ) | GenHorizontalMoves(s, occ);
+        return GenSliderMoves(s, occ, {NORTH, SOUTH, EAST, WEST});
     }
-
-#pragma endregion
-
-#pragma region ===== Magic Bitboards initialization =====
 
     void InitMagic(auto &magics, auto &table, auto &magic_init, int shift, auto &generator) {
         for (Square s: Squares) {
@@ -77,10 +50,6 @@ namespace Bitboards {
         }
     }
 
-#pragma endregion
-
-#pragma region ===== Precomputing king moves, knight moves, pawn attacks =====
-
     void GenPieceMoves(std::initializer_list<Direction> dirs, std::array<Bitboard, 64> &output) {
         for (Square s: Squares) {
             Bitboard moves = EMPTY_BB;
@@ -94,10 +63,6 @@ namespace Bitboards {
             output[s] = moves;
         }
     }
-
-#pragma endregion
-
-#pragma region ===== Generate helper rays =====
 
     Bitboard GenRayToEdges(Square s1, Square s2) {
 
@@ -144,14 +109,10 @@ namespace Bitboards {
         }
     }
 
-#pragma enregion
-
-#pragma region ===== Misc =====
-
     void Init() {
         GenRays();
-        InitMagic(r_magics, magic_lookup, rook_magics, 64 - 12, GenRookMoves);
-        InitMagic(b_magics, magic_lookup, bishop_magics, 64 - 9, GenBishopMoves);
+        InitMagic(r_magics, magic_lookup, r_init_magic, 64 - 12, GenRookMoves);
+        InitMagic(b_magics, magic_lookup, b_init_magic, 64 - 9, GenBishopMoves);
         GenPieceMoves({NORTH_EAST, NORTH_WEST}, pawn_attacks[WHITE]);
         GenPieceMoves({SOUTH_EAST, SOUTH_WEST}, pawn_attacks[BLACK]);
         GenPieceMoves({NORTH, NORTH_EAST, EAST, SOUTH_EAST, SOUTH, SOUTH_WEST, WEST, NORTH_WEST}, king_moves);

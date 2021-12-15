@@ -6,12 +6,12 @@
 
 namespace Bitboards {
 
-    struct black_magicx {
+    struct MagicInit {
         uint64_t factor;
         int position;
     };
 
-    inline black_magicx bishop_magics[64] =
+    inline MagicInit b_init_magic[64] =
             {
                     {0xa7020080601803d8ull, 60984},
                     {0x13802040400801f1ull, 66046},
@@ -79,7 +79,7 @@ namespace Bitboards {
                     {0x100000c05f582008ull, 11140},
             };
 
-    inline black_magicx rook_magics[64] =
+    inline MagicInit r_init_magic[64] =
             {
                     {0x80280013ff84ffffull, 10890},
                     {0x5ffbfefdfef67fffull, 50579},
