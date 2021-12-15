@@ -40,7 +40,7 @@ namespace Bitboards {
                                  | ((file_mask[FILE_A] | file_mask[FILE_H]) & ~file_mask[SqToFile(s)]))
                                & generator(s, EMPTY_BB));
             magics[s].magic_num = magic_init[s].factor;
-            magics[s].attacks = table.data() + magic_init[s].position;
+            magics[s].attacks = table.begin() + magic_init[s].position;
             Bitboard occ = EMPTY_BB;
             do {
                 auto idx = ((occ | magics[s].mask) * magics[s].magic_num) >> shift;
@@ -52,15 +52,14 @@ namespace Bitboards {
 
     void GenPieceMoves(std::initializer_list<Direction> dirs, std::array<Bitboard, 64> &output) {
         for (Square s: Squares) {
-            Bitboard moves = EMPTY_BB;
+            output[s] = EMPTY_BB;
             for (const auto &d: dirs) {
                 if (s + d < SQUARE_NR && s + d >= A1) {
-                    moves |= SqToBB(s + d);
+                    output[s] |= SqToBB(s + d);
                 }
             }
             File f = SqToFile(s);
-            moves &= f > FILE_D ? ~file_mask[FILE_A] & ~file_mask[FILE_B] : ~file_mask[FILE_G] & ~file_mask[FILE_H];
-            output[s] = moves;
+            output[s] &= f > FILE_D ? ~file_mask[FILE_A] & ~file_mask[FILE_B] : ~file_mask[FILE_G] & ~file_mask[FILE_H];
         }
     }
 
