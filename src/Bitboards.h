@@ -121,12 +121,12 @@ namespace Bitboards {
     constexpr Bitboard Shift(Bitboard b) {
         return D == NORTH ? b << 8 :
                D == SOUTH ? b >> 8 :
-               D == EAST ? (b & ~0x8080808080808080ULL) << 1 :
-               D == WEST ? (b & ~0x0101010101010101ULL) >> 1 :
-               D == NORTH_EAST ? (b & ~0x8080808080808080ULL) << 9 :
-               D == NORTH_WEST ? (b & ~0x0101010101010101ULL) << 7 :
-               D == SOUTH_EAST ? (b & ~0x8080808080808080ULL) >> 7 :
-               D == SOUTH_WEST ? (b & ~0x0101010101010101ULL) >> 9 :
+               D == EAST ? (b & ~0x8080808080808080ull) << 1 :
+               D == WEST ? (b & ~0x0101010101010101ull) >> 1 :
+               D == NORTH_EAST ? (b & ~0x8080808080808080ull) << 9 :
+               D == NORTH_WEST ? (b & ~0x0101010101010101ull) << 7 :
+               D == SOUTH_EAST ? (b & ~0x8080808080808080ull) >> 7 :
+               D == SOUTH_WEST ? (b & ~0x0101010101010101ull) >> 9 :
                EMPTY_BB;
     }
 }
