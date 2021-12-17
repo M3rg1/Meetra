@@ -34,7 +34,7 @@ void TranspositionTable::NewSearch() {
 void TranspositionTable::Clear() {
     used_entries = 0;
     current_epoch = 0;
-    std::fill_n(table.get(), buckets_count, TTBucket());
+    std::fill_n(table.get(), buckets_count, TTBucket{});
 }
 
 void TranspositionTable::Save(Hash64 hash, Score score, Depth depth, Move move, TTFlag flag, Depth ply) {

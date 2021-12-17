@@ -28,7 +28,7 @@ namespace Search {
 
     struct RootMove {
         Move move;
-        PVLine pv{};
+        PVLine pv = {};
         Score score = NEGATIVE_INF;
         Score previous_score = NEGATIVE_INF;
         Depth depth = 0;
