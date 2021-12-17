@@ -58,7 +58,7 @@ namespace Search {
     [[nodiscard]] bool EnoughTimeLeft();
     [[nodiscard]] bool IsSearchLimited();
     [[nodiscard]] inline bool Run() { return run.load(std::memory_order_relaxed); }
-    inline void WaitFinished() { std::ranges::for_each(threads, [&](auto &t) { t->WaitForFinish(); }); }
+    inline void WaitFinished() { std::ranges::for_each(threads, &SearchThread::WaitForFinish); }
     inline void StopSearch() { run = false; }
     inline void ClearTT() { tt.Clear(); }
     inline void ShowShowCurrLine(bool show) { show_currline = show; }

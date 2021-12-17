@@ -200,7 +200,7 @@ namespace Search {
                     ) {
                 if (moves_searched >= 7) reduction += depth / 3;
                 if (NodeType != PV) ++reduction;
-                if (std::ranges::find(killers[ply], move) != std::end(killers[ply])) --reduction;
+                if (std::ranges::find(killers[ply], move) != killers[ply].end()) --reduction;
                 reduction = std::clamp(reduction, 1, depth - 2);
             }
 
@@ -314,7 +314,7 @@ namespace Search {
     }
 
     void SearchThread::UpdateKillers(Move move, Depth ply) {
-        if (board.IsQuiet(move) && std::ranges::find(killers[ply], move) == std::end(killers[ply])) {
+        if (board.IsQuiet(move) && std::ranges::find(killers[ply], move) == killers[ply].end()) {
             std::copy_backward(killers[ply].begin(), killers[ply].begin() + KILLER_SLOTS - 1, killers[ply].begin() + 1);
             killers[ply][0] = move;
         }
