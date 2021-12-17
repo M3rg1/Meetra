@@ -8,7 +8,7 @@
 #include <ranges>
 
 Board::Board() {
-    NewPosition(STARTPOS_FEN, false);
+    NewPosition(STARTPOS_FEN);
 }
 
 bool Board::NewPosition(const std::string &fen, bool isChess960) {
@@ -18,7 +18,7 @@ bool Board::NewPosition(const std::string &fen, bool isChess960) {
     chess960 = isChess960;
     history_cnt = 0;
     uci_moves_cnt = 0;
-    state = BoardState();
+    state = {};
     board.fill(NO_PIECE);
     color_bbs.fill(EMPTY_BB);
     type_bbs.fill(EMPTY_BB);
