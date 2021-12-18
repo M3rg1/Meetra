@@ -339,9 +339,9 @@ bool Board::IsDraw() const {
 }
 
 bool Board::IsRepetition() const {
-    int stop = std::max(static_cast<int>(HistorySize()) - Ply(), 0);
-    for (int i = static_cast<int>(HistorySize()) - 2, rep = 0; i >= stop; i -= 2) {
-        if (history[i].hash == state.hash && (i > static_cast<int>(uci_moves_cnt) || ++rep > 1)) {
+    int stop = std::max(HistorySize() - Ply(), 0);
+    for (int i = HistorySize() - 2, rep = 0; i >= stop; i -= 2) {
+        if (history[i].hash == state.hash && (i > uci_moves_cnt || ++rep > 1)) {
             return true;
         }
     }
