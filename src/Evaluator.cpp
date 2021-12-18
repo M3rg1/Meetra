@@ -43,9 +43,12 @@ void Evaluator::MakeMove(const Board &board, Move m) {
 
     mg[col] += mg_table[col][moved_pt][to] - mg_table[col][moved_pt][from];
     eg[col] += eg_table[col][moved_pt][to] - eg_table[col][moved_pt][from];
-    mg[enemy_col] -= mg_table[enemy_col][taken_pt][capture_s];
-    eg[enemy_col] -= eg_table[enemy_col][taken_pt][capture_s];
-    phase -= phase_inc[taken_pt];
+
+    if (taken_pt != NONE_PIECE_TYPE) {
+        mg[enemy_col] -= mg_table[enemy_col][taken_pt][capture_s];
+        eg[enemy_col] -= eg_table[enemy_col][taken_pt][capture_s];
+        phase -= phase_inc[taken_pt];
+    }
 
     if (IsPromotion(m)) {
         PieceType prom_to = PromotionTo(GetMoveType(m));
@@ -79,10 +82,13 @@ Score Evaluator::GetMoveEval(const Board &board, Move m) const {
     PieceType moved_pt = board.GetPieceTypeOnSq(from);
     PieceType taken_pt = board.GetPieceTypeOnSq(capture_s);
 
-    Score mg_val = mg_table[col][moved_pt][to] - mg_table[col][moved_pt][from]
-                   + mg_table[OtherColor(col)][taken_pt][capture_s];
-    Score eg_val = eg_table[col][moved_pt][to] - eg_table[col][moved_pt][from]
-                   + eg_table[OtherColor(col)][taken_pt][capture_s];
+    Score mg_val = mg_table[col][moved_pt][to] - mg_table[col][moved_pt][from];
+    Score eg_val = eg_table[col][moved_pt][to] - eg_table[col][moved_pt][from];
+
+    if (taken_pt != NONE_PIECE_TYPE) {
+        mg_val += mg_table[OtherColor(col)][taken_pt][capture_s];
+        eg_val += eg_table[OtherColor(col)][taken_pt][capture_s];
+    }
 
     if (IsPromotion(m)) {
         PieceType prom_to = PromotionTo(GetMoveType(m));
