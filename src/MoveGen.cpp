@@ -49,7 +49,7 @@ MoveGen::MoveGen(const Board &b, const std::array<Move, KILLER_SLOTS> &killer_mo
 }
 
 void MoveGen::EvalMoves() {
-    for (auto &m_e: move_eval | std::ranges::views::take(moves_cnt)) {
+    for (auto &m_e: move_eval | std::views::take(moves_cnt)) {
         if (const auto k = std::ranges::find(killers, m_e.move); k != killers.end()) {
             m_e.score = static_cast<Score>(std::distance(k, killers.end()) * KILLER_EVAL_BONUS);
         } else {
