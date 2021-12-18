@@ -328,7 +328,7 @@ namespace Search {
         if (auto rm = std::ranges::find(root_moves, move); rm != root_moves.end()) {
             if (rm->depth < move.depth) {
                 return false;
-            } else if (rm->depth > move.depth || GetBestRootMove().move != move.move) {
+            } else if (rm->depth > move.depth || GetBestRootMove().score > move.score) {
                 return true;
             }
         }
