@@ -18,7 +18,7 @@ void TranspositionTable::Init(int size_mb) {
         std::osyncstream(std::cout) << "Invalid TT size! Initializing to: " << size_mb << "MB" << std::endl;
     }
 
-    buckets_count = (size_mb * 1048576ull) / sizeof(TTBucket);
+    buckets_count = (static_cast<size_t>(size_mb) * 1048576ull) / sizeof(TTBucket);
     table = std::make_unique<TTBucket[]>(buckets_count);
     Clear();
 }

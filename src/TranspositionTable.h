@@ -55,7 +55,7 @@ private:
     };
 
     struct TTBucket {
-        TTEntry entries[TT_ENTRIES_PER_BUCKET]{};
+        TTEntry entries[TT_ENTRIES_PER_BUCKET] = {};
     };
 
     TTEpoch current_epoch;

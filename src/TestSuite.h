@@ -152,15 +152,15 @@ namespace Testing {
             << "Total time elapsed: " << elapsed << "ms\n"
             << "Average NPS: " << nps << '\n';
         if (!errors.empty()) {
-            oss << "Errors found in tests:\n";
+            oss << "\nErrors found in tests:\n\n";
             for (const auto &e: errors) {
                 oss << (e + 1) << ". FEN: " << tests[e].fen << '\n';
             }
-            oss << "========\nTotal errors: " << errors.size();
+            oss << "\n========\nTotal errors: " << errors.size();
         } else {
-            oss << "All tests OK";
+            oss << "\nAll tests OK";
         }
-        oss << std::endl;
+        oss << '\n' << std::endl;
     }
 }
 

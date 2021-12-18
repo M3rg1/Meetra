@@ -50,7 +50,7 @@ namespace Uci {
     Search::Settings ParseSearchOptions(std::istringstream &iss);
 
     void Init() {
-        std::ios_base::sync_with_stdio(false);
+        std::ios_base::sync_with_stdio(false); // TODO let teacher for PJC know the leak is from here https://gcc.gnu.org/bugzilla/show_bug.cgi?id=27931
         std::cin.tie(nullptr);
     }
 
@@ -134,7 +134,7 @@ namespace Uci {
         std::osyncstream(std::cout) << "\nTime elapsed: " << elapsed << "ms"
                                     << " | Nodes explored: " << nodes
                                     << " | NPS: " << nps
-                                    << std::endl;
+                                    << '\n' << std::endl;
     }
 
     void IsReadyCommand() {
@@ -208,15 +208,15 @@ namespace Uci {
         if (option == "clear hash") {
             Search::ClearTT();
         } else if (option == "hash" && IsNumber(value)) {
-            Search::SetTTSize(std::stoull(value));
+            Search::SetTTSize(std::stoi(value));
         } else if (option == "mute plies" && IsNumber(value)) {
             Search::SetPliesMuted(std::stoi(value));
         } else if (option == "threads" && IsNumber(value)) {
-            Search::SetNumThreads(std::stoull(value));
+            Search::SetNumThreads(std::stoi(value));
         } else if (option == "multipv" && IsNumber(value)) {
-            Search::SetMultiPv(std::stoull(value));
+            Search::SetMultiPv(std::stoi(value));
         } else if (option == "move overhead" && IsNumber(value)) {
-            Search::SetMoveOverhead(std::stoll(value));
+            Search::SetMoveOverhead(std::stoi(value));
         } else if (option == "uci_showcurrline" && IsBoolean(value)) {
             Search::ShowShowCurrLine(value == "true");
         } else if (option == "show current move" && IsBoolean(value)) {
@@ -226,7 +226,7 @@ namespace Uci {
         } else if (option == "uci_chess960" && IsBoolean(value)) {
             Search::SetChess960(value == "true");
         } else if (option == "send updates frequency" && IsNumber(value)) {
-            Search::SetUpdateInterval(std::stoll(value));
+            Search::SetUpdateInterval(std::stoi(value));
         } else {
             std::osyncstream(std::cout)
                     << "info Unknown option or invalid value: " << option << ' ' << value << std::endl;
