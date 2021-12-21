@@ -74,7 +74,7 @@ namespace Zobrist {
 
         Bitboard cr = board.Cr();
         while (cr) {
-            hash ^= castling_keys[Bitboards::PopLsb(cr)];
+            hash ^= castling_keys[SqToFile(Bitboards::PopLsb(cr))];
         }
 
         if (board.ColorToMove() == BLACK) {
