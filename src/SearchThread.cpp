@@ -28,8 +28,11 @@ namespace Search {
                 curr_rm = &root_moves[curr_rm_num];
                 curr_rm->seldepth = 1;
 
-                if (IsMainThread() && show_currmove && depth_reached > plies_muted
-                    && ElapsedSince(start_time) > CURRMOVE_DELAY) {
+                if (IsMainThread()
+                    && show_currmove
+                    && depth_reached > plies_muted
+                    && ElapsedSince(start_time) > CURRMOVE_DELAY
+                        ) {
                     SendCurrMoveInfo();
                 }
 
@@ -205,12 +208,15 @@ namespace Search {
             }
 
             Score score = NEGATIVE_INF;
+            // LMR search. LMR condition has been triggered
             if (reduction > 0) {
                 score = -ABSearch<NON_PV>(-alpha - 1, -alpha, depth - reduction - 1, ply + 1);
             }
+            // PVS search. LMR search failed. Or LMR wasn't performed, and it's either non PV node or a PV node but not the first move
             if (score > alpha || (reduction == 0 && (NodeType != PV || moves_searched > 0))) {
                 score = -ABSearch<NON_PV>(-alpha - 1, -alpha, depth - 1, ply + 1);
             }
+            // Full search. PV node only. It's either the first move we are searching or PVS search failed
             if (NodeType == PV && (moves_searched == 0 || (score > alpha && score < beta))) {
                 pv[ply + 1].Clear();
                 score = -ABSearch<PV>(-beta, -alpha, depth - 1, ply + 1);
