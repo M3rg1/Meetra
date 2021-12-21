@@ -15,7 +15,7 @@ namespace Search {
     }
 
     int TimeReduction(const Board &b) {
-        int reduction = std::max(45 + std::min(b.GetPhase(), 20) - b.FullMoveClock(), 20);
+        int reduction = std::max(45 + std::min(b.Phase(), 20) - b.FullMoveClock(), 20);
         if (settings.moves_to_go) {
             reduction = std::min(settings.moves_to_go + 1, reduction - 3);
         }
@@ -54,13 +54,13 @@ namespace Search {
     std::vector<RootMove> GenRootMoves(const Board &board) {
         MoveGen move_gen(board);
         std::vector<RootMove> root_moves;
-        while (Move move = move_gen.GetBestMove<NORMAL>()) {
+        while (Move move = move_gen.NextBestMove<NORMAL>()) {
             if (board.IsMoveLegal(move)) {
                 root_moves.emplace_back(move);
             }
         }
         for (auto &rm: root_moves) {
-            rm.score = board.GetMoveEval(rm.move);
+            rm.score = board.MoveEval(rm.move);
         }
         std::ranges::sort(root_moves);
         return root_moves;
@@ -78,7 +78,7 @@ namespace Search {
         if (multi_pv == 1) {
             for (size_t i = 1; i < threads.size(); ++i) {
                 threads[i]->WaitForFinish();
-                if (threads[i]->DidBeatMove(best_thread->GetBestRootMove())) {
+                if (threads[i]->DidBeatMove(best_thread->BestRootMove())) {
                     best_thread = threads[i].get();
                 }
             }
@@ -96,7 +96,7 @@ namespace Search {
         InitNewSearch(s, board);
 
         if (use_book && !IsSearchLimited() && !board.IsChess960() && board.FullMoveClock() <= BOOK_DEPTH / 2) {
-            if (auto moves = Book::Probe(board.GetHash()); !moves.empty()) {
+            if (auto moves = Book::Probe(board.Hash()); !moves.empty()) {
                 StopSearch();
                 std::ranges::shuffle(moves, std::mt19937{std::random_device{}()});
                 std::osyncstream(std::cout) << "bestmove " << board.MoveToName(moves.front()) << std::endl;

@@ -19,8 +19,8 @@ public:
     }
 
     template<GenType T>
-    [[nodiscard]] Move GetBestMove();
-    [[nodiscard]] Move GetAnyMove();
+    [[nodiscard]] Move NextBestMove();
+    [[nodiscard]] Move NextMove();
     [[nodiscard]] bool IsPseudoLegal(Move m);
 
 private:

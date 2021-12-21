@@ -12,9 +12,9 @@ public:
 
     void SetBoard(const Board &board);
     void MakeMove(const Board &board, Move m);
-    [[nodiscard]] Score GetMoveEval(const Board &board, Move m) const;
-    [[nodiscard]] Score GetBoardEval() const;
-    [[nodiscard]] inline int GetPhase() const { return phase; }
+    [[nodiscard]] Score MoveEval(const Board &board, Move m) const;
+    [[nodiscard]] Score BoardEval() const;
+    [[nodiscard]] inline int Phase() const { return phase; }
 
 private:
 

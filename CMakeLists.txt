@@ -30,11 +30,22 @@ add_executable(${PROJECT_NAME} ${SRC_FILES})
 target_include_directories(${PROJECT_NAME} PUBLIC ${INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} ${LINK_LIBS})
 
-if(MINGW)
-    set(CMAKE_EXE_LINKER_FLAGS -static)
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
 endif()
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -fno-exceptions -fno-rtti -march=native")
-set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -pedantic -Wextra -Wshadow -Wno-unknown-pragmas -Wno-unused-variable")
+
+if(MSVC)
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT /O2 /Ob3 /DNDEBUG")
+endif()
+
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+    set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -fno-exceptions -fno-rtti -march=native")
+    set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -pedantic -Wextra -Wshadow -Wno-unknown-pragmas -Wno-unused-variable")
+endif()
+
+if(MINGW)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
+endif()
 
 message(STATUS "CMAKE_CXX_FLAGS_DEBUG are: ${CMAKE_CXX_FLAGS_DEBUG}")
 message(STATUS "CMAKE_CXX_FLAGS_RELEASE are: ${CMAKE_CXX_FLAGS_RELEASE}")

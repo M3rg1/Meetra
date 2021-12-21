@@ -21,12 +21,12 @@ MoveGen::MoveGen(const Board &b, const std::array<Move, KILLER_SLOTS> &killer_mo
         board(b),
         my_color(board.ColorToMove()),
         enemy_color(OtherColor(my_color)),
-        king_s(Bitboards::Lsb(board.GetPieces(KING, my_color))),
+        king_s(Bitboards::Lsb(board.Pieces(KING, my_color))),
         ep_s(board.EpSquare()),
-        all_pieces(board.GetPieces(ALL_TYPES)),
+        all_pieces(board.Pieces(ALL_TYPES)),
         empty_squares(~all_pieces),
-        enemy_pieces(board.GetPieces(enemy_color)),
-        checkers(board.GetCheckers()),
+        enemy_pieces(board.Pieces(enemy_color)),
+        checkers(board.Checkers()),
         blockers(board.PinnedToSquare(king_s, enemy_color)),
         legal_moves(FULL_BB),
         double_check(false),
@@ -43,7 +43,7 @@ MoveGen::MoveGen(const Board &b, const std::array<Move, KILLER_SLOTS> &killer_mo
         }
         Bitboard capture_mask = checkers;
         Square attacker_square = Bitboards::Lsb(capture_mask);
-        Bitboard block_mask = Bitboards::GetRayToSquares(king_s, attacker_square);
+        Bitboard block_mask = Bitboards::RayToSquares(king_s, attacker_square);
         legal_moves = capture_mask | block_mask;
     }
 }
@@ -53,13 +53,13 @@ void MoveGen::EvalMoves() {
         if (const auto k = std::ranges::find(killers, m_e.move); k != killers.end()) {
             m_e.score = static_cast<Score>(std::distance(k, killers.end()) * KILLER_EVAL_BONUS);
         } else {
-            m_e.score = board.GetMoveEval(m_e.move);
+            m_e.score = board.MoveEval(m_e.move);
         }
     }
 }
 
 template<GenType T>
-Move MoveGen::GetBestMove() {
+Move MoveGen::NextBestMove() {
     while (Empty()) {
         my_color == WHITE ? NextPhase<WHITE, T>() : NextPhase<BLACK, T>();
         if (!Empty() && move_eval[0].move != ZERO_MOVE) {
@@ -70,15 +70,15 @@ Move MoveGen::GetBestMove() {
     return PopRef(*it);
 }
 
-Move MoveGen::GetAnyMove() {
+Move MoveGen::NextMove() {
     while (Empty()) {
         my_color == WHITE ? NextPhase<WHITE, NORMAL>() : NextPhase<BLACK, NORMAL>();
     }
     return PopBack();
 }
 
-template Move MoveGen::GetBestMove<QSEARCH>();
-template Move MoveGen::GetBestMove<NORMAL>();
+template Move MoveGen::NextBestMove<QSEARCH>();
+template Move MoveGen::NextBestMove<NORMAL>();
 
 template<Color C, GenType T>
 void MoveGen::NextPhase() {
@@ -108,34 +108,34 @@ void MoveGen::NextPhase() {
 template<GenPhase P, Color C>
 void MoveGen::GenMovesForPhase() {
     if constexpr (P == DOUBLE_CHECK) {
-        MovesForPT<KING, C, GENERATE>(board.GetPieces(KING, C), enemy_pieces | empty_squares);
+        MovesForPT<KING, C, GENERATE>(board.Pieces(KING, C), enemy_pieces | empty_squares);
     } else if constexpr (P == PROMOTION) {
-        Bitboard pawns = board.GetPieces(PAWN, C);
+        Bitboard pawns = board.Pieces(PAWN, C);
         PawnProms<C, LEFT, GENERATE>(pawns);
         PawnProms<C, RIGHT, GENERATE>(pawns);
         PawnProms<C, FORWARD, GENERATE>(pawns);
     } else if constexpr (P == CAPTURE) {
         Bitboard mask = legal_moves & enemy_pieces;
-        Bitboard pawns = board.GetPieces(PAWN, C);
+        Bitboard pawns = board.Pieces(PAWN, C);
         EpMoves<C, GENERATE>(pawns);
         PawnCaptures<C, LEFT, GENERATE>(pawns);
         PawnCaptures<C, RIGHT, GENERATE>(pawns);
-        MovesForPT<KING, C, GENERATE>(board.GetPieces(KING, C), enemy_pieces);
-        MovesForPT<KNIGHT, C, GENERATE>(board.GetPieces(KNIGHT, C), mask);
-        MovesForPT<BISHOP, C, GENERATE>(board.GetPieces(BISHOP, C), mask);
-        MovesForPT<ROOK, C, GENERATE>(board.GetPieces(ROOK, C), mask);
-        MovesForPT<QUEEN, C, GENERATE>(board.GetPieces(QUEEN, C), mask);
+        MovesForPT<KING, C, GENERATE>(board.Pieces(KING, C), enemy_pieces);
+        MovesForPT<KNIGHT, C, GENERATE>(board.Pieces(KNIGHT, C), mask);
+        MovesForPT<BISHOP, C, GENERATE>(board.Pieces(BISHOP, C), mask);
+        MovesForPT<ROOK, C, GENERATE>(board.Pieces(ROOK, C), mask);
+        MovesForPT<QUEEN, C, GENERATE>(board.Pieces(QUEEN, C), mask);
     } else if constexpr (P == QUIET) {
         Bitboard mask = legal_moves & empty_squares;
-        Bitboard pawns = board.GetPieces(PAWN, C);
+        Bitboard pawns = board.Pieces(PAWN, C);
         PawnOneFwd<C, GENERATE>(pawns);
         PawnTwoFwd<C, GENERATE>(pawns);
         CastlingMoves<C, GENERATE>();
-        MovesForPT<KING, C, GENERATE>(board.GetPieces(KING, C), empty_squares);
-        MovesForPT<KNIGHT, C, GENERATE>(board.GetPieces(KNIGHT, C), mask);
-        MovesForPT<BISHOP, C, GENERATE>(board.GetPieces(BISHOP, C), mask);
-        MovesForPT<ROOK, C, GENERATE>(board.GetPieces(ROOK, C), mask);
-        MovesForPT<QUEEN, C, GENERATE>(board.GetPieces(QUEEN, C), mask);
+        MovesForPT<KING, C, GENERATE>(board.Pieces(KING, C), empty_squares);
+        MovesForPT<KNIGHT, C, GENERATE>(board.Pieces(KNIGHT, C), mask);
+        MovesForPT<BISHOP, C, GENERATE>(board.Pieces(BISHOP, C), mask);
+        MovesForPT<ROOK, C, GENERATE>(board.Pieces(ROOK, C), mask);
+        MovesForPT<QUEEN, C, GENERATE>(board.Pieces(QUEEN, C), mask);
     }
 }
 
@@ -143,9 +143,9 @@ template<PieceType PT, Color C, GenMode M>
 auto MoveGen::MovesForPT(Bitboard pieces, Bitboard legality_mask, Move to_validate) {
     while (pieces) {
         Square origin_s = Bitboards::PopLsb(pieces);
-        Bitboard possible_moves = Bitboards::GetAttacks<PT>(origin_s, all_pieces) & legality_mask;
+        Bitboard possible_moves = Bitboards::Attacks<PT>(origin_s, all_pieces) & legality_mask;
         if (blockers & SqToBB(origin_s)) {
-            possible_moves &= Bitboards::GetRayToBorders(king_s, origin_s);
+            possible_moves &= Bitboards::RayToBorders(king_s, origin_s);
         }
         while (possible_moves) {
             Square dest_s = Bitboards::PopLsb(possible_moves);
@@ -229,7 +229,7 @@ auto MoveGen::PawnProms(Bitboard pieces, Move to_validate) {
 template<Color C, GenMode M>
 auto MoveGen::EpMoves(Bitboard pieces, Move to_validate) {
     if (ep_s) {
-        Bitboard attackers = Bitboards::GetAttacks<PAWN>(ep_s, EMPTY_BB, OtherColor(C)) & pieces;
+        Bitboard attackers = Bitboards::Attacks<PAWN>(ep_s, EMPTY_BB, OtherColor(C)) & pieces;
         while (attackers) {
             Square origin_s = Bitboards::PopLsb(attackers);
             if constexpr (M == GENERATE) PutMove(NewMove(origin_s, ep_s, EN_PASSANT));
@@ -258,7 +258,7 @@ auto MoveGen::CastlingMoves(Move to_validate) {
 
 template<Color C, CastlingSide S>
 bool MoveGen::CanCastle() const {
-    if (!board.CrAvailable(C, S)) {
+    if (!board.IsCastlingAvailable(C, S)) {
         return false;
     }
     // (for chess 960) we need to calculate all the squares that we travel through and make sure they are empty
@@ -266,8 +266,8 @@ bool MoveGen::CanCastle() const {
     constexpr Square k_dest = S == LONG ? C == WHITE ? C1 : C8 : C == WHITE ? G1 : G8;
     Bitboard rook_bb = board.RookSqBB(C, S);
     Bitboard occ = all_pieces ^ rook_bb ^ SqToBB(king_s);
-    Bitboard walk_sq = Bitboards::GetRayToSquares(Bitboards::Lsb(rook_bb), r_dest)
-                       | Bitboards::GetRayToSquares(king_s, k_dest)
+    Bitboard walk_sq = Bitboards::RayToSquares(Bitboards::Lsb(rook_bb), r_dest)
+                       | Bitboards::RayToSquares(king_s, k_dest)
                        | SqToBB(r_dest) | SqToBB(k_dest);
 
     return (occ & walk_sq) == EMPTY_BB;
@@ -275,13 +275,13 @@ bool MoveGen::CanCastle() const {
 
 // allow movement only on a line between piece and king, if piece is a blocker
 bool MoveGen::DiscoveryCheck(Square orig, Square dest) const {
-    return (blockers & SqToBB(orig)) && !(Bitboards::GetRayToBorders(king_s, orig) & SqToBB(dest));
+    return (blockers & SqToBB(orig)) && !(Bitboards::RayToBorders(king_s, orig) & SqToBB(dest));
 }
 
 // guarantees that the move can be generated by this generator
 bool MoveGen::IsPseudoLegal(Move m) {
 
-    Piece moved_piece = board.GetPieceOnSquare(FromSquare(m));
+    Piece moved_piece = board.PieceOnSquare(FromSquare(m));
     if (m == ZERO_MOVE || moved_piece == NO_PIECE || ColorOfPiece(moved_piece) != my_color) {
         return false;
     }
@@ -293,7 +293,7 @@ bool MoveGen::IsPseudoLegal(Move m) {
                MovesForPT<KING, BLACK, VALIDATE>(SqToBB(FromSquare(m)), empty_squares | enemy_pieces, m);
     }
 
-    if (GetMoveType(m) == NO_FLAG) {
+    if (TypeOfMove(m) == NO_FLAG) {
         return my_color == WHITE ? NormalMoveIsPseudoLegal<WHITE>(m) : NormalMoveIsPseudoLegal<BLACK>(m);
     } else {
         return my_color == WHITE ? SpecialMoveIsPseudoLegal<WHITE>(m) : SpecialMoveIsPseudoLegal<BLACK>(m);
@@ -303,9 +303,9 @@ bool MoveGen::IsPseudoLegal(Move m) {
 template<Color C>
 bool MoveGen::SpecialMoveIsPseudoLegal(Move m) {
 
-    MoveType mt = GetMoveType(m);
+    MoveType mt = TypeOfMove(m);
     Square from = FromSquare(m);
-    PieceType moved_pt = board.GetPieceTypeOnSq(from);
+    PieceType moved_pt = board.PieceTypeOnSq(from);
     Bitboard pos = SqToBB(from);
 
     if (mt == TWO_FORWARD && moved_pt == PAWN) {
@@ -326,11 +326,11 @@ template<Color C>
 bool MoveGen::NormalMoveIsPseudoLegal(Move m) {
 
     Square from = FromSquare(m);
-    PieceType moved_pt = board.GetPieceTypeOnSq(from);
+    PieceType moved_pt = board.PieceTypeOnSq(from);
     Bitboard pos = SqToBB(from);
 
     if (moved_pt == PAWN) {
-        if (board.GetPieceOnSquare(ToSquare(m)) == NO_PIECE) {
+        if (board.PieceOnSquare(ToSquare(m)) == NO_PIECE) {
             return PawnOneFwd<C, VALIDATE>(pos, m);
         } else {
             return PawnCaptures<C, LEFT, VALIDATE>(pos, m) || PawnCaptures<C, RIGHT, VALIDATE>(pos, m);

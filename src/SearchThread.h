@@ -60,7 +60,7 @@ namespace Search {
         [[nodiscard]] bool LimitReached() const;
 
         [[nodiscard]] bool DidBeatMove(const RootMove &move) const;
-        [[nodiscard]] RootMove GetBestRootMove() const;
+        [[nodiscard]] RootMove BestRootMove() const;
         [[nodiscard]] inline uint64_t Nodes() const { return nodes_explored.load(std::memory_order_relaxed); }
         void SendBestMove() const;
         void SendFullSearchInfo() const;
@@ -83,7 +83,7 @@ namespace Search {
         void SendCurrLineInfo() const;
         void SendCurrMoveInfo() const;
         void SendBriefSearchInfo() const;
-        [[nodiscard]] Depth GetMaxSeldepth() const;
+        [[nodiscard]] Depth MaxSeldepthReached() const;
         [[nodiscard]] inline bool IsMainThread() const { return id == 0; }
 
         Board board;

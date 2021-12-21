@@ -21,7 +21,7 @@ namespace Testing {
         uint64_t total_nodes = 0;
 
         if (depth <= 1) {
-            while (Move m = move_gen.GetAnyMove()) {
+            while (Move m = move_gen.NextMove()) {
                 if (board.IsMoveLegal(m)) {
                     ++total_nodes;
                     if constexpr (DIV) {
@@ -32,7 +32,7 @@ namespace Testing {
             return total_nodes;
         }
 
-        while (Move m = move_gen.GetAnyMove()) {
+        while (Move m = move_gen.NextMove()) {
             if (!board.MakeMove(m)) {
                 board.UnmakeMove(m);
                 continue;
@@ -88,7 +88,7 @@ namespace Testing {
             result = Perft<false>(depth, board);
 
             auto elapsed = ElapsedSince(start);
-            auto nps = GetNps(result, elapsed);
+            auto nps = Nps(result, elapsed);
 
             std::osyncstream(std::cout)
                     << "Position: " << fen << '\n'
@@ -145,7 +145,7 @@ namespace Testing {
         }
 
         auto elapsed = ElapsedSince(start);
-        auto nps = GetNps(nodes, elapsed);
+        auto nps = Nps(nodes, elapsed);
 
         std::osyncstream oss(std::cout);
         oss << "==========================================\n\n"

@@ -60,7 +60,7 @@ namespace Zobrist {
 
         for (Color c: Colors) {
             for (PieceType pt: PieceTypes) {
-                Bitboard pieces = board.GetPieces(pt, c);
+                Bitboard pieces = board.Pieces(pt, c);
                 while (pieces) {
                     Square s = Bitboards::PopLsb(pieces);
                     hash ^= piece_keys[s][NewPiece(pt, c)];
@@ -72,7 +72,7 @@ namespace Zobrist {
             hash ^= ep_keys[SqToFile(board.EpSquare())];
         }
 
-        Bitboard cr = board.GetCr();
+        Bitboard cr = board.Cr();
         while (cr) {
             hash ^= castling_keys[Bitboards::PopLsb(cr)];
         }

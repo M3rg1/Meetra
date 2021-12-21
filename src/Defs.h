@@ -12,7 +12,7 @@ inline TimeRep Now() {
             (std::chrono::steady_clock::now().time_since_epoch()).count();
 }
 inline TimeRep ElapsedSince(TimeRep t) { return Now() - t; }
-constexpr uint64_t GetNps(uint64_t nodes, TimeRep t) { return (nodes * 1000 / (t + 1)); }
+constexpr uint64_t Nps(uint64_t nodes, TimeRep t) { return (nodes * 1000 / (t + 1)); }
 
 using Depth = int;
 
@@ -144,7 +144,7 @@ constexpr Bitboard SqToBB(Square s) { return static_cast<Bitboard>(0x1ull << s);
 constexpr Square FiRaToSq(File f, Rank r) { return static_cast<Square>((r << 3) | f); }
 constexpr File SqToFile(Square s) { return static_cast<File>(s & 7); }
 constexpr Rank SqToRank(Square s) { return static_cast<Rank>(s >> 3); }
-constexpr Square StrToSq(std::string_view name) { return FiRaToSq(CharToFile(name[0]), CharToRank(name[1])); }
+constexpr Square StrToSq(std::string_view sq_name) { return FiRaToSq(CharToFile(sq_name[0]), CharToRank(sq_name[1])); }
 inline std::string SqToStr(Square s) { return {FileToChar(SqToFile(s)), RankToChar(SqToRank(s))}; }
 
 enum CastlingSide {
@@ -173,7 +173,7 @@ constexpr PieceType PromotionTo(MoveType mt) { return static_cast<PieceType>((mt
 constexpr Square FromSquare(Move m) { return static_cast<Square>(m & 0x3F); }
 constexpr Square ToSquare(Move m) { return static_cast<Square>((m >> 6) & 0x3F); }
 constexpr bool IsPromotion(Move m) { return m >> 14; }
-constexpr MoveType GetMoveType(Move m) { return static_cast<MoveType>(m & 0xF000); }
+constexpr MoveType TypeOfMove(Move m) { return static_cast<MoveType>(m & 0xF000); }
 
 template<typename T>
 struct Iterator {

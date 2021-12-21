@@ -76,12 +76,12 @@ namespace Bitboards {
 
     void Init();
 
-    inline Bitboard GetRookAttacks(Square s, Bitboard occ) {
+    inline Bitboard RookAttacks(Square s, Bitboard occ) {
         BlackMagic m = r_magics[s];
         return m.attacks[((occ | m.mask) * m.magic_num) >> (64 - 12)];
     }
 
-    inline Bitboard GetBishopAttacks(Square s, Bitboard occ) {
+    inline Bitboard BishopAttacks(Square s, Bitboard occ) {
         BlackMagic m = b_magics[s];
         return m.attacks[((occ | m.mask) * m.magic_num) >> (64 - 9)];
     }
@@ -97,21 +97,21 @@ namespace Bitboards {
         return s;
     }
 
-    inline Bitboard GetRayToBorders(Square s1, Square s2) { return rays_to_borders[s1][s2]; }
-    inline Bitboard GetRayToSquares(Square s1, Square s2) { return rays_to_squares[s1][s2]; }
-    constexpr Bitboard GetRookRays(Square s) { return file_mask[SqToFile(s)] | rank_mask[SqToRank(s)]; }
-    constexpr Bitboard GetBishopRays(Square s) {
+    inline Bitboard RayToBorders(Square s1, Square s2) { return rays_to_borders[s1][s2]; }
+    inline Bitboard RayToSquares(Square s1, Square s2) { return rays_to_squares[s1][s2]; }
+    constexpr Bitboard RookRays(Square s) { return file_mask[SqToFile(s)] | rank_mask[SqToRank(s)]; }
+    constexpr Bitboard BishopRays(Square s) {
         File f = SqToFile(s);
         Rank r = SqToRank(s);
         return diag_mask[f + r] | anti_diag_mask[r + 7 - f];
     }
 
     template<PieceType PT>
-    Bitboard GetAttacks(Square s, Bitboard occ = EMPTY_BB, Color c = WHITE) {
+    Bitboard Attacks(Square s, Bitboard occ = EMPTY_BB, Color c = WHITE) {
         return PT == PAWN ? pawn_attacks[c][s] :
-               PT == BISHOP ? GetBishopAttacks(s, occ) :
-               PT == ROOK ? GetRookAttacks(s, occ) :
-               PT == QUEEN ? GetBishopAttacks(s, occ) | GetRookAttacks(s, occ) :
+               PT == BISHOP ? BishopAttacks(s, occ) :
+               PT == ROOK ? RookAttacks(s, occ) :
+               PT == QUEEN ? BishopAttacks(s, occ) | RookAttacks(s, occ) :
                PT == KNIGHT ? knight_moves[s] :
                PT == KING ? king_moves[s] :
                EMPTY_BB;

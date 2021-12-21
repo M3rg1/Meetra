@@ -107,7 +107,7 @@ namespace Search {
         if (board.IsDraw()) {
             return RandomizedDrawScore();
         } else if (ply >= MAX_SEARCH_DEPTH) {
-            return board.GetEval();
+            return board.Eval();
         } else if (depth <= 0) {
             if (NodeType == PV && board.IsInCheck()) {
                 depth = 1;
@@ -124,11 +124,11 @@ namespace Search {
         }
 
         MoveGen move_gen(board, killers[ply]);
-        Score static_eval = board.GetEval();
+        Score static_eval = board.Eval();
         Score eval = static_eval; // eval is not used if we are in check
         Move tt_move = ZERO_MOVE;
         Score tt_score;
-        TTFlag tt_flag = tt.Probe(board.GetHash(), alpha, beta, depth, ply, tt_score, tt_move);
+        TTFlag tt_flag = tt.Probe(board.Hash(), alpha, beta, depth, ply, tt_score, tt_move);
 
         if (tt_flag != NOT_FOUND && move_gen.IsPseudoLegal(tt_move)) {
             if (NodeType != PV && tt_flag & CUTOFF) {
@@ -177,7 +177,7 @@ namespace Search {
         auto moves_searched = 0;
         auto do_lmr = !board.IsInCheck() && depth >= LMR_MIN_DEPTH;
 
-        while (Move move = move_gen.GetBestMove<NORMAL>()) {
+        while (Move move = move_gen.NextBestMove<NORMAL>()) {
 
             // temporary fix to not play TT move twice - this should be done in the move list before evaluating the move
             if (move == tt_move && moves_searched > 0) {
@@ -235,7 +235,7 @@ namespace Search {
                     }
                     if (score >= beta) {
                         UpdateKillers(move, ply);
-                        tt.Save(board.GetHash(), score, depth, move, LOWER, ply);
+                        tt.Save(board.Hash(), score, depth, move, LOWER, ply);
                         return score;
                     }
                     tt_flag = EXACT;
@@ -250,7 +250,7 @@ namespace Search {
             return board.IsInCheck() ? -MATE_SCORE + ply : RandomizedDrawScore();
         }
 
-        tt.Save(board.GetHash(), best_score, depth, best_move, tt_flag, ply);
+        tt.Save(board.Hash(), best_score, depth, best_move, tt_flag, ply);
 
         return best_score;
     }
@@ -260,7 +260,7 @@ namespace Search {
         curr_rm->seldepth = std::max(ply, curr_rm->seldepth);
 
         if (ply >= 3 * depth_reached || ply >= MAX_SEARCH_DEPTH) {
-            return board.GetEval();
+            return board.Eval();
         }
 
         if (board.IsDraw()) {
@@ -269,7 +269,7 @@ namespace Search {
 
         Score best_score = NEGATIVE_INF;
         if (!board.IsInCheck()) {
-            best_score = board.GetEval();
+            best_score = board.Eval();
             if (best_score > alpha) {
                 if (best_score >= beta) {
                     return best_score;
@@ -280,7 +280,7 @@ namespace Search {
 
         MoveGen move_gen(board);
         auto moves_searched = 0;
-        while (Move move = move_gen.GetBestMove<QSEARCH>()) {
+        while (Move move = move_gen.NextBestMove<QSEARCH>()) {
 
             if (!board.MakeMove(move)) {
                 board.UnmakeMove(move);
@@ -328,22 +328,22 @@ namespace Search {
         if (auto rm = std::ranges::find(root_moves, move); rm != root_moves.end()) {
             if (rm->depth < move.depth) {
                 return false;
-            } else if (rm->depth > move.depth || GetBestRootMove().score > move.score) {
+            } else if (rm->depth > move.depth || BestRootMove().score > move.score) {
                 return true;
             }
         }
         return false;
     }
 
-    RootMove SearchThread::GetBestRootMove() const {
+    RootMove SearchThread::BestRootMove() const {
         return root_moves[0];
     }
 
     void SearchThread::SendBestMove() const {
-        std::osyncstream(std::cout) << "bestmove " << board.MoveToName(GetBestRootMove().move) << std::endl;
+        std::osyncstream(std::cout) << "bestmove " << board.MoveToName(BestRootMove().move) << std::endl;
     }
 
-    Depth SearchThread::GetMaxSeldepth() const {
+    Depth SearchThread::MaxSeldepthReached() const {
         return std::ranges::max_element(root_moves, [&](const auto &m1, const auto &m2) {
             return m2.depth == depth_reached && m1.seldepth < m2.seldepth;
         })->seldepth;
@@ -353,11 +353,11 @@ namespace Search {
 
         auto elapsed = ElapsedSince(start_time);
         auto nodes = NodesTotal();
-        auto nps = GetNps(nodes, elapsed);
+        auto nps = Nps(nodes, elapsed);
 
         std::osyncstream(std::cout)
                 << "info depth " << depth_reached
-                << " seldepth " << GetMaxSeldepth()
+                << " seldepth " << MaxSeldepthReached()
                 << " nodes " << nodes
                 << " time " << elapsed
                 << " nps " << nps
@@ -369,7 +369,7 @@ namespace Search {
 
         auto elapsed = ElapsedSince(start_time);
         auto nodes = NodesTotal();
-        auto nps = GetNps(nodes, elapsed);
+        auto nps = Nps(nodes, elapsed);
 
         auto pvs_to_send = std::min(multi_pv, static_cast<int>(root_moves.size()));
         std::osyncstream oss(std::cout);

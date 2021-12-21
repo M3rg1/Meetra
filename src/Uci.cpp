@@ -13,7 +13,7 @@ namespace Uci {
                              "| |\\/| / -_) -_)  _| '_/ _` |\n"  \
                              "|_|  |_\\___\\___|\\__|_| \\__,_|";
 
-    std::string GetOptions() {
+    std::string Options() {
         std::ostringstream oss;
         oss << std::boolalpha
             << "option name Clear Hash type button\n"
@@ -106,7 +106,7 @@ namespace Uci {
         std::osyncstream(std::cout)
                 << "id name " << PROJECT_NAME << " v. " << PROJECT_VER << '\n'
                 << "id author " << PROJECT_AUTHOR << '\n'
-                << GetOptions() << '\n'
+                << Options() << '\n'
                 << "uciok" << std::endl;
     }
 
@@ -129,7 +129,7 @@ namespace Uci {
         auto nodes = Testing::Perft<true>(depth, board);
 
         auto elapsed = ElapsedSince(start);
-        auto nps = GetNps(nodes, elapsed);
+        auto nps = Nps(nodes, elapsed);
 
         std::osyncstream(std::cout) << "\nTime elapsed: " << elapsed << "ms"
                                     << " | Nodes explored: " << nodes

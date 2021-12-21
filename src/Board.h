@@ -28,38 +28,38 @@ public:
     [[nodiscard]] Bitboard PinnedToSquare(Square s, Color blockers_color) const;
     [[nodiscard]] std::string MoveToName(Move m) const;
     [[nodiscard]] Move MoveFromName(std::string_view move_name) const;
-    [[maybe_unused]] [[nodiscard]] std::string GetFen() const;
+    [[maybe_unused]] [[nodiscard]] std::string Fen() const;
     [[maybe_unused]] [[nodiscard]] std::string PrettyPrint() const;
     [[nodiscard]] inline bool IsQuiet(Move m) const {
-        return GetMoveType(m) != EN_PASSANT && !IsPromotion(m) && GetPieceOnSquare(ToSquare(m)) == NO_PIECE;
+        return TypeOfMove(m) != EN_PASSANT && !IsPromotion(m) && PieceOnSquare(ToSquare(m)) == NO_PIECE;
     }
 
 #pragma region ===== Getters =====
     [[nodiscard]] inline int HistorySize() const { return history_cnt; }
-    [[nodiscard]] inline Score GetEval() const { return state.evaluator.GetBoardEval(); };
-    [[nodiscard]] inline Score GetMoveEval(Move m) const { return state.evaluator.GetMoveEval(*this, m); };
-    [[nodiscard]] inline Bitboard GetPieces(PieceType pt, Color c) const { return type_bbs[pt] & color_bbs[c]; }
-    [[nodiscard]] inline Bitboard GetPieces(PieceType pt) const { return type_bbs[pt]; }
-    [[nodiscard]] inline Bitboard GetPieces(Color c) const { return color_bbs[c]; }
-    [[nodiscard]] inline Piece GetPieceOnSquare(Square s) const { return board[s]; }
-    [[nodiscard]] inline PieceType GetPieceTypeOnSq(Square s) const { return TypeOfPiece(GetPieceOnSquare(s)); }
-    [[nodiscard]] inline Bitboard GetCr() const { return state.cr; }
-    [[nodiscard]] inline Hash64 GetHash() const { return state.hash; }
-    [[nodiscard]] inline bool CrAvailable(Color c, CastlingSide cs) const { return RookSqBB(c, cs); }
+    [[nodiscard]] inline Score Eval() const { return state.evaluator.BoardEval(); };
+    [[nodiscard]] inline Score MoveEval(Move m) const { return state.evaluator.MoveEval(*this, m); };
+    [[nodiscard]] inline Bitboard Pieces(PieceType pt, Color c) const { return type_bbs[pt] & color_bbs[c]; }
+    [[nodiscard]] inline Bitboard Pieces(PieceType pt) const { return type_bbs[pt]; }
+    [[nodiscard]] inline Bitboard Pieces(Color c) const { return color_bbs[c]; }
+    [[nodiscard]] inline Piece PieceOnSquare(Square s) const { return board[s]; }
+    [[nodiscard]] inline PieceType PieceTypeOnSq(Square s) const { return TypeOfPiece(PieceOnSquare(s)); }
+    [[nodiscard]] inline Bitboard Cr() const { return state.cr; }
+    [[nodiscard]] inline Hash64 Hash() const { return state.hash; }
+    [[nodiscard]] inline bool IsCastlingAvailable(Color c, CastlingSide cs) const { return RookSqBB(c, cs); }
     [[nodiscard]] inline Square EpSquare() const { return state.ep_square; }
     [[nodiscard]] inline Color ColorToMove() const { return state.to_move; }
     [[nodiscard]] inline Piece CapturedPiece() const { return state.captured_piece; }
     [[nodiscard]] inline int Ply() const { return state.ply; }
     [[nodiscard]] inline int FullMoveClock() const { return state.moves; }
-    [[nodiscard]] inline bool Move50Rule() const { return Ply() >= 100; };
+    [[nodiscard]] inline bool IsMove50Rule() const { return Ply() >= 100; };
     [[nodiscard]] inline Bitboard RookSqBB(Color c, CastlingSide s) const { return state.cr & origin_rooks[c][s]; }
     [[nodiscard]] inline Square RookSq(Color c, CastlingSide s) const { return Bitboards::Lsb(RookSqBB(c, s)); }
-    [[nodiscard]] inline int GetPhase() const { return state.evaluator.GetPhase(); }
+    [[nodiscard]] inline int Phase() const { return state.evaluator.Phase(); }
     [[nodiscard]] inline bool IsInCheck() const { return state.checkers; }
-    [[nodiscard]] inline Bitboard GetCheckers() const { return state.checkers; }
+    [[nodiscard]] inline Bitboard Checkers() const { return state.checkers; }
     [[nodiscard]] inline bool IsChess960() const { return chess960; }
     [[nodiscard]] Move RookCastlingMove(Square king_to, Color c) const;
-    [[nodiscard]] bool DrawByMaterial() const;
+    [[nodiscard]] bool IsDrawByMaterial() const;
     [[nodiscard]] bool AnyLegalMoves() const;
     [[nodiscard]] bool IsRepetition() const;
     [[nodiscard]] bool IsDraw() const;

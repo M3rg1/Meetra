@@ -14,7 +14,7 @@ void Evaluator::SetBoard(const Board &board) {
 
     for (Color c: Colors) {
         for (PieceType pt: PieceTypes) {
-            Bitboard pieces = board.GetPieces(pt, c);
+            Bitboard pieces = board.Pieces(pt, c);
             while (pieces) {
                 Square s = Bitboards::PopLsb(pieces);
                 mg[c] += mg_table[c][pt][s];
@@ -37,9 +37,9 @@ void Evaluator::MakeMove(const Board &board, Move m) {
     Color enemy_col = OtherColor(col);
     Square to = ToSquare(m);
     Square from = FromSquare(m);
-    Square capture_s = GetMoveType(m) == EN_PASSANT ? (col == WHITE ? to + SOUTH : to + NORTH) : to;
-    PieceType moved_pt = board.GetPieceTypeOnSq(from);
-    PieceType taken_pt = board.GetPieceTypeOnSq(capture_s);
+    Square capture_s = TypeOfMove(m) == EN_PASSANT ? (col == WHITE ? to + SOUTH : to + NORTH) : to;
+    PieceType moved_pt = board.PieceTypeOnSq(from);
+    PieceType taken_pt = board.PieceTypeOnSq(capture_s);
 
     mg[col] += mg_table[col][moved_pt][to] - mg_table[col][moved_pt][from];
     eg[col] += eg_table[col][moved_pt][to] - eg_table[col][moved_pt][from];
@@ -51,11 +51,11 @@ void Evaluator::MakeMove(const Board &board, Move m) {
     }
 
     if (IsPromotion(m)) {
-        PieceType prom_to = PromotionTo(GetMoveType(m));
+        PieceType prom_to = PromotionTo(TypeOfMove(m));
         mg[col] += mg_table[col][prom_to][to] - mg_table[col][PAWN][to];
         eg[col] += eg_table[col][prom_to][to] - eg_table[col][PAWN][to];
         phase += phase_inc[prom_to] - phase_inc[PAWN];
-    } else if (GetMoveType(m) == CASTLING) {
+    } else if (TypeOfMove(m) == CASTLING) {
         Move r_move = board.RookCastlingMove(to, col);
         Square r_to = ToSquare(r_move);
         Square r_from = FromSquare(r_move);
@@ -69,18 +69,18 @@ void Evaluator::MakeMove(const Board &board, Move m) {
     eg_phase = 24 - mg_phase;
 }
 
-Score Evaluator::GetBoardEval() const {
+Score Evaluator::BoardEval() const {
     return (mg_score * mg_phase + eg_score * eg_phase) / 24;
 }
 
-Score Evaluator::GetMoveEval(const Board &board, Move m) const {
+Score Evaluator::MoveEval(const Board &board, Move m) const {
 
     Color col = board.ColorToMove();
     Square to = ToSquare(m);
     Square from = FromSquare(m);
-    Square capture_s = GetMoveType(m) == EN_PASSANT ? (col == WHITE ? to + SOUTH : to + NORTH) : to;
-    PieceType moved_pt = board.GetPieceTypeOnSq(from);
-    PieceType taken_pt = board.GetPieceTypeOnSq(capture_s);
+    Square capture_s = TypeOfMove(m) == EN_PASSANT ? (col == WHITE ? to + SOUTH : to + NORTH) : to;
+    PieceType moved_pt = board.PieceTypeOnSq(from);
+    PieceType taken_pt = board.PieceTypeOnSq(capture_s);
 
     Score mg_val = mg_table[col][moved_pt][to] - mg_table[col][moved_pt][from];
     Score eg_val = eg_table[col][moved_pt][to] - eg_table[col][moved_pt][from];
@@ -91,10 +91,10 @@ Score Evaluator::GetMoveEval(const Board &board, Move m) const {
     }
 
     if (IsPromotion(m)) {
-        PieceType prom_to = PromotionTo(GetMoveType(m));
+        PieceType prom_to = PromotionTo(TypeOfMove(m));
         mg_val += mg_table[col][prom_to][to] - mg_table[col][PAWN][to];
         eg_val += eg_table[col][prom_to][to] - eg_table[col][PAWN][to];
-    } else if (GetMoveType(m) == CASTLING) {
+    } else if (TypeOfMove(m) == CASTLING) {
         Move r_move = board.RookCastlingMove(to, col);
         Square r_to = ToSquare(r_move);
         Square r_from = FromSquare(r_move);
