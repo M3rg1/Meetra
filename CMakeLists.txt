@@ -34,9 +34,9 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif()
 
-if(MSVC)
+#[[if(MSVC)
     set(CMAKE_CXX_FLAGS_RELEASE "/MT /O2 /Ob3 /DNDEBUG")
-endif()
+endif()]]
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
     set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -fno-exceptions -fno-rtti -march=native")
