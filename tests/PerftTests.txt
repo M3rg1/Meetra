@@ -40,7 +40,9 @@ depth 4       result 23527        fen 8/8/2k5/5q2/5n2/8/5K2/8 b - - 0 1
 depth 5       result 1063513      fen 1k6/1b6/8/8/7R/8/8/4K2R b K - 0
 depth 5       result 346695       fen 1k6/8/8/8/R7/1n6/8/R3K3 b Q - 0 1
 
-# chess960 positions
+# Chess960 positions
+# Test positions taken from the Ethereal FRC test suite
+# https://github.com/AndyGrant/Ethereal/blob/master/src/perft/fischer.epd
 
 FRC     depth 5         result 8146062	    fen bqnb1rkr/pp3ppp/3ppn2/2p5/5P2/P2P4/NPP1P1PP/BQ1BNRKR w HFhf - 2 9
 FRC     depth 5         result 14481581	    fen n1bqnrkr/pp1ppp1p/2p5/6p1/2P2b2/PN6/1PNPPPPP/1BBQ1RKR w HFhf - 2 9
