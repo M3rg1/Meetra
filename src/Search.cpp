@@ -129,6 +129,7 @@ namespace Search {
 
     void Shutdown() {
         StopSearch();
+        WaitFinished();
         threads.clear();
     }
 
