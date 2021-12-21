@@ -448,7 +448,7 @@ namespace Search {
             {
                 std::unique_lock lock(mtx);
                 active = false;
-                cond_var.notify_all();
+                cond_var.notify_one();
                 cond_var.wait(lock, stop_token, [&] { return active; });
             }
             if (stop_token.stop_requested()) { return; }
