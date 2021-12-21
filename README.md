@@ -55,7 +55,7 @@ For example, some free GUIs with UCI support include:
 - **Move generation**
     - [Staged  move generator](https://www.chessprogramming.org/Move_Generation#Staged_move_generation) (TT move,
       promotions, captures, quiet moves)
-    - [Black Magic bitboards](https://www.chessprogramming.org/Magic_Bitboards)
+    - [Black Magic bitboards](https://www.chessprogramming.org/Magic_Bitboards#Black_Magic_Bitboards)
   - Precomputed moves for all pieces
 - **Move ordering**
     - TT move first
