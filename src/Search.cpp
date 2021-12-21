@@ -3,7 +3,6 @@
 #include <random>
 #include <syncstream>
 #include <iostream>
-#include <ranges>
 #include "Book.h"
 
 namespace Search {
@@ -135,7 +134,7 @@ namespace Search {
 
     void SetNumThreads(int num_threads) {
 
-        if (num_threads > MAX_SEARCH_THREADS || num_threads < 1) {
+        if (num_threads > MAX_SEARCH_THREADS || num_threads < MIN_SEARCH_THREADS) {
             num_threads = std::clamp(num_threads, MIN_SEARCH_THREADS, MAX_SEARCH_THREADS);
             std::osyncstream(std::cout)
                     << "info Invalid threads count! Initializing to: " << num_threads << " threads" << std::endl;

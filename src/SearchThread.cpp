@@ -449,10 +449,11 @@ namespace Search {
                 std::unique_lock lock(mtx);
                 active = false;
                 cond_var.notify_all();
+                if (stop_token.stop_requested()) { return; }
                 cond_var.wait(lock, stop_token, [&] { return active; });
+                active = true;
             }
-            if (stop_token.stop_requested()) { return; }
-            Search();
+            if (!stop_token.stop_requested()) { Search(); }
         }
     }
 
