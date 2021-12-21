@@ -8,9 +8,9 @@
 Navigate to the root folder and run these commands:
 
 ```
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build
 cd build
-make
 ./Meetra
 ```
 
@@ -20,7 +20,7 @@ The engine is not supposed to be run from the command line. To use it, download 
 the [UCI protocol](http://wbec-ridderkerk.nl/html/UCIProtocol.html), and proceed with engine installation according to
 their respective guides.
 
-For example, some free GUIs with UCI support:
+For example, some free GUIs with UCI support include:
 
 - [Arena](http://www.playwitharena.de/) (recommended)
 - [Cute Chess](https://cutechess.com/)
@@ -34,16 +34,16 @@ For example, some free GUIs with UCI support:
 - Up to 64 threads
 - Up to 32 GB transposition table
 - Infinite search, limited nodes search, fixed depth search
+- Clear hash - clears any stored information from previous searches
 - Own book
 - **Additional custom UCI commands**
     - Mute plies - the engine won't be sending any output to the GUI up to the specified depth
     - Move overhead - how much time should be set aside for communication delay between the engine and GUI, and any
       other potential delays in milliseconds (best kept at default value)
-    - Clear hash - clears any stored information from previous searches
     - Show current move - whether the engine will be sending information about which move in the root position is
       currently being searched
     - Send updates frequency - how often will search information (nodes, nps, hashfull etc.) be sent to the GUI during
-      an ongoing search in milliseconds
+      an ongoing search, in milliseconds
 
 #### Internal engine architecture
 
