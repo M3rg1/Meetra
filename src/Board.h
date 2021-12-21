@@ -17,7 +17,7 @@ public:
     void UnmakeMove(Move m);
     void MakeNullMove();
     void UnmakeNullMove();
-    bool MakeUciMove(std::string_view move_string);
+    bool MakeUciMove(std::string_view move_name);
 
     [[nodiscard]] bool IsMoveLegal(Move m) const;
     [[nodiscard]] bool IsValid() const;

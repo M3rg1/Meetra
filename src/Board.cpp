@@ -434,9 +434,9 @@ bool Board::ParseFen(const std::string &fen) {
     return true;
 }
 
-bool Board::MakeUciMove(std::string_view move_str) {
+bool Board::MakeUciMove(std::string_view move_name) {
 
-    Move uci_move = MoveFromName(move_str);
+    Move uci_move = MoveFromName(move_name);
     MoveGen move_gen(*this);
 
     while (Move move = move_gen.GetAnyMove()) {
