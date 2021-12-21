@@ -104,4 +104,3 @@ Score Evaluator::GetMoveEval(const Board &board, Move m) const {
 
     return (mg_val * mg_phase + eg_val * eg_phase) / 24;
 }
-
