@@ -125,15 +125,12 @@ namespace Uci {
         iss >> depth;
 
         auto start = Now();
-
         auto nodes = Testing::Perft<true>(depth, board);
-
         auto elapsed = ElapsedSince(start);
-        auto nps = Nps(nodes, elapsed);
 
         std::osyncstream(std::cout) << "\nTime elapsed: " << elapsed << "ms"
                                     << " | Nodes explored: " << nodes
-                                    << " | NPS: " << nps
+                                    << " | NPS: " << Nps(nodes, elapsed)
                                     << '\n' << std::endl;
     }
 

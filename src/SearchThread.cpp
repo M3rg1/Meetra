@@ -353,14 +353,13 @@ namespace Search {
 
         auto elapsed = ElapsedSince(start_time);
         auto nodes = NodesTotal();
-        auto nps = Nps(nodes, elapsed);
 
         std::osyncstream(std::cout)
                 << "info depth " << depth_reached
                 << " seldepth " << MaxSeldepthReached()
                 << " nodes " << nodes
                 << " time " << elapsed
-                << " nps " << nps
+                << " nps " << Nps(nodes, elapsed)
                 << " hashfull " << static_cast<int>(tt.Usage() * 1000.0)
                 << std::endl;
     }

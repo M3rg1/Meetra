@@ -84,11 +84,8 @@ namespace Testing {
             }
 
             auto start = Now();
-
             result = Perft<false>(depth, board);
-
             auto elapsed = ElapsedSince(start);
-            auto nps = Nps(result, elapsed);
 
             std::osyncstream(std::cout)
                     << "Position: " << fen << '\n'
@@ -96,7 +93,7 @@ namespace Testing {
                     << " | Expected: " << expected
                     << " | Got: " << result
                     << " | Time elapsed: " << elapsed << "ms"
-                    << " | NPS: " << nps << '\n'
+                    << " | NPS: " << Nps(result, elapsed) << '\n'
                     << (result != expected ? "=== ERROR ===" : "=== OK ===") << '\n' << std::endl;
 
             return result == expected;
@@ -145,12 +142,11 @@ namespace Testing {
         }
 
         auto elapsed = ElapsedSince(start);
-        auto nps = Nps(nodes, elapsed);
 
         std::osyncstream oss(std::cout);
         oss << "==========================================\n\n"
             << "Total time elapsed: " << elapsed << "ms\n"
-            << "Average NPS: " << nps << '\n';
+            << "Average NPS: " << Nps(nodes, elapsed) << '\n';
         if (!errors.empty()) {
             oss << "\nErrors found in tests:\n\n";
             for (const auto &e: errors) {
