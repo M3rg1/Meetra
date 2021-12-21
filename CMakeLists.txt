@@ -24,7 +24,7 @@ set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads REQUIRED)
 
-set(LINK_LIBS Threads::Threads)
+set(LINK_LIBS Threads::Threads tensorflow)
 
 add_executable(${PROJECT_NAME} ${SRC_FILES})
 target_include_directories(${PROJECT_NAME} PUBLIC ${INCLUDE_DIRS})
@@ -33,7 +33,7 @@ target_link_libraries(${PROJECT_NAME} ${LINK_LIBS})
 if(MINGW)
     set(CMAKE_EXE_LINKER_FLAGS -static)
 endif()
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -fno-exceptions -fno-rtti -march=native")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -march=native")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -pedantic -Wextra -Wshadow -Wno-unknown-pragmas -Wno-unused-variable")
 
 message(STATUS "CMAKE_CXX_FLAGS_DEBUG are: ${CMAKE_CXX_FLAGS_DEBUG}")

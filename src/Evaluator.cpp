@@ -4,10 +4,12 @@
 #include "Board.h"
 #include <algorithm>
 
+
 using namespace Evaluation;
 
-void Evaluator::SetBoard(const Board &board) {
+cppflow::model Evaluator::model = cppflow::model(std::string("model"));
 
+void Evaluator::SetBoard(const Board &board) {
     mg.fill(0);
     eg.fill(0);
     phase = 0;
@@ -69,8 +71,46 @@ void Evaluator::MakeMove(const Board &board, Move m) {
     eg_phase = 24 - mg_phase;
 }
 
-Score Evaluator::GetBoardEval() const {
-    return (mg_score * mg_phase + eg_score * eg_phase) / 24;
+std::vector<uint8_t> Evaluator::GetValues(const Board &b) const {
+
+    std::vector<uint8_t> data;
+    for (PieceType pt : PieceTypes) {
+        for (Square s : Squares) {
+            for (Color c : Colors) {
+                Piece p = b.GetPieceOnSquare(s);
+                if (ColorOfPiece(p) == c && TypeOfPiece(p) == pt) {
+                    data.emplace_back(1);
+                } else {
+                    data.emplace_back(0);
+                }
+            }
+        }
+    }
+    for (int i = 0; i < 2; i++) {
+        for (Square s : Squares) {
+            data.emplace_back(0);
+        }
+    }
+    return data;
+}
+
+Score Evaluator::GetBoardEval(const Board &b) {
+
+    std::vector<int64_t> shape = {14, 8, 8};
+
+    cppflow::tensor tens(GetValues(b), shape);
+    tens = cppflow::cast(tens, TF_UINT8, TF_FLOAT);
+    tens = cppflow::expand_dims(tens, 0);
+
+
+    auto output = model(tens);
+
+    auto data = output.get_data<float>();
+    auto cp = 111.714640912 * std::tan(1.5620688421 * data[0]);
+
+    int side = b.ColorToMove() == WHITE ? 1 : -1;
+    return static_cast<Score>(cp / 100.f) * side;
+    //return (mg_score * mg_phase + eg_score * eg_phase) / 24;
 }
 
 Score Evaluator::GetMoveEval(const Board &board, Move m) const {

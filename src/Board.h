@@ -36,7 +36,7 @@ public:
 
 #pragma region ===== Getters =====
     [[nodiscard]] inline int HistorySize() const { return history_cnt; }
-    [[nodiscard]] inline Score GetEval() const { return state.evaluator.GetBoardEval(); };
+    [[nodiscard]] inline Score GetEval() { return state.evaluator.GetBoardEval(*this); };
     [[nodiscard]] inline Score GetMoveEval(Move m) const { return state.evaluator.GetMoveEval(*this, m); };
     [[nodiscard]] inline Bitboard GetPieces(PieceType pt, Color c) const { return type_bbs[pt] & color_bbs[c]; }
     [[nodiscard]] inline Bitboard GetPieces(PieceType pt) const { return type_bbs[pt]; }
