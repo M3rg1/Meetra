@@ -10,8 +10,7 @@ class MoveGen {
 
 public:
 
-    explicit MoveGen(const Board &b);
-    MoveGen(const Board &b, const std::array<Move, KILLER_SLOTS> &killer_moves);
+    explicit MoveGen(const Board &b, const std::array<Move, KILLER_SLOTS> &killer_moves = {});
 
     inline void PutTTMove(Move tt_move) {
         move_eval[moves_cnt].move = tt_move;
@@ -46,14 +45,14 @@ private:
     Bitboard enemy_pieces;
     Bitboard checkers;
     Bitboard blockers;
-    Bitboard legal_moves;
-    bool double_check;
+    Bitboard legal_moves = FULL_BB;
+    bool double_check = false;
 
-    GenPhase gen_phase;
+    GenPhase gen_phase = PROMOTION;
 
     std::array<Move, KILLER_SLOTS> killers;
     std::array<ScoredMove, MAX_LEGAL_MOVES> move_eval;
-    int moves_cnt;
+    int moves_cnt = 0;
 
     [[nodiscard]] inline bool Empty() const { return moves_cnt == 0; }
     inline Move PopBack() { return move_eval[--moves_cnt].move; }

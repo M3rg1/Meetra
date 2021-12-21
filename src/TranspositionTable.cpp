@@ -1,7 +1,7 @@
 #include "TranspositionTable.h"
-#include "Search.h"
 #include <syncstream>
 #include <iostream>
+#include <cstring>
 
 Score RemoveMatePly(Score score, Depth ply) {
     return score > MIN_MATE_EVAL ? score + ply : score < -MIN_MATE_EVAL ? score - ply : score;
@@ -20,7 +20,8 @@ void TranspositionTable::Init(int size_mb) {
 
     buckets_count = (static_cast<size_t>(size_mb) * 1048576ull) / sizeof(TTBucket);
     table = std::make_unique<TTBucket[]>(buckets_count);
-    Clear();
+    used_entries = 0;
+    current_epoch = 0;
 }
 
 void TranspositionTable::NewSearch() {
@@ -34,7 +35,10 @@ void TranspositionTable::NewSearch() {
 void TranspositionTable::Clear() {
     used_entries = 0;
     current_epoch = 0;
-    std::fill_n(table.get(), buckets_count, TTBucket{});
+    std::memset(table.get(), 0, buckets_count * sizeof(TTBucket));
+    // TODO when epoch is circular and we no longer have to call clear in NewSearch after reaching epoch 63, we can use
+    //  this, otherwise it's roughly 3-4x slower than memset
+    //std::fill_n(table.get(), buckets_count, TTBucket());
 }
 
 void TranspositionTable::Save(Hash64 hash, Score score, Depth depth, Move move, TTFlag flag, Depth ply) {

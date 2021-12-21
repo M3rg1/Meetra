@@ -28,7 +28,7 @@ namespace Search {
     };
 
     // static vars in search thread?
-    inline Settings settings = {};
+    inline Settings settings;
     inline TimeRep start_time = 0;
     inline TimeRep time_limit = 0;
     inline std::atomic<bool> run = false;

@@ -15,8 +15,6 @@ bool ValidatePromMove(Move m, Move to_validate) {
            || ((m | PROMOTE_KNIGHT) == to_validate);
 }
 
-MoveGen::MoveGen(const Board &b) : MoveGen(b, {}) {};
-
 MoveGen::MoveGen(const Board &b, const std::array<Move, KILLER_SLOTS> &killer_moves) :
         board(b),
         my_color(board.ColorToMove()),
@@ -28,11 +26,7 @@ MoveGen::MoveGen(const Board &b, const std::array<Move, KILLER_SLOTS> &killer_mo
         enemy_pieces(board.Pieces(enemy_color)),
         checkers(board.Checkers()),
         blockers(board.PinnedToSquare(king_s, enemy_color)),
-        legal_moves(FULL_BB),
-        double_check(false),
-        gen_phase(PROMOTION),
-        killers(killer_moves),
-        moves_cnt(0) {
+        killers(killer_moves) {
 
     if (checkers) {
         if (Bitboards::MoreThanOne(checkers)) {

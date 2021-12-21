@@ -18,7 +18,7 @@ bool Board::NewPosition(const std::string &fen, bool isChess960) {
     chess960 = isChess960;
     history_cnt = 0;
     uci_moves_cnt = 0;
-    state = {};
+    state = BoardState();
     board.fill(NO_PIECE);
     color_bbs.fill(EMPTY_BB);
     type_bbs.fill(EMPTY_BB);
