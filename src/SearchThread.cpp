@@ -138,7 +138,7 @@ namespace Search {
                 return tt_score;
             }
             move_gen.PutTTMove(tt_move);
-            // improve static eval if possible
+            // improve static eval using stored TT score if possible
             if ((tt_flag & UPPER && eval > tt_score) || (tt_flag & LOWER && eval < tt_score)) {
                 eval = tt_score;
             }
@@ -312,6 +312,7 @@ namespace Search {
             }
         }
 
+        // since we generate all moves when in check, if there are no moves, it's checkmate
         if (moves_searched == 0 && board.IsInCheck()) {
             return -MATE_SCORE + ply;
         }
