@@ -50,7 +50,7 @@ namespace Uci {
     Search::Settings ParseSearchOptions(std::istringstream &iss);
 
     void Init() {
-        std::ios_base::sync_with_stdio(false); // TODO let teacher for PJC know the leak is from here https://gcc.gnu.org/bugzilla/show_bug.cgi?id=27931
+        std::ios_base::sync_with_stdio(false); // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=27931
         std::cin.tie(nullptr);
     }
 
