@@ -218,7 +218,7 @@ namespace Search {
             if (score > alpha || (reduction == 0 && (NodeType != PV || moves_searched > 0))) {
                 score = -ABSearch<NON_PV>(-alpha - 1, -alpha, depth - 1, ply + 1);
             }
-            // Full search. PV node only. It's either the first move we are searching or PVS search failed
+            // Full search. PV nodes only. It's either the first move we are searching or PVS search failed
             if (NodeType == PV && (moves_searched == 0 || (score > alpha && score < beta))) {
                 pv[ply + 1].Clear();
                 score = -ABSearch<PV>(-beta, -alpha, depth - 1, ply + 1);
