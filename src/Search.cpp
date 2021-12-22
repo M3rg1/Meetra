@@ -9,7 +9,7 @@
 namespace Search {
 
     bool EnoughTimeLeft() {
-        if (IsSearchLimited() || time_limit * 3 > ElapsedSince(start_time) * 2) {
+        if (IsSearchLimited() || time_limit * 2 > ElapsedSince(start_time) * 3) {
             return true;
         }
         return false;
