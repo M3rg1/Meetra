@@ -50,14 +50,14 @@ namespace Uci {
 
     void Listen() {
 
-        std::cout << "Meetra v. " << PROJECT_VER << "\nMade by " << PROJECT_AUTHOR << std::endl;
+        std::cout << "Meetra v. " << PROJECT_VER << "\nMade by " << PROJECT_AUTHOR << '\n' << std::endl;
 
         Board board;
-        std::string input;
+        std::string input, command;
         while (std::getline(std::cin, input)) {
 
             std::istringstream iss(std::move(input));
-            std::string command;
+            command.clear();
             iss >> command;
 
             if (command == "uci") UciCommand();
