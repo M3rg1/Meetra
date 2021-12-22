@@ -25,20 +25,15 @@ void TranspositionTable::Init(int size_mb) {
 }
 
 void TranspositionTable::NewSearch() {
-    if (current_epoch >= 63) {
-        Clear();
-    }
     used_entries = 0;
     ++current_epoch;
+    current_epoch &= EPOCH_MASK;
 }
 
 void TranspositionTable::Clear() {
     used_entries = 0;
     current_epoch = 0;
-    std::memset(table.get(), 0, buckets_count * sizeof(TTBucket));
-    // TODO when epoch is circular and we no longer have to call clear in NewSearch after reaching epoch 63, we can use
-    //  this, otherwise it's roughly 3-4x slower than memset
-    //std::fill_n(table.get(), buckets_count, TTBucket());
+    std::fill_n(table.get(), buckets_count, TTBucket());
 }
 
 void TranspositionTable::Save(Hash64 hash, Score score, Depth depth, Move move, TTFlag flag, Depth ply) {
@@ -58,8 +53,7 @@ void TranspositionTable::Save(Hash64 hash, Score score, Depth depth, Move move, 
                 return;
             }
         }
-
-        auto entry_score = entry.GetDepth() - 4 * (current_epoch - entry.GetEpoch());
+        auto entry_score = entry.GetDepth() - 3 * (((EPOCH_MASK + 1) + current_epoch - entry.GetEpoch()) & EPOCH_MASK);
         if (entry.GetFlag() == EXACT) {
             entry_score += 2;
         }

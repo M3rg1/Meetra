@@ -25,6 +25,8 @@ public:
 
 private:
 
+    static constexpr int EPOCH_MASK = 63;
+
     // 8 bytes
     struct TTEntry {
 
