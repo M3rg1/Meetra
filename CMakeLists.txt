@@ -37,6 +37,7 @@ endif()
 if(MSVC)
     set(CMAKE_EXE_LINKER_FLAGS "/machine:x64")
     set(CMAKE_CXX_FLAGS_RELEASE "/D_WINDOWS /O2 /Ob2 /GR- /DNDEBUG")
+    set(CMAKE_CXX20_STANDARD_COMPILE_OPTION "-std:c++latest")
 endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
@@ -47,8 +48,6 @@ endif()
 if(MINGW)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
 endif()
-
-set(CMAKE_CXX_FLAGS "")
 
 message(STATUS "CMAKE_CXX_FLAGS_DEBUG are: ${CMAKE_CXX_FLAGS_DEBUG}")
 message(STATUS "CMAKE_CXX_FLAGS_RELEASE are: ${CMAKE_CXX_FLAGS_RELEASE}")
