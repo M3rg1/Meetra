@@ -230,8 +230,7 @@ bool Board::MakeMove(Move m) {
     // in chess960, when castling, we remove the rook from its square before moving, and put it back later
     if (chess960 && move_type == CASTLING) {
         Move rook_move = RookCastlingMove(to, this_col);
-        Square rook_from = FromSquare(rook_move);
-        RemovePiece(rook_from);
+        RemovePiece(FromSquare(rook_move));
     } else {
         Square capture_square = move_type == EN_PASSANT ? EpCaptureSq(this_col, to) : to;
         Piece captured_piece = PieceOnSquare(capture_square);
@@ -334,7 +333,7 @@ bool Board::AllSquaresSafe(Bitboard squares, Color attacker, Bitboard occ) const
 }
 
 bool Board::IsDraw() const {
-    return (IsMove50Rule() && !(IsInCheck() && !AnyLegalMoves())) // could be checkmate on 50th move
+    return (IsMove50Rule() && !(IsInCheck() && !AnyLegalMoves())) // could be checkmated on the 50th move
            || IsRepetition()
            || (!IsInCheck() && IsDrawByMaterial());
 }
