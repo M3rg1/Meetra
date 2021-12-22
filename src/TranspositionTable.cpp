@@ -53,7 +53,7 @@ void TranspositionTable::Save(Hash64 hash, Score score, Depth depth, Move move, 
                 return;
             }
         }
-        auto entry_score = entry.GetDepth() - 3 * (((EPOCH_MASK + 1) + current_epoch - entry.GetEpoch()) & EPOCH_MASK);
+        int entry_score = entry.GetDepth() - 3 * (((EPOCH_MASK + 1) + current_epoch - entry.GetEpoch()) & EPOCH_MASK);
         if (entry.GetFlag() == EXACT) {
             entry_score += 2;
         }
