@@ -6,6 +6,7 @@
 #include <iomanip>
 #include <bit>
 #include <ranges>
+#include "ZobristHash.h"
 
 Board::Board() {
     NewPosition(STARTPOS_FEN);

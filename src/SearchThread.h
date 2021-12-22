@@ -67,6 +67,10 @@ namespace Search {
 
     private:
 
+        enum Node {
+            PV, NON_PV, NULL_MOVE
+        };
+
         void InitThread(std::stop_token stop_token);
 
         template<Node NodeType>

@@ -12,11 +12,15 @@ class TranspositionTable {
 
 public:
 
+    enum EntryFlag {
+        NOT_FOUND, UPPER, LOWER, EXACT, CUTOFF
+    };
+
     void Init(int size_mb = DEFAULT_HASH_SIZE);
-    void Save(Hash64 hash, Score score, Depth depth, Move move, TTFlag flag, Depth ply);
+    void Save(Hash64 hash, Score score, Depth depth, Move move, EntryFlag flag, Depth ply);
     void NewSearch();
     void Clear();
-    TTFlag Probe(Hash64 hash, Score alpha, Score beta, Depth depth, Depth ply, Score &score, Move &move);
+    EntryFlag Probe(Hash64 hash, Score alpha, Score beta, Depth depth, Depth ply, Score &score, Move &move);
     [[nodiscard]] inline double Usage() const {
         double usage = static_cast<double>(used_entries.load(std::memory_order_relaxed))
                        / static_cast<double>(buckets_count * TT_ENTRIES_PER_BUCKET);
@@ -26,6 +30,7 @@ public:
 private:
 
     static constexpr int EPOCH_MASK = 63;
+    using TTEpoch = int;
 
     // 8 bytes
     struct TTEntry {
@@ -34,11 +39,11 @@ private:
         [[nodiscard]] inline Score GetScore() const { return static_cast<Score>(score); }
         [[nodiscard]] inline Depth GetDepth() const { return static_cast<Depth>(depth); }
         [[nodiscard]] inline Move GetMove() const { return static_cast<Move>(move); }
-        [[nodiscard]] inline TTFlag GetFlag() const { return static_cast<TTFlag>(flag); }
+        [[nodiscard]] inline EntryFlag GetFlag() const { return static_cast<EntryFlag>(flag); }
         [[nodiscard]] inline TTEpoch GetEpoch() const { return static_cast<TTEpoch>(epoch); }
         inline void SetEpoch(TTEpoch e) { epoch = e; }
 
-        inline void SaveEntry(Hash16 h, Score s, Depth d, Move m, TTFlag f, TTEpoch e) {
+        inline void SaveEntry(Hash16 h, Score s, Depth d, Move m, EntryFlag f, TTEpoch e) {
             hash = static_cast<uint16_t>(h);
             score = static_cast<int16_t>(s);
             depth = static_cast<uint8_t>(d);

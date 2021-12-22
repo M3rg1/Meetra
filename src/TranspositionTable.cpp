@@ -36,7 +36,7 @@ void TranspositionTable::Clear() {
     std::fill_n(table.get(), buckets_count, TTBucket());
 }
 
-void TranspositionTable::Save(Hash64 hash, Score score, Depth depth, Move move, TTFlag flag, Depth ply) {
+void TranspositionTable::Save(Hash64 hash, Score score, Depth depth, Move move, EntryFlag flag, Depth ply) {
 
     TTBucket &bucket = table[hash % buckets_count];
     TTEntry *entry_to_write;
@@ -69,11 +69,11 @@ void TranspositionTable::Save(Hash64 hash, Score score, Depth depth, Move move, 
     entry_to_write->SaveEntry(hash16, RemoveMatePly(score, ply), depth, move, flag, current_epoch);
 }
 
-TTFlag TranspositionTable::Probe(Hash64 hash, Score alpha, Score beta, Depth depth, Depth ply, Score &score,
-                                 Move &move) {
+TranspositionTable::EntryFlag
+TranspositionTable::Probe(Hash64 hash, Score alpha, Score beta, Depth depth, Depth ply, Score &score, Move &move) {
 
     TTBucket &bucket = table[hash % buckets_count];
-    TTFlag flag = NOT_FOUND;
+    EntryFlag flag = NOT_FOUND;
     Hash16 hash16 = Zobrist::MakeHash16(hash);
 
     for (auto &entry: bucket.entries) {
@@ -84,7 +84,7 @@ TTFlag TranspositionTable::Probe(Hash64 hash, Score alpha, Score beta, Depth dep
             if (entry.GetDepth() >= depth
                 && ((score <= alpha && (flag & UPPER)) || (score >= beta && (flag & LOWER)) || flag == EXACT)) {
                 entry.SetEpoch(current_epoch);
-                flag = static_cast<TTFlag>(flag | CUTOFF);
+                flag = static_cast<EntryFlag>(flag | CUTOFF);
             }
             break;
         }

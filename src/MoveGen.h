@@ -10,6 +10,10 @@ class MoveGen {
 
 public:
 
+    enum GenType {
+        QSEARCH, NORMAL
+    };
+
     explicit MoveGen(const Board &b, const std::array<Move, KILLER_SLOTS> &killer_moves = {});
 
     inline void PutTTMove(Move tt_move) {
@@ -23,6 +27,18 @@ public:
     [[nodiscard]] bool IsPseudoLegal(Move m);
 
 private:
+
+    enum GenMode {
+        GENERATE, VALIDATE
+    };
+
+    enum GenPhase {
+        PROMOTION, CAPTURE, QUIET, END, DOUBLE_CHECK
+    };
+
+    enum PawnMoveDir {
+        LEFT, RIGHT, FORWARD
+    };
 
     struct ScoredMove {
         Move move;
@@ -105,6 +121,12 @@ private:
     [[nodiscard]] bool SpecialMoveIsPseudoLegal(Move m);
     template<Color C>
     [[nodiscard]] bool NormalMoveIsPseudoLegal(Move m);
+
+    template<Color C, PawnMoveDir DIR>
+    static constexpr Direction PawnMove() {
+        return C == WHITE ? DIR == LEFT ? NORTH_WEST : DIR == RIGHT ? NORTH_EAST : NORTH
+                          : DIR == LEFT ? SOUTH_EAST : DIR == RIGHT ? SOUTH_WEST : SOUTH;
+    }
 };
 
 #endif //MEETRA_MOVEGEN_H

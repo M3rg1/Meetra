@@ -2,11 +2,6 @@
 #include <algorithm>
 #include <ranges>
 
-template<Color C, PawnMoveDir DIR>
-constexpr Direction PawnMove() {
-    return C == WHITE ? DIR == LEFT ? NORTH_WEST : DIR == RIGHT ? NORTH_EAST : NORTH
-                      : DIR == LEFT ? SOUTH_EAST : DIR == RIGHT ? SOUTH_WEST : SOUTH;
-}
 
 bool ValidatePromMove(Move m, Move to_validate) {
     return ((m | PROMOTE_QUEEN) == to_validate)
@@ -52,7 +47,7 @@ void MoveGen::EvalMoves() {
     }
 }
 
-template<GenType T>
+template<MoveGen::GenType T>
 Move MoveGen::NextBestMove() {
     while (Empty()) {
         my_color == WHITE ? NextPhase<WHITE, T>() : NextPhase<BLACK, T>();
@@ -71,10 +66,10 @@ Move MoveGen::NextMove() {
     return PopBack();
 }
 
-template Move MoveGen::NextBestMove<QSEARCH>();
-template Move MoveGen::NextBestMove<NORMAL>();
+template Move MoveGen::NextBestMove<MoveGen::QSEARCH>();
+template Move MoveGen::NextBestMove<MoveGen::NORMAL>();
 
-template<Color C, GenType T>
+template<Color C, MoveGen::GenType T>
 void MoveGen::NextPhase() {
     switch (gen_phase) {
         case DOUBLE_CHECK:
@@ -99,7 +94,7 @@ void MoveGen::NextPhase() {
     }
 }
 
-template<GenPhase P, Color C>
+template<MoveGen::GenPhase P, Color C>
 void MoveGen::GenMovesForPhase() {
     if constexpr (P == DOUBLE_CHECK) {
         MovesForPT<KING, C, GENERATE>(board.Pieces(KING, C), enemy_pieces | empty_squares);
@@ -133,7 +128,7 @@ void MoveGen::GenMovesForPhase() {
     }
 }
 
-template<PieceType PT, Color C, GenMode M>
+template<PieceType PT, Color C, MoveGen::GenMode M>
 auto MoveGen::MovesForPT(Bitboard pieces, Bitboard legality_mask, Move to_validate) {
     while (pieces) {
         Square origin_s = Bitboards::PopLsb(pieces);
@@ -150,7 +145,7 @@ auto MoveGen::MovesForPT(Bitboard pieces, Bitboard legality_mask, Move to_valida
     if constexpr (M == VALIDATE) return false;
 }
 
-template<Color C, GenMode M>
+template<Color C, MoveGen::GenMode M>
 auto MoveGen::PawnOneFwd(Bitboard pieces, Move to_validate) {
 
     constexpr Direction dir = PawnMove<C, FORWARD>();
@@ -167,7 +162,7 @@ auto MoveGen::PawnOneFwd(Bitboard pieces, Move to_validate) {
     if constexpr (M == VALIDATE) return false;
 }
 
-template<Color C, GenMode M>
+template<Color C, MoveGen::GenMode M>
 auto MoveGen::PawnTwoFwd(Bitboard pieces, Move to_validate) {
 
     constexpr Direction dir = PawnMove<C, FORWARD>();
@@ -185,7 +180,7 @@ auto MoveGen::PawnTwoFwd(Bitboard pieces, Move to_validate) {
     if constexpr (M == VALIDATE) return false;
 }
 
-template<Color C, PawnMoveDir D, GenMode M>
+template<Color C, MoveGen::PawnMoveDir D, MoveGen::GenMode M>
 auto MoveGen::PawnCaptures(Bitboard pieces, Move to_validate) {
 
     constexpr Direction dir = PawnMove<C, D>();
@@ -202,7 +197,7 @@ auto MoveGen::PawnCaptures(Bitboard pieces, Move to_validate) {
     if constexpr (M == VALIDATE) return false;
 }
 
-template<Color C, PawnMoveDir D, GenMode M>
+template<Color C, MoveGen::PawnMoveDir D, MoveGen::GenMode M>
 auto MoveGen::PawnProms(Bitboard pieces, Move to_validate) {
 
     constexpr Direction dir = PawnMove<C, D>();
@@ -220,7 +215,7 @@ auto MoveGen::PawnProms(Bitboard pieces, Move to_validate) {
     if constexpr (M == VALIDATE) return false;
 }
 
-template<Color C, GenMode M>
+template<Color C, MoveGen::GenMode M>
 auto MoveGen::EpMoves(Bitboard pieces, Move to_validate) {
     if (ep_s) {
         Bitboard attackers = Bitboards::Attacks<PAWN>(ep_s, EMPTY_BB, OtherColor(C)) & pieces;
@@ -233,7 +228,7 @@ auto MoveGen::EpMoves(Bitboard pieces, Move to_validate) {
     if constexpr (M == VALIDATE) return false;
 }
 
-template<Color C, GenMode M>
+template<Color C, MoveGen::GenMode M>
 auto MoveGen::CastlingMoves(Move to_validate) {
     if (checkers) {
         if constexpr (M == GENERATE) return;

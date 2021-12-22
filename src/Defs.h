@@ -26,27 +26,6 @@ using Bitboard = uint64_t;
 constexpr Bitboard EMPTY_BB = 0;
 constexpr Bitboard FULL_BB = 0xFFFFFFFFFFFFFFFF;
 
-using TTEpoch = int;
-enum TTFlag {
-    NOT_FOUND, UPPER, LOWER, EXACT, CUTOFF
-};
-
-enum GenType {
-    QSEARCH, NORMAL
-};
-
-enum GenMode {
-    GENERATE, VALIDATE
-};
-
-enum GenPhase {
-    PROMOTION, CAPTURE, QUIET, END, DOUBLE_CHECK
-};
-
-enum Node {
-    PV, NON_PV, NULL_MOVE
-};
-
 enum Color {
     WHITE, BLACK,
     COLOR_NR
@@ -97,10 +76,6 @@ constexpr Rank CharToRank(char c) { return static_cast<Rank>(c - '1'); }
 constexpr char RankToChar(Rank r) { return static_cast<char>(r + '1'); }
 constexpr File CharToFile(char c) { return static_cast<File>(c - 'a'); }
 constexpr char FileToChar(File f) { return static_cast<char>(f + 'a'); }
-
-enum PawnMoveDir {
-    LEFT, RIGHT, FORWARD,
-};
 
 enum Direction {
     NORTH = 8, NORTH_EAST = 9, EAST = 1, SOUTH_EAST = -7, SOUTH = -8, SOUTH_WEST = -9, WEST = -1, NORTH_WEST = 7

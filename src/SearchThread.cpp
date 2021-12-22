@@ -99,7 +99,7 @@ namespace Search {
         }
     }
 
-    template<Node NodeType>
+    template<SearchThread::Node NodeType>
     Score SearchThread::ABSearch(Score alpha, Score beta, Depth depth, Depth ply) {
 
         if (IsMainThread()) {
@@ -127,20 +127,21 @@ namespace Search {
             return alpha;
         }
 
+        typedef TranspositionTable TT;
         MoveGen move_gen(board, killers[ply]);
         Score static_eval = board.Eval();
         Score eval = static_eval; // eval is not used if we are in check
         Move tt_move = ZERO_MOVE;
         Score tt_score;
-        TTFlag tt_flag = tt.Probe(board.Hash(), alpha, beta, depth, ply, tt_score, tt_move);
+        TT::EntryFlag tt_flag = tt.Probe(board.Hash(), alpha, beta, depth, ply, tt_score, tt_move);
 
-        if (tt_flag != NOT_FOUND && move_gen.IsPseudoLegal(tt_move)) {
-            if (NodeType != PV && tt_flag & CUTOFF) {
+        if (tt_flag != TT::NOT_FOUND && move_gen.IsPseudoLegal(tt_move)) {
+            if (NodeType != PV && tt_flag & TT::CUTOFF) {
                 return tt_score;
             }
             move_gen.PutTTMove(tt_move);
             // improve static eval using stored TT score if possible
-            if ((tt_flag & UPPER && eval > tt_score) || (tt_flag & LOWER && eval < tt_score)) {
+            if ((tt_flag & TT::UPPER && eval > tt_score) || (tt_flag & TT::LOWER && eval < tt_score)) {
                 eval = tt_score;
             }
         }
@@ -175,13 +176,13 @@ namespace Search {
             }
         }
 
-        tt_flag = UPPER;
+        tt_flag = TT::UPPER;
         Score best_score = NEGATIVE_INF;
         Move best_move;
         auto moves_searched = 0;
         auto do_lmr = !board.IsInCheck() && depth >= LMR_MIN_DEPTH;
 
-        while (Move move = move_gen.NextBestMove<NORMAL>()) {
+        while (Move move = move_gen.NextBestMove<MoveGen::NORMAL>()) {
 
             // temporary fix to not play TT move twice - this should be done in the move list before evaluating the move
             if (move == tt_move && moves_searched > 0) {
@@ -242,10 +243,10 @@ namespace Search {
                     }
                     if (score >= beta) {
                         UpdateKillers(move, ply);
-                        tt.Save(board.Hash(), score, depth, move, LOWER, ply);
+                        tt.Save(board.Hash(), score, depth, move, TT::LOWER, ply);
                         return score;
                     }
-                    tt_flag = EXACT;
+                    tt_flag = TT::EXACT;
                     alpha = score;
                 }
                 best_score = score;
@@ -287,7 +288,7 @@ namespace Search {
 
         MoveGen move_gen(board);
         auto moves_searched = 0;
-        while (Move move = move_gen.NextBestMove<QSEARCH>()) {
+        while (Move move = move_gen.NextBestMove<MoveGen::QSEARCH>()) {
 
             if (!board.MakeMove(move)) {
                 board.UnmakeMove(move);

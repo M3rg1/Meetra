@@ -55,7 +55,7 @@ namespace Search {
     std::vector<RootMove> GenRootMoves(const Board &board) {
         MoveGen move_gen(board);
         std::vector<RootMove> root_moves;
-        while (Move move = move_gen.NextBestMove<NORMAL>()) {
+        while (Move move = move_gen.NextMove()) {
             if (board.IsMoveLegal(move)) {
                 root_moves.emplace_back(move);
             }
