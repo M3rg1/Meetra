@@ -34,9 +34,10 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif()
 
-#[[if(MSVC)
-    set(CMAKE_CXX_FLAGS_RELEASE "/MT /O2 /Ob3 /DNDEBUG")
-endif()]]
+if(MSVC)
+    set(CMAKE_EXE_LINKER_FLAGS "/machine:x64")
+    set(CMAKE_CXX_FLAGS_RELEASE "/D_WINDOWS /O2 /Ob2 /GR- /DNDEBUG")
+endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
     set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -fno-exceptions -fno-rtti -march=native")
@@ -47,5 +48,8 @@ if(MINGW)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
 endif()
 
+set(CMAKE_CXX_FLAGS "")
+
 message(STATUS "CMAKE_CXX_FLAGS_DEBUG are: ${CMAKE_CXX_FLAGS_DEBUG}")
 message(STATUS "CMAKE_CXX_FLAGS_RELEASE are: ${CMAKE_CXX_FLAGS_RELEASE}")
+message(STATUS "CMAKE_EXE_LINKER_FLAGS are: ${CMAKE_EXE_LINKER_FLAGS}")
