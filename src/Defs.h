@@ -120,6 +120,7 @@ constexpr Square FiRaToSq(File f, Rank r) { return static_cast<Square>((r << 3) 
 constexpr File SqToFile(Square s) { return static_cast<File>(s & 7); }
 constexpr Rank SqToRank(Square s) { return static_cast<Rank>(s >> 3); }
 constexpr Square StrToSq(std::string_view sq_name) { return FiRaToSq(CharToFile(sq_name[0]), CharToRank(sq_name[1])); }
+constexpr Square EpCaptureSq(Color c, Square to) { return c == WHITE ? to + SOUTH : to + NORTH; }
 inline std::string SqToStr(Square s) { return {FileToChar(SqToFile(s)), RankToChar(SqToRank(s))}; }
 
 enum CastlingSide {

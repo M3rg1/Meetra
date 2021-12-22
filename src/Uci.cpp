@@ -201,6 +201,8 @@ namespace Uci {
             Search::SetMultiPv(std::stoi(value));
         } else if (option == "move overhead" && IsNumber(value)) {
             Search::SetMoveOverhead(std::stoi(value));
+        } else if (option == "send updates frequency" && IsNumber(value)) {
+            Search::SetUpdateInterval(std::stoi(value));
         } else if (option == "uci_showcurrline" && IsBoolean(value)) {
             Search::ShowShowCurrLine(value == "true");
         } else if (option == "show current move" && IsBoolean(value)) {
@@ -209,8 +211,6 @@ namespace Uci {
             Search::SetUseBook(value == "true");
         } else if (option == "uci_chess960" && IsBoolean(value)) {
             Search::SetChess960(value == "true");
-        } else if (option == "send updates frequency" && IsNumber(value)) {
-            Search::SetUpdateInterval(std::stoi(value));
         } else {
             std::osyncstream(std::cout)
                     << "info Unknown option or invalid value: " << option << ' ' << value << std::endl;

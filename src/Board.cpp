@@ -233,7 +233,7 @@ bool Board::MakeMove(Move m) {
         Square rook_from = FromSquare(rook_move);
         RemovePiece(rook_from);
     } else {
-        Square capture_square = move_type == EN_PASSANT ? (this_col == WHITE ? to + SOUTH : to + NORTH) : to;
+        Square capture_square = move_type == EN_PASSANT ? EpCaptureSq(this_col, to) : to;
         Piece captured_piece = PieceOnSquare(capture_square);
         if (captured_piece) {
             RemovePiece(capture_square);
@@ -310,7 +310,7 @@ void Board::UnmakeMove(Move m) {
     MovePiece(to, from);
 
     if (captured_piece) {
-        Square capture_s = TypeOfMove(m) == EN_PASSANT ? (ColorToMove() == WHITE ? to + SOUTH : to + NORTH) : to;
+        Square capture_s = TypeOfMove(m) == EN_PASSANT ? EpCaptureSq(ColorToMove(), to) : to;
         AddPiece(capture_s, captured_piece);
     }
 
@@ -441,10 +441,7 @@ bool Board::MakeUciMove(std::string_view move_name) {
     MoveGen move_gen(*this);
 
     while (Move move = move_gen.NextMove()) {
-        if (FromSquare(move) == FromSquare(uci_move) && ToSquare(move) == ToSquare(uci_move)) {
-            if ((IsPromotion(uci_move) || TypeOfMove(uci_move) == CASTLING) && move != uci_move) {
-                continue;
-            }
+        if (move == uci_move) {
             MakeMove(move);
             ++uci_moves_cnt;
             return true;
@@ -485,20 +482,23 @@ Move Board::MoveFromName(std::string_view move_name) const {
     Square s_from = StrToSq(&move_name[0]);
     Square s_to = StrToSq(&move_name[2]);
     MoveType flag = NO_FLAG;
+    PieceType moved_pt = PieceTypeOnSq(s_from);
 
     if (move_name.length() == 5) {
         flag = move_name[4] == 'q' ? PROMOTE_QUEEN :
                move_name[4] == 'r' ? PROMOTE_ROOK :
                move_name[4] == 'b' ? PROMOTE_BISHOP :
                PROMOTE_KNIGHT;
-    }
-
-    if (chess960) {
-        Piece p = PieceOnSquare(s_to);
-        if (ColorOfPiece(p) == ColorToMove() && TypeOfPiece(p) == ROOK) {
-            s_to = s_to > s_from ? ColorToMove() == WHITE ? G1 : G8 : ColorToMove() == WHITE ? C1 : C8;
-            flag = CASTLING;
-        }
+    } else if (chess960 && PieceTypeOnSq(s_to) == ROOK && ColorOfPiece(PieceOnSquare(s_to)) == ColorToMove()) {
+        // FRC castling is denoted as capturing own rook, but internally we use to_square as the real square to move to
+        s_to = s_to > s_from ? ColorToMove() == WHITE ? G1 : G8 : ColorToMove() == WHITE ? C1 : C8;
+        flag = CASTLING;
+    } else if (moved_pt == KING && std::popcount(Bitboards::RayToSquares(s_from, s_to)) == 1) {
+        flag = CASTLING;
+    } else if (moved_pt == PAWN && std::popcount(Bitboards::RayToSquares(s_from, s_to)) == 1) {
+        flag = TWO_FORWARD;
+    } else if (moved_pt == PAWN && s_to == EpSquare()) {
+        flag = EN_PASSANT;
     }
 
     return NewMove(s_from, s_to, flag);
