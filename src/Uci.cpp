@@ -3,15 +3,9 @@
 #include "Search.h"
 #include "TestSuite.h"
 #include <Env.h>
-#include <unistd.h>
 #include <syncstream>
 
 namespace Uci {
-
-    const std::string LOGO = " __  __         _\n"               \
-                             "|  \\/  |___ ___| |_ _ _ __ _\n"   \
-                             "| |\\/| / -_) -_)  _| '_/ _` |\n"  \
-                             "|_|  |_\\___\\___|\\__|_| \\__,_|";
 
     std::string Options() {
         std::ostringstream oss;
@@ -56,16 +50,9 @@ namespace Uci {
 
     void Listen() {
 
+        std::cout << "Meetra v. " << PROJECT_VER << "\nMade by " << PROJECT_AUTHOR << std::endl;
+
         Board board;
-
-        if (isatty(STDOUT_FILENO)) {
-            std::osyncstream(std::cout)
-                    << LOGO << '\n'
-                    << " v. " << PROJECT_VER << '\n'
-                    << " Made by " << PROJECT_AUTHOR << "\n\n"
-                    << board.PrettyPrint() << std::endl;
-        }
-
         std::string input;
         while (std::getline(std::cin, input)) {
 

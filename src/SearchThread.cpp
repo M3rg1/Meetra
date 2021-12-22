@@ -3,6 +3,7 @@
 #include "Search.h"
 #include <syncstream>
 #include <iostream>
+#include <functional>
 
 namespace Search {
 

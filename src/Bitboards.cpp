@@ -40,7 +40,7 @@ namespace Bitboards {
                                  | ((file_mask[FILE_A] | file_mask[FILE_H]) & ~file_mask[SqToFile(s)]))
                                & generator(s, EMPTY_BB));
             magics[s].magic_num = magic_init[s].factor;
-            magics[s].attacks = table.begin() + magic_init[s].position;
+            magics[s].attacks = table.data() + magic_init[s].position;
             Bitboard occ = EMPTY_BB;
             do {
                 auto idx = ((occ | magics[s].mask) * magics[s].magic_num) >> shift;

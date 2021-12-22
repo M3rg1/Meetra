@@ -4,6 +4,7 @@
 #include <syncstream>
 #include <iostream>
 #include "Book.h"
+#include <numeric>
 
 namespace Search {
 

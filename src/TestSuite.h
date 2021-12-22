@@ -133,7 +133,7 @@ namespace Testing {
         uint64_t nodes = 0;
         auto start = Now();
 
-        for (size_t i = 0; i < tests.size(); ++i) {
+        for (int i = 0; i < static_cast<int>(tests.size()); ++i) {
             std::osyncstream(std::cout) << "Running test " << i + 1 << " ..." << std::endl;
             if (!tests[i].Run()) {
                 errors.emplace_back(i);
