@@ -22,7 +22,6 @@ namespace Search {
             Score alpha = NEGATIVE_INF;
             Score beta = POSITIVE_INF;
             Score score;
-            killers[2].fill(ZERO_MOVE);
 
             // alpha beta search over root moves
             for (curr_rm_num = 0; curr_rm_num < static_cast<int>(root_moves.size()); ++curr_rm_num) {
