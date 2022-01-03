@@ -3,11 +3,11 @@
 #include "EvalValues.h"
 #include "Board.h"
 #include <algorithm>
-
+#include <ranges>
 
 using namespace Evaluation;
 
-cppflow::model Evaluator::model = cppflow::model(std::string("model"));
+cppflow::model Evaluator::model = cppflow::model(std::string("model-1.595"));
 
 void Evaluator::SetBoard(const Board &board) {
     mg.fill(0);
@@ -71,13 +71,15 @@ void Evaluator::MakeMove(const Board &board, Move m) {
     eg_phase = 24 - mg_phase;
 }
 
-std::vector<uint8_t> Evaluator::GetValues(const Board &b) const {
+std::vector<uint8_t> Evaluator::GetValues(const Board &board) const {
 
+    // Board board;
+    // board.NewPosition(STARTPOS_FEN);
     std::vector<uint8_t> data;
-    for (PieceType pt : PieceTypes) {
-        for (Square s : Squares) {
-            for (Color c : Colors) {
-                Piece p = b.GetPieceOnSquare(s);
+    for (Color c: Colors) {
+        for (PieceType pt: PieceTypes) {
+            for (Square s: Squares) {
+                Piece p = board.GetPieceOnSquare(s);
                 if (ColorOfPiece(p) == c && TypeOfPiece(p) == pt) {
                     data.emplace_back(1);
                 } else {
@@ -86,30 +88,40 @@ std::vector<uint8_t> Evaluator::GetValues(const Board &b) const {
             }
         }
     }
-    for (int i = 0; i < 2; i++) {
-        for (Square s : Squares) {
-            data.emplace_back(0);
+    /*std::cout << data.size() << std::endl;
+    int i = 0;
+    for (auto e: data) {
+        std::cout << int(e) << ' ';
+        ++i;
+        if ( i % 60 == 0) {
+            std::cout << '\n';
         }
+        *//*++i;
+        if (i % 8 == 0) {
+            std::cout << '\n';
+        }
+        if (i % 64 == 0) {
+            std::cout << "\n\n\n";
+            i = 0;
+        }*//*
     }
+    std::cout << std::endl;*/
     return data;
 }
 
 Score Evaluator::GetBoardEval(const Board &b) {
 
-    std::vector<int64_t> shape = {14, 8, 8};
+    cppflow::tensor tensor(GetValues(b), {768});
+    tensor = cppflow::cast(tensor, TF_UINT8, TF_FLOAT);
+    tensor = cppflow::expand_dims(tensor, 0);
 
-    cppflow::tensor tens(GetValues(b), shape);
-    tens = cppflow::cast(tens, TF_UINT8, TF_FLOAT);
-    tens = cppflow::expand_dims(tens, 0);
-
-
-    auto output = model(tens);
+    auto output = model(tensor);
 
     auto data = output.get_data<float>();
-    auto cp = 111.714640912 * std::tan(1.5620688421 * data[0]);
+    // auto cp = 111.714640912 * std::tan(1.5620688421 * data[0]);
 
     int side = b.ColorToMove() == WHITE ? 1 : -1;
-    return static_cast<Score>(cp / 100.f) * side;
+    return static_cast<Score>(data[0] * 100.0) * side;
     //return (mg_score * mg_phase + eg_score * eg_phase) / 24;
 }
 
