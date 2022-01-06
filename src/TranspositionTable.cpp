@@ -1,7 +1,6 @@
 #include "TranspositionTable.h"
 #include <syncstream>
 #include <iostream>
-#include <cstring>
 
 Score RemoveMatePly(Score score, Depth ply) {
     return score > MIN_MATE_EVAL ? score + ply : score < -MIN_MATE_EVAL ? score - ply : score;
