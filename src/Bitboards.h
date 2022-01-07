@@ -65,8 +65,8 @@ namespace Bitboards {
     inline std::array<BlackMagic, SQUARE_NR> r_magics;
     inline std::array<BlackMagic, SQUARE_NR> b_magics;
 
-    inline std::array<Bitboard, 64> king_moves;
-    inline std::array<Bitboard, 64> knight_moves;
+    inline std::array<Bitboard, SQUARE_NR> king_moves;
+    inline std::array<Bitboard, SQUARE_NR> knight_moves;
     inline std::array<std::array<Bitboard, SQUARE_NR>, COLOR_NR> pawn_attacks;
 
     inline std::array<std::array<Bitboard, SQUARE_NR>, SQUARE_NR> rays_to_squares;
