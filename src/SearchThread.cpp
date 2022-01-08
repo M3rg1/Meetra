@@ -179,8 +179,8 @@ namespace Search {
         tt_flag = TT::UPPER;
         Score best_score = NEGATIVE_INF;
         Move best_move;
-        auto moves_searched = 0;
-        auto do_lmr = !board.IsInCheck() && depth >= LMR_MIN_DEPTH;
+        int moves_searched = 0;
+        bool do_lmr = !board.IsInCheck() && depth >= LMR_MIN_DEPTH;
 
         while (Move move = move_gen.NextBestMove<MoveGen::NORMAL>()) {
 
