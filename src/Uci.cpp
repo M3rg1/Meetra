@@ -50,7 +50,7 @@ namespace Uci {
 
     void Listen() {
 
-        std::cout << "Meetra v. " << PROJECT_VER << "\nMade by " << PROJECT_AUTHOR << '\n' << std::endl;
+        std::cout << PROJECT_NAME << " v. " << PROJECT_VER << "\nMade by " << PROJECT_AUTHOR << '\n' << std::endl;
 
         Board board;
         std::string input, command;
