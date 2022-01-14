@@ -317,6 +317,7 @@ namespace Search {
     }
 
     void SearchThread::UpdateKillers(Move move, Depth ply) {
+        // if the move is not present in the killers array, shift all moves one to the right and put the new move first
         if (board.IsQuiet(move) && std::ranges::find(killers[ply], move) == killers[ply].end()) {
             std::copy_backward(killers[ply].begin(), killers[ply].begin() + KILLER_SLOTS - 1, killers[ply].begin() + 1);
             killers[ply][0] = move;
