@@ -110,14 +110,8 @@ namespace Search {
 
         if (board.IsDraw()) {
             return RandomizedDrawScore();
-        } else if (ply >= MAX_SEARCH_DEPTH) {
-            return board.Eval();
         } else if (depth <= 0) {
-            if (NodeType == PV && board.IsInCheck()) {
-                depth = 1;
-            } else {
-                return QSearch(alpha, beta, ply);
-            }
+            return QSearch(alpha, beta, ply);
         }
 
         // mate distance pruning
