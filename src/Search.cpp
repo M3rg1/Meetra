@@ -93,6 +93,24 @@ namespace Search {
 
         Search::WaitFinished();
 
+        if (1) {
+            auto best_score = 0;
+            auto root_moves = GenRootMoves(board);
+            Move best_move = root_moves.front().move;
+            for (auto move : root_moves) {
+                board.MakeMove(move.move);
+                auto score = board.Eval();
+                board.UnmakeMove(move.move);
+                if (score > best_score) {
+                    best_move = move.move;
+                    best_score = score;
+                }
+            }
+            std::osyncstream(std::cout) << "info score " << best_score << std::endl;
+            std::osyncstream(std::cout) << "bestmove " << board.MoveToName(best_move) << std::endl;
+            return;
+        }
+
         run = true;
         InitNewSearch(s, board);
 
