@@ -78,7 +78,7 @@ namespace Bitboards {
                EMPTY_BB;
     }
 
-    Bitboard GenRaysBetween(Square s1, Square s2) {
+    Bitboard GenRayBetween(Square s1, Square s2) {
 
         Square max = std::max(s1, s2);
         Square min = std::min(s1, s2);
@@ -102,7 +102,7 @@ namespace Bitboards {
     void GenRays() {
         for (Square s1: Squares) {
             for (Square s2: Squares) {
-                rays_to_squares[s1][s2] = GenRaysBetween(s1, s2);
+                rays_to_squares[s1][s2] = GenRayBetween(s1, s2);
                 rays_to_borders[s1][s2] = GenRayToEdges(s1, s2);
             }
         }
