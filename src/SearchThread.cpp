@@ -372,7 +372,6 @@ namespace Search {
 
         auto elapsed = ElapsedSince(start_time);
         auto nodes = NodesTotal();
-        auto nps = Nps(nodes, elapsed);
 
         auto pvs_to_send = std::min(multi_pv, static_cast<int>(root_moves.size()));
         std::osyncstream oss(std::cout);
@@ -383,7 +382,7 @@ namespace Search {
                 << " seldepth " << root_moves[i].seldepth
                 << " nodes " << nodes
                 << " time " << elapsed
-                << " nps " << nps
+                << " nps " << Nps(nodes, elapsed)
                 << " hashfull " << static_cast<int>(tt.Usage() * 1000.0)
                 << " score ";
 
