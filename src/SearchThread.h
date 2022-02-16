@@ -87,7 +87,7 @@ namespace Search {
         void SendCurrLineInfo() const;
         void SendCurrMoveInfo() const;
         void SendBriefSearchInfo() const;
-        [[nodiscard]] Depth MaxSeldepthReached() const;
+        [[nodiscard]] Depth SeldepthReached() const;
         [[nodiscard]] inline bool IsMainThread() const { return id == 0; }
 
         Board board;

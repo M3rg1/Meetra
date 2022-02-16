@@ -347,7 +347,7 @@ namespace Search {
         std::osyncstream(std::cout) << "bestmove " << board.MoveToName(BestRootMove().move) << std::endl;
     }
 
-    Depth SearchThread::MaxSeldepthReached() const {
+    Depth SearchThread::SeldepthReached() const {
         return std::ranges::max_element(root_moves, [&](const auto &m1, const auto &m2) {
             return m2.depth == depth_reached && m1.seldepth < m2.seldepth;
         })->seldepth;
@@ -360,11 +360,11 @@ namespace Search {
 
         std::osyncstream(std::cout)
                 << "info depth " << depth_reached
-                << " seldepth " << MaxSeldepthReached()
+                << " seldepth " << SeldepthReached()
                 << " nodes " << nodes
                 << " time " << elapsed
                 << " nps " << Nps(nodes, elapsed)
-                << " hashfull " << static_cast<int>(tt.Usage() * 1000.0)
+                << " hashfull " << tt.Hashfull()
                 << std::endl;
     }
 
@@ -383,7 +383,7 @@ namespace Search {
                 << " nodes " << nodes
                 << " time " << elapsed
                 << " nps " << Nps(nodes, elapsed)
-                << " hashfull " << static_cast<int>(tt.Usage() * 1000.0)
+                << " hashfull " << tt.Hashfull()
                 << " score ";
 
             Score score = root_moves[i].score == 1 || root_moves[i].score == -1 ? 0 : root_moves[i].score;

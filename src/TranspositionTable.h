@@ -21,10 +21,10 @@ public:
     void NewSearch();
     void Clear();
     EntryFlag Probe(Hash64 hash, Score alpha, Score beta, Depth depth, Depth ply, Score &score, Move &move);
-    [[nodiscard]] inline double Usage() const {
+    [[nodiscard]] inline int Hashfull() const {
         double usage = static_cast<double>(used_entries.load(std::memory_order_relaxed))
                        / static_cast<double>(buckets_count * TT_ENTRIES_PER_BUCKET);
-        return std::min(usage, 1.0);
+        return static_cast<int>(std::min(usage * 1000.0, 1000.0));
     }
 
 private:
