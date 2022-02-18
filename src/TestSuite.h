@@ -111,7 +111,7 @@ namespace Testing {
         std::vector<Test> tests;
         std::string line;
 
-        while (getline(test_file, line)) {
+        while (std::getline(test_file, line)) {
             if (std::ranges::all_of(line, ::isspace) || line[line.find_first_not_of(' ')] == '#') {
                 continue;
             }

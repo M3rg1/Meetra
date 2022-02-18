@@ -92,25 +92,25 @@ private:
     template<GenPhase P, Color C>
     void GenMovesForPhase();
 
-    template<PieceType PT, Color C, GenMode M>
+    template<PieceType PT, Color C, GenMode M = GENERATE>
     auto MovesForPT(Bitboard pieces, Bitboard legality_mask, Move to_validate = {});
 
-    template<Color C, GenMode M>
+    template<Color C, GenMode M = GENERATE>
     auto EpMoves(Bitboard pieces, Move to_validate = {});
 
-    template<Color C, PawnMoveDir D, GenMode M>
+    template<Color C, PawnMoveDir D, GenMode M = GENERATE>
     auto PawnProms(Bitboard pieces, Move to_validate = {});
 
-    template<Color C, PawnMoveDir D, GenMode M>
+    template<Color C, PawnMoveDir D, GenMode M = GENERATE>
     auto PawnCaptures(Bitboard pieces, Move to_validate = {});
 
-    template<Color C, GenMode M>
+    template<Color C, GenMode M = GENERATE>
     auto PawnOneFwd(Bitboard pieces, Move to_validate = {});
 
-    template<Color C, GenMode M>
+    template<Color C, GenMode M = GENERATE>
     auto PawnTwoFwd(Bitboard pieces, Move to_validate = {});
 
-    template<Color C, GenMode M>
+    template<Color C, GenMode M = GENERATE>
     auto CastlingMoves(Move to_validate = {});
 
     template<Color C, CastlingSide S>

@@ -97,34 +97,29 @@ void MoveGen::NextPhase() {
 template<MoveGen::GenPhase P, Color C>
 void MoveGen::GenMovesForPhase() {
     if constexpr (P == DOUBLE_CHECK) {
-        MovesForPT<KING, C, GENERATE>(board.Pieces(KING, C), enemy_pieces | empty_squares);
+        MovesForPT<KING, C>(board.Pieces(KING, C), enemy_pieces | empty_squares);
     } else if constexpr (P == PROMOTION) {
         Bitboard pawns = board.Pieces(PAWN, C);
-        PawnProms<C, LEFT, GENERATE>(pawns);
-        PawnProms<C, RIGHT, GENERATE>(pawns);
-        PawnProms<C, FORWARD, GENERATE>(pawns);
-    } else if constexpr (P == CAPTURE) {
-        Bitboard mask = legal_moves & enemy_pieces;
+        PawnProms<C, LEFT>(pawns);
+        PawnProms<C, RIGHT>(pawns);
+        PawnProms<C, FORWARD>(pawns);
+    } else if constexpr (P == CAPTURE || P == QUIET) {
         Bitboard pawns = board.Pieces(PAWN, C);
-        EpMoves<C, GENERATE>(pawns);
-        PawnCaptures<C, LEFT, GENERATE>(pawns);
-        PawnCaptures<C, RIGHT, GENERATE>(pawns);
-        MovesForPT<KING, C, GENERATE>(board.Pieces(KING, C), enemy_pieces);
-        MovesForPT<KNIGHT, C, GENERATE>(board.Pieces(KNIGHT, C), mask);
-        MovesForPT<BISHOP, C, GENERATE>(board.Pieces(BISHOP, C), mask);
-        MovesForPT<ROOK, C, GENERATE>(board.Pieces(ROOK, C), mask);
-        MovesForPT<QUEEN, C, GENERATE>(board.Pieces(QUEEN, C), mask);
-    } else if constexpr (P == QUIET) {
-        Bitboard mask = legal_moves & empty_squares;
-        Bitboard pawns = board.Pieces(PAWN, C);
-        PawnOneFwd<C, GENERATE>(pawns);
-        PawnTwoFwd<C, GENERATE>(pawns);
-        CastlingMoves<C, GENERATE>();
-        MovesForPT<KING, C, GENERATE>(board.Pieces(KING, C), empty_squares);
-        MovesForPT<KNIGHT, C, GENERATE>(board.Pieces(KNIGHT, C), mask);
-        MovesForPT<BISHOP, C, GENERATE>(board.Pieces(BISHOP, C), mask);
-        MovesForPT<ROOK, C, GENERATE>(board.Pieces(ROOK, C), mask);
-        MovesForPT<QUEEN, C, GENERATE>(board.Pieces(QUEEN, C), mask);
+        if constexpr (P == CAPTURE) {
+            EpMoves<C>(pawns);
+            PawnCaptures<C, LEFT>(pawns);
+            PawnCaptures<C, RIGHT>(pawns);
+        } else {
+            PawnOneFwd<C>(pawns);
+            PawnTwoFwd<C>(pawns);
+            CastlingMoves<C>();
+        }
+        Bitboard mask = P == CAPTURE ? legal_moves & enemy_pieces : legal_moves & empty_squares;
+        MovesForPT<KNIGHT, C>(board.Pieces(KNIGHT, C), mask);
+        MovesForPT<BISHOP, C>(board.Pieces(BISHOP, C), mask);
+        MovesForPT<ROOK, C>(board.Pieces(ROOK, C), mask);
+        MovesForPT<QUEEN, C>(board.Pieces(QUEEN, C), mask);
+        MovesForPT<KING, C>(board.Pieces(KING, C), P == CAPTURE ? enemy_pieces : empty_squares);
     }
 }
 
