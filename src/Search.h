@@ -8,7 +8,6 @@
 #include "SearchThread.h"
 #include "Defs.h"
 #include "Config.h"
-#include <iostream>
 
 namespace Search {
 
