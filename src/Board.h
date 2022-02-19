@@ -99,7 +99,6 @@ private:
         Evaluator evaluator;
     };
 
-    // todo this could be template parametr for the board??
     bool chess960 = false;
 
     BoardState state;
