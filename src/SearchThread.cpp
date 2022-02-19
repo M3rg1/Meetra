@@ -317,7 +317,6 @@ namespace Search {
     }
 
     void SearchThread::UpdateKillers(Move move, Depth ply) {
-        // TODO killer moves is a special struct/class. there's a killers.containsMove(move) that will replace this and some other functions - clean code!
         // if the move is not present in the killers array, shift all moves one to the right and put the new move first
         if (board.IsQuiet(move) && std::ranges::find(killers[ply], move) == killers[ply].end()) {
             std::copy_backward(killers[ply].begin(), killers[ply].begin() + KILLER_SLOTS - 1, killers[ply].begin() + 1);
@@ -471,7 +470,6 @@ namespace Search {
         curr_rm_num = 0;
         depth_reached = 0;
         nodes_explored = 0;
-        // TODO like this for example, this can be killers.clear()
         std::ranges::for_each(killers, [&](auto &k) { k.fill(ZERO_MOVE); });
     }
 
