@@ -8,6 +8,7 @@
 #include "SearchThread.h"
 #include "Defs.h"
 #include "Config.h"
+#include <iostream>
 
 namespace Search {
 
@@ -28,7 +29,7 @@ namespace Search {
     };
 
     // static vars in search thread?
-    inline Settings settings;
+    inline Settings settings = {};
     inline TimeRep start_time = 0;
     inline TimeRep time_limit = 0;
     inline std::atomic<bool> run = false;
@@ -43,7 +44,7 @@ namespace Search {
     inline int multi_pv = DEFAULT_MULTI_PV;
     inline TimeRep move_overhead = DEFAULT_OVERHEAD;
     inline TimeRep update_interval = DEFAULT_UPDATE_INTERVAL;
-    inline TimeRep last_update_time;
+    inline TimeRep last_update_time = 0;
 
     // also static vars in search thread?
     inline TranspositionTable tt;
