@@ -1,9 +1,9 @@
-#include "SearchThread.h"
-#include "MoveGen.h"
-#include "Search.h"
 #include <syncstream>
 #include <iostream>
 #include <functional>
+#include "SearchThread.h"
+#include "MoveGen.h"
+#include "Search.h"
 
 namespace Search {
 

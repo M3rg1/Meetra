@@ -3,14 +3,14 @@
 
 #include <string>
 #include <vector>
+#include <syncstream>
+#include <iostream>
+#include <fstream>
+#include <sstream>
 #include "Defs.h"
 #include "Board.h"
 #include "MoveGen.h"
-#include <fstream>
-#include <sstream>
 #include "Config.h"
-#include <syncstream>
-#include <iostream>
 
 namespace Testing {
 

@@ -1,6 +1,6 @@
-#include "MoveGen.h"
 #include <algorithm>
 #include <ranges>
+#include "MoveGen.h"
 
 
 bool ValidatePromMove(Move m, Move to_validate) {

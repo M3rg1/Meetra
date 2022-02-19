@@ -3,11 +3,11 @@
 
 #include <vector>
 #include <thread>
+#include <algorithm>
 #include <mutex>
 #include <condition_variable>
 #include "Board.h"
 #include "Config.h"
-#include <algorithm>
 
 namespace Search {
 

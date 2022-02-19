@@ -1,10 +1,10 @@
-#include "Search.h"
-#include "MoveGen.h"
 #include <random>
 #include <syncstream>
 #include <iostream>
-#include "Book.h"
 #include <numeric>
+#include "Search.h"
+#include "MoveGen.h"
+#include "Book.h"
 
 namespace Search {
 

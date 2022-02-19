@@ -1,9 +1,9 @@
 #include <iostream>
+#include <syncstream>
+#include <Env.h>
 #include "Uci.h"
 #include "Search.h"
 #include "TestSuite.h"
-#include <Env.h>
-#include <syncstream>
 
 namespace Uci {
 

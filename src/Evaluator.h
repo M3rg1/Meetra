@@ -1,8 +1,8 @@
 #ifndef MEETRA_EVALUATOR_H
 #define MEETRA_EVALUATOR_H
 
-#include "Defs.h"
 #include <array>
+#include "Defs.h"
 
 class Board;
 

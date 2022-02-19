@@ -1,11 +1,11 @@
-#include "Board.h"
 #include <sstream>
-#include "MoveGen.h"
 #include <algorithm>
 #include <regex>
 #include <iomanip>
 #include <bit>
 #include <ranges>
+#include "Board.h"
+#include "MoveGen.h"
 #include "ZobristHash.h"
 
 Board::Board() {

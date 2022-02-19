@@ -1,9 +1,9 @@
 #include <random>
+#include <algorithm>
+#include <array>
 #include "ZobristHash.h"
 #include "Bitboards.h"
 #include "Board.h"
-#include <algorithm>
-#include <array>
 
 namespace Zobrist {
 

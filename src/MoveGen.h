@@ -1,10 +1,10 @@
 #ifndef MEETRA_MOVEGEN_H
 #define MEETRA_MOVEGEN_H
 
+#include <array>
 #include "Defs.h"
 #include "Board.h"
 #include "Config.h"
-#include <array>
 
 class MoveGen {
 

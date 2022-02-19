@@ -2,14 +2,14 @@
 #define MEETRA_BOOK_H
 
 #include <vector>
-#include "ZobristHash.h"
-#include "Board.h"
-#include <filesystem>
 #include <fstream>
-#include "Defs.h"
-#include "Config.h"
+#include <filesystem>
 #include <iostream>
 #include <syncstream>
+#include "ZobristHash.h"
+#include "Board.h"
+#include "Defs.h"
+#include "Config.h"
 
 namespace Book {
 
@@ -31,7 +31,7 @@ namespace Book {
             stream.seekg(static_cast<std::streamoff>(mid * sizeof(BookEntry)), std::ios::beg);
             stream.read(reinterpret_cast<char *>(&book_entry), sizeof(BookEntry));
 
-            if(!stream.good()) {
+            if (!stream.good()) {
                 break;
             }
 

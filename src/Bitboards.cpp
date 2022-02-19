@@ -1,7 +1,7 @@
-#include "Bitboards.h"
-#include "MagicNumbers.h"
 #include <sstream>
 #include <ranges>
+#include "Bitboards.h"
+#include "MagicNumbers.h"
 
 namespace Bitboards {
 

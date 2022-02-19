@@ -1,8 +1,8 @@
+#include <algorithm>
 #include "Evaluator.h"
 #include "Bitboards.h"
 #include "EvalValues.h"
 #include "Board.h"
-#include <algorithm>
 
 using namespace Evaluation;
 
