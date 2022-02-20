@@ -50,7 +50,7 @@ namespace Bitboards {
         }
     }
 
-    void GenPieceMoves(std::initializer_list<Direction> dirs, std::array<Bitboard, 64> &output) {
+    void GenPieceMoves(std::initializer_list<Direction> dirs, std::array<Bitboard, SQUARE_NR> &output) {
         for (Square s: Squares) {
             output[s] = EMPTY_BB;
             for (const auto &d: dirs) {
