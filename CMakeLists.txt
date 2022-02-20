@@ -29,6 +29,7 @@ set(LINK_LIBS Threads::Threads)
 add_executable(${PROJECT_NAME} ${SRC_FILES})
 target_include_directories(${PROJECT_NAME} PUBLIC ${INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} ${LINK_LIBS})
+set_target_properties(Meetra PROPERTIES OUTPUT_NAME "${PROJECT_NAME}_v${PROJECT_VERSION}")
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
