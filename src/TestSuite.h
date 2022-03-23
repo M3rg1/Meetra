@@ -102,7 +102,7 @@ namespace Testing {
 
     inline std::vector<Test> LoadTests() {
 
-        std::fstream test_file(TEST_FILE_PATH, std::ios::in);
+        std::ifstream test_file(TEST_FILE_PATH, std::ios::in);
         if (!test_file.is_open()) {
             std::osyncstream(std::cout) << "Could not open the test file!" << std::endl;
             return {};
