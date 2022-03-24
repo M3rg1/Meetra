@@ -69,10 +69,6 @@ void Evaluator::MakeMove(const Board &board, Move m) {
     eg_phase = 24 - mg_phase;
 }
 
-Score Evaluator::BoardEval() const {
-    return (mg_score * mg_phase + eg_score * eg_phase) / 24;
-}
-
 Score Evaluator::MoveEval(const Board &board, Move m) const {
 
     Color col = board.ColorToMove();

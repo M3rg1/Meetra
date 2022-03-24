@@ -1,16 +1,9 @@
 #include <random>
 #include <algorithm>
-#include <array>
 #include "ZobristHash.h"
-#include "Bitboards.h"
 #include "Board.h"
 
 namespace Zobrist {
-
-    std::array<std::array<uint64_t, B_KING + 1>, SQUARE_NR> piece_keys;
-    std::array<uint64_t, SQUARE_NR> castling_keys;
-    std::array<uint64_t, SQUARE_NR> ep_keys;
-    uint64_t color_key;
 
     void Init() {
 
@@ -22,37 +15,6 @@ namespace Zobrist {
         std::ranges::generate(ep_keys, gen);
         ep_keys[0] = 0;
         color_key = gen();
-    }
-
-    void AddPiece(Hash64 &h, Piece p, Square s) {
-        h ^= piece_keys[s][p];
-    }
-
-    void RemovePiece(Hash64 &h, Piece p, Square s) {
-        AddPiece(h, p, s);
-    }
-
-    void AddEp(Hash64 &h, Square s) {
-        h ^= ep_keys[s];
-    }
-
-    void RemoveEp(Hash64 &h, Square s) {
-        AddEp(h, s);
-    }
-
-    void UpdateCr(Hash64 &h, Bitboard previous, Bitboard current) {
-        Bitboard cr_change = previous ^ current;
-        while (cr_change) {
-            h ^= castling_keys[Bitboards::PopLsb(cr_change)];
-        }
-    }
-
-    void UpdateColor(Hash64 &h) {
-        h ^= color_key;
-    }
-
-    void MovePiece(Hash64 &h, Piece p, Square from, Square to) {
-        h ^= piece_keys[from][p] ^ piece_keys[to][p];
     }
 
     void GenPiecesHash(Hash64 &hash, const Board &board) {
