@@ -89,7 +89,7 @@ private:
     template<Color C, GenType T>
     void NextPhase();
 
-    template<GenPhase P, Color C>
+    template<GenPhase P, Color C, GenType T>
     void GenMovesForPhase();
 
     template<PieceType PT, Color C, GenMode M = GENERATE>
@@ -98,7 +98,7 @@ private:
     template<Color C, GenMode M = GENERATE>
     auto EpMoves(Bitboard pieces, Move to_validate = {});
 
-    template<Color C, PawnMoveDir D, GenMode M = GENERATE>
+    template<Color C, PawnMoveDir D, GenType T, GenMode M = GENERATE>
     auto PawnProms(Bitboard pieces, Move to_validate = {});
 
     template<Color C, PawnMoveDir D, GenMode M = GENERATE>

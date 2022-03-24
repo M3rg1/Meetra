@@ -73,19 +73,19 @@ template<Color C, MoveGen::GenType T>
 void MoveGen::NextPhase() {
     switch (gen_phase) {
         case DOUBLE_CHECK:
-            GenMovesForPhase<DOUBLE_CHECK, C>();
+            GenMovesForPhase<DOUBLE_CHECK, C, T>();
             gen_phase = END;
             break;
         case PROMOTION:
-            GenMovesForPhase<PROMOTION, C>();
+            GenMovesForPhase<PROMOTION, C, T>();
             gen_phase = CAPTURE;
             break;
         case CAPTURE:
-            GenMovesForPhase<CAPTURE, C>();
+            GenMovesForPhase<CAPTURE, C, T>();
             gen_phase = T == QSEARCH && !checkers ? END : QUIET;
             break;
         case QUIET:
-            GenMovesForPhase<QUIET, C>();
+            GenMovesForPhase<QUIET, C, T>();
             gen_phase = END;
             break;
         case END:
@@ -94,15 +94,15 @@ void MoveGen::NextPhase() {
     }
 }
 
-template<MoveGen::GenPhase P, Color C>
+template<MoveGen::GenPhase P, Color C, MoveGen::GenType T>
 void MoveGen::GenMovesForPhase() {
     if constexpr (P == DOUBLE_CHECK) {
         MovesForPT<KING, C>(board.Pieces(KING, C), enemy_pieces | empty_squares);
     } else if constexpr (P == PROMOTION) {
         Bitboard pawns = board.Pieces(PAWN, C);
-        PawnProms<C, LEFT>(pawns);
-        PawnProms<C, RIGHT>(pawns);
-        PawnProms<C, FORWARD>(pawns);
+        PawnProms<C, LEFT, T>(pawns);
+        PawnProms<C, RIGHT, T>(pawns);
+        PawnProms<C, FORWARD, T>(pawns);
     } else if constexpr (P == CAPTURE || P == QUIET) {
         Bitboard pawns = board.Pieces(PAWN, C);
         if constexpr (P == CAPTURE) {
@@ -192,7 +192,7 @@ auto MoveGen::PawnCaptures(Bitboard pieces, Move to_validate) {
     if constexpr (M == VALIDATE) return false;
 }
 
-template<Color C, MoveGen::PawnMoveDir D, MoveGen::GenMode M>
+template<Color C, MoveGen::PawnMoveDir D, MoveGen::GenType T, MoveGen::GenMode M>
 auto MoveGen::PawnProms(Bitboard pieces, Move to_validate) {
 
     constexpr Direction dir = PawnMove<C, D>();
@@ -203,7 +203,13 @@ auto MoveGen::PawnProms(Bitboard pieces, Move to_validate) {
         Square dest_s = Bitboards::PopLsb(promotions);
         Square origin_s = dest_s - dir;
         if (!DiscoveryCheck(origin_s, dest_s)) {
-            if constexpr (M == GENERATE) PutPromMoves(NewMove(origin_s, dest_s));
+            if constexpr (M == GENERATE) {
+                if constexpr (T == QSEARCH) {
+                    PutMove(NewMove(origin_s, dest_s, PROMOTE_QUEEN));
+                } else {
+                    PutPromMoves(NewMove(origin_s, dest_s));
+                }
+            }
             if constexpr (M == VALIDATE) if (ValidatePromMove(NewMove(origin_s, dest_s), to_validate)) return true;
         }
     }
@@ -299,9 +305,9 @@ bool MoveGen::SpecialMoveIsPseudoLegal(Move m) {
     } else if (mt == EN_PASSANT && moved_pt == PAWN) {
         return EpMoves<C, VALIDATE>(pos, m);
     } else if (IsPromotion(m) && moved_pt == PAWN) {
-        return PawnProms<C, LEFT, VALIDATE>(pos, m)
-               || PawnProms<C, RIGHT, VALIDATE>(pos, m)
-               || PawnProms<C, FORWARD, VALIDATE>(pos, m);
+        return PawnProms<C, LEFT, NORMAL, VALIDATE>(pos, m)
+               || PawnProms<C, RIGHT, NORMAL, VALIDATE>(pos, m)
+               || PawnProms<C, FORWARD, NORMAL, VALIDATE>(pos, m);
     }
     return false;
 }
