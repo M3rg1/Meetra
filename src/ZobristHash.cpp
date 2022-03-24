@@ -8,18 +8,19 @@
 namespace Zobrist {
 
     std::array<std::array<uint64_t, B_KING + 1>, SQUARE_NR> piece_keys;
-    std::array<uint64_t, FILE_NR> castling_keys;
-    std::array<uint64_t, FILE_NR>  ep_keys;
+    std::array<uint64_t, SQUARE_NR> castling_keys;
+    std::array<uint64_t, SQUARE_NR> ep_keys;
     uint64_t color_key;
 
     void Init() {
 
-        std::mt19937_64 mt(ZOBRIST_SEED);
+        std::mt19937_64 mt(ZOBRIST_SEED); // NOLINT(cert-msc51-cpp)
         auto gen = [&] { return mt(); };
 
         std::ranges::for_each(piece_keys, [&](auto &pt_keys) { std::ranges::generate(pt_keys, gen); });
         std::ranges::generate(castling_keys, gen);
         std::ranges::generate(ep_keys, gen);
+        ep_keys[0] = 0;
         color_key = gen();
     }
 
@@ -32,7 +33,7 @@ namespace Zobrist {
     }
 
     void AddEp(Hash64 &h, Square s) {
-        h ^= ep_keys[SqToFile(s)];
+        h ^= ep_keys[s];
     }
 
     void RemoveEp(Hash64 &h, Square s) {
@@ -42,7 +43,7 @@ namespace Zobrist {
     void UpdateCr(Hash64 &h, Bitboard previous, Bitboard current) {
         Bitboard cr_change = previous ^ current;
         while (cr_change) {
-            h ^= castling_keys[SqToFile(Bitboards::PopLsb(cr_change))];
+            h ^= castling_keys[Bitboards::PopLsb(cr_change)];
         }
     }
 
@@ -54,31 +55,27 @@ namespace Zobrist {
         h ^= piece_keys[from][p] ^ piece_keys[to][p];
     }
 
-    Hash64 GenHash64(const Board &board) {
-
-        Hash64 hash = NEW_HASH64;
-
+    void GenPiecesHash(Hash64 &hash, const Board &board) {
         for (Color c: Colors) {
             for (PieceType pt: PieceTypes) {
                 Bitboard pieces = board.Pieces(pt, c);
                 while (pieces) {
                     Square s = Bitboards::PopLsb(pieces);
-                    hash ^= piece_keys[s][NewPiece(pt, c)];
+                    AddPiece(hash, NewPiece(pt, c), s);
                 }
             }
         }
+    }
 
-        if (board.EpSquare()) {
-            hash ^= ep_keys[SqToFile(board.EpSquare())];
-        }
+    Hash64 GenHash64(const Board &board) {
 
-        Bitboard cr = board.Cr();
-        while (cr) {
-            hash ^= castling_keys[SqToFile(Bitboards::PopLsb(cr))];
-        }
+        Hash64 hash = NEW_HASH64;
 
+        GenPiecesHash(hash, board);
+        UpdateCr(hash, EMPTY_BB, board.Cr());
+        AddEp(hash, board.EpSquare());
         if (board.ColorToMove() == BLACK) {
-            hash ^= color_key;
+            UpdateColor(hash);
         }
 
         return hash;
