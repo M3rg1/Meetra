@@ -12,12 +12,12 @@
 namespace Search {
 
     struct PVLine {
-        [[nodiscard]] auto begin() const { return Iterator<const Move>{moves}; }
-        [[nodiscard]] auto end() const { return Iterator<const Move>{moves + Size()}; }
-        [[nodiscard]] int Size() const { return len; }
-        void PutMove(Move m) { moves[len++] = m; }
-        void Clear() { len = 0; }
-        void Merge(const PVLine &other) {
+        [[nodiscard]] constexpr auto begin() const { return Iterator<const Move>{moves}; }
+        [[nodiscard]] constexpr auto end() const { return Iterator<const Move>{moves + Size()}; }
+        [[nodiscard]] constexpr int Size() const { return len; }
+        constexpr void PutMove(Move m) { moves[len++] = m; }
+        constexpr void Clear() { len = 0; }
+        constexpr void Merge(const PVLine &other) {
             std::copy_n(other.moves, other.len, moves + len);
             len += other.len;
         }
@@ -37,13 +37,13 @@ namespace Search {
 
         explicit RootMove(Move m) : move(m) {}
 
-        std::strong_ordering operator<=>(const RootMove &other) const {
+        constexpr std::strong_ordering operator<=>(const RootMove &other) const {
             return other.score != score ? other.score <=> score :
                    other.previous_score != previous_score ? other.previous_score <=> previous_score :
                    other.nodes <=> nodes;
         }
 
-        bool operator==(const RootMove &other) const {
+        constexpr bool operator==(const RootMove &other) const {
             return move == other.move;
         }
     };

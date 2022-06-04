@@ -381,7 +381,7 @@ namespace Search {
 
         std::osyncstream oss(std::cout);
         auto pvs_to_send = std::min(multi_pv, static_cast<int>(root_moves.size()));
-        for (auto i :  std::views::iota(0, pvs_to_send)) {
+        for (auto i: std::views::iota(0, pvs_to_send)) {
             oss << "info";
             if (pvs_to_send > 1) oss << " multipv " << i + 1;
             oss << " depth " << root_moves[i].depth
