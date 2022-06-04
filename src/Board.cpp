@@ -374,9 +374,8 @@ Move Board::RookCastlingMove(Square king_to, Color c) const {
 
 bool Board::ParseFen(const std::string &fen) {
 
-    static const std::regex rgx(
-            R"(\s*([rnbqkpRNBQKP1-8]{1,8}\/){7}([rnbqkpRNBQKP1-8]{1,8})\s*[bw]\s*(([a-hkqA-HKQ]{1,4})|(-))?\s*(([a-h][36])|(-))?\s*\d*\s*\d*\s*)",
-            std::regex::optimize);
+    static constexpr auto regex_str = R"(\s*([rnbqkpRNBQKP1-8]{1,8}\/){7}([rnbqkpRNBQKP1-8]{1,8})\s*[bw]\s*(([a-hkqA-HKQ]{1,4})|(-))?\s*(([a-h][36])|(-))?\s*\d*\s*\d*\s*)";
+    static const std::regex rgx(regex_str, std::regex::optimize);
     if (!std::regex_match(fen, rgx)) {
         return false;
     }
