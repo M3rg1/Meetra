@@ -10,7 +10,7 @@ namespace Bitboards {
         int position;
     };
 
-    inline MagicInit b_init_magic[64]
+    constexpr auto b_init_magic = std::to_array<MagicInit>(
             {
                     {0xa7020080601803d8ull, 60984},
                     {0x13802040400801f1ull, 66046},
@@ -76,9 +76,9 @@ namespace Bitboards {
                     {0x945e388000801012ull, 22194},
                     {0x0840800080200fdaull, 70880},
                     {0x100000c05f582008ull, 11140},
-            };
+            });
 
-    inline MagicInit r_init_magic[64]
+    constexpr auto r_init_magic = std::to_array<MagicInit>(
             {
                     {0x80280013ff84ffffull, 10890},
                     {0x5ffbfefdfef67fffull, 50579},
@@ -144,6 +144,6 @@ namespace Bitboards {
                     {0xafe0000fff780402ull, 28745},
                     {0xee73fffbffbb77feull, 8555},
                     {0x0002000308482882ull, 1009},
-            };
+            });
 }
 #endif //MEETRA_MAGICNUMBERS_H

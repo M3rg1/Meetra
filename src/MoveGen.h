@@ -43,7 +43,7 @@ private:
         Move move;
         Score score;
 
-        std::strong_ordering operator<=>(const ScoredMove &other) const {
+        constexpr std::strong_ordering operator<=>(const ScoredMove &other) const {
             return score <=> other.score;
         }
     };
