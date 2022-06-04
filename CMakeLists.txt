@@ -36,7 +36,6 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 if(MSVC)
-    set(CMAKE_EXE_LINKER_FLAGS "/machine:x64")
     set(CMAKE_CXX_FLAGS_RELEASE "/D_WINDOWS /O2 /Ob2 /GR- /DNDEBUG")
     set(CMAKE_CXX20_STANDARD_COMPILE_OPTION "/std:c++latest")
 endif()

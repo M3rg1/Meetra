@@ -2,6 +2,7 @@
 #include <syncstream>
 #include <iostream>
 #include <numeric>
+#include <ranges>
 #include "Search.h"
 #include "MoveGen.h"
 #include "Book.h"
@@ -75,12 +76,12 @@ namespace Search {
         // for multipv, because helper threads might skip some depths and not have the full pv, we can't safely use
         // their results without risking their pv for other than the top move will be very old from low depth or even
         // missing entirely
-        SearchThread *best_thread = threads.front().get();
+        auto best_thread = threads.front().get();
         if (multi_pv == 1) {
-            for (size_t i = 1; i < threads.size(); ++i) {
-                threads[i]->WaitForFinish();
-                if (threads[i]->DidBeatMove(best_thread->BestRootMove())) {
-                    best_thread = threads[i].get();
+            for (auto &thread: threads | std::views::drop(1)) {
+                thread->WaitForFinish();
+                if (thread->DidBeatMove(best_thread->BestRootMove())) {
+                    best_thread = thread.get();
                 }
             }
         }
@@ -144,7 +145,7 @@ namespace Search {
 
         Shutdown();
 
-        for (auto i = 0; i < num_threads; ++i) {
+        for (auto i: std::views::iota(0, num_threads)) {
             threads.emplace_back(new SearchThread(i));
         }
     }

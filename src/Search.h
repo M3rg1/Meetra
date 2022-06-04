@@ -56,6 +56,7 @@ namespace Search {
 
     [[nodiscard]] bool EnoughTimeLeft();
     [[nodiscard]] bool IsSearchLimited();
+    [[nodiscard]] uint64_t NodesTotal();
     [[nodiscard]] inline bool Run() { return run.load(std::memory_order_relaxed); }
     inline void WaitFinished() { std::ranges::for_each(threads, &SearchThread::WaitForFinish); }
     inline void StopSearch() { run = false; }
@@ -72,7 +73,6 @@ namespace Search {
         update_interval = std::clamp(interval, MIN_UPDATE_INTERVAL, MAX_UPDATE_INTERVAL);
     }
     void SetNumThreads(int num_threads);
-    uint64_t NodesTotal();
 }
 
 #endif //MEETRA_SEARCH_H

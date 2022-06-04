@@ -1,6 +1,7 @@
 #include <syncstream>
 #include <iostream>
 #include <functional>
+#include <ranges>
 #include "SearchThread.h"
 #include "MoveGen.h"
 #include "Search.h"
@@ -378,9 +379,9 @@ namespace Search {
         auto elapsed = ElapsedSince(start_time);
         auto nodes = NodesTotal();
 
-        auto pvs_to_send = std::min(multi_pv, static_cast<int>(root_moves.size()));
         std::osyncstream oss(std::cout);
-        for (auto i = 0; i < pvs_to_send; ++i) {
+        auto pvs_to_send = std::min(multi_pv, static_cast<int>(root_moves.size()));
+        for (auto i :  std::views::iota(0, pvs_to_send)) {
             oss << "info";
             if (pvs_to_send > 1) oss << " multipv " << i + 1;
             oss << " depth " << root_moves[i].depth
@@ -391,7 +392,7 @@ namespace Search {
                 << " hashfull " << tt.Hashfull()
                 << " score ";
 
-            Score score = root_moves[i].score == 1 || root_moves[i].score == -1 ? 0 : root_moves[i].score;
+            Score score = (root_moves[i].score == 1 || root_moves[i].score == -1) ? 0 : root_moves[i].score;
             if (score > MIN_MATE_EVAL) oss << "mate " << (MATE_SCORE - score) / 2;
             else if (score < -MIN_MATE_EVAL) oss << "mate " << -(MATE_SCORE + score) / 2;
             else oss << "cp " << score;
@@ -406,8 +407,10 @@ namespace Search {
     }
 
     void SearchThread::SendCurrMoveInfo() const {
-        std::osyncstream(std::cout) << "info currmove " << board.MoveToName(curr_rm->move) << " currmovenumber "
-                                    << curr_rm_num + 1 << std::endl;
+        std::osyncstream(std::cout)
+                << "info currmove " << board.MoveToName(curr_rm->move)
+                << " currmovenumber " << curr_rm_num + 1
+                << std::endl;
     }
 
     void SearchThread::SendCurrLineInfo() const {

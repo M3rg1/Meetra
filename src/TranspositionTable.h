@@ -20,7 +20,7 @@ public:
     void Save(Hash64 hash, Score score, Depth depth, Move move, EntryFlag flag, Depth ply);
     void NewSearch();
     void Clear();
-    std::tuple<EntryFlag , Score, Move> Probe(Hash64 hash, Score alpha, Score beta, Depth depth, Depth ply);
+    std::tuple<EntryFlag, Score, Move> Probe(Hash64 hash, Score alpha, Score beta, Depth depth, Depth ply);
     [[nodiscard]] inline int Hashfull() const {
         double usage = static_cast<double>(used_entries.load(std::memory_order_relaxed))
                        / static_cast<double>(buckets_count * TT_ENTRIES_PER_BUCKET);
@@ -41,8 +41,8 @@ private:
         [[nodiscard]] inline Move GetMove() const { return static_cast<Move>(move); }
         [[nodiscard]] inline EntryFlag GetFlag() const { return static_cast<EntryFlag>(flag); }
         [[nodiscard]] inline TTEpoch GetEpoch() const { return static_cast<TTEpoch>(epoch); }
-        inline void SetEpoch(TTEpoch e) { epoch = e; }
 
+        inline void SetEpoch(TTEpoch e) { epoch = e; }
         inline void SaveEntry(Hash16 h, Score s, Depth d, Move m, EntryFlag f, TTEpoch e) {
             hash = static_cast<uint16_t>(h);
             score = static_cast<int16_t>(s);
