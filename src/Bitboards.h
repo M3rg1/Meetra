@@ -1,9 +1,12 @@
 #ifndef MEETRA_BITBOARDS_H
 #define MEETRA_BITBOARDS_H
 
+#include "Defs.h"
 #include <bit>
 #include <array>
-#include "Defs.h"
+#include <sstream>
+#include <ranges>
+#include "MagicNumbers.h"
 
 namespace Bitboards {
 
@@ -41,52 +44,231 @@ namespace Bitboards {
             0x804020100000000, 0x402010000000000, 0x201000000000000, 0x100000000000000
     };
 
-    constexpr std::array<Bitboard, COLOR_NR> castling_mask{
+    constexpr std::array castling_mask{
             rank_mask[RANK_1],
             rank_mask[RANK_8]
     };
 
-    constexpr std::array<Bitboard, COLOR_NR> prom_mask{
+    constexpr std::array prom_mask{
             rank_mask[RANK_8],
             rank_mask[RANK_1]
     };
 
-    constexpr std::array<Bitboard, COLOR_NR> two_fwd_mask{
+    constexpr std::array two_fwd_mask{
             rank_mask[RANK_4],
             rank_mask[RANK_5]
     };
 
     struct BlackMagic {
-        Bitboard *attacks;
+        const Bitboard *attacks;
         Bitboard mask;
         uint64_t magic_num;
     };
 
-    inline std::array<BlackMagic, SQUARE_NR> r_magics;
-    inline std::array<BlackMagic, SQUARE_NR> b_magics;
+    constexpr int foo(int i ) {
+        return i < 0 ? i * -1 : i;
+    }
 
-    inline std::array<Bitboard, SQUARE_NR> king_moves;
-    inline std::array<Bitboard, SQUARE_NR> knight_moves;
-    inline std::array<std::array<Bitboard, SQUARE_NR>, COLOR_NR> pawn_attacks;
+    constexpr bool MoveOk(Square s, Square to) {
+        int f = foo(SqToFile(s) - SqToFile(to));
+        int r = foo(SqToRank(s) - SqToRank(to));
+        return f <= 1 && r <= 1 && to >= A1 && to <= H8;
+    }
 
-    inline std::array<std::array<Bitboard, SQUARE_NR>, SQUARE_NR> rays_to_squares;
-    inline std::array<std::array<Bitboard, SQUARE_NR>, SQUARE_NR> rays_to_borders;
+    constexpr Bitboard GenSliderMoves(Square s, Bitboard occ, std::initializer_list<Direction> dirs) {
+        Bitboard attacks = EMPTY_BB;
+        for (Direction d: dirs) {
+            Square from = s;
+            Square to = s + d;
+            while (!(occ & SqToBB(from)) && MoveOk(from, to)) {
+                attacks |= SqToBB(to);
+                from = to;
+                to += d;
+            }
+        }
+        return attacks;
+    }
 
-    inline std::array<Bitboard, 87988> magic_lookup;
+    constexpr Bitboard GenBishopMoves(Square s, Bitboard occ) {
+        return GenSliderMoves(s, occ, {NORTH_EAST, SOUTH_EAST, SOUTH_WEST, NORTH_WEST});
+    }
 
-    void Init();
+    constexpr Bitboard GenRookMoves(Square s, Bitboard occ) {
+        return GenSliderMoves(s, occ, {NORTH, SOUTH, EAST, WEST});
+    }
 
-    inline Bitboard RookAttacks(Square s, Bitboard occ) {
+    consteval auto GenTable() {
+        std::array<Bitboard, 87988> table{};
+        for (Square s: Squares) {
+            Bitboard occ = EMPTY_BB;
+            Bitboard mask = ~(((rank_mask[RANK_1] | rank_mask[RANK_8]) & ~rank_mask[SqToRank(s)])
+                              | ((file_mask[FILE_A] | file_mask[FILE_H]) & ~file_mask[SqToFile(s)]))
+                            & GenRookMoves(s, EMPTY_BB);
+            do {
+                auto idx = ((occ | (~mask)) * r_init_magic[s].factor) >> (64 - 12);
+                (table.data() + r_init_magic[s].position)[idx] = GenRookMoves(s, occ);
+                occ = (occ - mask) & mask;
+            } while (occ);
+
+            occ = EMPTY_BB;
+            mask = ~(((rank_mask[RANK_1] | rank_mask[RANK_8]) & ~rank_mask[SqToRank(s)])
+                     | ((file_mask[FILE_A] | file_mask[FILE_H]) & ~file_mask[SqToFile(s)]))
+                   & GenBishopMoves(s, EMPTY_BB);
+
+            do {
+                auto idx = ((occ | (~mask)) * b_init_magic[s].factor) >> (64 - 9);
+                (table.data() + b_init_magic[s].position)[idx] = GenBishopMoves(s, occ);
+                occ = (occ - mask) & mask;
+            } while (occ);
+
+        }
+        return table;
+    }
+
+    constexpr auto lookup_table = GenTable();
+
+    consteval auto InitMagic(auto &magic_init, auto &generator) {
+        std::array<BlackMagic, SQUARE_NR> magics{};
+        for (Square s: Squares) {
+            magics[s].mask = ~(~(((rank_mask[RANK_1] | rank_mask[RANK_8]) & ~rank_mask[SqToRank(s)])
+                                 | ((file_mask[FILE_A] | file_mask[FILE_H]) & ~file_mask[SqToFile(s)]))
+                               & generator(s, EMPTY_BB));
+            magics[s].magic_num = magic_init[s].factor;
+            magics[s].attacks = lookup_table.data() + magic_init[s].position;
+        }
+        return magics;
+    }
+
+    constexpr auto r_magics = InitMagic(r_init_magic, GenRookMoves);
+    constexpr auto b_magics = InitMagic(b_init_magic, GenBishopMoves);
+
+    constexpr Bitboard GenRaysToEdge(Square s1, Square s2) {
+
+        if (s1 == s2) {
+            return EMPTY_BB;
+        }
+
+        File f1 = SqToFile(s1);
+        Rank r1 = SqToRank(s1);
+        File f2 = SqToFile(s2);
+        Rank r2 = SqToRank(s2);
+
+        return r1 == r2 ? rank_mask[r1] :
+               f1 == f2 ? file_mask[f1] :
+               f1 + r1 == f2 + r2 ? diag_mask[f1 + r1] :
+               f1 - r1 == f2 - r2 ? anti_diag_mask[r1 + 7 - f1] :
+               EMPTY_BB;
+    }
+
+    constexpr Bitboard GenRayBetweenSquares(Square s1, Square s2) {
+
+        if (s1 == s2) {
+            return EMPTY_BB;
+        }
+
+        Square max = std::max(s1, s2);
+        Square min = std::min(s1, s2);
+
+        Rank r_max = SqToRank(max);
+        File f_max = SqToFile(max);
+
+        Rank r_min = SqToRank(min);
+        File f_min = SqToFile(min);
+
+        Bitboard mask = SqToBB(max) - (SqToBB(min) << 1);
+
+        return r_max == r_min ? rank_mask[r_max] & mask :
+               f_max == f_min ? file_mask[f_max] & mask :
+               f_min + r_min == f_max + r_max ? diag_mask[f_max + r_max] & mask :
+               f_min - r_min == f_max - r_max ? anti_diag_mask[r_max + 7 - f_max] & mask :
+               EMPTY_BB;
+    }
+
+    consteval auto GenRays(Bitboard (*RayGen)(Square, Square)) {
+        std::array<std::array<Bitboard, SQUARE_NR>, SQUARE_NR> arr{};
+        for (Square s1: Squares) {
+            for (Square s2: Squares) {
+                arr[s1][s2] = RayGen(s1, s2);
+            }
+        }
+        return arr;
+    }
+
+    constexpr auto rays_to_squares = GenRays(GenRayBetweenSquares);
+    constexpr auto rays_to_borders = GenRays(GenRaysToEdge);
+
+    consteval auto GenPieceMoves(std::initializer_list<Direction> dirs) {
+        std::array<Bitboard, SQUARE_NR> moves{};
+        for (Square s: Squares) {
+            for (const auto &d: dirs) {
+                if (s + d < SQUARE_NR && s + d >= A1) {
+                    moves[s] |= SqToBB(s + d);
+                }
+            }
+            File f = SqToFile(s);
+            moves[s] &=
+                    f > FILE_D ? ~file_mask[FILE_A] & ~file_mask[FILE_B] : ~file_mask[FILE_G] & ~file_mask[FILE_H];
+        }
+        return moves;
+    }
+
+    constexpr auto king_moves = GenPieceMoves(
+            {NORTH, NORTH_EAST, EAST, SOUTH_EAST, SOUTH, SOUTH_WEST, WEST, NORTH_WEST});
+
+    constexpr auto knight_moves = GenPieceMoves(
+            {NORTH + 2 * EAST, 2 * NORTH + EAST, NORTH + 2 * WEST, 2 * NORTH + WEST,
+             SOUTH + 2 * EAST, 2 * SOUTH + EAST, SOUTH + 2 * WEST, 2 * SOUTH + WEST});
+
+    constexpr std::array pawn_attacks = {
+            GenPieceMoves({NORTH_EAST, NORTH_WEST}),
+            GenPieceMoves({SOUTH_EAST, SOUTH_WEST})
+    };
+
+    constexpr Bitboard RayToBorders(Square s1, Square s2) { return rays_to_borders[s1][s2]; }
+    constexpr Bitboard RayToSquares(Square s1, Square s2) { return rays_to_squares[s1][s2]; }
+
+    constexpr Bitboard GetRookAttacks(Square s, Bitboard occ) {
         BlackMagic m = r_magics[s];
         return m.attacks[((occ | m.mask) * m.magic_num) >> (64 - 12)];
     }
 
-    inline Bitboard BishopAttacks(Square s, Bitboard occ) {
+    constexpr Bitboard GetBishopAttacks(Square s, Bitboard occ) {
         BlackMagic m = b_magics[s];
         return m.attacks[((occ | m.mask) * m.magic_num) >> (64 - 9)];
     }
 
-    [[maybe_unused]] [[nodiscard]] std::string PPBitboard(Bitboard b);
+    template<PieceType PT>
+    [[nodiscard]] constexpr Bitboard Attacks(Square s, Bitboard occ = EMPTY_BB, Color c = WHITE) {
+        return PT == PAWN ? pawn_attacks[c][s] :
+               PT == BISHOP ? GetBishopAttacks(s, occ) :
+               PT == ROOK ? GetRookAttacks(s, occ) :
+               PT == QUEEN ? GetBishopAttacks(s, occ) | GetRookAttacks(s, occ) :
+               PT == KNIGHT ? knight_moves[s] :
+               PT == KING ? king_moves[s] :
+               EMPTY_BB;
+    }
+
+    constexpr Bitboard RookRays(Square s) { return file_mask[SqToFile(s)] | rank_mask[SqToRank(s)]; }
+
+    constexpr Bitboard BishopRays(Square s) {
+        File f = SqToFile(s);
+        Rank r = SqToRank(s);
+        return diag_mask[f + r] | anti_diag_mask[r + 7 - f];
+    }
+
+    template<Direction D>
+    constexpr Bitboard Shift(Bitboard b) {
+        return D == NORTH ? b << 8 :
+               D == SOUTH ? b >> 8 :
+               D == EAST ? (b & ~0x8080808080808080ULL) << 1 :
+               D == WEST ? (b & ~0x0101010101010101ULL) >> 1 :
+               D == NORTH_EAST ? (b & ~0x8080808080808080ULL) << 9 :
+               D == NORTH_WEST ? (b & ~0x0101010101010101ULL) << 7 :
+               D == SOUTH_EAST ? (b & ~0x8080808080808080ULL) >> 7 :
+               D == SOUTH_WEST ? (b & ~0x0101010101010101ULL) >> 9 :
+               EMPTY_BB;
+    }
+
     [[nodiscard]] constexpr bool MoreThanOne(Bitboard b) { return (b & (b - 1)); }
     [[nodiscard]] constexpr bool ExactlyOne(Bitboard b) { return b && !MoreThanOne(b); }
     [[nodiscard]] constexpr Square Msb(Bitboard b) { return static_cast<Square>(63 ^ std::countl_zero(b)); }
@@ -97,37 +279,21 @@ namespace Bitboards {
         return s;
     }
 
-    inline Bitboard RayToBorders(Square s1, Square s2) { return rays_to_borders[s1][s2]; }
-    inline Bitboard RayToSquares(Square s1, Square s2) { return rays_to_squares[s1][s2]; }
-    constexpr Bitboard RookRays(Square s) { return file_mask[SqToFile(s)] | rank_mask[SqToRank(s)]; }
-    constexpr Bitboard BishopRays(Square s) {
-        File f = SqToFile(s);
-        Rank r = SqToRank(s);
-        return diag_mask[f + r] | anti_diag_mask[r + 7 - f];
-    }
-
-    template<PieceType PT>
-    Bitboard Attacks(Square s, Bitboard occ = EMPTY_BB, Color c = WHITE) {
-        return PT == PAWN ? pawn_attacks[c][s] :
-               PT == BISHOP ? BishopAttacks(s, occ) :
-               PT == ROOK ? RookAttacks(s, occ) :
-               PT == QUEEN ? BishopAttacks(s, occ) | RookAttacks(s, occ) :
-               PT == KNIGHT ? knight_moves[s] :
-               PT == KING ? king_moves[s] :
-               EMPTY_BB;
-    }
-
-    template<Direction D>
-    constexpr Bitboard Shift(Bitboard b) {
-        return D == NORTH ? b << 8 :
-               D == SOUTH ? b >> 8 :
-               D == EAST ? (b & ~0x8080808080808080ull) << 1 :
-               D == WEST ? (b & ~0x0101010101010101ull) >> 1 :
-               D == NORTH_EAST ? (b & ~0x8080808080808080ull) << 9 :
-               D == NORTH_WEST ? (b & ~0x0101010101010101ull) << 7 :
-               D == SOUTH_EAST ? (b & ~0x8080808080808080ull) >> 7 :
-               D == SOUTH_WEST ? (b & ~0x0101010101010101ull) >> 9 :
-               EMPTY_BB;
+    [[maybe_unused]] [[nodiscard]] inline std::string PPBitboard(Bitboard b) {
+        std::ostringstream oss;
+        for (Rank r: Ranks | std::views::reverse) {
+            oss << r + 1 << " |";
+            for (File f: Files) {
+                if ((b >> ((r * 8) + f)) & 1) {
+                    oss << " x ";
+                } else {
+                    oss << " o ";
+                }
+            }
+            oss << '\n';
+        }
+        oss << "    A  B  C  D  E  F  G  H";
+        return oss.str();
     }
 }
 

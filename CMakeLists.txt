@@ -36,13 +36,13 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 if(MSVC)
-    set(CMAKE_CXX_FLAGS_RELEASE "/D_WINDOWS /O2 /Ob2 /GR- /DNDEBUG")
+    set(CMAKE_CXX_FLAGS_RELEASE "/D_WINDOWS /O2 /Ob2 /GR- /DNDEBUG /constexpr:steps1000000000")
     set(CMAKE_CXX20_STANDARD_COMPILE_OPTION "/std:c++latest")
 endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
-    set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables -fno-rtti -march=native")
-    set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -pedantic -Wextra -Wshadow -Wno-unknown-pragmas -Wno-unused-variable")
+    set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables -fno-rtti -march=native -fconstexpr-ops-limit=1000000000")
+    set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -pedantic -Wextra -Wshadow -Wno-unknown-pragmas -Wno-unused-variable -fconstexpr-ops-limit=1000000000")
 endif()
 
 if(MINGW)
