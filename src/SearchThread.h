@@ -80,6 +80,7 @@ namespace Search {
         template<Node NodeType>
         Score ABSearch(Score alpha, Score beta, Depth depth, Depth ply);
         Score QSearch(Score alpha, Score beta, Depth ply);
+
         void UpdateKillers(Move move, Depth ply);
         [[nodiscard]] bool KillersContainMove(Move move, Depth ply) const;
         [[nodiscard]] Score RandomizedDrawScore() const;
