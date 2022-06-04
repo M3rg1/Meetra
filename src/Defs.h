@@ -151,12 +151,4 @@ constexpr Square ToSquare(Move m) { return static_cast<Square>((m >> 6) & 0x3F);
 constexpr bool IsPromotion(Move m) { return m >> 14; }
 constexpr MoveType TypeOfMove(Move m) { return static_cast<MoveType>(m & 0xF000); }
 
-template<typename T>
-struct Iterator {
-    T *p;
-    T &operator*() { return *p; }
-    bool operator!=(const Iterator &rhs) { return p != rhs.p; }
-    void operator++() { ++p; }
-};
-
 #endif //MEETRA_DEFS_H

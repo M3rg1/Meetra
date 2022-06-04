@@ -12,21 +12,25 @@
 namespace Search {
 
     struct PVLine {
-        [[nodiscard]] constexpr auto begin() const { return Iterator<const Move>{moves}; }
-        [[nodiscard]] constexpr auto end() const { return Iterator<const Move>{moves + Size()}; }
+
+        [[nodiscard]] constexpr auto begin() const { return moves.begin(); }
+        [[nodiscard]] constexpr auto end() const { return moves.begin() + len; }
         [[nodiscard]] constexpr int Size() const { return len; }
         constexpr void PutMove(Move m) { moves[len++] = m; }
         constexpr void Clear() { len = 0; }
         constexpr void Merge(const PVLine &other) {
-            std::copy_n(other.moves, other.len, moves + len);
+            std::copy_n(other.moves.begin(), other.len, moves.begin() + len);
             len += other.len;
         }
+
     private:
-        Move moves[MAX_SEARCH_DEPTH + 1];
+
+        std::array<Move, MAX_SEARCH_DEPTH + 1> moves;
         int len = 0;
     };
 
     struct RootMove {
+
         Move move;
         PVLine pv;
         Score score = NEGATIVE_INF;
