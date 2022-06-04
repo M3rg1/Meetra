@@ -17,7 +17,7 @@ namespace Search {
         [[nodiscard]] int Size() const { return len; }
         void PutMove(Move m) { moves[len++] = m; }
         void Clear() { len = 0; }
-        void PutLine(const PVLine &other) {
+        void Merge(const PVLine &other) {
             std::copy_n(other.moves, other.len, moves + len);
             len += other.len;
         }
@@ -77,6 +77,7 @@ namespace Search {
         Score ABSearch(Score alpha, Score beta, Depth depth, Depth ply);
         Score QSearch(Score alpha, Score beta, Depth ply);
         void UpdateKillers(Move move, Depth ply);
+        [[nodiscard]] bool KillersContainMove(Move move, Depth ply) const;
         [[nodiscard]] Score RandomizedDrawScore() const;
 
         [[nodiscard]] bool MoveTimeLimitReached() const;

@@ -85,8 +85,8 @@ namespace Uci {
     }
 
     void UnknownCommand() {
-        std::osyncstream(std::cout) << "Unknown command, please see the engine documentation for available commands."
-                                    << std::endl;
+        std::osyncstream(std::cout)
+                << "Unknown command, please see the engine documentation for available commands." << std::endl;
     }
 
     void UciCommand() {

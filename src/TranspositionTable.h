@@ -20,7 +20,7 @@ public:
     void Save(Hash64 hash, Score score, Depth depth, Move move, EntryFlag flag, Depth ply);
     void NewSearch();
     void Clear();
-    EntryFlag Probe(Hash64 hash, Score alpha, Score beta, Depth depth, Depth ply, Score &score, Move &move);
+    std::tuple<EntryFlag , Score, Move> Probe(Hash64 hash, Score alpha, Score beta, Depth depth, Depth ply);
     [[nodiscard]] inline int Hashfull() const {
         double usage = static_cast<double>(used_entries.load(std::memory_order_relaxed))
                        / static_cast<double>(buckets_count * TT_ENTRIES_PER_BUCKET);

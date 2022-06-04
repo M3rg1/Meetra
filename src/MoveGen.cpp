@@ -2,7 +2,6 @@
 #include <ranges>
 #include "MoveGen.h"
 
-
 bool ValidatePromMove(Move m, Move to_validate) {
     return ((m | PROMOTE_QUEEN) == to_validate)
            || ((m | PROMOTE_ROOK) == to_validate)

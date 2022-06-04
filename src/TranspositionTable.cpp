@@ -2,6 +2,8 @@
 #include <iostream>
 #include "TranspositionTable.h"
 
+using TT = TranspositionTable;
+
 Score RemoveMatePly(Score score, Depth ply) {
     return score > MIN_MATE_EVAL ? score + ply : score < -MIN_MATE_EVAL ? score - ply : score;
 }
@@ -10,7 +12,7 @@ Score AddMatePly(Score score, Depth ply) {
     return score > MIN_MATE_EVAL ? score - ply : score < -MIN_MATE_EVAL ? score + ply : score;
 }
 
-void TranspositionTable::Init(int size_mb) {
+void TT::Init(int size_mb) {
 
     if (size_mb > MAX_HASH_SIZE || size_mb < MIN_HASH_SIZE) {
         size_mb = std::clamp(size_mb, MIN_HASH_SIZE, MAX_HASH_SIZE);
@@ -23,24 +25,24 @@ void TranspositionTable::Init(int size_mb) {
     current_epoch = 0;
 }
 
-void TranspositionTable::NewSearch() {
+void TT::NewSearch() {
     used_entries = 0;
     ++current_epoch;
     current_epoch &= EPOCH_MASK;
 }
 
-void TranspositionTable::Clear() {
+void TT::Clear() {
     used_entries = 0;
     current_epoch = 0;
     std::fill_n(table.get(), buckets_count, TTBucket());
 }
 
-void TranspositionTable::Save(Hash64 hash, Score score, Depth depth, Move move, EntryFlag flag, Depth ply) {
+void TT::Save(Hash64 hash, Score score, Depth depth, Move move, EntryFlag flag, Depth ply) {
 
     TTBucket &bucket = table[hash % buckets_count];
     TTEntry *entry_to_write;
     Hash16 hash16 = Zobrist::MakeHash16(hash);
-    int worst_entry_score = 1000000;
+    int worst_entry_score = std::numeric_limits<int>::max();
 
     for (auto &entry: bucket.entries) {
 
@@ -68,12 +70,13 @@ void TranspositionTable::Save(Hash64 hash, Score score, Depth depth, Move move, 
     entry_to_write->SaveEntry(hash16, RemoveMatePly(score, ply), depth, move, flag, current_epoch);
 }
 
-TranspositionTable::EntryFlag
-TranspositionTable::Probe(Hash64 hash, Score alpha, Score beta, Depth depth, Depth ply, Score &score, Move &move) {
+std::tuple<TT::EntryFlag, Score, Move> TT::Probe(Hash64 hash, Score alpha, Score beta, Depth depth, Depth ply) {
 
     TTBucket &bucket = table[hash % buckets_count];
     EntryFlag flag = NOT_FOUND;
     Hash16 hash16 = Zobrist::MakeHash16(hash);
+    Move move = ZERO_MOVE;
+    Score score;
 
     for (auto &entry: bucket.entries) {
         if (entry.GetHash16() == hash16) {
@@ -89,6 +92,5 @@ TranspositionTable::Probe(Hash64 hash, Score alpha, Score beta, Depth depth, Dep
         }
     }
 
-    return flag;
+    return {flag, score, move};
 }
-

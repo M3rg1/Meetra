@@ -23,6 +23,9 @@ namespace Search {
             Score beta = POSITIVE_INF;
             Score score;
 
+            // TODO zero out node counts for the moves??
+            // std::ranges::for_each(root_moves, [](auto &r){ r.nodes = 0; });
+
             // alpha beta search over root moves
             for (curr_rm_num = 0; curr_rm_num < static_cast<int>(root_moves.size()); ++curr_rm_num) {
 
@@ -61,7 +64,7 @@ namespace Search {
 
                 if (score > alpha) {
                     curr_rm->pv.Clear();
-                    curr_rm->pv.PutLine(pv[2]);
+                    curr_rm->pv.Merge(pv[2]);
                     curr_rm->score = score;
                     if (multi_pv == 1) {
                         alpha = score;
@@ -121,13 +124,11 @@ namespace Search {
             return alpha;
         }
 
-        typedef TranspositionTable TT;
+        using TT = TranspositionTable;
         MoveGen move_gen(board, killers[ply]);
         Score static_eval = board.Eval();
         Score eval = static_eval; // eval is not used if we are in check
-        Move tt_move = ZERO_MOVE;
-        Score tt_score;
-        TT::EntryFlag tt_flag = tt.Probe(board.Hash(), alpha, beta, depth, ply, tt_score, tt_move);
+        auto [tt_flag, tt_score, tt_move] = tt.Probe(board.Hash(), alpha, beta, depth, ply);
 
         if (tt_flag != TT::NOT_FOUND && move_gen.IsPseudoLegal(tt_move)) {
             if (NodeType != PV && tt_flag & TT::CUTOFF) {
@@ -199,7 +200,7 @@ namespace Search {
                     ) {
                 if (moves_searched >= 7) reduction += depth / 3;
                 if (NodeType != PV) ++reduction;
-                if (std::ranges::find(killers[ply], move) != killers[ply].end()) --reduction;
+                if (KillersContainMove(move, ply)) --reduction;
                 reduction = std::clamp(reduction, 1, depth - 2);
             }
 
@@ -233,7 +234,7 @@ namespace Search {
                     if constexpr (NodeType == PV) {
                         pv[ply].Clear();
                         pv[ply].PutMove(move);
-                        pv[ply].PutLine(pv[ply + 1]);
+                        pv[ply].Merge(pv[ply + 1]);
                     }
                     if (score >= beta) {
                         UpdateKillers(move, ply);
@@ -318,10 +319,14 @@ namespace Search {
 
     void SearchThread::UpdateKillers(Move move, Depth ply) {
         // if the move is not present in the killers array, shift all moves one to the right and put the new move first
-        if (board.IsQuiet(move) && std::ranges::find(killers[ply], move) == killers[ply].end()) {
-            std::copy_backward(killers[ply].begin(), killers[ply].begin() + KILLER_SLOTS - 1, killers[ply].begin() + 1);
+        if (board.IsQuiet(move) && !KillersContainMove(move, ply)) {
+            std::copy_backward(killers[ply].begin(), killers[ply].end() - 1, killers[ply].end());
             killers[ply][0] = move;
         }
+    }
+
+    bool SearchThread::KillersContainMove(Move move, Depth ply) const {
+        return std::ranges::find(killers[ply], move) != killers[ply].end();
     }
 
     Score SearchThread::RandomizedDrawScore() const {
@@ -329,7 +334,7 @@ namespace Search {
     }
 
     bool SearchThread::DidBeatMove(const RootMove &move) const {
-        if (auto rm = std::ranges::find(root_moves, move); rm != root_moves.end()) {
+        if (const auto rm = std::ranges::find(root_moves, move); rm != root_moves.end()) {
             if (rm->depth < move.depth) {
                 return false;
             } else if (rm->depth > move.depth || BestRootMove().score > move.score) {

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(Meetra VERSION 0.1)
+project(Meetra VERSION 0.1.01)
 set(PROJECT_AUTHOR M3rg1)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -13,7 +13,7 @@ if(supported)
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
 else()
     message(STATUS "IPO / LTO not supported")
-    message(DEBUG "<${error}>")
+    message(DEBUG "${error}")
 endif()
 
 configure_file(Env.h.in ${CMAKE_BINARY_DIR}/generated/Env.h)
@@ -42,7 +42,7 @@ if(MSVC)
 endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
-    set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -fno-exceptions -fno-rtti -march=native")
+    set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables -fno-rtti -march=native")
     set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -pedantic -Wextra -Wshadow -Wno-unknown-pragmas -Wno-unused-variable")
 endif()
 
