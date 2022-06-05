@@ -435,7 +435,7 @@ bool Board::ParseFen(const std::string &fen) {
 
 bool Board::MakeUciMove(std::string_view move_name) {
 
-    Move uci_move = MoveFromName(move_name);
+    Move uci_move = StrToMove(move_name);
     MoveGen move_gen(*this);
 
     while (Move move = move_gen.NextMove()) {
@@ -448,7 +448,7 @@ bool Board::MakeUciMove(std::string_view move_name) {
     return false;
 }
 
-std::string Board::MoveToName(Move m) const {
+std::string Board::MoveToStr(Move m) const {
 
     if (m == ZERO_MOVE) {
         return "0000";
@@ -475,7 +475,7 @@ std::string Board::MoveToName(Move m) const {
     return ret;
 }
 
-Move Board::MoveFromName(std::string_view move_name) const {
+Move Board::StrToMove(std::string_view move_name) const {
 
     Square s_from = StrToSq(&move_name[0]);
     Square s_to = StrToSq(&move_name[2]);

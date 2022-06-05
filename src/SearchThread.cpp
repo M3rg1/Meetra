@@ -350,7 +350,7 @@ namespace Search {
     }
 
     void SearchThread::SendBestMove() const {
-        std::osyncstream(std::cout) << "bestmove " << board.MoveToName(BestRootMove().move) << std::endl;
+        std::osyncstream(std::cout) << "bestmove " << board.MoveToStr(BestRootMove().move) << std::endl;
     }
 
     Depth SearchThread::SeldepthReached() const {
@@ -397,9 +397,9 @@ namespace Search {
             else if (score < -MIN_MATE_EVAL) oss << "mate " << -(MATE_SCORE + score) / 2;
             else oss << "cp " << score;
 
-            oss << " pv " << board.MoveToName(root_moves[i].move);
+            oss << " pv " << board.MoveToStr(root_moves[i].move);
             for (const auto &m: root_moves[i].pv) {
-                oss << ' ' << board.MoveToName(m);
+                oss << ' ' << board.MoveToStr(m);
             }
             if (i + 1 < pvs_to_send) oss << '\n';
         }
@@ -408,16 +408,16 @@ namespace Search {
 
     void SearchThread::SendCurrMoveInfo() const {
         std::osyncstream(std::cout)
-                << "info currmove " << board.MoveToName(curr_rm->move)
+                << "info currmove " << board.MoveToStr(curr_rm->move)
                 << " currmovenumber " << curr_rm_num + 1
                 << std::endl;
     }
 
     void SearchThread::SendCurrLineInfo() const {
         std::osyncstream oss(std::cout);
-        oss << "info currline " << board.MoveToName(curr_rm->move);
+        oss << "info currline " << board.MoveToStr(curr_rm->move);
         for (const auto &m: curr_rm->pv) {
-            oss << ' ' << board.MoveToName(m);
+            oss << ' ' << board.MoveToStr(m);
         }
         oss << std::endl;
     }

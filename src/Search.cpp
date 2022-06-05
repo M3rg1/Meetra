@@ -101,7 +101,7 @@ namespace Search {
             if (auto moves = Book::Probe(board.Hash()); !moves.empty()) {
                 StopSearch();
                 std::ranges::shuffle(moves, std::mt19937{std::random_device{}()});
-                std::osyncstream(std::cout) << "bestmove " << board.MoveToName(moves.front()) << std::endl;
+                std::osyncstream(std::cout) << "bestmove " << board.MoveToStr(moves.front()) << std::endl;
                 return;
             }
         }

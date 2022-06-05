@@ -26,7 +26,7 @@ namespace Testing {
                 if (board.IsMoveLegal(m)) {
                     ++total_nodes;
                     if constexpr (DIV) {
-                        std::osyncstream(std::cout) << board.MoveToName(m) << ": 1" << std::endl;
+                        std::osyncstream(std::cout) << board.MoveToStr(m) << ": 1" << std::endl;
                     }
                 }
             }
@@ -42,7 +42,7 @@ namespace Testing {
             board.UnmakeMove(m);
             total_nodes += nodes;
             if constexpr (DIV) {
-                std::osyncstream(std::cout) << board.MoveToName(m) << ": " << nodes << std::endl;
+                std::osyncstream(std::cout) << board.MoveToStr(m) << ": " << nodes << std::endl;
             }
         }
 

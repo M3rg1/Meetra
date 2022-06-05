@@ -26,8 +26,8 @@ public:
     [[nodiscard]] bool IsAttackedBySliders(Square s, Color attacked_by, Bitboard occ) const;
     [[nodiscard]] Bitboard AttackedBy(Square s, Color attacked_by, Bitboard occ) const;
     [[nodiscard]] Bitboard PinnedToSquare(Square s, Color blockers_color) const;
-    [[nodiscard]] std::string MoveToName(Move m) const;
-    [[nodiscard]] Move MoveFromName(std::string_view move_name) const;
+    [[nodiscard]] std::string MoveToStr(Move m) const;
+    [[nodiscard]] Move StrToMove(std::string_view move_name) const;
     [[maybe_unused]] [[nodiscard]] std::string Fen() const;
     [[maybe_unused]] [[nodiscard]] std::string PrettyPrint() const;
     [[nodiscard]] inline bool IsQuiet(Move m) const {
