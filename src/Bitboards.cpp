@@ -5,7 +5,7 @@
 
 namespace Bitboards {
 
-    Bitboard GenSliderMoves(Square s, Bitboard occ, std::initializer_list<Direction> dirs) 
+    Bitboard GenSliderMoves(Square s, Bitboard occ, std::initializer_list<Direction> dirs) {
 
         auto MoveOk = [](Square from, Square to) {
             int f = std::abs(SqToFile(from) - SqToFile(to));
