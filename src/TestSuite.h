@@ -34,10 +34,10 @@ namespace Testing {
         }
 
         while (Move m = move_gen.NextMove()) {
-            if (!board.MakeMove(m)) {
-                board.UnmakeMove(m);
+            if (!board.IsMoveLegal(m)) {
                 continue;
             }
+            board.MakeMove(m);
             uint64_t nodes = Perft<false>(depth - 1, board);
             board.UnmakeMove(m);
             total_nodes += nodes;

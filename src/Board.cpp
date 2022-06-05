@@ -203,8 +203,8 @@ void Board::MakeNullMove() {
     IncrementPly();
 }
 
-// Make a pseudo legal move.
-bool Board::MakeMove(Move m) {
+// Make a legal move.
+void Board::MakeMove(Move m) {
 
     history[history_cnt++] = state;
 
@@ -260,10 +260,6 @@ bool Board::MakeMove(Move m) {
             Zobrist::RemovePiece(state.hash, moved_piece, to);
             AddPiece(to, promoted_to);
             Zobrist::AddPiece(state.hash, promoted_to, to);
-        } else if (move_type == EN_PASSANT) {
-            if (IsAttackedBySliders(Bitboards::Lsb(Pieces(KING, this_col)), next_col, Pieces(ALL_TYPES))) {
-                return false;
-            }
         }
     } else if (moved_pt == KING) {
         state.cr &= Bitboards::castling_mask[next_col];
@@ -275,19 +271,11 @@ bool Board::MakeMove(Move m) {
             // put back the rook that we took out earlier in chess 960 castling
             chess960 ? AddPiece(r_to, NewPiece(ROOK, this_col)) : MovePiece(r_from, r_to);
             Zobrist::MovePiece(state.hash, NewPiece(ROOK, this_col), r_from, r_to);
-            Bitboard king_walk = Bitboards::RayToSquares(from, to) | SqToBB(to);
-            if (!AllSquaresSafe(king_walk, next_col, Pieces(ALL_TYPES))) {
-                return false;
-            }
-        } else if (IsAttackedByAny(to, next_col, Pieces(ALL_TYPES))) {
-            return false;
         }
     }
 
     Square king_s = Bitboards::Lsb(Pieces(KING, next_col));
     state.checkers = AttackedBy(king_s, this_col, Pieces(ALL_TYPES));
-
-    return true;
 }
 
 void Board::UnmakeMove(Move m) {

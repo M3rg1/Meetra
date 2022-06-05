@@ -181,14 +181,11 @@ namespace Search {
         while (Move move = move_gen.NextBestMove<MoveGen::NORMAL>()) {
 
             // temporary fix to not play TT move twice - this should be done in the move list before evaluating the move
-            if (move == tt_move && moves_searched > 0) {
+            if (!board.IsMoveLegal(move) || (move == tt_move && moves_searched > 0)) {
                 continue;
             }
 
-            if (!board.MakeMove(move)) {
-                board.UnmakeMove(move);
-                continue;
-            }
+            board.MakeMove(move);
 
             // late move reduction
             Depth reduction = 0;
@@ -286,10 +283,11 @@ namespace Search {
         auto moves_searched = 0;
         while (Move move = move_gen.NextBestMove<MoveGen::QSEARCH>()) {
 
-            if (!board.MakeMove(move)) {
-                board.UnmakeMove(move);
+            if (!board.IsMoveLegal(move)) {
                 continue;
             }
+
+            board.MakeMove(move);
 
             Score score = -QSearch(-beta, -alpha, ply + 1);
 

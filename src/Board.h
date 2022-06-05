@@ -13,7 +13,7 @@ public:
 
     Board();
     bool NewPosition(const std::string &fen, bool isChess960 = false);
-    bool MakeMove(Move m);
+    void MakeMove(Move m);
     void UnmakeMove(Move m);
     void MakeNullMove();
     void UnmakeNullMove();
