@@ -41,17 +41,17 @@ namespace Bitboards {
             0x804020100000000, 0x402010000000000, 0x201000000000000, 0x100000000000000
     };
 
-    constexpr std::array<Bitboard, COLOR_NR> castling_mask{
+    constexpr std::array castling_mask{
             rank_mask[RANK_1],
             rank_mask[RANK_8]
     };
 
-    constexpr std::array<Bitboard, COLOR_NR> prom_mask{
+    constexpr std::array prom_mask{
             rank_mask[RANK_8],
             rank_mask[RANK_1]
     };
 
-    constexpr std::array<Bitboard, COLOR_NR> two_fwd_mask{
+    constexpr std::array two_fwd_mask{
             rank_mask[RANK_4],
             rank_mask[RANK_5]
     };
