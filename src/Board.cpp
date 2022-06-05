@@ -491,9 +491,9 @@ Move Board::StrToMove(std::string_view move_name) const {
         // FRC castling is denoted as capturing own rook, but internally we use to_square as the real square to move to
         s_to = s_to > s_from ? ColorToMove() == WHITE ? G1 : G8 : ColorToMove() == WHITE ? C1 : C8;
         flag = CASTLING;
-    } else if (moved_pt == KING && std::popcount(Bitboards::RayToSquares(s_from, s_to)) == 1) {
+    } else if (moved_pt == KING && Bitboards::ExactlyOne(Bitboards::RayToSquares(s_from, s_to))) {
         flag = CASTLING;
-    } else if (moved_pt == PAWN && std::popcount(Bitboards::RayToSquares(s_from, s_to)) == 1) {
+    } else if (moved_pt == PAWN && Bitboards::ExactlyOne(Bitboards::RayToSquares(s_from, s_to))) {
         flag = TWO_FORWARD;
     } else if (moved_pt == PAWN && s_to == EpSquare()) {
         flag = EN_PASSANT;
@@ -502,7 +502,7 @@ Move Board::StrToMove(std::string_view move_name) const {
     return NewMove(s_from, s_to, flag);
 }
 
-[[maybe_unused]] std::string Board::Fen() const {
+std::string Board::Fen() const {
 
     std::ostringstream oss;
 
@@ -546,24 +546,22 @@ Move Board::StrToMove(std::string_view move_name) const {
     return oss.str();
 }
 
-[[maybe_unused]] std::string Board::PrettyPrint() const {
-
-    std::ostringstream oss;
+std::ostream &operator<<(std::ostream &os, const Board &b) {
 
     for (Rank r: Ranks | std::views::reverse) {
-        oss << r + 1 << " |";
+        os << r + 1 << " |";
         for (File f: Files) {
-            oss << ' ' << PieceToChar(PieceOnSquare(FiRaToSq(f, r))) << (f == FILE_H ? "" : " ");
+            os << ' ' << PieceToChar(b.PieceOnSquare(FiRaToSq(f, r))) << (f == FILE_H ? "" : " ");
         }
-        oss << '\n';
+        os << '\n';
     }
-    oss << "---------------------------\n"
-        << "  | A  B  C  D  E  F  G  H\n\n"
-        << "FEN: " << Fen() << '\n'
-        << "Hash: 0x" << std::hex << std::uppercase << std::setfill('0') << std::setw(16) << Hash();
-    if (chess960) {
-        oss << "\nChess 960 board";
+    os << "---------------------------\n"
+       << "  | A  B  C  D  E  F  G  H\n\n"
+       << "FEN: " << b.Fen() << '\n'
+       << "Hash: 0x" << std::hex << std::uppercase << std::setfill('0') << std::setw(16) << b.Hash();
+    if (b.chess960) {
+        os << "\nChess 960 board";
     }
 
-    return oss.str();
+    return os;
 }

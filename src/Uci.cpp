@@ -77,7 +77,7 @@ namespace Uci {
     }
 
     void BoardCommand(const Board &board) {
-        std::osyncstream(std::cout) << '\n' << board.PrettyPrint() << std::endl;
+        std::osyncstream(std::cout) << '\n' << board << std::endl;
     }
 
     void TestCommand() {

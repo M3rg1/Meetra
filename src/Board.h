@@ -28,8 +28,7 @@ public:
     [[nodiscard]] Bitboard PinnedToSquare(Square s, Color blockers_color) const;
     [[nodiscard]] std::string MoveToStr(Move m) const;
     [[nodiscard]] Move StrToMove(std::string_view move_name) const;
-    [[maybe_unused]] [[nodiscard]] std::string Fen() const;
-    [[maybe_unused]] [[nodiscard]] std::string PrettyPrint() const;
+    [[nodiscard]] std::string Fen() const;
     [[nodiscard]] inline bool IsQuiet(Move m) const {
         return TypeOfMove(m) != EN_PASSANT && !IsPromotion(m) && PieceOnSquare(ToSquare(m)) == NO_PIECE;
     }
@@ -66,6 +65,8 @@ public:
 #pragma endregion
 
 private:
+
+    friend std::ostream &operator<<(std::ostream &os, const Board &board);
 
 #pragma region ===== Game State modifications =====
     inline void SetEpSquare(Square s) { state.ep_square = s; }
