@@ -17,7 +17,7 @@ public:
     void UnmakeMove(Move m);
     void MakeNullMove();
     void UnmakeNullMove();
-    bool MakeUciMove(std::string_view move_name);
+    bool MakeUciMove(std::string_view move);
 
     [[nodiscard]] bool IsMoveLegal(Move m) const;
     [[nodiscard]] bool IsValid() const;
@@ -27,7 +27,7 @@ public:
     [[nodiscard]] Bitboard AttackedBy(Square s, Color attacked_by, Bitboard occ) const;
     [[nodiscard]] Bitboard PinnedToSquare(Square s, Color blockers_color) const;
     [[nodiscard]] std::string MoveToStr(Move m) const;
-    [[nodiscard]] Move StrToMove(std::string_view move_name) const;
+    [[nodiscard]] Move StrToMove(std::string_view move_str) const;
     [[nodiscard]] std::string Fen() const;
     [[nodiscard]] inline bool IsQuiet(Move m) const {
         return TypeOfMove(m) != EN_PASSANT && !IsPromotion(m) && PieceOnSquare(ToSquare(m)) == NO_PIECE;

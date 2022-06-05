@@ -9,7 +9,7 @@
 #include "ZobristHash.h"
 
 Board::Board() {
-    NewPosition(STARTPOS_FEN);
+    NewPosition(STARTPOS_FEN.data());
 }
 
 bool Board::NewPosition(const std::string &fen, bool isChess960) {
@@ -374,8 +374,8 @@ Move Board::RookCastlingMove(Square king_to, Color c) const {
 
 bool Board::ParseFen(const std::string &fen) {
 
-    static constexpr auto regex_str = R"(\s*([rnbqkpRNBQKP1-8]{1,8}\/){7}([rnbqkpRNBQKP1-8]{1,8})\s*[bw]\s*(([a-hkqA-HKQ]{1,4})|(-))?\s*(([a-h][36])|(-))?\s*\d*\s*\d*\s*)";
-    static const std::regex rgx(regex_str, std::regex::optimize);
+    static constexpr auto pattern = R"(\s*([rnbqkpRNBQKP1-8]{1,8}\/){7}([rnbqkpRNBQKP1-8]{1,8})\s*[bw]\s*(([a-hkqA-HKQ]{1,4})|(-))?\s*(([a-h][36])|(-))?\s*\d*\s*\d*\s*)";
+    static const std::regex rgx(pattern, std::regex::optimize);
     if (!std::regex_match(fen, rgx)) {
         return false;
     }
@@ -433,9 +433,9 @@ bool Board::ParseFen(const std::string &fen) {
     return true;
 }
 
-bool Board::MakeUciMove(std::string_view move_name) {
+bool Board::MakeUciMove(std::string_view move_str) {
 
-    Move uci_move = StrToMove(move_name);
+    Move uci_move = StrToMove(move_str);
     MoveGen move_gen(*this);
 
     while (Move move = move_gen.NextMove()) {
@@ -475,17 +475,17 @@ std::string Board::MoveToStr(Move m) const {
     return ret;
 }
 
-Move Board::StrToMove(std::string_view move_name) const {
+Move Board::StrToMove(std::string_view move_str) const {
 
-    Square s_from = StrToSq(&move_name[0]);
-    Square s_to = StrToSq(&move_name[2]);
+    Square s_from = StrToSq(&move_str[0]);
+    Square s_to = StrToSq(&move_str[2]);
     MoveType flag = NO_FLAG;
     PieceType moved_pt = PieceTypeOnSq(s_from);
 
-    if (move_name.length() == 5) {
-        flag = move_name[4] == 'q' ? PROMOTE_QUEEN :
-               move_name[4] == 'r' ? PROMOTE_ROOK :
-               move_name[4] == 'b' ? PROMOTE_BISHOP :
+    if (move_str.length() == 5) {
+        flag = move_str[4] == 'q' ? PROMOTE_QUEEN :
+               move_str[4] == 'r' ? PROMOTE_ROOK :
+               move_str[4] == 'b' ? PROMOTE_BISHOP :
                PROMOTE_KNIGHT;
     } else if (chess960 && PieceTypeOnSq(s_to) == ROOK && ColorOfPiece(PieceOnSquare(s_to)) == ColorToMove()) {
         // FRC castling is denoted as capturing own rook, but internally we use to_square as the real square to move to

@@ -1,17 +1,18 @@
 #ifndef MEETRA_CONFIG_H
 #define MEETRA_CONFIG_H
 
+#include <filesystem>
 #include "Defs.h"
 
 constexpr Depth BOOK_DEPTH = 20; // TODO this should be read from the book itself and put in var in Book.h
-inline const std::string BOOK_PATH = "books/bestmove_r20d20_a5000.mtr.bin"; // TODO this should be UCI setting (var in Book.h)
-inline const std::string TEST_FILE_PATH = "tests/PerftTests.txt";
+const inline std::filesystem::path BOOK_PATH = "books/bestmove_r20d20_a5000.mtr.bin"; // TODO this should be UCI setting (var in Book.h)
+const inline std::filesystem::path TEST_FILE_PATH = "tests/PerftTests.txt";
 
 #pragma region ===== Global limits =====
 constexpr int MAX_LEGAL_MOVES = 256;
 constexpr int MAX_GAME_LENGTH = 1024;
 constexpr Depth MAX_SEARCH_DEPTH = 128;
-inline const std::string STARTPOS_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+constexpr std::string_view STARTPOS_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 #pragma endregion
 
 #pragma region ===== Various UCI settings limits =====
