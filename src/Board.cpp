@@ -435,6 +435,12 @@ bool Board::ParseFen(const std::string &fen) {
 
 bool Board::MakeUciMove(std::string_view move_str) {
 
+    static constexpr auto pattern = R"(([a-h][1-8]){2}[qrbn]?)";
+    static const std::regex rgx(pattern, std::regex::optimize);
+    if (!std::regex_match(move_str.data(), rgx)) {
+        return false;
+    }
+
     Move uci_move = StrToMove(move_str);
     MoveGen move_gen(*this);
 

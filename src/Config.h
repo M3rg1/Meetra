@@ -39,7 +39,7 @@ constexpr int MAX_MULTI_PV = 32;
 
 constexpr Depth DEFAULT_MUTE_PLIES = 0;
 constexpr Depth MIN_MUTE_PLIES = 0;
-constexpr Depth MAX_MUTE_PLIES = 32;
+constexpr Depth MAX_MUTE_PLIES = MAX_SEARCH_DEPTH;
 #pragma endregion
 
 #pragma region ===== Evaluation =====
