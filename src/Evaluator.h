@@ -13,8 +13,8 @@ public:
     void SetBoard(const Board &board);
     void MakeMove(const Board &board, Move m);
     [[nodiscard]] Score MoveEval(const Board &board, Move m) const;
-    [[nodiscard]] inline Score BoardEval() const { return (mg_score * mg_phase + eg_score * eg_phase) / 24; };
-    [[nodiscard]] inline int Phase() const { return phase; }
+    [[nodiscard]] Score BoardEval() const { return (mg_score * mg_phase + eg_score * eg_phase) / 24; };
+    [[nodiscard]] int Phase() const { return phase; }
 
 private:
 

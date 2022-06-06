@@ -16,7 +16,7 @@ public:
 
     explicit MoveGen(const Board &b, const std::array<Move, KILLER_SLOTS> &killer_moves = {});
 
-    inline void PutTTMove(Move tt_move) {
+    void PutTTMove(Move tt_move) {
         move_eval[moves_cnt++] = {tt_move, TT_EVAL_BONUS};
     }
 
@@ -69,14 +69,14 @@ private:
     std::array<ScoredMove, MAX_LEGAL_MOVES> move_eval;
     int moves_cnt = 0;
 
-    [[nodiscard]] inline bool Empty() const { return moves_cnt == 0; }
-    inline Move PopBack() { return move_eval[--moves_cnt].move; }
-    inline Move PopRef(ScoredMove &it) {
+    [[nodiscard]] bool Empty() const { return moves_cnt == 0; }
+    Move PopBack() { return move_eval[--moves_cnt].move; }
+    Move PopRef(ScoredMove &it) {
         std::swap(it, move_eval[--moves_cnt]);
         return move_eval[moves_cnt].move;
     }
-    inline void PutMove(Move m) { move_eval[moves_cnt++].move = m; }
-    inline void PutPromMoves(Move m) {
+    void PutMove(Move m) { move_eval[moves_cnt++].move = m; }
+    void PutPromMoves(Move m) {
         PutMove(m | PROMOTE_QUEEN);
         PutMove(m | PROMOTE_ROOK);
         PutMove(m | PROMOTE_BISHOP);

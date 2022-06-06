@@ -75,7 +75,7 @@ namespace Testing {
             }
         }
 
-        inline bool Run() {
+        bool Run() {
 
             Board board;
             if (!board.NewPosition(fen, chess960)) {

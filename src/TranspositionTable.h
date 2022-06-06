@@ -21,7 +21,7 @@ public:
     void NewSearch();
     void Clear();
     std::tuple<EntryFlag, Score, Move> Probe(Hash64 hash, Score alpha, Score beta, Depth depth, Depth ply);
-    [[nodiscard]] inline int Hashfull() const {
+    [[nodiscard]] int Hashfull() const {
         double usage = static_cast<double>(used_entries.load(std::memory_order_relaxed))
                        / static_cast<double>(buckets_count * TT_ENTRIES_PER_BUCKET);
         return static_cast<int>(std::min(usage * 1000.0, 1000.0));
@@ -35,15 +35,15 @@ private:
     // 8 bytes
     struct TTEntry {
 
-        [[nodiscard]] inline Hash16 GetHash16() const { return static_cast<Hash16>(hash); }
-        [[nodiscard]] inline Score GetScore() const { return static_cast<Score>(score); }
-        [[nodiscard]] inline Depth GetDepth() const { return static_cast<Depth>(depth); }
-        [[nodiscard]] inline Move GetMove() const { return static_cast<Move>(move); }
-        [[nodiscard]] inline EntryFlag GetFlag() const { return static_cast<EntryFlag>(flag); }
-        [[nodiscard]] inline TTEpoch GetEpoch() const { return static_cast<TTEpoch>(epoch); }
+        [[nodiscard]] Hash16 GetHash16() const { return static_cast<Hash16>(hash); }
+        [[nodiscard]] Score GetScore() const { return static_cast<Score>(score); }
+        [[nodiscard]] Depth GetDepth() const { return static_cast<Depth>(depth); }
+        [[nodiscard]] Move GetMove() const { return static_cast<Move>(move); }
+        [[nodiscard]] EntryFlag GetFlag() const { return static_cast<EntryFlag>(flag); }
+        [[nodiscard]] TTEpoch GetEpoch() const { return static_cast<TTEpoch>(epoch); }
 
-        inline void SetEpoch(TTEpoch e) { epoch = e; }
-        inline void SaveEntry(Hash16 h, Score s, Depth d, Move m, EntryFlag f, TTEpoch e) {
+        void SetEpoch(TTEpoch e) { epoch = e; }
+        void SaveEntry(Hash16 h, Score s, Depth d, Move m, EntryFlag f, TTEpoch e) {
             hash = static_cast<uint16_t>(h);
             score = static_cast<int16_t>(s);
             depth = static_cast<uint8_t>(d);
