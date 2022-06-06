@@ -9,9 +9,9 @@ namespace Bitboards {
     Bitboard GenSliderMoves(Square s, Bitboard occ, std::initializer_list<Direction> dirs) {
 
         auto MoveOk = [](Square from, Square to) {
-            int f = std::abs(SqToFile(from) - SqToFile(to));
-            int r = std::abs(SqToRank(from) - SqToRank(to));
-            return f <= 1 && r <= 1 && to >= A1 && to <= H8;
+            int f_diff = std::abs(SqToFile(from) - SqToFile(to));
+            int r_diff = std::abs(SqToRank(from) - SqToRank(to));
+            return f_diff <= 1 && r_diff <= 1 && to >= A1 && to <= H8;
         };
 
         Bitboard attacks = EMPTY_BB;
