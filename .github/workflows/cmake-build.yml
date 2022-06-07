@@ -1,11 +1,11 @@
 name: CMake-build
-    
+
 on:
   push:
     branches: [ "master" ]
   pull_request:
     branches: [ "master" ]
-    
+
 env:
   BUILD_TYPE: Release
 
@@ -15,25 +15,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - run:   |
-         sudo apt update
-         sudo apt install gcc-10 g++-10
-      shell: bash
-      
-    - uses: actions/checkout@v3
+      - run: |
+          sudo apt update
+          sudo apt install gcc-10 g++-10
+        shell: bash
 
-    - name: Build
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
-      shell: bash
-      env:
-       CC:   gcc-10
-       CXX:  g++-10
-       
+      - uses: actions/checkout@v3
+
+      - name: Build
+        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+        shell: bash
+        env:
+          CC: gcc-10
+          CXX: g++-10
+
   windows:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - name: Build
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+      - name: Build
+        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
