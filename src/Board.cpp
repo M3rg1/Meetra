@@ -433,11 +433,12 @@ bool Board::ParseFen(const std::string &fen) {
     return true;
 }
 
-bool Board::MakeUciMove(std::string_view move_str) {
+bool Board::MakeUciMove(std::string move_str) {
 
+    std::ranges::transform(move_str, move_str.begin(), ::tolower);
     static constexpr auto pattern = R"(([a-h][1-8]){2}[qrbn]?)";
     static const std::regex rgx(pattern, std::regex::optimize);
-    if (!std::regex_match(move_str.data(), rgx)) {
+    if (!std::regex_match(move_str, rgx)) {
         return false;
     }
 
