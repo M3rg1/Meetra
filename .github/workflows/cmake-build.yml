@@ -26,7 +26,7 @@ jobs:
             compiler: g++-11
 
           - os: windows-latest
-            compiler: MSVC
+            compiler: cl
 
     steps:
       - name: Checkout Repository
