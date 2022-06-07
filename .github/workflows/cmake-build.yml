@@ -22,7 +22,7 @@ jobs:
             compiler: g++-11
 
           - os: windows-latest
-            compiler: cl
+            compiler: cl 19.29
 
     steps:
       - name: Checkout Repository
@@ -43,37 +43,3 @@ jobs:
         run: cmake --build ${{github.workspace}}/build
         env:
           CXX: ${{ matrix.compiler }}
-
-#  linux:
-#    runs-on: ubuntu-latest
-#
-#    steps:
-#      - run: |
-#          sudo apt update
-#          sudo apt install ${{env.GCC_COMPILER}}
-#        shell: bash
-#
-#      - uses: actions/checkout@v3
-#
-#      - name: Build
-#        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
-#        env:
-#          CXX: ${{env.GCC_COMPILER}}
-#
-#      - name: Compile
-#        run: cmake --build ${{github.workspace}}/build
-#        env:
-#          CXX: ${{env.GCC_COMPILER}}
-#
-#
-#  windows:
-#    runs-on: windows-latest
-#
-#    steps:
-#      - uses: actions/checkout@v3
-#
-#      - name: Build
-#        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
-#
-#      - name: Compile
-#        run: cmake --build ${{github.workspace}}/build
