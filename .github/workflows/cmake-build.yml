@@ -34,8 +34,11 @@ jobs:
         env:
           CXX: g++-11
 
+      - name: Run
+        run: ${{github.workspace}}/build/Meetra_v0.1.01
+
       - name: Test
-        run: ${{github.workspace}}/build/Meetra_v0.1.01 | echo 'test'
+        run: echo 'isready'
 
 
   windows:
