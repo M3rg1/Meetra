@@ -24,17 +24,17 @@ jobs:
 
         include:
           - os: ubuntu-latest
-            compiler: ${{env.GCC_COMPILER}}
+            compiler: g++-11
 
           - os: macos-latest
-            compiler: ${{env.GCC_COMPILER}}
+            compiler: g++-11
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
       - name: Update compiler
-        if: ${{ matrix.compiler == env.GCC_COMPILER }}
+        if: ${{ matrix.compiler == 'g++-11' }}
         run: |
           sudo apt update
           sudo apt install ${{matrix.compiler}}
