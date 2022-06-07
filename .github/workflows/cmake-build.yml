@@ -17,7 +17,7 @@ jobs:
     steps:
       - run: |
           sudo apt update
-          sudo apt install g++-10
+          sudo apt install g++-11
         shell: bash
 
       - uses: actions/checkout@v3
@@ -26,13 +26,13 @@ jobs:
         run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
         shell: bash
         env:
-          CXX: g++-10
+          CXX: g++-11
 
       - name: Compile
         run: cmake --build ${{github.workspace}}/build
         shell: bash
         env:
-          CXX: g++-10
+          CXX: g++-11
 
       - name: Test
         run: ./Meetra_v0.1.01.exe | echo 'test'
