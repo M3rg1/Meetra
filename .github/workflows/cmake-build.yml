@@ -32,11 +32,11 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-#      - name: Update compiler
-#        if: ${{ matrix.compiler == 'g++-11' }}
-#        run: |
-#          sudo apt update
-#          sudo apt install ${{ matrix.compiler }}
+      - name: Update compiler
+        if: ${{ matrix.compiler == 'g++-11' }}
+        run: |
+          sudo apt update
+          sudo apt install ${{ matrix.compiler }}
 
       - name: Build
         env:
