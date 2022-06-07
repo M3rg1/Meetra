@@ -251,7 +251,7 @@ namespace Search {
         } // end move loop
 
         if (moves_searched == 0) {
-            return board.IsInCheck() ? -MATE_SCORE + ply : RandomizedDrawScore();
+            return board.IsInCheck() ? -MATE_SCORE + ply : RandomizedDrawScore(); // tst
         }
 
         tt.Save(board.Hash(), best_score, depth, best_move, tt_flag, ply);
