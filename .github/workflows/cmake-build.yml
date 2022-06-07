@@ -28,6 +28,10 @@ jobs:
         env:
           CXX: g++-10
 
+      - name: Test
+        run: ./Meetra_v0.1.01 | echo 'test'
+
+
   windows:
     runs-on: windows-latest
 
