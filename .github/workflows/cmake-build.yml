@@ -25,9 +25,6 @@ jobs:
           - os: ubuntu-latest
             compiler: g++-11
 
-          - os: windows-latest
-            compiler: msvc 19.29
-
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
