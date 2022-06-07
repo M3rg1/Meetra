@@ -20,24 +20,21 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ ubuntu-latest, macos-latest, windows-latest ]
+        os: [ ubuntu-latest, windows-latest ]
 
         include:
           - os: ubuntu-latest
-            compiler: g++-11
-
-          - os: macos-latest
             compiler: g++-11
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-#      - name: Update compiler
-#        if: ${{ matrix.compiler == 'g++-11' }}
-#        run: |
-#          sudo apt update
-#          sudo apt install ${{matrix.compiler}}
+      - name: Update compiler
+        if: ${{ matrix.compiler == 'g++-11' }}
+        run: |
+          sudo apt update
+          sudo apt install ${{matrix.compiler}}
 
       - name: Build
         run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
