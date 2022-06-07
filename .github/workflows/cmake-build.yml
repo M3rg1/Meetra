@@ -36,13 +36,9 @@ jobs:
           sudo apt install ${{ matrix.compiler }}
 
       - name: Build
-        env:
-          CXX: ${{ matrix.compiler }}
         run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
 
       - name: Compile
-        env:
-          CXX: ${{ matrix.compiler }}
         run: cmake --build ${{github.workspace}}/build
 
 #  linux:
