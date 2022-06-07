@@ -9,9 +9,9 @@ on:
 env:
   BUILD_TYPE: Release
 
-#defaults:
-#  run:
-#    shell: bash
+defaults:
+  run:
+    shell: bash
 
 jobs:
   build_and_compile:
@@ -19,14 +19,14 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ ubuntu-latest ]
+        os: [ ubuntu-latest, windows-latest ]
 
         include:
           - os: ubuntu-latest
             compiler: g++-11
 
-#          - os: windows-latest
-#            compiler: MSVC 19.29
+          - os: windows-latest
+            compiler: MSVC
 
     steps:
       - name: Checkout Repository
@@ -39,14 +39,14 @@ jobs:
           sudo apt install ${{ matrix.compiler }}
 
       - name: Build
+        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
         env:
           CXX: ${{ matrix.compiler }}
-        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
 
       - name: Compile
+        run: cmake --build ${{github.workspace}}/build
         env:
           CXX: ${{ matrix.compiler }}
-        run: cmake --build ${{github.workspace}}/build
 
 #  linux:
 #    runs-on: ubuntu-latest
