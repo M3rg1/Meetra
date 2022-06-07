@@ -29,6 +29,9 @@ jobs:
           CXX: g++-10
 
       - name: Test
+        run: cmake --build ${{github.workspace}}/build
+
+      - name: Run
         run: ./Meetra_v0.1.01.exe | echo 'test'
 
 
