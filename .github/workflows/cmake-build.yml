@@ -8,7 +8,7 @@ on:
 
 env:
   BUILD_TYPE: Release
-  GCC_COMPILER: g++-11
+  GCC_COMPILER: g++-10
 
 defaults:
   run:
@@ -24,23 +24,27 @@ jobs:
 
         include:
           - os: ubuntu-latest
-            compiler: g++-11
+            compiler: g++-10
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
       - name: Update compiler
-        if: ${{ matrix.compiler == 'g++-11' }}
+        if: ${{ matrix.compiler == 'g++-10' }}
         run: |
           sudo apt update
           sudo apt install ${{matrix.compiler}}
 
       - name: Build
         run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+        env:
+          CXX: ${{ matrix.compiler }}
 
       - name: Compile
         run: cmake --build ${{github.workspace}}/build
+        env:
+          CXX: ${{ matrix.compiler }}
 
 #  linux:
 #    runs-on: ubuntu-latest
