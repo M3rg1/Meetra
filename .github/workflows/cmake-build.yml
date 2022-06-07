@@ -22,7 +22,7 @@ jobs:
             compiler: g++-11
 
           - os: windows-latest
-            compiler: cl 19.29
+            compiler: cl
 
     steps:
       - name: Checkout Repository
