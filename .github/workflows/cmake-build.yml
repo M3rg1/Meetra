@@ -36,6 +36,10 @@ jobs:
 
       - name: Build
         run: cmake -B ${{ github.workspace }}/build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+        env:
+          CXX: ${{ matrix.compiler }}
 
       - name: Compile
         run: cmake --build ${{github.workspace}}/build
+        env:
+          CXX: ${{ matrix.compiler }}
