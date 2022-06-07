@@ -8,6 +8,7 @@ on:
 
 env:
   BUILD_TYPE: Release
+  GCC_COMPILER: g++-11
 
 jobs:
 
@@ -17,28 +18,20 @@ jobs:
     steps:
       - run: |
           sudo apt update
-          sudo apt install g++-11
+          sudo apt install ${{env.GCC_COMPILER}}
         shell: bash
 
       - uses: actions/checkout@v3
 
       - name: Build
         run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
-        shell: bash
         env:
-          CXX: g++-11
+          CXX: ${{env.GCC_COMPILER}}
 
       - name: Compile
         run: cmake --build ${{github.workspace}}/build
-        shell: bash
         env:
-          CXX: g++-11
-
-      - name: Run
-        run: ${{github.workspace}}/build/Meetra_v0.1.01
-
-      - name: Test
-        run: echo 'isready'
+          CXX: ${{env.GCC_COMPILER}}
 
 
   windows:
@@ -49,3 +42,6 @@ jobs:
 
       - name: Build
         run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+
+      - name: Compile
+        run: cmake --build ${{github.workspace}}/build
