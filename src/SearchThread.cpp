@@ -111,6 +111,7 @@ namespace Search {
         }
 
         curr_rm->seldepth = std::max(ply, curr_rm->seldepth);
+        pv[ply].Clear();
 
         if (board.IsDraw()) {
             return RandomizedDrawScore();
@@ -216,7 +217,6 @@ namespace Search {
             }
             // Full search: PV nodes only. It's either the first move we are searching or PVS search failed
             if (NodeType == PV && (moves_searched == 0 || (score > alpha && score < beta))) {
-                pv[ply + 1].Clear();
                 score = -ABSearch<PV>(-beta, -alpha, depth - 1, ply + 1);
             }
 

@@ -66,7 +66,7 @@ private:
     };
 
     TTEpoch current_epoch;
-    std::atomic<int_fast64_t> used_entries;
+    std::atomic<uint64_t> used_entries;
     size_t buckets_count;
     std::unique_ptr<TTBucket[]> table;
 };

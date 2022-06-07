@@ -134,7 +134,7 @@ enum CastlingSide {
  * 12-15 MoveType flag
  * if the 14th bit is 1, it's a promotion move -> prom bits  N = 0010.., B = 1010.., R = 0110.., Q = 1110..
  */
-using Move = uint_fast16_t;
+using Move = uint16_t;
 constexpr Move ZERO_MOVE = 0;
 
 enum MoveType {
