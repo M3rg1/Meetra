@@ -8,43 +8,41 @@ on:
 
 env:
   BUILD_TYPE: Release
-  GCC_COMPILER: g++-11
-
 
 jobs:
-#  build_and_compile:
-#    name: Build & compile on ${{ matrix.os }} with ${{ matrix.compiler }}.
-#    runs-on: ${{ matrix.os }}
-#    strategy:
-#      matrix:
-#        os: [ ubuntu-latest, windows-latest ]
-#
-#        include:
-#          - os: ubuntu-latest
-#            compiler: g++-11
-#
-#          - os: windows-latest
-#            compiler: cl
-#
-#    steps:
-#      - name: Checkout Repository
-#        uses: actions/checkout@v3
-#
-#      - name: Update compiler
-#        if: ${{ matrix.compiler == 'g++-11' }}
-#        run: |
-#          sudo apt update
-#          sudo apt install ${{ matrix.compiler }}
-#
-#      - name: Build
-#        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
-#        env:
-#          CXX: ${{ matrix.compiler }}
-#
-#      - name: Compile
-#        run: cmake --build ${{github.workspace}}/build
-#        env:
-#          CXX: ${{ matrix.compiler }}
+  build_and_compile:
+    name: Build & compile on ${{ matrix.os }} with ${{ matrix.compiler }}.
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, windows-latest ]
+
+        include:
+          - os: ubuntu-latest
+            compiler: g++-11
+
+          - os: windows-latest
+            compiler: cl
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Update compiler
+        if: ${{ matrix.compiler == 'g++-11' }}
+        run: |
+          sudo apt update
+          sudo apt install ${{ matrix.compiler }}
+
+      - name: Build
+        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+        env:
+          CXX: ${{ matrix.compiler }}
+
+      - name: Compile
+        run: cmake --build ${{github.workspace}}/build
+        env:
+          CXX: ${{ matrix.compiler }}
 
 #  linux:
 #    runs-on: ubuntu-latest
@@ -66,16 +64,16 @@ jobs:
 #        run: cmake --build ${{github.workspace}}/build
 #        env:
 #          CXX: ${{env.GCC_COMPILER}}
-
-
-  windows:
-    runs-on: windows-latest
-
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Build
-        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
-
-      - name: Compile
-        run: cmake --build ${{github.workspace}}/build
+#
+#
+#  windows:
+#    runs-on: windows-latest
+#
+#    steps:
+#      - uses: actions/checkout@v3
+#
+#      - name: Build
+#        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+#
+#      - name: Compile
+#        run: cmake --build ${{github.workspace}}/build
