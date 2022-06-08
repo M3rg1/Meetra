@@ -19,7 +19,7 @@ jobs:
 
         include:
           - os: ubuntu-latest
-            compiler: g++-11
+            compiler: g++-12
 
           - os: macos-latest
             compiler: g++-11
