@@ -27,7 +27,7 @@ find_package(Threads REQUIRED)
 set(LINK_LIBS Threads::Threads)
 
 add_executable(${PROJECT_NAME} ${SRC_FILES})
-target_include_directories(${PROJECT_NAME} PUBLIC ${INCLUDE_DIRS})
+target_include_directories(${PROJECT_NAME} PRIVATE ${INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} ${LINK_LIBS})
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "${PROJECT_NAME}_v${PROJECT_VERSION}")
 
@@ -36,12 +36,13 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 if(MSVC)
-    set(CMAKE_CXX_FLAGS_RELEASE "/D_WINDOWS /O2 /Ob2 /GR- /DNDEBUG")
+    set(CMAKE_CXX_FLAGS_RELEASE "/O2 /GR- /DNDEBUG")
+    set(CMAKE_CXX_FLAGS_DEBUG "/Zi /Ob0 /Od /RTC1 /W3")
     set(CMAKE_CXX20_STANDARD_COMPILE_OPTION "/std:c++latest")
 endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
-    set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -fno-unwind-tables -fno-asynchronous-unwind-tables -fno-rtti -march=native") #-fno-exceptions
+    set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -fno-rtti -march=native") # -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables
     set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -pedantic -Wextra -Wshadow -Wno-unknown-pragmas -Wno-unused-variable")
 endif()
 

@@ -112,7 +112,7 @@ namespace Uci {
         iss >> depth;
 
         auto start = Now();
-        auto nodes = Testing::Perft<true>(depth, board);
+        auto nodes = depth > 0 ? Testing::Perft<true>(depth, board) : 0;
         auto elapsed = ElapsedSince(start);
 
         std::osyncstream(std::cout) << "\nTime elapsed: " << elapsed << "ms"

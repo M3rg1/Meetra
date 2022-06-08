@@ -142,8 +142,8 @@ enum MoveType {
     PROMOTE_KNIGHT = 4 << 12, PROMOTE_BISHOP = 5 << 12, PROMOTE_ROOK = 6 << 12, PROMOTE_QUEEN = 7 << 12
 };
 
-constexpr Move NewMove(Square from, Square to) { return from | (to << 6); }
-constexpr Move NewMove(Square from, Square to, MoveType flag) { return NewMove(from, to) | flag; }
+constexpr Move NewMove(Square from, Square to) { return static_cast<Move>(from | (to << 6)); }
+constexpr Move NewMove(Square from, Square to, MoveType flag) { return static_cast<Move>(NewMove(from, to) | flag); }
 
 constexpr PieceType PromotionTo(MoveType mt) { return static_cast<PieceType>((mt >> 12) - 2); }
 constexpr Square FromSquare(Move m) { return static_cast<Square>(m & 0x3F); }
