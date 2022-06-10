@@ -81,7 +81,7 @@ namespace Search {
             } // end alpha beta loop
 
             // sort based on score -> previous score -> node count
-            std::ranges::stable_sort(root_moves);
+            std::ranges::sort(root_moves);
 
             if (DepthLimitReached()) {
                 StopSearch();
@@ -99,7 +99,7 @@ namespace Search {
         } // end iterative deepening loop
 
         if (IsMainThread()) {
-            FinishSearch();
+            FinalizeSearch();
         }
     }
 
@@ -335,7 +335,8 @@ namespace Search {
     }
 
     bool SearchThread::DidBeatMove(const RootMove &move) const {
-        if (const auto rm = std::ranges::find(root_moves, move); rm != root_moves.end()) {
+        const auto rm = std::ranges::find(root_moves, move);
+        if (rm != root_moves.end()) {
             if (rm->depth < move.depth) {
                 return false;
             } else if (rm->depth > move.depth || BestRootMove().score > move.score) {
@@ -392,7 +393,7 @@ namespace Search {
                 << " hashfull " << tt.Hashfull()
                 << " score ";
 
-            Score score = (root_moves[i].score == 1 || root_moves[i].score == -1) ? 0 : root_moves[i].score;
+            Score score = (root_moves[i].score > 1 || root_moves[i].score < -1) ? root_moves[i].score : 0;
             if (score > MIN_MATE_EVAL) oss << "mate " << (MATE_SCORE - score) / 2;
             else if (score < -MIN_MATE_EVAL) oss << "mate " << -(MATE_SCORE + score) / 2;
             else oss << "cp " << score;

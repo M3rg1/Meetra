@@ -68,7 +68,7 @@ namespace Search {
         return root_moves;
     }
 
-    void FinishSearch() {
+    void FinalizeSearch() {
 
         StopSearch();
 

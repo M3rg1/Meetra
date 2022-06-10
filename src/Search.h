@@ -51,7 +51,7 @@ namespace Search {
 
     void Init();
     void StartSearch(Settings settings, Board board);
-    void FinishSearch();
+    void FinalizeSearch();
     void Shutdown();
 
     [[nodiscard]] bool EnoughTimeLeft();
