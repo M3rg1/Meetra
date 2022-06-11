@@ -4,11 +4,11 @@
 
 using TT = TranspositionTable;
 
-Score RemoveMatePly(Score score, Depth ply) {
+constexpr Score RemoveMatePly(Score score, Depth ply) {
     return score > MIN_MATE_EVAL ? score + ply : score < -MIN_MATE_EVAL ? score - ply : score;
 }
 
-Score AddMatePly(Score score, Depth ply) {
+constexpr Score AddMatePly(Score score, Depth ply) {
     return score > MIN_MATE_EVAL ? score - ply : score < -MIN_MATE_EVAL ? score + ply : score;
 }
 
@@ -40,9 +40,9 @@ void TT::Clear() {
 void TT::Save(Hash64 hash, Score score, Depth depth, Move move, EntryFlag flag, Depth ply) {
 
     TTBucket &bucket = table[hash % buckets_count];
-    TTEntry *entry_to_write;
     Hash16 hash16 = Zobrist::MakeHash16(hash);
     int worst_entry_score = std::numeric_limits<int>::max();
+    TTEntry *entry_to_write;
 
     for (auto &entry: bucket.entries) {
 
