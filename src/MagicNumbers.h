@@ -1,9 +1,9 @@
 #ifndef MEETRA_MAGICNUMBERS_H
 #define MEETRA_MAGICNUMBERS_H
 
-#include "Defs.h"
-
 namespace Bitboards {
+
+    // Magics found by - http://talkchess.com/forum/viewtopic.php?t=64790
 
     struct MagicInit {
         uint64_t factor;

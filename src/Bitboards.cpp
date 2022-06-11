@@ -139,6 +139,4 @@ namespace Bitboards {
         oss << "    A  B  C  D  E  F  G  H";
         return oss.str();
     }
-
-#pragma endregion
 }
