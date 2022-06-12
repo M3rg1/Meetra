@@ -410,7 +410,7 @@ bool Board::ParseFen(const std::string &fen) {
             Color col = std::isupper(c) ? WHITE : BLACK;
             Bitboard rooks = Pieces(ROOK, col) & Bitboards::castling_mask[col];
             c = std::tolower(c, std::locale());
-            if (c == 'k' || c == 'q' || ('a' <= c && c <= 'h')) {
+            if ((c == 'k' || c == 'q' || ('a' <= c && c <= 'h')) && rooks) {
                 Bitboard r_bb = SqToBB(c == 'k' ? Bitboards::Msb(rooks) :
                                        c == 'q' ? Bitboards::Lsb(rooks) :
                                        FiRaToSq(CharToFile(c), col == WHITE ? RANK_1 : RANK_8));
