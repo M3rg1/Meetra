@@ -132,8 +132,9 @@ auto MoveGen::MovesForPT(Bitboard pieces, Bitboard legality_mask, Move to_valida
         }
         while (possible_moves) {
             Square dest_s = Bitboards::PopLsb(possible_moves);
-            if constexpr (M == GENERATE) PutMove(NewMove(origin_s, dest_s));
-            if constexpr (M == VALIDATE) if (NewMove(origin_s, dest_s) == to_validate) return true;
+            Move move = NewMove(origin_s, dest_s);
+            if constexpr (M == GENERATE) PutMove(move);
+            if constexpr (M == VALIDATE) if (move == to_validate) return true;
         }
     }
     if constexpr (M == VALIDATE) return false;
@@ -149,8 +150,9 @@ auto MoveGen::PawnOneFwd(Bitboard pieces, Move to_validate) {
         Square dest_s = Bitboards::PopLsb(one_fwd);
         Square origin_s = dest_s - dir;
         if (!DiscoveryCheck(origin_s, dest_s)) {
-            if constexpr (M == GENERATE) PutMove(NewMove(origin_s, dest_s));
-            if constexpr (M == VALIDATE) if (NewMove(origin_s, dest_s) == to_validate) return true;
+            Move pawn_one_fwd_move = NewMove(origin_s, dest_s);
+            if constexpr (M == GENERATE) PutMove(pawn_one_fwd_move);
+            if constexpr (M == VALIDATE) if (pawn_one_fwd_move == to_validate) return true;
         }
     }
     if constexpr (M == VALIDATE) return false;
@@ -167,8 +169,9 @@ auto MoveGen::PawnTwoFwd(Bitboard pieces, Move to_validate) {
         Square dest_s = Bitboards::PopLsb(two_fwd);
         Square origin_s = dest_s - dir - dir;
         if (!DiscoveryCheck(origin_s, dest_s)) {
-            if constexpr (M == GENERATE) PutMove(NewMove(origin_s, dest_s, TWO_FORWARD));
-            if constexpr (M == VALIDATE) if (NewMove(origin_s, dest_s, TWO_FORWARD) == to_validate) return true;
+            Move pawn_two_fwd_move = NewMove(origin_s, dest_s, TWO_FORWARD);
+            if constexpr (M == GENERATE) PutMove(pawn_two_fwd_move);
+            if constexpr (M == VALIDATE) if (pawn_two_fwd_move == to_validate) return true;
         }
     }
     if constexpr (M == VALIDATE) return false;
@@ -184,8 +187,9 @@ auto MoveGen::PawnCaptures(Bitboard pieces, Move to_validate) {
         Square dest_s = Bitboards::PopLsb(captures);
         Square origin_s = dest_s - dir;
         if (!DiscoveryCheck(origin_s, dest_s)) {
-            if constexpr (M == GENERATE) PutMove(NewMove(origin_s, dest_s));
-            if constexpr (M == VALIDATE) if (NewMove(origin_s, dest_s) == to_validate) return true;
+            Move pawn_capture_move = NewMove(origin_s, dest_s);
+            if constexpr (M == GENERATE) PutMove(pawn_capture_move);
+            if constexpr (M == VALIDATE) if (pawn_capture_move == to_validate) return true;
         }
     }
     if constexpr (M == VALIDATE) return false;
@@ -221,8 +225,9 @@ auto MoveGen::EpMoves(Bitboard pieces, Move to_validate) {
         Bitboard attackers = Bitboards::Attacks<PAWN>(ep_s, EMPTY_BB, OtherColor(C)) & pieces;
         while (attackers) {
             Square origin_s = Bitboards::PopLsb(attackers);
-            if constexpr (M == GENERATE) PutMove(NewMove(origin_s, ep_s, EN_PASSANT));
-            if constexpr (M == VALIDATE) if (NewMove(origin_s, ep_s, EN_PASSANT) == to_validate) return true;
+            Move ep_move = NewMove(origin_s, ep_s, EN_PASSANT);
+            if constexpr (M == GENERATE) PutMove(ep_move);
+            if constexpr (M == VALIDATE) if (ep_move == to_validate) return true;
         }
     }
     if constexpr (M == VALIDATE) return false;
@@ -235,12 +240,14 @@ auto MoveGen::CastlingMoves(Move to_validate) {
         if constexpr (M == VALIDATE) return false;
     }
     if (CanCastle<C, SHORT>()) {
-        if constexpr (M == GENERATE) PutMove(NewMove(king_s, C == WHITE ? G1 : G8, CASTLING));
-        if constexpr (M == VALIDATE) if (NewMove(king_s, C == WHITE ? G1 : G8, CASTLING) == to_validate) return true;
+        Move shor_castling_move = NewMove(king_s, C == WHITE ? G1 : G8, CASTLING);
+        if constexpr (M == GENERATE) PutMove(shor_castling_move);
+        if constexpr (M == VALIDATE) if (shor_castling_move == to_validate) return true;
     }
     if (CanCastle<C, LONG>()) {
-        if constexpr (M == GENERATE) PutMove(NewMove(king_s, C == WHITE ? C1 : C8, CASTLING));
-        if constexpr (M == VALIDATE) if (NewMove(king_s, C == WHITE ? C1 : C8, CASTLING) == to_validate) return true;
+        Move long_castling_move = NewMove(king_s, C == WHITE ? C1 : C8, CASTLING);
+        if constexpr (M == GENERATE) PutMove(long_castling_move);
+        if constexpr (M == VALIDATE) if (long_castling_move == to_validate) return true;
     }
     if constexpr (M == VALIDATE) return false;
 }
