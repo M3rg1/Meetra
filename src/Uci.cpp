@@ -187,7 +187,6 @@ namespace Uci {
         }
         iss >> value;
 
-        std::ranges::transform(value, value.begin(), ::tolower);
         std::ranges::transform(option, option.begin(), ::tolower);
 
         if (option == "clear hash") {
