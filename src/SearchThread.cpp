@@ -399,12 +399,12 @@ namespace Search {
             else oss << "cp " << score;
 
             oss << " pv " << board.MoveToStr(root_moves[i].move);
-            for (const auto &m: root_moves[i].pv) {
+            for (auto m: root_moves[i].pv) {
                 oss << ' ' << board.MoveToStr(m);
             }
-            if (i + 1 < pvs_to_send) oss << '\n';
+            oss << '\n';
         }
-        oss << std::endl;
+        oss << std::flush;
     }
 
     void SearchThread::SendCurrMoveInfo() const {
@@ -417,7 +417,7 @@ namespace Search {
     void SearchThread::SendCurrLineInfo() const {
         std::osyncstream oss(std::cout);
         oss << "info currline " << board.MoveToStr(curr_rm->move);
-        for (const auto &m: curr_rm->pv) {
+        for (auto m: curr_rm->pv) {
             oss << ' ' << board.MoveToStr(m);
         }
         oss << std::endl;

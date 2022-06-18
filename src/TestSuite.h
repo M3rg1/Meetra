@@ -150,7 +150,7 @@ namespace Testing {
             << "Average NPS: " << Nps(nodes, elapsed) << '\n';
         if (!errors.empty()) {
             oss << "\nErrors found in tests:\n\n";
-            for (const auto &e: errors) {
+            for (auto e: errors) {
                 oss << (e + 1) << ". FEN: " << tests[e].fen << '\n';
             }
             oss << "\n========\nTotal errors: " << errors.size();
