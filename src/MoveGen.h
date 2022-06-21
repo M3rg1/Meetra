@@ -2,6 +2,7 @@
 #define MEETRA_MOVEGEN_H
 
 #include <array>
+#include "SearchThread.h" // todo this shouldnt be here (only cuz we need the killers struct) - move list soon pls
 #include "Defs.h"
 #include "Board.h"
 #include "Config.h"
@@ -14,7 +15,7 @@ public:
         QSEARCH, NORMAL
     };
 
-    explicit MoveGen(const Board &b, const std::array<Move, KILLER_SLOTS> &killer_moves = {});
+    explicit MoveGen(const Board &b, const Search::Killers &killer_moves = {});
 
     void PutTTMove(Move tt_move) {
         move_eval[moves_cnt++] = {tt_move, TT_EVAL_BONUS};
@@ -65,7 +66,8 @@ private:
 
     GenPhase gen_phase = PROMOTION;
 
-    std::array<Move, KILLER_SLOTS> killers;
+    const Search::Killers killers;
+    int killers_cnt = 0;
     std::array<ScoredMove, MAX_LEGAL_MOVES> move_eval;
     int moves_cnt = 0;
 

@@ -153,7 +153,7 @@ namespace Search {
             return eval;
         }
 
-        killers[ply + 1].fill(ZERO_MOVE);
+        killers[ply + 1].Clear();
 
         // null move pruning
         if (NodeType == NON_PV
@@ -202,7 +202,7 @@ namespace Search {
                     ) {
                 if (moves_searched >= 7) reduction += depth / 3;
                 if (NodeType != PV) ++reduction;
-                if (KillersContainMove(move, ply)) --reduction;
+                if (killers[ply].Contains(move)) --reduction;
                 reduction = std::clamp(reduction, 1, depth - 2);
             }
 
@@ -320,14 +320,9 @@ namespace Search {
 
     void SearchThread::UpdateKillers(Move move, Depth ply) {
         // if the move is not present in the killers array, shift all moves one to the right and put the new move first
-        if (board.IsQuiet(move) && !KillersContainMove(move, ply)) {
-            std::copy_backward(killers[ply].begin(), killers[ply].end() - 1, killers[ply].end());
-            killers[ply][0] = move;
+        if (board.IsQuiet(move) && !killers[ply].Contains(move)) {
+            killers[ply].PutMove(move);
         }
-    }
-
-    bool SearchThread::KillersContainMove(Move move, Depth ply) const {
-        return std::ranges::find(killers[ply], move) != killers[ply].end();
     }
 
     Score SearchThread::RandomizedDrawScore() const {
@@ -382,26 +377,24 @@ namespace Search {
 
         std::osyncstream oss(std::cout);
         auto pvs_to_send = std::min(multi_pv, static_cast<int>(root_moves.size()));
-        for (auto i: std::views::iota(0, pvs_to_send)) {
+        for (const auto &rm: root_moves | std::views::take(pvs_to_send)) {
             oss << "info";
-            if (pvs_to_send > 1) oss << " multipv " << i + 1;
-            oss << " depth " << root_moves[i].depth
-                << " seldepth " << root_moves[i].seldepth
+            if (pvs_to_send > 1) oss << " multipv " << (std::distance(root_moves.data(), &rm) + 1);
+            oss << " depth " << rm.depth
+                << " seldepth " << rm.seldepth
                 << " nodes " << nodes
                 << " time " << elapsed
                 << " nps " << Nps(nodes, elapsed)
                 << " hashfull " << tt.Hashfull()
                 << " score ";
 
-            Score score = (root_moves[i].score > 1 || root_moves[i].score < -1) ? root_moves[i].score : 0;
+            Score score = (rm.score > 1 || rm.score < -1) ? rm.score : 0;
             if (score > MIN_MATE_EVAL) oss << "mate " << (MATE_SCORE - score) / 2;
             else if (score < -MIN_MATE_EVAL) oss << "mate " << -(MATE_SCORE + score) / 2;
             else oss << "cp " << score;
 
-            oss << " pv " << board.MoveToStr(root_moves[i].move);
-            for (auto m: root_moves[i].pv) {
-                oss << ' ' << board.MoveToStr(m);
-            }
+            oss << " pv " << board.MoveToStr(rm.move);
+            std::ranges::for_each(rm.pv, [&](auto m) { oss << ' ' << board.MoveToStr(m); });
             oss << '\n';
         }
         oss << std::flush;
@@ -417,9 +410,7 @@ namespace Search {
     void SearchThread::SendCurrLineInfo() const {
         std::osyncstream oss(std::cout);
         oss << "info currline " << board.MoveToStr(curr_rm->move);
-        for (auto m: curr_rm->pv) {
-            oss << ' ' << board.MoveToStr(m);
-        }
+        std::ranges::for_each(curr_rm->pv, [&](auto m) { oss << ' ' << board.MoveToStr(m); });
         oss << std::endl;
     }
 
@@ -479,7 +470,7 @@ namespace Search {
         curr_rm_num = 0;
         depth_reached = 0;
         nodes_explored = 0;
-        std::ranges::for_each(killers, [&](auto &k) { k.fill(ZERO_MOVE); });
+        std::ranges::for_each(killers, [&](auto &k) { k.Clear(); });
     }
 
     void SearchThread::StartThread() {

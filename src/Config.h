@@ -69,7 +69,7 @@ constexpr Depth NULL_MIN_DEPTH = 4;
 constexpr Depth NULL_BASE_REDUCTION = 4;
 constexpr Depth LMR_MIN_DEPTH = 3;
 constexpr int LMR_MIN_MOVES_SEARCHED = 2;
-constexpr int KILLER_SLOTS = 2;
+constexpr int KILLER_SLOTS = 2; // this should never be 0
 #pragma endregion
 
 #endif //MEETRA_CONFIG_H

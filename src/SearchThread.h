@@ -11,6 +11,33 @@
 
 namespace Search {
 
+    struct Killers {
+
+        [[nodiscard]] constexpr auto begin() const { return killers.begin(); }
+        [[nodiscard]] constexpr auto end() const { return killers.begin() + len; }
+        [[nodiscard]] constexpr auto begin() { return killers.begin(); }
+        [[nodiscard]] constexpr auto end() { return killers.begin() + len; }
+        [[nodiscard]] constexpr int Size() const { return len; }
+        [[nodiscard]] constexpr auto Find(Move move) const {
+            return std::ranges::find(*this, move);
+        }
+        [[nodiscard]] constexpr bool Contains(Move move) const {
+            return Find(move) != end();
+        }
+
+        constexpr void Clear() { len = 0; }
+        constexpr void PutMove(Move move) {
+            len = std::min(len + 1, KILLER_SLOTS);
+            std::copy_backward(begin(), end() - 1, end());
+            killers[0] = move;
+        }
+
+    private:
+
+        std::array<Move, KILLER_SLOTS> killers;
+        int len = 0;
+    };
+
     struct PVLine {
 
         [[nodiscard]] constexpr auto begin() const { return moves.begin(); }
@@ -82,7 +109,6 @@ namespace Search {
         Score QSearch(Score alpha, Score beta, Depth ply);
 
         void UpdateKillers(Move move, Depth ply);
-        [[nodiscard]] bool KillersContainMove(Move move, Depth ply) const;
         [[nodiscard]] Score RandomizedDrawScore() const;
 
         [[nodiscard]] bool MoveTimeLimitReached() const;
@@ -97,7 +123,7 @@ namespace Search {
         [[nodiscard]] bool IsMainThread() const { return id == 0; }
 
         Board board;
-        std::array<std::array<Move, KILLER_SLOTS>, MAX_SEARCH_DEPTH + 1> killers;
+        std::array<Killers, MAX_SEARCH_DEPTH + 1> killers;
         std::array<PVLine, MAX_SEARCH_DEPTH + 1> pv;
         std::vector<RootMove> root_moves;
         RootMove *curr_rm;

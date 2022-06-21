@@ -50,7 +50,7 @@ namespace Search {
         return std::accumulate(threads.begin(),
                                threads.end(),
                                uint64_t{},
-                               [&](auto sum, const auto &t) { return sum + t->Nodes(); });
+                               [](auto sum, const auto &t) { return sum + t->Nodes(); });
     }
 
     std::vector<RootMove> GenRootMoves(const Board &board) {

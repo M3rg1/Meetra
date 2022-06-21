@@ -9,7 +9,7 @@ bool ValidatePromMove(Move m, Move to_validate) {
            || ((m | PROMOTE_KNIGHT) == to_validate);
 }
 
-MoveGen::MoveGen(const Board &b, const std::array<Move, KILLER_SLOTS> &killer_moves) :
+MoveGen::MoveGen(const Board &b, const Search::Killers &killer_moves) :
         board(b),
         my_color(board.ColorToMove()),
         enemy_color(OtherColor(my_color)),
@@ -20,7 +20,8 @@ MoveGen::MoveGen(const Board &b, const std::array<Move, KILLER_SLOTS> &killer_mo
         enemy_pieces(board.Pieces(enemy_color)),
         checkers(board.Checkers()),
         blockers(board.PinnedToSquare(king_s, enemy_color)),
-        killers(killer_moves) {
+        killers(killer_moves),
+        killers_cnt(killer_moves.Size()){
 
     if (checkers) {
         if (Bitboards::MoreThanOne(checkers)) {
@@ -38,11 +39,14 @@ MoveGen::MoveGen(const Board &b, const std::array<Move, KILLER_SLOTS> &killer_mo
 
 void MoveGen::EvalMoves() {
     for (auto &m_e: move_eval | std::views::take(moves_cnt)) {
-        if (const auto k = std::ranges::find(killers, m_e.move); k != killers.end()) {
-            m_e.score = static_cast<Score>(std::distance(k, killers.end()) * KILLER_EVAL_BONUS);
-        } else {
-            m_e.score = board.MoveEval(m_e.move);
+        if (gen_phase == END && killers_cnt > 0) {
+            if (const auto k = killers.Find(m_e.move); k != killers.end()) {
+                m_e.score = static_cast<Score>(std::distance(k, killers.end()) * KILLER_EVAL_BONUS);
+                --killers_cnt;
+                continue;
+            }
         }
+        m_e.score = board.MoveEval(m_e.move);
     }
 }
 
