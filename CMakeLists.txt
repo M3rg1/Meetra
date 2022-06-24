@@ -42,8 +42,9 @@ if(MSVC)
 endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
-    set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -fno-rtti -march=native") # -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables
-    set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -pedantic -Wextra -Wshadow -Wno-unknown-pragmas -Wno-unused-variable")
+    set(COMPILE_WARNINGS "-Wall -pedantic -Wextra -Wshadow -Wno-unknown-pragmas -Wno-unused-variable")
+    set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -fno-rtti -march=native ${COMPILE_WARNINGS}") # -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables
+    set(CMAKE_CXX_FLAGS_DEBUG "-g ${COMPILE_WARNINGS}")
 endif()
 
 if(MINGW)

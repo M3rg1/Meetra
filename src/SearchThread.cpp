@@ -22,7 +22,7 @@ namespace Search {
 
             Score alpha = NEGATIVE_INF;
             Score beta = POSITIVE_INF;
-            Score score;
+            Score score = 0;
 
             // TODO zero out node counts for the moves??
             // std::ranges::for_each(root_moves, [](auto &r){ r.nodes = 0; });
