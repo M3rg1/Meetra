@@ -50,7 +50,7 @@ namespace Search {
     inline std::vector<std::unique_ptr<SearchThread>> threads;
 
     void Init();
-    void StartSearch(Settings settings, Board board);
+    void StartSearch(Settings settings, const Board &board);
     void FinalizeSearch();
     void Shutdown();
 

@@ -26,7 +26,7 @@ bool Board::NewPosition(const std::string &fen, bool isChess960) {
     origin_rooks[BLACK].fill(EMPTY_BB);
     origin_rooks[WHITE].fill(EMPTY_BB);
 
-    if (!ParseFen(fen) || !IsValid()) {
+    if (!ParseFen(fen)) {
         *this = previous;
         return false;
     }
@@ -36,53 +36,6 @@ bool Board::NewPosition(const std::string &fen, bool isChess960) {
 
     Square king_s = Bitboards::Lsb(Pieces(KING, ColorToMove()));
     state.checkers = AttackedBy(king_s, OtherColor(ColorToMove()), Pieces(ALL_TYPES));
-
-    return true;
-}
-
-bool Board::IsValid() const {
-
-    Bitboard white_king = Pieces(KING, WHITE);
-    Bitboard black_king = Pieces(KING, BLACK);
-    if (!Bitboards::ExactlyOne(white_king) || !Bitboards::ExactlyOne(black_king)) {
-        return false;
-    }
-
-    Square enemy_king_square = ColorToMove() == WHITE ? Bitboards::Lsb(black_king) : Bitboards::Lsb(white_king);
-    if (IsAttackedByAny(enemy_king_square, ColorToMove(), Pieces(ALL_TYPES))) {
-        return false;
-    }
-
-    if (IsCastlingAvailable(WHITE, SHORT) || IsCastlingAvailable(WHITE, LONG)) {
-        if (!(white_king & Bitboards::castling_mask[WHITE])) {
-            return false;
-        }
-        if (!chess960 && Bitboards::Lsb(white_king) != E1) {
-            return false;
-        }
-    }
-
-    if (IsCastlingAvailable(BLACK, SHORT) || IsCastlingAvailable(BLACK, LONG)) {
-        if (!(black_king & Bitboards::castling_mask[BLACK])) {
-            return false;
-        }
-        if (!chess960 && Bitboards::Lsb(black_king) != E8) {
-            return false;
-        }
-    }
-
-    if (EpSquare()) {
-        Square capture_s = ColorToMove() == WHITE ? EpSquare() + SOUTH : EpSquare() + NORTH;
-        Bitboard rank_mask = Bitboards::two_fwd_mask[OtherColor(ColorToMove())];
-        if (PieceOnSquare(capture_s) != NewPiece(PAWN, OtherColor(ColorToMove()))
-            || !(rank_mask & SqToBB(capture_s))) {
-            return false;
-        }
-    }
-
-    if (Pieces(PAWN) & (Bitboards::rank_mask[RANK_8] | Bitboards::rank_mask[RANK_1])) {
-        return false;
-    }
 
     return true;
 }
@@ -372,20 +325,9 @@ Move Board::RookCastlingMove(Square king_to, Color c) const {
     return NewMove(from, to);
 }
 
-bool Board::ParseFen(const std::string &fen) {
-
-    static constexpr auto pattern = R"(\s*([rnbqkpRNBQKP1-8]{1,8}\/){7}([rnbqkpRNBQKP1-8]{1,8})\s*[bw]\s*(([a-hkqA-HKQ]{1,4})|(-))?\s*(([a-h][36])|(-))?\s*\d*\s*\d*\s*)";
-    static const std::regex rgx(pattern, std::regex::optimize);
-    if (!std::regex_match(fen, rgx)) {
-        return false;
-    }
-
-    std::istringstream iss(fen);
-    std::string token;
-
-    iss >> token;
+bool Board::ParseFenPieces(std::string_view fen_pieces) {
     Square s = A8;
-    for (char c: token) {
+    for (char c: fen_pieces) {
         if (std::isdigit(c)) {
             s += c - '0';
         } else if (c == '/') {
@@ -398,29 +340,49 @@ bool Board::ParseFen(const std::string &fen) {
             s += 1;
         }
     }
-    if (s != H1 + 1) {
+    bool allSquaresDescribed = s == H1 + 1;
+    return allSquaresDescribed;
+}
+
+bool Board::ParseFenCastling(std::string_view fen_castling) {
+    for (char c: fen_castling) {
+        Color col = std::isupper(c) ? WHITE : BLACK;
+        Bitboard rooks = Pieces(ROOK, col) & Bitboards::castling_mask[col];
+        c = std::tolower(c, std::locale());
+        if (rooks && (c == 'k' || c == 'q' || ('a' <= c && c <= 'h'))) {
+            Bitboard r_bb = SqToBB(c == 'k' ? Bitboards::Msb(rooks) :
+                                   c == 'q' ? Bitboards::Lsb(rooks) :
+                                   FiRaToSq(CharToFile(c), col == WHITE ? RANK_1 : RANK_8));
+            state.cr |= r_bb & rooks;
+            origin_rooks[col][r_bb > Pieces(KING, col) ? SHORT : LONG] = r_bb;
+        }
+    }
+    bool allCastlingIsValid = std::popcount(state.cr) == static_cast<int>(fen_castling.length());
+    return allCastlingIsValid;
+}
+
+bool Board::ParseFen(const std::string &fen) {
+
+    // allow fen with missing castling/ep/ply/moves - only (valid) piece placement and color to move is required
+    static constexpr auto pattern = R"(\s*([rnbqkpRNBQKP1-8]{1,8}\/){7}([rnbqkpRNBQKP1-8]{1,8})\s*[bw]\s*(([a-hkqA-HKQ]{1,4})|(-))?\s*(([a-h][36])|(-))?\s*\d*\s*\d*\s*)";
+    static const std::regex rgx(pattern, std::regex::optimize);
+    if (!std::regex_match(fen, rgx)) {
+        return false;
+    }
+
+    std::istringstream iss(fen);
+    std::string token;
+
+    iss >> token;
+    if (!ParseFenPieces(token)) {
         return false;
     }
 
     iss >> token;
     SetColorToMove(token == "w" ? WHITE : BLACK);
 
-    if (iss >> token && token != "-") {
-        for (char c: token) {
-            Color col = std::isupper(c) ? WHITE : BLACK;
-            Bitboard rooks = Pieces(ROOK, col) & Bitboards::castling_mask[col];
-            c = std::tolower(c, std::locale());
-            if ((c == 'k' || c == 'q' || ('a' <= c && c <= 'h')) && rooks) {
-                Bitboard r_bb = SqToBB(c == 'k' ? Bitboards::Msb(rooks) :
-                                       c == 'q' ? Bitboards::Lsb(rooks) :
-                                       FiRaToSq(CharToFile(c), col == WHITE ? RANK_1 : RANK_8));
-                state.cr |= r_bb & rooks;
-                origin_rooks[col][r_bb > Pieces(KING, col) ? SHORT : LONG] = r_bb;
-            }
-        }
-        if (std::popcount(state.cr) != static_cast<int>(token.length())) {
-            return false;
-        }
+    if (iss >> token && token != "-" && !ParseFenCastling(token)) {
+        return false;
     }
 
     if (iss >> token && token != "-") {
@@ -429,6 +391,55 @@ bool Board::ParseFen(const std::string &fen) {
 
     iss >> state.ply;
     iss >> state.moves;
+
+    return IsValid();
+}
+
+// additional checks for board validity after parsing FEN. Even if FEN is valid, the state of the board might not be.
+// (e.g. multiple kings/possible to capture a king etc.)
+bool Board::IsValid() const {
+
+    Bitboard white_king = Pieces(KING, WHITE);
+    Bitboard black_king = Pieces(KING, BLACK);
+    if (!Bitboards::ExactlyOne(white_king) || !Bitboards::ExactlyOne(black_king)) {
+        return false;
+    }
+
+    Square enemy_king_square = ColorToMove() == WHITE ? Bitboards::Lsb(black_king) : Bitboards::Lsb(white_king);
+    if (IsAttackedByAny(enemy_king_square, ColorToMove(), Pieces(ALL_TYPES))) {
+        return false;
+    }
+
+    if (IsCastlingAvailable(WHITE, SHORT) || IsCastlingAvailable(WHITE, LONG)) {
+        if (!(white_king & Bitboards::castling_mask[WHITE])) {
+            return false;
+        }
+        if (!chess960 && Bitboards::Lsb(white_king) != E1) {
+            return false;
+        }
+    }
+
+    if (IsCastlingAvailable(BLACK, SHORT) || IsCastlingAvailable(BLACK, LONG)) {
+        if (!(black_king & Bitboards::castling_mask[BLACK])) {
+            return false;
+        }
+        if (!chess960 && Bitboards::Lsb(black_king) != E8) {
+            return false;
+        }
+    }
+
+    if (EpSquare()) {
+        Square capture_s = ColorToMove() == WHITE ? EpSquare() + SOUTH : EpSquare() + NORTH;
+        Bitboard rank_mask = Bitboards::two_fwd_mask[OtherColor(ColorToMove())];
+        if (PieceOnSquare(capture_s) != NewPiece(PAWN, OtherColor(ColorToMove()))
+            || !(rank_mask & SqToBB(capture_s))) {
+            return false;
+        }
+    }
+
+    if (Pieces(PAWN) & (Bitboards::rank_mask[RANK_8] | Bitboards::rank_mask[RANK_1])) {
+        return false;
+    }
 
     return true;
 }
@@ -488,69 +499,82 @@ Move Board::StrToMove(std::string_view move_str) const {
     Square s_to = StrToSq(&move_str[2]);
     MoveType flag = NO_FLAG;
     PieceType moved_pt = PieceTypeOnSq(s_from);
+    Piece dst_piece = PieceOnSquare(s_to);
 
-    if (move_str.length() == 5) {
+    bool isPromotion = move_str.length() == 5;
+    bool isChess960Castling = chess960 && TypeOfPiece(dst_piece) == ROOK && ColorOfPiece(dst_piece) == ColorToMove();
+    bool isNormalCastling = moved_pt == KING && Bitboards::ExactlyOne(Bitboards::RayToSquares(s_from, s_to));
+    bool isTwoFwd = moved_pt == PAWN && Bitboards::ExactlyOne(Bitboards::RayToSquares(s_from, s_to));
+    bool isEnPassant = moved_pt == PAWN && s_to == EpSquare();
+
+    if (isPromotion) {
         flag = move_str[4] == 'q' ? PROMOTE_QUEEN :
                move_str[4] == 'r' ? PROMOTE_ROOK :
                move_str[4] == 'b' ? PROMOTE_BISHOP :
                PROMOTE_KNIGHT;
-    } else if (chess960 && PieceTypeOnSq(s_to) == ROOK && ColorOfPiece(PieceOnSquare(s_to)) == ColorToMove()) {
+    } else if (isChess960Castling) {
         // FRC castling is denoted as capturing own rook, but internally we use to_square as the real square to move to
-        s_to = s_to > s_from ? ColorToMove() == WHITE ? G1 : G8 : ColorToMove() == WHITE ? C1 : C8;
+        s_to = s_to > s_from ? (ColorToMove() == WHITE ? G1 : G8) : (ColorToMove() == WHITE ? C1 : C8);
         flag = CASTLING;
-    } else if (moved_pt == KING && Bitboards::ExactlyOne(Bitboards::RayToSquares(s_from, s_to))) {
+    } else if (isNormalCastling) {
         flag = CASTLING;
-    } else if (moved_pt == PAWN && Bitboards::ExactlyOne(Bitboards::RayToSquares(s_from, s_to))) {
+    } else if (isTwoFwd) {
         flag = TWO_FORWARD;
-    } else if (moved_pt == PAWN && s_to == EpSquare()) {
+    } else if (isEnPassant) {
         flag = EN_PASSANT;
     }
 
     return NewMove(s_from, s_to, flag);
 }
 
-std::string Board::Fen() const {
-
-    std::ostringstream oss;
-
+std::string Board::PiecesToFen() const {
+    std::string pieces_fen;
+    pieces_fen.reserve(64);
     for (Rank r: Ranks | std::views::reverse) {
         int empty_cnt = 0;
         for (File f: Files) {
             Piece p = PieceOnSquare(FiRaToSq(f, r));
             if (p != NO_PIECE) {
                 if (empty_cnt > 0) {
-                    oss << empty_cnt;
+                    pieces_fen += std::to_string(empty_cnt);
                     empty_cnt = 0;
                 }
-                oss << PieceToChar(p);
+                pieces_fen += PieceToChar(p);
             } else {
                 ++empty_cnt;
             }
         }
         if (empty_cnt > 0) {
-            oss << empty_cnt;
+            pieces_fen += std::to_string(empty_cnt);
         }
-        oss << (r > RANK_1 ? '/' : ' ');
+        pieces_fen += (r > RANK_1 ? '/' : ' ');
     }
+    return pieces_fen;
+}
 
-    oss << (ColorToMove() == WHITE ? 'w' : 'b') << ' ';
-
+std::string Board::CastlingToFen() const {
     if (!Cr()) {
-        oss << '-';
-    } else {
-        if (IsCastlingAvailable(WHITE, SHORT))
-            oss << (chess960 ? std::toupper(FileToChar(SqToFile(RookSq(WHITE, SHORT))), std::locale()) : 'K');
-        if (IsCastlingAvailable(WHITE, LONG))
-            oss << (chess960 ? std::toupper(FileToChar(SqToFile(RookSq(WHITE, LONG))), std::locale()) : 'Q');
-        if (IsCastlingAvailable(BLACK, SHORT))
-            oss << (chess960 ? FileToChar(SqToFile(RookSq(BLACK, SHORT))) : 'k');
-        if (IsCastlingAvailable(BLACK, LONG))
-            oss << (chess960 ? FileToChar(SqToFile(RookSq(BLACK, LONG))) : 'q');
+        return "-";
     }
+    std::string castling_fen;
+    if (IsCastlingAvailable(WHITE, SHORT))
+        castling_fen += (chess960 ? std::toupper(FileToChar(SqToFile(RookSq(WHITE, SHORT))), std::locale()) : 'K');
+    if (IsCastlingAvailable(WHITE, LONG))
+        castling_fen += (chess960 ? std::toupper(FileToChar(SqToFile(RookSq(WHITE, LONG))), std::locale()) : 'Q');
+    if (IsCastlingAvailable(BLACK, SHORT))
+        castling_fen += (chess960 ? FileToChar(SqToFile(RookSq(BLACK, SHORT))) : 'k');
+    if (IsCastlingAvailable(BLACK, LONG))
+        castling_fen += (chess960 ? FileToChar(SqToFile(RookSq(BLACK, LONG))) : 'q');
+    return castling_fen;
+}
 
-    oss << ' ' << (EpSquare() ? SqToStr(EpSquare()) : "-") << ' ' << Ply() << ' ' << FullMoveClock();
-
-    return oss.str();
+std::string Board::Fen() const {
+    return PiecesToFen()
+           + (ColorToMove() == WHITE ? 'w' : 'b') + ' '
+           + CastlingToFen() + ' '
+           + (EpSquare() ? SqToStr(EpSquare()) : "-") + ' '
+           + std::to_string(Ply()) + ' '
+           + std::to_string(FullMoveClock());
 }
 
 std::ostream &operator<<(std::ostream &os, const Board &b) {

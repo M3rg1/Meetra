@@ -19,8 +19,11 @@ public:
     void UnmakeNullMove();
     bool MakeUciMove(std::string move_str);
 
+    [[nodiscard]] bool IsDrawByMaterial() const;
+    [[nodiscard]] bool AnyLegalMoves() const;
+    [[nodiscard]] bool IsRepetition() const;
+    [[nodiscard]] bool IsDraw() const;
     [[nodiscard]] bool IsMoveLegal(Move m) const;
-    [[nodiscard]] bool IsValid() const;
     [[nodiscard]] bool AllSquaresSafe(Bitboard squares, Color attacker, Bitboard occ) const;
     [[nodiscard]] bool IsAttackedByAny(Square s, Color attacked_by, Bitboard occ) const;
     [[nodiscard]] bool IsAttackedBySliders(Square s, Color attacked_by, Bitboard occ) const;
@@ -58,15 +61,14 @@ public:
     [[nodiscard]] Bitboard Checkers() const { return state.checkers; }
     [[nodiscard]] bool IsChess960() const { return chess960; }
     [[nodiscard]] Move RookCastlingMove(Square king_to, Color c) const;
-    [[nodiscard]] bool IsDrawByMaterial() const;
-    [[nodiscard]] bool AnyLegalMoves() const;
-    [[nodiscard]] bool IsRepetition() const;
-    [[nodiscard]] bool IsDraw() const;
 #pragma endregion
 
 private:
 
     friend std::ostream &operator<<(std::ostream &os, const Board &board);
+    [[nodiscard]] std::string PiecesToFen() const;
+    [[nodiscard]] std::string CastlingToFen() const;
+    [[nodiscard]] bool IsValid() const;
 
 #pragma region ===== Game State modifications =====
     void SetEpSquare(Square s) { state.ep_square = s; }
@@ -82,6 +84,8 @@ private:
 
 #pragma region ===== Update inner structures =====
     bool ParseFen(const std::string &fen);
+    bool ParseFenPieces(std::string_view fen_pieces);
+    bool ParseFenCastling(std::string_view fen_castling);
     void RemovePiece(Square s);
     void AddPiece(Square s, Piece p);
     void MovePiece(Square from, Square to);

@@ -59,19 +59,14 @@ namespace Search {
         while (Move move = move_gen.NextMove()) {
             if (board.IsMoveLegal(move)) {
                 root_moves.emplace_back(move);
+                root_moves.back().score = board.MoveEval(move);
             }
-        }
-        for (auto &rm: root_moves) {
-            rm.score = board.MoveEval(rm.move);
         }
         std::ranges::sort(root_moves);
         return root_moves;
     }
 
-    void FinalizeSearch() {
-
-        StopSearch();
-
+    SearchThread *PickBestThread() {
         // select the thread with the best move overall
         // for multipv, because helper threads might skip some depths and not have the full pv, we can't safely use
         // their results without risking their pv for other than the top move will be very old from low depth or even
@@ -85,23 +80,37 @@ namespace Search {
                 }
             }
         }
+        return best_thread;
+    }
 
+    void FinalizeSearch() {
+        StopSearch();
+        auto best_thread = PickBestThread();
         best_thread->SendFullSearchInfo();
         best_thread->SendBestMove();
     }
 
-    void StartSearch(Settings s, Board board) {
+    bool GetBookMove(const Board &board) {
+        if (!IsSearchLimited() && !board.IsChess960() && board.FullMoveClock() <= BOOK_DEPTH / 2) {
+            if (auto moves = Book::Probe(board.Hash()); !moves.empty()) {
+                std::ranges::shuffle(moves, std::mt19937{std::random_device{}()});
+                return moves.front();
+            }
+        }
+        return ZERO_MOVE;
+    }
+
+    void StartSearch(Settings s, const Board &board) {
 
         Search::WaitFinished();
 
         run = true;
         InitNewSearch(s, board);
 
-        if (use_book && !IsSearchLimited() && !board.IsChess960() && board.FullMoveClock() <= BOOK_DEPTH / 2) {
-            if (auto moves = Book::Probe(board.Hash()); !moves.empty()) {
+        if (use_book) {
+            if (auto book_move = GetBookMove(board); book_move != ZERO_MOVE) {
+                std::osyncstream(std::cout) << "bestmove " << board.MoveToStr(book_move) << std::endl;
                 StopSearch();
-                std::ranges::shuffle(moves, std::mt19937{std::random_device{}()});
-                std::osyncstream(std::cout) << "bestmove " << board.MoveToStr(moves.front()) << std::endl;
                 return;
             }
         }
