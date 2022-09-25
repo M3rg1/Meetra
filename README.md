@@ -1,3 +1,5 @@
+You can challenge this bot to a game at any time on lichess - https://lichess.org/@/MeetraBot. The real rating is quite a bit higher than shown there (estimated roughly 2600 [CCRL](https://ccrl.chessdom.com/ccrl/4040/)), but sadly lichess is plagued by Stockfish clones.
+
 #### Build & run
 
 ##### Build requirements:
