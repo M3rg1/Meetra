@@ -58,7 +58,8 @@ namespace Bitboards {
         for (Square s: Squares) {
             output[s] = EMPTY_BB;
             for (Direction d: dirs) {
-                if (s + d < SQUARE_NR && s + d >= A1) {
+                bool square_is_on_board = s + d < SQUARE_NR && s + d >= A1;
+                if (square_is_on_board) {
                     output[s] |= SqToBB(s + d);
                 }
             }

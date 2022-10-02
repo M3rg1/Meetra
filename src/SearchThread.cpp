@@ -422,11 +422,11 @@ namespace Search {
             return;
         }
 
-        // querying time is expensive, don't do it too often
-        if ((Nodes() & 4095) != 0) {
+        if (--termination_calls >= 0) {
             return;
         }
 
+        termination_calls = TERMINATION_GRANULARITY;
         auto elapsed = ElapsedSince(start_time);
 
         if ((!IsSearchLimited() && elapsed > time_limit) || MoveTimeLimitReached()) {
@@ -470,6 +470,7 @@ namespace Search {
         curr_rm_num = 0;
         depth_reached = 0;
         nodes_explored = 0;
+        termination_calls = TERMINATION_GRANULARITY;
         std::ranges::for_each(killers, [&](auto &k) { k.Clear(); });
     }
 

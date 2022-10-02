@@ -23,8 +23,7 @@ bool Board::NewPosition(const std::string &fen, bool isChess960) {
     board.fill(NO_PIECE);
     color_bbs.fill(EMPTY_BB);
     type_bbs.fill(EMPTY_BB);
-    origin_rooks[BLACK].fill(EMPTY_BB);
-    origin_rooks[WHITE].fill(EMPTY_BB);
+    origin_rooks.fill({EMPTY_BB});
 
     if (!ParseFen(fen)) {
         *this = previous;
@@ -501,26 +500,26 @@ Move Board::StrToMove(std::string_view move_str) const {
     PieceType moved_pt = PieceTypeOnSq(s_from);
     Piece dst_piece = PieceOnSquare(s_to);
 
-    bool isPromotion = move_str.length() == 5;
-    bool isChess960Castling = chess960 && TypeOfPiece(dst_piece) == ROOK && ColorOfPiece(dst_piece) == ColorToMove();
-    bool isNormalCastling = moved_pt == KING && Bitboards::ExactlyOne(Bitboards::RayToSquares(s_from, s_to));
-    bool isTwoFwd = moved_pt == PAWN && Bitboards::ExactlyOne(Bitboards::RayToSquares(s_from, s_to));
-    bool isEnPassant = moved_pt == PAWN && s_to == EpSquare();
+    bool is_promotion = move_str.length() == 5;
+    bool is_960_castling = chess960 && TypeOfPiece(dst_piece) == ROOK && ColorOfPiece(dst_piece) == ColorToMove();
+    bool is_normal_castling = moved_pt == KING && Bitboards::ExactlyOne(Bitboards::RayToSquares(s_from, s_to));
+    bool is_two_fwd = moved_pt == PAWN && Bitboards::ExactlyOne(Bitboards::RayToSquares(s_from, s_to));
+    bool is_en_passant = moved_pt == PAWN && s_to == EpSquare();
 
-    if (isPromotion) {
+    if (is_promotion) {
         flag = move_str[4] == 'q' ? PROMOTE_QUEEN :
                move_str[4] == 'r' ? PROMOTE_ROOK :
                move_str[4] == 'b' ? PROMOTE_BISHOP :
                PROMOTE_KNIGHT;
-    } else if (isChess960Castling) {
+    } else if (is_960_castling) {
         // FRC castling is denoted as capturing own rook, but internally we use to_square as the real square to move to
         s_to = s_to > s_from ? (ColorToMove() == WHITE ? G1 : G8) : (ColorToMove() == WHITE ? C1 : C8);
         flag = CASTLING;
-    } else if (isNormalCastling) {
+    } else if (is_normal_castling) {
         flag = CASTLING;
-    } else if (isTwoFwd) {
+    } else if (is_two_fwd) {
         flag = TWO_FORWARD;
-    } else if (isEnPassant) {
+    } else if (is_en_passant) {
         flag = EN_PASSANT;
     }
 
@@ -544,10 +543,8 @@ std::string Board::PiecesToFen() const {
                 ++empty_cnt;
             }
         }
-        if (empty_cnt > 0) {
-            pieces_fen += std::to_string(empty_cnt);
-        }
-        pieces_fen += (r > RANK_1 ? '/' : ' ');
+        if (empty_cnt > 0) pieces_fen += std::to_string(empty_cnt);
+        if (r > RANK_1) pieces_fen += '/';
     }
     return pieces_fen;
 }
@@ -569,7 +566,7 @@ std::string Board::CastlingToFen() const {
 }
 
 std::string Board::Fen() const {
-    return PiecesToFen()
+    return PiecesToFen() + ' '
            + (ColorToMove() == WHITE ? 'w' : 'b') + ' '
            + CastlingToFen() + ' '
            + (EpSquare() ? SqToStr(EpSquare()) : "-") + ' '

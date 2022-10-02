@@ -130,6 +130,7 @@ namespace Search {
         int curr_rm_num;
         Depth depth_reached;
         std::atomic<uint64_t> nodes_explored;
+        int termination_calls;
 
         int id;
         bool active;
