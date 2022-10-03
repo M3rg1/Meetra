@@ -426,7 +426,7 @@ namespace Search {
             return;
         }
 
-        termination_calls = TERMINATION_GRANULARITY;
+        termination_calls = TIME_QUERY_FREQUENCY;
         auto elapsed = ElapsedSince(start_time);
 
         if ((!IsSearchLimited() && elapsed > time_limit) || MoveTimeLimitReached()) {
@@ -470,7 +470,7 @@ namespace Search {
         curr_rm_num = 0;
         depth_reached = 0;
         nodes_explored = 0;
-        termination_calls = TERMINATION_GRANULARITY;
+        termination_calls = TIME_QUERY_FREQUENCY;
         std::ranges::for_each(killers, [&](auto &k) { k.Clear(); });
     }
 
