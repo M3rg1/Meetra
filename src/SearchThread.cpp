@@ -12,7 +12,7 @@ namespace Search {
     void SearchThread::Search() {
 
         // iterative deepening
-        for (depth_reached = 1; depth_reached <= MAX_SEARCH_DEPTH && Run(); ++depth_reached) {
+        for (depth_reached = 1; Run() && depth_reached <= MAX_SEARCH_DEPTH; ++depth_reached) {
 
             // if a helper thread falls behind the main thread, skip current depth and go deeper
             if (!IsMainThread() && depth_reached <= mt_depth) {
@@ -145,10 +145,10 @@ namespace Search {
 
         // reverse futility pruning
         if (NodeType == NON_PV
-            && !board.IsInCheck()
             && depth <= FUTILITY_MAX_DEPTH
-            && eval < MIN_MATE_EVAL
             && eval - FUTILITY_FACTOR * depth >= beta
+            && !board.IsInCheck()
+            && eval < MIN_MATE_EVAL
                 ) {
             return eval;
         }
@@ -157,10 +157,10 @@ namespace Search {
 
         // null move pruning
         if (NodeType == NON_PV
-            && !board.IsInCheck()
             && depth >= NULL_MIN_DEPTH
             && eval >= beta
             && eval >= static_eval
+            && !board.IsInCheck()
             && beta < MIN_MATE_EVAL
             && alpha > -MIN_MATE_EVAL
                 ) {
@@ -195,10 +195,10 @@ namespace Search {
             Depth reduction = 0;
             if (do_lmr
                 && moves_searched >= LMR_MIN_MOVES_SEARCHED
-                && !board.IsInCheck()
                 && !board.CapturedPiece()
-                && !IsPromotion(move)
+                && !board.IsInCheck()
                 && best_score > -MIN_MATE_EVAL
+                && !IsPromotion(move)
                     ) {
                 if (moves_searched >= 7) reduction += depth / 3;
                 if (NodeType != PV) ++reduction;
