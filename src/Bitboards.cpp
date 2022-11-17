@@ -6,7 +6,7 @@
 
 namespace Bitboards {
 
-    Bitboard GenSliderMoves(Square s, Bitboard occ, std::initializer_list<Direction> dirs) {
+    Bitboard GenSliderMoves(Square s, Bitboard occ, const std::initializer_list<Direction> &dirs) {
 
         auto MoveOk = [](Square from, Square to) {
             int f_diff = std::abs(SqToFile(from) - SqToFile(to));
@@ -54,7 +54,7 @@ namespace Bitboards {
         }
     }
 
-    void GenPieceMoves(std::initializer_list<Direction> dirs, std::array<Bitboard, SQUARE_NR> &output) {
+    void GenPieceMoves(const std::initializer_list<Direction> &dirs, std::array<Bitboard, SQUARE_NR> &output) {
         for (Square s: Squares) {
             output[s] = EMPTY_BB;
             for (Direction d: dirs) {
@@ -85,16 +85,15 @@ namespace Bitboards {
 
     Bitboard GenRayBetween(Square s1, Square s2) {
 
-        Square max = std::max(s1, s2);
-        Square min = std::min(s1, s2);
+        Square s_max = std::max(s1, s2);
+        Rank r_max = SqToRank(s_max);
+        File f_max = SqToFile(s_max);
 
-        Rank r_max = SqToRank(max);
-        File f_max = SqToFile(max);
+        Square s_min = std::min(s1, s2);
+        Rank r_min = SqToRank(s_min);
+        File f_min = SqToFile(s_min);
 
-        Rank r_min = SqToRank(min);
-        File f_min = SqToFile(min);
-
-        Bitboard mask = SqToBB(max) - (SqToBB(min) << 1);
+        Bitboard mask = SqToBB(s_max) - (SqToBB(s_min) << 1);
 
         return s1 == s2 ? EMPTY_BB :
                r_max == r_min ? rank_mask[r_max] & mask :

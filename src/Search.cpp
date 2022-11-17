@@ -16,8 +16,8 @@ namespace Search {
         return false;
     }
 
-    int TimeReduction(const Board &b) {
-        int reduction = std::max(45 + std::min(b.Phase(), 20) - b.FullMoveClock(), 20);
+    int TimeReduction(const Board &board) {
+        int reduction = std::max(45 + std::min(board.Phase(), 20) - board.FullMoveClock(), 20);
         if (settings.moves_to_go) {
             reduction = std::min(settings.moves_to_go + 1, reduction - 3);
         }

@@ -7,7 +7,7 @@
 
 namespace Bitboards {
 
-    constexpr std::array<Bitboard, RANK_NR> rank_mask{
+    inline constexpr std::array<Bitboard, RANK_NR> rank_mask{
             0x00000000000000FF,
             0x000000000000FF00,
             0x0000000000FF0000,
@@ -18,7 +18,7 @@ namespace Bitboards {
             0xFF00000000000000
     };
 
-    constexpr std::array<Bitboard, FILE_NR> file_mask{
+    inline constexpr std::array<Bitboard, FILE_NR> file_mask{
             0x0101010101010101,
             0x0202020202020202,
             0x0404040404040404,
@@ -29,29 +29,29 @@ namespace Bitboards {
             0x8080808080808080
     };
 
-    constexpr std::array<Bitboard, 15> diag_mask{
+    inline constexpr std::array<Bitboard, 15> diag_mask{
             0x1, 0x102, 0x10204, 0x1020408, 0x102040810, 0x10204081020, 0x1020408102040,
             0x102040810204080, 0x204081020408000, 0x408102040800000, 0x810204080000000,
             0x1020408000000000, 0x2040800000000000, 0x4080000000000000, 0x8000000000000000
     };
 
-    constexpr std::array<Bitboard, 15> anti_diag_mask{
+    inline constexpr std::array<Bitboard, 15> anti_diag_mask{
             0x80, 0x8040, 0x804020, 0x80402010, 0x8040201008, 0x804020100804, 0x80402010080402,
             0x8040201008040201, 0x4020100804020100, 0x2010080402010000, 0x1008040201000000,
             0x804020100000000, 0x402010000000000, 0x201000000000000, 0x100000000000000
     };
 
-    constexpr std::array castling_mask{
+    inline constexpr std::array castling_mask{
             rank_mask[RANK_1],
             rank_mask[RANK_8]
     };
 
-    constexpr std::array prom_mask{
+    inline constexpr std::array prom_mask{
             rank_mask[RANK_8],
             rank_mask[RANK_1]
     };
 
-    constexpr std::array two_fwd_mask{
+    inline constexpr std::array two_fwd_mask{
             rank_mask[RANK_4],
             rank_mask[RANK_5]
     };

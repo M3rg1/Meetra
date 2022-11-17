@@ -20,17 +20,17 @@ using Score = int;
 
 using Hash64 = uint64_t;
 using Hash16 = uint16_t;
-constexpr Hash64 NEW_HASH64 = 0;
+inline constexpr Hash64 NEW_HASH64 = 0;
 
 using Bitboard = uint64_t;
-constexpr Bitboard EMPTY_BB = 0;
-constexpr Bitboard FULL_BB = 0xFFFFFFFFFFFFFFFF;
+inline constexpr Bitboard EMPTY_BB = 0;
+inline constexpr Bitboard FULL_BB = 0xFFFFFFFFFFFFFFFF;
 
 enum Color {
     WHITE, BLACK,
     COLOR_NR
 };
-constexpr std::array Colors{WHITE, BLACK};
+inline constexpr std::array Colors{WHITE, BLACK};
 constexpr Color OtherColor(Color c) { return static_cast<Color>(c ^ 1); }
 
 enum PieceType {
@@ -38,7 +38,7 @@ enum PieceType {
     PIECE_TYPE_NR,
     ALL_TYPES = 7
 };
-constexpr std::array PieceTypes{PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING};
+inline constexpr std::array PieceTypes{PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING};
 
 enum Piece {
     NO_PIECE = 0,
@@ -50,7 +50,7 @@ constexpr Color ColorOfPiece(Piece p) { return static_cast<Color>(p >> 3); }
 constexpr PieceType TypeOfPiece(Piece p) { return static_cast<PieceType>(p & 7); }
 constexpr Piece NewPiece(PieceType pt, Color c) { return static_cast<Piece>((c << 3) | pt); }
 
-constexpr std::string_view piece_char = "oPNBRQK  pnbrqk";
+inline constexpr std::string_view piece_char = "oPNBRQK  pnbrqk";
 
 constexpr Piece CharToPiece(char c) { return static_cast<Piece>(piece_char.find(c)); }
 constexpr char PieceToChar(Piece p) { return piece_char[p]; }
@@ -59,13 +59,13 @@ enum Rank {
     RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8,
     RANK_NR
 };
-constexpr std::array Ranks{RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8};
+inline constexpr std::array Ranks{RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8};
 
 enum File {
     FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H,
     FILE_NR
 };
-constexpr std::array Files{FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H};
+inline constexpr std::array Files{FILE_A, FILE_B, FILE_C, FILE_D, FILE_E, FILE_F, FILE_G, FILE_H};
 
 constexpr int operator+(File f, Rank r) { return static_cast<int>(f) + static_cast<int>(r); }
 constexpr int operator+(Rank r, File f) { return f + r; }
@@ -100,7 +100,7 @@ enum Square {
     SQUARE_NR,
     NO_SQ = 0
 };
-constexpr std::array Squares{
+inline constexpr std::array Squares{
         A1, B1, C1, D1, E1, F1, G1, H1,
         A2, B2, C2, D2, E2, F2, G2, H2,
         A3, B3, C3, D3, E3, F3, G3, H3,
@@ -135,7 +135,7 @@ enum CastlingSide {
  * if the 14th bit is 1, it's a promotion move -> prom bits  N = 0010.., B = 1010.., R = 0110.., Q = 1110..
  */
 using Move = uint16_t;
-constexpr Move ZERO_MOVE = 0;
+inline constexpr Move ZERO_MOVE = 0;
 
 enum MoveType {
     NO_FLAG = 0, EN_PASSANT = 1 << 12, CASTLING = 2 << 12, TWO_FORWARD = 3 << 12,

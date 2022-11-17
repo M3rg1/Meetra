@@ -10,7 +10,7 @@ namespace Bitboards {
         int position;
     };
 
-    constexpr auto b_init_magic = std::to_array<MagicInit>(
+    inline constexpr auto b_init_magic = std::to_array<MagicInit>(
             {
                     {0xa7020080601803d8ull, 60984},
                     {0x13802040400801f1ull, 66046},
@@ -78,7 +78,7 @@ namespace Bitboards {
                     {0x100000c05f582008ull, 11140},
             });
 
-    constexpr auto r_init_magic = std::to_array<MagicInit>(
+    inline constexpr auto r_init_magic = std::to_array<MagicInit>(
             {
                     {0x80280013ff84ffffull, 10890},
                     {0x5ffbfefdfef67fffull, 50579},
