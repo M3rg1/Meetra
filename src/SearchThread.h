@@ -67,6 +67,7 @@ namespace Search {
         uint64_t nodes = 0;
 
         explicit RootMove(Move m) : move(m) {}
+        RootMove(Move m, Score s) : move(m), score(s) {}
 
         constexpr std::strong_ordering operator<=>(const RootMove &other) const {
             return other.score != score ? other.score <=> score :

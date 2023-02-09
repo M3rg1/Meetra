@@ -5,6 +5,14 @@
 
 using TT = TranspositionTable;
 
+static constexpr Score RemoveMatePly(Score score, Depth ply) {
+    return score > MIN_MATE_EVAL ? score + ply : score < -MIN_MATE_EVAL ? score - ply : score;
+}
+
+static constexpr Score AddMatePly(Score score, Depth ply) {
+    return score > MIN_MATE_EVAL ? score - ply : score < -MIN_MATE_EVAL ? score + ply : score;
+}
+
 void TT::Init(int size_mb) {
 
     if (size_mb > MAX_HASH_SIZE || size_mb < MIN_HASH_SIZE) {
@@ -86,12 +94,4 @@ std::tuple<TT::EntryFlag, Score, Move> TT::Probe(Hash64 hash, Score alpha, Score
     }
 
     return {flag, score, move};
-}
-
-constexpr Score TT::RemoveMatePly(Score score, Depth ply) {
-    return score > MIN_MATE_EVAL ? score + ply : score < -MIN_MATE_EVAL ? score - ply : score;
-}
-
-constexpr Score TT::AddMatePly(Score score, Depth ply) {
-    return score > MIN_MATE_EVAL ? score - ply : score < -MIN_MATE_EVAL ? score + ply : score;
 }

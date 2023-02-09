@@ -6,8 +6,6 @@
 
 namespace Zobrist {
 
-    static void GenPiecesHash(Hash64 &hash, const Board &board);
-
     void Init() {
 
         std::mt19937_64 mt(ZOBRIST_SEED); // NOLINT(cert-msc51-cpp)
@@ -18,6 +16,18 @@ namespace Zobrist {
         std::ranges::generate(ep_keys, gen);
         ep_keys[0] = 0;
         color_key = gen();
+    }
+
+    static void GenPiecesHash(Hash64 &hash, const Board &board) {
+        for (Color c: Colors) {
+            for (PieceType pt: PieceTypes) {
+                Bitboard pieces = board.Pieces(pt, c);
+                while (pieces) {
+                    Square s = Bitboards::PopLsb(pieces);
+                    AddPiece(hash, NewPiece(pt, c), s);
+                }
+            }
+        }
     }
 
     Hash64 GenHash64(const Board &board) {
@@ -32,17 +42,5 @@ namespace Zobrist {
         }
 
         return hash;
-    }
-
-    static void GenPiecesHash(Hash64 &hash, const Board &board) {
-        for (Color c: Colors) {
-            for (PieceType pt: PieceTypes) {
-                Bitboard pieces = board.Pieces(pt, c);
-                while (pieces) {
-                    Square s = Bitboards::PopLsb(pieces);
-                    AddPiece(hash, NewPiece(pt, c), s);
-                }
-            }
-        }
     }
 }

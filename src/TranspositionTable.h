@@ -66,9 +66,6 @@ private:
         TTEntry entries[TT_ENTRIES_PER_BUCKET];
     };
 
-    static constexpr Score RemoveMatePly(Score score, Depth ply);
-    static constexpr Score AddMatePly(Score score, Depth ply);
-
     TTEpoch current_epoch;
     std::atomic<uint64_t> used_entries;
     size_t buckets_count;
