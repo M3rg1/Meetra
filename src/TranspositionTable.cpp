@@ -1,16 +1,9 @@
-#include <syncstream>
-#include <iostream>
 #include "TranspositionTable.h"
 
+#include <syncstream>
+#include <iostream>
+
 using TT = TranspositionTable;
-
-constexpr Score RemoveMatePly(Score score, Depth ply) {
-    return score > MIN_MATE_EVAL ? score + ply : score < -MIN_MATE_EVAL ? score - ply : score;
-}
-
-constexpr Score AddMatePly(Score score, Depth ply) {
-    return score > MIN_MATE_EVAL ? score - ply : score < -MIN_MATE_EVAL ? score + ply : score;
-}
 
 void TT::Init(int size_mb) {
 
@@ -93,4 +86,12 @@ std::tuple<TT::EntryFlag, Score, Move> TT::Probe(Hash64 hash, Score alpha, Score
     }
 
     return {flag, score, move};
+}
+
+constexpr Score TT::RemoveMatePly(Score score, Depth ply) {
+    return score > MIN_MATE_EVAL ? score + ply : score < -MIN_MATE_EVAL ? score - ply : score;
+}
+
+constexpr Score TT::AddMatePly(Score score, Depth ply) {
+    return score > MIN_MATE_EVAL ? score - ply : score < -MIN_MATE_EVAL ? score + ply : score;
 }

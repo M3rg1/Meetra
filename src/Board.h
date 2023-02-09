@@ -7,6 +7,9 @@
 #include "Config.h"
 #include "Bitboards.h"
 
+#include <array>
+#include <string>
+
 class Board {
 
 public:

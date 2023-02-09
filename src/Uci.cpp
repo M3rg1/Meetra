@@ -1,47 +1,28 @@
-#include <iostream>
-#include <syncstream>
-#include <Env.h>
 #include "Uci.h"
 #include "Search.h"
 #include "TestSuite.h"
 
+#include <Env.h>
+#include <iostream>
+#include <syncstream>
+
 namespace Uci {
 
-    std::string Options() {
-        std::ostringstream oss;
-        oss << std::boolalpha
-            << "option name Clear Hash type button\n"
-            << "option name UCI_ShowCurrLine type check default " << DEFAULT_SHOW_CURRLINE << '\n'
-            << "option name Show current move type check default " << DEFAULT_SHOW_CURRMOVE << '\n'
-            << "option name Hash type spin default " << DEFAULT_HASH_SIZE << " min " << MIN_HASH_SIZE
-            << " max " << MAX_HASH_SIZE << '\n'
-            << "option name MultiPV type spin default " << DEFAULT_MULTI_PV << " min " << MIN_MULTI_PV << " max "
-            << MAX_MULTI_PV << '\n'
-            << "option name Mute plies type spin default " << DEFAULT_MUTE_PLIES << " min " << MIN_MUTE_PLIES << " max "
-            << MAX_MUTE_PLIES << '\n'
-            << "option name OwnBook type check default " << DEFAULT_USE_BOOK << '\n'
-            << "option name Threads type spin default " << DEFAULT_SEARCH_THREADS << " min " << MIN_SEARCH_THREADS
-            << " max " << MAX_SEARCH_THREADS << '\n'
-            << "option name Move overhead type spin default " << DEFAULT_OVERHEAD << " min "
-            << MIN_OVERHEAD << " max " << MAX_OVERHEAD << '\n'
-            << "option name UCI_Chess960 type check default " << DEFAULT_CHESS960 << '\n'
-            << "option name Send updates frequency type spin default " << DEFAULT_UPDATE_INTERVAL << " min "
-            << MIN_UPDATE_INTERVAL << " max " << MAX_UPDATE_INTERVAL;
-        return oss.str();
-    }
-
-    void UciCommand();
-    void IsReadyCommand();
-    void GoCommand(std::istringstream &iss, const Board &board);
-    void UciNewGameCommand();
-    void PositionCommand(std::istringstream &iss, Board &board);
-    void PerftCommand(std::istringstream &iss, Board &board);
-    void SetOptionCommand(std::istringstream &iss);
-    void StopCommand();
-    void BoardCommand(const Board &board);
-    void TestCommand();
-    void UnknownCommand();
-    Search::Settings ParseSearchOptions(std::istringstream &iss);
+    static std::string Options();
+    static void UciCommand();
+    static void IsReadyCommand();
+    static void GoCommand(std::istringstream &iss, const Board &board);
+    static void PositionCommand(std::istringstream &iss, Board &board);
+    static void SetOptionCommand(std::istringstream &iss);
+    static void StopCommand();
+    static void UciNewGameCommand();
+    static void PerftCommand(std::istringstream &iss, Board &board);
+    static void BoardCommand(const Board &board);
+    static void TestCommand();
+    static void UnknownCommand();
+    static bool IsNumber(std::string_view str);
+    static bool IsBoolean(std::string_view str);
+    static Search::Settings ParseSearchOptions(std::istringstream &iss);
 
     void Init() {
         std::ios_base::sync_with_stdio(false); // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=27931
@@ -76,20 +57,30 @@ namespace Uci {
         }
     }
 
-    void BoardCommand(const Board &board) {
-        std::osyncstream(std::cout) << '\n' << board << std::endl;
+    static std::string Options() {
+        std::ostringstream oss;
+        oss << std::boolalpha
+            << "option name Clear Hash type button\n"
+            << "option name UCI_ShowCurrLine type check default " << DEFAULT_SHOW_CURRLINE << '\n'
+            << "option name Show current move type check default " << DEFAULT_SHOW_CURRMOVE << '\n'
+            << "option name Hash type spin default " << DEFAULT_HASH_SIZE << " min " << MIN_HASH_SIZE
+            << " max " << MAX_HASH_SIZE << '\n'
+            << "option name MultiPV type spin default " << DEFAULT_MULTI_PV << " min " << MIN_MULTI_PV << " max "
+            << MAX_MULTI_PV << '\n'
+            << "option name Mute plies type spin default " << DEFAULT_MUTE_PLIES << " min " << MIN_MUTE_PLIES << " max "
+            << MAX_MUTE_PLIES << '\n'
+            << "option name OwnBook type check default " << DEFAULT_USE_BOOK << '\n'
+            << "option name Threads type spin default " << DEFAULT_SEARCH_THREADS << " min " << MIN_SEARCH_THREADS
+            << " max " << MAX_SEARCH_THREADS << '\n'
+            << "option name Move overhead type spin default " << DEFAULT_OVERHEAD << " min "
+            << MIN_OVERHEAD << " max " << MAX_OVERHEAD << '\n'
+            << "option name UCI_Chess960 type check default " << DEFAULT_CHESS960 << '\n'
+            << "option name Send updates frequency type spin default " << DEFAULT_UPDATE_INTERVAL << " min "
+            << MIN_UPDATE_INTERVAL << " max " << MAX_UPDATE_INTERVAL;
+        return oss.str();
     }
 
-    void TestCommand() {
-        Testing::RunTests();
-    }
-
-    void UnknownCommand() {
-        std::osyncstream(std::cout)
-                << "Unknown command, please see the engine documentation for available commands." << std::endl;
-    }
-
-    void UciCommand() {
+    static void UciCommand() {
         std::osyncstream(std::cout)
                 << "id name " << PROJECT_NAME << " v. " << PROJECT_VER << '\n'
                 << "id author " << PROJECT_AUTHOR << '\n'
@@ -97,7 +88,11 @@ namespace Uci {
                 << "uciok" << std::endl;
     }
 
-    void GoCommand(std::istringstream &iss, const Board &board) {
+    static void IsReadyCommand() {
+        std::osyncstream(std::cout) << "readyok" << std::endl;
+    }
+
+    static void GoCommand(std::istringstream &iss, const Board &board) {
         if (Search::run) {
             std::osyncstream(std::cout) << "info Search is already in progress!" << std::endl;
             return;
@@ -106,26 +101,7 @@ namespace Uci {
         Search::StartSearch(settings, board);
     }
 
-    void PerftCommand(std::istringstream &iss, Board &board) {
-
-        Depth depth = 0;
-        iss >> depth;
-
-        auto start = Now();
-        auto nodes = depth > 0 ? Testing::Perft<true>(depth, board) : 0;
-        auto elapsed = ElapsedSince(start);
-
-        std::osyncstream(std::cout) << "\nTime elapsed: " << elapsed << "ms"
-                                    << " | Nodes explored: " << nodes
-                                    << " | NPS: " << Nps(nodes, elapsed)
-                                    << '\n' << std::endl;
-    }
-
-    void IsReadyCommand() {
-        std::osyncstream(std::cout) << "readyok" << std::endl;
-    }
-
-    void PositionCommand(std::istringstream &iss, Board &board) {
+    static void PositionCommand(std::istringstream &iss, Board &board) {
 
         std::string token, fen;
         iss >> token;
@@ -151,28 +127,7 @@ namespace Uci {
         }
     }
 
-    void StopCommand() {
-        Search::StopSearch();
-        Search::WaitFinished(); // wait until search is finished before accepting more commands
-    }
-
-    void UciNewGameCommand() {
-        if (Search::run) {
-            std::osyncstream(std::cout) << "info Search is already in progress!" << std::endl;
-            return;
-        }
-        Search::ClearTT();
-    }
-
-    bool IsNumber(std::string_view str) {
-        return !str.empty() && std::ranges::all_of(str, ::isdigit);
-    }
-
-    bool IsBoolean(std::string_view str) {
-        return str == "true" || str == "false";
-    }
-
-    void SetOptionCommand(std::istringstream &iss) {
+    static void SetOptionCommand(std::istringstream &iss) {
 
         if (Search::run) {
             std::osyncstream(std::cout) << "info Cannot change settings while search is ongoing!" << std::endl;
@@ -217,7 +172,56 @@ namespace Uci {
         }
     }
 
-    Search::Settings ParseSearchOptions(std::istringstream &iss) {
+    static void StopCommand() {
+        Search::StopSearch();
+        Search::WaitFinished(); // wait until search is finished before accepting more commands
+    }
+
+    static void UciNewGameCommand() {
+        if (Search::run) {
+            std::osyncstream(std::cout) << "info Search is already in progress!" << std::endl;
+            return;
+        }
+        Search::ClearTT();
+    }
+
+    static void PerftCommand(std::istringstream &iss, Board &board) {
+
+        Depth depth = 0;
+        iss >> depth;
+
+        auto start = Now();
+        auto nodes = depth > 0 ? Testing::Perft<true>(depth, board) : 0;
+        auto elapsed = ElapsedSince(start);
+
+        std::osyncstream(std::cout) << "\nTime elapsed: " << elapsed << "ms"
+                                    << " | Nodes explored: " << nodes
+                                    << " | NPS: " << Nps(nodes, elapsed)
+                                    << '\n' << std::endl;
+    }
+
+    static void BoardCommand(const Board &board) {
+        std::osyncstream(std::cout) << '\n' << board << std::endl;
+    }
+
+    static void TestCommand() {
+        Testing::RunTests();
+    }
+
+    static void UnknownCommand() {
+        std::osyncstream(std::cout)
+                << "Unknown command, please see the engine documentation for available commands." << std::endl;
+    }
+
+    static bool IsNumber(std::string_view str) {
+        return !str.empty() && std::ranges::all_of(str, ::isdigit);
+    }
+
+    static bool IsBoolean(std::string_view str) {
+        return str == "true" || str == "false";
+    }
+
+    static Search::Settings ParseSearchOptions(std::istringstream &iss) {
 
         Search::Settings settings;
         std::string option;

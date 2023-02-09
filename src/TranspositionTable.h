@@ -1,12 +1,13 @@
 #ifndef MEETRA_TRANSPOSITIONTABLE_H
 #define MEETRA_TRANSPOSITIONTABLE_H
 
-#include <memory>
-#include <atomic>
 #include "Board.h"
 #include "ZobristHash.h"
 #include "Defs.h"
 #include "Config.h"
+
+#include <memory>
+#include <atomic>
 
 class TranspositionTable {
 
@@ -17,9 +18,9 @@ public:
     };
 
     void Init(int size_mb = DEFAULT_HASH_SIZE);
-    void Save(Hash64 hash, Score score, Depth depth, Move move, EntryFlag flag, Depth ply);
     void NewSearch();
     void Clear();
+    void Save(Hash64 hash, Score score, Depth depth, Move move, EntryFlag flag, Depth ply);
     std::tuple<EntryFlag, Score, Move> Probe(Hash64 hash, Score alpha, Score beta, Depth depth, Depth ply);
     [[nodiscard]] int Hashfull() const {
         double usage = static_cast<double>(used_entries.load(std::memory_order_relaxed))
@@ -64,6 +65,9 @@ private:
     struct TTBucket {
         TTEntry entries[TT_ENTRIES_PER_BUCKET];
     };
+
+    static constexpr Score RemoveMatePly(Score score, Depth ply);
+    static constexpr Score AddMatePly(Score score, Depth ply);
 
     TTEpoch current_epoch;
     std::atomic<uint64_t> used_entries;

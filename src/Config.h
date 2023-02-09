@@ -1,8 +1,9 @@
 #ifndef MEETRA_CONFIG_H
 #define MEETRA_CONFIG_H
 
-#include <filesystem>
 #include "Defs.h"
+
+#include <filesystem>
 
 inline constexpr Depth BOOK_DEPTH = 20; // TODO this should be read from the book itself and put in var in Book.h
 inline const std::filesystem::path BOOK_PATH = "books/bestmove_r20d20_a5000.mtr.bin"; // TODO this should be UCI setting (var in Book.h)

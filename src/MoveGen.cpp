@@ -1,13 +1,6 @@
-#include <algorithm>
-#include <ranges>
 #include "MoveGen.h"
 
-bool ValidatePromMove(Move m, Move to_validate) {
-    return ((m | PROMOTE_QUEEN) == to_validate)
-           || ((m | PROMOTE_ROOK) == to_validate)
-           || ((m | PROMOTE_BISHOP) == to_validate)
-           || ((m | PROMOTE_KNIGHT) == to_validate);
-}
+#include <ranges>
 
 MoveGen::MoveGen(const Board &b, const Search::Killers &killer_moves) :
         board(b),
@@ -21,7 +14,7 @@ MoveGen::MoveGen(const Board &b, const Search::Killers &killer_moves) :
         checkers(board.Checkers()),
         blockers(board.PinnedToSquare(king_s, enemy_color)),
         killers(killer_moves),
-        killers_cnt(killer_moves.Size()){
+        killers_cnt(killer_moves.Size()) {
 
     if (checkers) {
         if (Bitboards::MoreThanOne(checkers)) {
@@ -40,7 +33,7 @@ MoveGen::MoveGen(const Board &b, const Search::Killers &killer_moves) :
 void MoveGen::EvalMoves() {
     for (auto &m_e: move_eval | std::views::take(moves_cnt)) {
         if (gen_phase == END && killers_cnt > 0) {
-            if (const auto k = killers.Find(m_e.move); k != killers.end()) {
+            if (auto k = killers.Find(m_e.move); k != killers.end()) {
                 m_e.score = static_cast<Score>(std::distance(k, killers.end()) * KILLER_EVAL_BONUS);
                 --killers_cnt;
                 continue;
@@ -343,4 +336,11 @@ bool MoveGen::NormalMoveIsPseudoLegal(Move m) {
            moved_pt == ROOK ? MovesForPT<ROOK, C, VALIDATE>(pos, mask, m) :
            moved_pt == QUEEN ? MovesForPT<QUEEN, C, VALIDATE>(pos, mask, m) :
            moved_pt == KING && MovesForPT<KING, C, VALIDATE>(pos, empty_squares | enemy_pieces, m);
+}
+
+bool MoveGen::ValidatePromMove(Move m, Move to_validate) {
+    return ((m | PROMOTE_QUEEN) == to_validate)
+           || ((m | PROMOTE_ROOK) == to_validate)
+           || ((m | PROMOTE_BISHOP) == to_validate)
+           || ((m | PROMOTE_KNIGHT) == to_validate);
 }

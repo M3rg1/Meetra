@@ -1,10 +1,11 @@
+#include "SearchThread.h"
+#include "MoveGen.h"
+#include "Search.h"
+
 #include <syncstream>
 #include <iostream>
 #include <functional>
 #include <ranges>
-#include "SearchThread.h"
-#include "MoveGen.h"
-#include "Search.h"
 
 namespace Search {
 
@@ -453,7 +454,7 @@ namespace Search {
                 cond_var.notify_one();
                 cond_var.wait(lock, stop_token, [&] { return active; });
             }
-            if (stop_token.stop_requested()) { return; }
+            if (stop_token.stop_requested()) return;
             Search();
         }
     }
@@ -471,7 +472,7 @@ namespace Search {
         depth_reached = 0;
         nodes_explored = 0;
         termination_calls = TIME_QUERY_FREQUENCY;
-        std::ranges::for_each(killers, [&](auto &k) { k.Clear(); });
+        std::ranges::for_each(killers, &Killers::Clear);
     }
 
     void SearchThread::StartThread() {

@@ -1,13 +1,14 @@
 #ifndef MEETRA_SEARCH_H
 #define MEETRA_SEARCH_H
 
-#include <algorithm>
 #include "Board.h"
 #include "Evaluator.h"
 #include "TranspositionTable.h"
 #include "SearchThread.h"
 #include "Defs.h"
 #include "Config.h"
+
+#include <algorithm>
 
 namespace Search {
 

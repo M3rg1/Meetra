@@ -1,12 +1,13 @@
+#include "Board.h"
+#include "MoveGen.h"
+#include "ZobristHash.h"
+
 #include <sstream>
 #include <algorithm>
 #include <regex>
 #include <iomanip>
 #include <bit>
 #include <ranges>
-#include "Board.h"
-#include "MoveGen.h"
-#include "ZobristHash.h"
 
 Board::Board() {
     NewPosition(STARTPOS_FEN.data());
@@ -339,8 +340,7 @@ bool Board::ParseFenPieces(std::string_view fen_pieces) {
             s += 1;
         }
     }
-    bool allSquaresDescribed = s == H1 + 1;
-    return allSquaresDescribed;
+    return s == H1 + 1;
 }
 
 bool Board::ParseFenCastling(std::string_view fen_castling) {

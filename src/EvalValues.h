@@ -1,8 +1,9 @@
 #ifndef MEETRA_EVALVALUES_H
 #define MEETRA_EVALVALUES_H
 
-#include <array>
 #include "Defs.h"
+
+#include <array>
 
 namespace Evaluation {
 

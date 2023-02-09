@@ -1,9 +1,10 @@
 #ifndef MEETRA_BITBOARDS_H
 #define MEETRA_BITBOARDS_H
 
+#include "Defs.h"
+
 #include <bit>
 #include <array>
-#include "Defs.h"
 
 namespace Bitboards {
 

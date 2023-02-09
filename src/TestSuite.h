@@ -1,6 +1,11 @@
 #ifndef MEETRA_TESTSUITE_H
 #define MEETRA_TESTSUITE_H
 
+#include "Board.h"
+#include "MoveGen.h"
+#include "Config.h"
+#include "Defs.h"
+
 #include <string>
 #include <vector>
 #include <syncstream>
@@ -8,10 +13,7 @@
 #include <fstream>
 #include <sstream>
 #include <ranges>
-#include "Defs.h"
-#include "Board.h"
-#include "MoveGen.h"
-#include "Config.h"
+#include <regex>
 
 namespace Testing {
 
@@ -39,8 +41,8 @@ namespace Testing {
                 continue;
             }
             uint64_t nodes = Perft<false>(depth - 1, board);
-            board.UnmakeMove(m);
             total_nodes += nodes;
+            board.UnmakeMove(m);
             if constexpr (DIV) {
                 std::osyncstream(std::cout) << board.MoveToStr(m) << ": " << nodes << std::endl;
             }
@@ -57,9 +59,9 @@ namespace Testing {
         uint64_t result = 0;
         bool chess960 = false;
 
-        explicit Test(const std::string &str) {
+        explicit Test(const std::string &line) {
 
-            std::istringstream iss(str);
+            std::istringstream iss(line);
             std::string token;
 
             iss >> token;
@@ -135,7 +137,7 @@ namespace Testing {
         auto start = Now();
 
         for (auto i: std::views::iota(0u, tests.size())) {
-            std::osyncstream(std::cout) << "Running test " << i + 1 << " ..." << std::endl;
+            std::osyncstream(std::cout) << "Running test " << i + 1 << '/' << tests.size() << " ..." << std::endl;
             if (!tests[i].Run()) {
                 errors.emplace_back(i);
             }

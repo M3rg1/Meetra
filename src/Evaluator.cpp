@@ -1,4 +1,3 @@
-#include <algorithm>
 #include "Evaluator.h"
 #include "Bitboards.h"
 #include "EvalValues.h"

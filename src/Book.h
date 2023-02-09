@@ -1,15 +1,16 @@
 #ifndef MEETRA_BOOK_H
 #define MEETRA_BOOK_H
 
+#include "ZobristHash.h"
+#include "Board.h"
+#include "Defs.h"
+#include "Config.h"
+
 #include <vector>
 #include <fstream>
 #include <filesystem>
 #include <iostream>
 #include <syncstream>
-#include "ZobristHash.h"
-#include "Board.h"
-#include "Defs.h"
-#include "Config.h"
 
 namespace Book {
 

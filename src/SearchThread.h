@@ -1,13 +1,14 @@
 #ifndef MEETRA_SEARCHTHREAD_H
 #define MEETRA_SEARCHTHREAD_H
 
+#include "Board.h"
+#include "Config.h"
+
 #include <vector>
 #include <thread>
 #include <algorithm>
 #include <mutex>
 #include <condition_variable>
-#include "Board.h"
-#include "Config.h"
 
 namespace Search {
 
@@ -17,10 +18,9 @@ namespace Search {
         [[nodiscard]] constexpr auto end() const { return killers.begin() + len; }
         [[nodiscard]] constexpr auto begin() { return killers.begin(); }
         [[nodiscard]] constexpr auto end() { return killers.begin() + len; }
+        [[nodiscard]] constexpr auto Find(Move move) const { return std::ranges::find(*this, move); }
+        [[nodiscard]] constexpr auto Find(Move move) { return std::ranges::find(*this, move); }
         [[nodiscard]] constexpr int Size() const { return len; }
-        [[nodiscard]] constexpr auto Find(Move move) const {
-            return std::ranges::find(*this, move);
-        }
         [[nodiscard]] constexpr bool Contains(Move move) const {
             return Find(move) != end();
         }

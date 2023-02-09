@@ -36,7 +36,7 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 if(MSVC)
-    set(CMAKE_CXX_FLAGS_RELEASE "/O2 /GR- /DNDEBUG")
+    set(CMAKE_CXX_FLAGS_RELEASE "/O2 /Ob2 /W4 /GR- /DNDEBUG")
     set(CMAKE_CXX_FLAGS_DEBUG "/Zi /Ob0 /Od /RTC1 /W3")
     set(CMAKE_CXX20_STANDARD_COMPILE_OPTION "/std:c++latest")
 endif()

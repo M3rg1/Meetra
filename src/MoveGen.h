@@ -1,11 +1,12 @@
 #ifndef MEETRA_MOVEGEN_H
 #define MEETRA_MOVEGEN_H
 
-#include <array>
 #include "SearchThread.h" // todo this shouldnt be here (only cuz we need the killers struct) - move list soon pls
 #include "Defs.h"
 #include "Board.h"
 #include "Config.h"
+
+#include <array>
 
 class MoveGen {
 
@@ -66,7 +67,7 @@ private:
 
     GenPhase gen_phase = PROMOTION;
 
-    const Search::Killers killers;
+    Search::Killers killers;
     int killers_cnt = 0;
     std::array<ScoredMove, MAX_LEGAL_MOVES> move_eval;
     int moves_cnt = 0;
@@ -122,6 +123,8 @@ private:
     [[nodiscard]] bool SpecialMoveIsPseudoLegal(Move m);
     template<Color C>
     [[nodiscard]] bool NormalMoveIsPseudoLegal(Move m);
+
+    [[nodiscard]] bool ValidatePromMove(Move m, Move to_validate);
 
     template<Color C, PawnMoveDir DIR>
     static constexpr Direction PawnMove() {
