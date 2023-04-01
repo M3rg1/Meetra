@@ -22,7 +22,7 @@ namespace Book {
     inline std::vector<Move> BinarySearch(std::ifstream &stream, uintmax_t size_bytes, Hash64 hash) {
 
         std::vector<Move> moves;
-        std::streamoff right = static_cast<std::streamoff>(size_bytes / sizeof(BookEntry));
+        std::streamoff right = size_bytes / sizeof(BookEntry);
         std::streamoff left = 0;
         BookEntry book_entry;
 

@@ -275,7 +275,7 @@ bool MoveGen::DiscoveryCheck(Square orig, Square dest) const {
 bool MoveGen::IsPseudoLegal(Move m) {
 
     Piece moved_piece = board.PieceOnSquare(FromSquare(m));
-    if (m == ZERO_MOVE || moved_piece == NO_PIECE || ColorOfPiece(moved_piece) != my_color) {
+    if (moved_piece == NO_PIECE || ColorOfPiece(moved_piece) != my_color) {
         return false;
     }
 

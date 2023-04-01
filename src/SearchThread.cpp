@@ -61,7 +61,6 @@ namespace Search {
                 nodes_explored.fetch_add(1, std::memory_order_relaxed);
                 ++curr_rm->nodes;
 
-                curr_rm->previous_score = curr_rm->score;
                 curr_rm->depth = depth_reached;
 
                 if (score > alpha) {
@@ -81,7 +80,7 @@ namespace Search {
                 }
             } // end alpha beta loop
 
-            // sort based on score -> previous score -> node count
+            // sort based on score -> node count
             std::ranges::sort(root_moves);
 
             if (DepthLimitReached()) {
@@ -446,7 +445,7 @@ namespace Search {
             active(true),
             thread(std::bind_front(&SearchThread::InitThread, this)) {}
 
-    void SearchThread::InitThread(std::stop_token stop_token) {
+    void SearchThread::InitThread(const std::stop_token& stop_token) {
         while (true) {
             {
                 std::unique_lock lock(mtx);

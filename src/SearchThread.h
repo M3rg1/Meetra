@@ -61,7 +61,6 @@ namespace Search {
         Move move;
         PVLine pv;
         Score score = NEGATIVE_INF;
-        Score previous_score = NEGATIVE_INF;
         Depth depth = 0;
         Depth seldepth = 0;
         uint64_t nodes = 0;
@@ -70,9 +69,7 @@ namespace Search {
         RootMove(Move m, Score s) : move(m), score(s) {}
 
         constexpr std::strong_ordering operator<=>(const RootMove &other) const {
-            return other.score != score ? other.score <=> score :
-                   other.previous_score != previous_score ? other.previous_score <=> previous_score :
-                   other.nodes <=> nodes;
+            return other.score != score ? other.score <=> score : other.nodes <=> nodes;
         }
 
         constexpr bool operator==(const RootMove &other) const {
@@ -103,7 +100,7 @@ namespace Search {
             PV, NON_PV, NULL_MOVE
         };
 
-        void InitThread(std::stop_token stop_token);
+        void InitThread(const std::stop_token& stop_token);
 
         template<Node NodeType>
         Score ABSearch(Score alpha, Score beta, Depth depth, Depth ply);
