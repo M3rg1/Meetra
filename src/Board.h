@@ -36,7 +36,7 @@ public:
     [[nodiscard]] Move StrToMove(std::string_view move_str) const;
     [[nodiscard]] std::string Fen() const;
     [[nodiscard]] bool IsQuiet(Move m) const {
-        return TypeOfMove(m) != EN_PASSANT && !IsPromotion(m) && PieceOnSquare(ToSquare(m)) == NO_PIECE;
+        return PieceOnSquare(ToSquare(m)) == NO_PIECE && !IsPromotion(m) && TypeOfMove(m) != EN_PASSANT;
     }
 
 #pragma region ===== Getters =====

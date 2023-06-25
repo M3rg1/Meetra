@@ -131,6 +131,7 @@ namespace Search {
         Score static_eval = board.Eval();
         Score eval = static_eval; // eval is not used if we are in check
         auto [tt_flag, tt_score, tt_move] = tt.Probe(board.Hash(), alpha, beta, depth, ply);
+        // assert (!(tt_flag != TT:NOT_FOUND && tt_move == ZERO_MOVE))
 
         if (tt_flag != TT::NOT_FOUND && move_gen.IsPseudoLegal(tt_move)) {
             if (NodeType != PV && tt_flag & TT::CUTOFF) {

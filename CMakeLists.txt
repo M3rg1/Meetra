@@ -24,11 +24,9 @@ set(CMAKE_THREAD_PREFER_PTHREAD ON)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 
-set(LINK_LIBS Threads::Threads)
-
 add_executable(${PROJECT_NAME} ${SRC_FILES})
 target_include_directories(${PROJECT_NAME} PRIVATE ${INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} ${LINK_LIBS})
+target_link_libraries(${PROJECT_NAME} PRIVATE Threads::Threads)
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "${PROJECT_NAME}_v${PROJECT_VERSION}")
 
 if(NOT CMAKE_BUILD_TYPE)

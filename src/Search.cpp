@@ -155,6 +155,7 @@ namespace Search {
 
         Shutdown();
 
+        threads.reserve(num_threads);
         for (auto i: std::views::iota(0, num_threads)) {
             threads.emplace_back(new SearchThread(i));
         }

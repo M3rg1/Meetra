@@ -528,7 +528,6 @@ Move Board::StrToMove(std::string_view move_str) const {
 
 std::string Board::PiecesToFen() const {
     std::string pieces_fen;
-    pieces_fen.reserve(64);
     for (Rank r: Ranks | std::views::reverse) {
         int empty_cnt = 0;
         for (File f: Files) {
