@@ -89,7 +89,7 @@ namespace Search {
         [[nodiscard]] bool LimitReached() const;
 
         [[nodiscard]] bool DidBeatMove(const RootMove &move) const;
-        [[nodiscard]] RootMove BestRootMove() const;
+        [[nodiscard]] const RootMove& BestRootMove() const { return root_moves[0]; }
         [[nodiscard]] uint64_t Nodes() const { return nodes_explored.load(std::memory_order_relaxed); }
         void SendBestMove() const;
         void SendFullSearchInfo() const;

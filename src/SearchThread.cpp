@@ -342,10 +342,6 @@ namespace Search {
         return false;
     }
 
-    RootMove SearchThread::BestRootMove() const {
-        return root_moves[0];
-    }
-
     void SearchThread::SendBestMove() const {
         std::osyncstream(std::cout) << "bestmove " << board.MoveToStr(BestRootMove().move) << std::endl;
     }

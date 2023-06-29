@@ -7,10 +7,10 @@
 
 namespace Bitboards {
 
-    static Bitboard GenSliderMoves(Square s, Bitboard occ, const std::initializer_list<Direction> &dirs);
+    static Bitboard GenSliderMoves(Square s, Bitboard occ, const std::vector<Direction> &dirs);
     static Bitboard GenBishopMoves(Square s, Bitboard occ);
     static Bitboard GenRookMoves(Square s, Bitboard occ);
-    static void GenPieceMoves(const std::initializer_list<Direction> &dirs, std::array<Bitboard, SQUARE_NR> &output);
+    static void GenPieceMoves(const std::vector<Direction> &dirs, std::array<Bitboard, SQUARE_NR> &output);
     static Bitboard GenRayToEdges(Square s1, Square s2);
     static Bitboard GenRayBetween(Square s1, Square s2);
     static void GenRays();
@@ -46,7 +46,7 @@ namespace Bitboards {
         return oss.str();
     }
 
-    static Bitboard GenSliderMoves(Square s, Bitboard occ, const std::initializer_list<Direction> &dirs) {
+    static Bitboard GenSliderMoves(Square s, Bitboard occ, const std::vector<Direction> &dirs) {
 
         auto MoveOk = [](Square from, Square to) {
             int f_diff = std::abs(SqToFile(from) - SqToFile(to));
@@ -75,7 +75,7 @@ namespace Bitboards {
         return GenSliderMoves(s, occ, {NORTH, SOUTH, EAST, WEST});
     }
 
-    static void GenPieceMoves(const std::initializer_list<Direction> &dirs, std::array<Bitboard, SQUARE_NR> &output) {
+    static void GenPieceMoves(const std::vector<Direction> &dirs, std::array<Bitboard, SQUARE_NR> &output) {
         for (Square s: Squares) {
             output[s] = EMPTY_BB;
             for (Direction d: dirs) {

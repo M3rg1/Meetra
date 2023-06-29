@@ -61,7 +61,7 @@ namespace Search {
         return ZERO_MOVE;
     }
 
-    void StartSearch(Settings s, const Board &board) {
+    void StartSearch(const Settings& s, const Board &board) {
 
         Search::WaitFinished();
 
