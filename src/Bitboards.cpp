@@ -106,11 +106,9 @@ namespace Bitboards {
 
     static Bitboard GenRayBetween(Square s1, Square s2) {
 
-        Square s_max = std::max(s1, s2);
+        auto [s_min, s_max] = std::minmax(s1, s2);
         Rank r_max = SqToRank(s_max);
         File f_max = SqToFile(s_max);
-
-        Square s_min = std::min(s1, s2);
         Rank r_min = SqToRank(s_min);
         File f_min = SqToFile(s_min);
 

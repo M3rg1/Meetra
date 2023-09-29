@@ -10,11 +10,6 @@
 
 namespace Search {
 
-    void Init() {
-        SetNumThreads(DEFAULT_SEARCH_THREADS);
-        tt.Init();
-    }
-
     static int TimeReduction(const Board &board) {
         int reduction = std::max(45 + std::min(board.Phase(), 20) - board.FullMoveClock(), 20);
         if (settings.moves_to_go) {
@@ -61,9 +56,29 @@ namespace Search {
         return ZERO_MOVE;
     }
 
-    void StartSearch(const Settings& s, const Board &board) {
+    static SearchThread *PickBestThread() {
+        // select the thread with the best move overall
+        // for multipv, because helper threads might skip some depths and not have the full pv, we can't safely use
+        // their results without risking their pv for other than the top move will be very old from low depth or even
+        // missing entirely
+        auto best_thread = threads.front().get();
+        if (multi_pv == 1) {
+            for (auto &thread: threads | std::views::drop(1)) {
+                thread->WaitForFinish();
+                if (thread->DidBeatMove(best_thread->BestRootMove())) {
+                    best_thread = thread.get();
+                }
+            }
+        }
+        return best_thread;
+    }
 
-        Search::WaitFinished();
+    void Init() {
+        SetNumThreads(DEFAULT_SEARCH_THREADS);
+        tt.Init();
+    }
+
+    void StartSearch(const Settings& s, const Board &board) {
 
         run = true;
         InitNewSearch(s, board);
@@ -95,23 +110,6 @@ namespace Search {
         std::ranges::for_each(threads, [&](auto &t) { t->InitNewSearch(board, root_moves); });
         if (threads.front()->LimitReached()) StopSearch(); // 0 nodes or 0 movetime or 0 depth search - stop immediately
         std::ranges::for_each(threads, &SearchThread::StartThread);
-    }
-
-    static SearchThread *PickBestThread() {
-        // select the thread with the best move overall
-        // for multipv, because helper threads might skip some depths and not have the full pv, we can't safely use
-        // their results without risking their pv for other than the top move will be very old from low depth or even
-        // missing entirely
-        auto best_thread = threads.front().get();
-        if (multi_pv == 1) {
-            for (auto &thread: threads | std::views::drop(1)) {
-                thread->WaitForFinish();
-                if (thread->DidBeatMove(best_thread->BestRootMove())) {
-                    best_thread = thread.get();
-                }
-            }
-        }
-        return best_thread;
     }
 
     void FinalizeSearch() {

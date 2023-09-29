@@ -132,23 +132,25 @@ enum CastlingSide {
  * 0-5 from square
  * 6-11 to square
  * 12-15 MoveType flag
- * if the 14th bit is 1, it's a promotion move -> prom bits  N = 0010.., B = 1010.., R = 0110.., Q = 1110..
+ * - if the 14th or 15th bit is 1, it's a promotion move -> prom bits  N = 010.., B = 011.., R = 100.., Q = 101..
+ * - two forward and castling bits can overlap into promotional piece type, but a move cannot be both at once
+ * - and we can still safely distinguish promotions from castling/two forward thanks to the 14th and 15th bits
  */
 using Move = uint16_t;
 inline constexpr Move ZERO_MOVE = 0;
 
 enum MoveType {
     NO_FLAG = 0, EN_PASSANT = 1 << 12, CASTLING = 2 << 12, TWO_FORWARD = 3 << 12,
-    PROMOTE_KNIGHT = 4 << 12, PROMOTE_BISHOP = 5 << 12, PROMOTE_ROOK = 6 << 12, PROMOTE_QUEEN = 7 << 12
+    PROMOTE_KNIGHT = KNIGHT << 13, PROMOTE_BISHOP = BISHOP << 13, PROMOTE_ROOK = ROOK << 13, PROMOTE_QUEEN = QUEEN << 13
 };
 
 constexpr Move NewMove(Square from, Square to) { return static_cast<Move>(from | (to << 6)); }
 constexpr Move NewMove(Square from, Square to, MoveType flag) { return static_cast<Move>(NewMove(from, to) | flag); }
 
-constexpr PieceType PromotionTo(MoveType mt) { return static_cast<PieceType>((mt >> 12) - 2); }
 constexpr Square FromSquare(Move m) { return static_cast<Square>(m & 0x3F); }
 constexpr Square ToSquare(Move m) { return static_cast<Square>((m >> 6) & 0x3F); }
-constexpr bool IsPromotion(Move m) { return m >> 14; }
 constexpr MoveType TypeOfMove(Move m) { return static_cast<MoveType>(m & 0xF000); }
+constexpr bool IsPromotion(Move m) { return m & 0xC000; } // == m >> 14
+constexpr PieceType PromotionTo(MoveType mt) { return static_cast<PieceType>(mt >> 13); }
 
 #endif //MEETRA_DEFS_H

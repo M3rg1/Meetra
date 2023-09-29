@@ -98,6 +98,7 @@ namespace Uci {
             return;
         }
         Search::Settings settings = ParseSearchOptions(iss);
+        Search::WaitFinished();
         Search::StartSearch(settings, board);
     }
 
@@ -133,6 +134,8 @@ namespace Uci {
             std::osyncstream(std::cout) << "info Cannot change settings while search is ongoing!" << std::endl;
             return;
         }
+
+        Search::WaitFinished();
 
         std::string token, option, value;
 
@@ -174,7 +177,6 @@ namespace Uci {
 
     static void StopCommand() {
         Search::StopSearch();
-        Search::WaitFinished(); // wait until search is finished before accepting more commands
     }
 
     static void UciNewGameCommand() {
@@ -182,6 +184,7 @@ namespace Uci {
             std::osyncstream(std::cout) << "info Search is already in progress!" << std::endl;
             return;
         }
+        Search::WaitFinished();
         Search::ClearTT();
     }
 
