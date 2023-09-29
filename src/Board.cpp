@@ -10,7 +10,7 @@
 #include <ranges>
 
 Board::Board() {
-    NewPosition(STARTPOS_FEN.data());
+    NewPosition(STARTPOS_FEN);
 }
 
 bool Board::NewPosition(const std::string &fen, bool isChess960) {

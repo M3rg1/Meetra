@@ -13,7 +13,7 @@ inline const std::filesystem::path TEST_FILE_PATH = "tests/PerftTests.txt";
 inline constexpr int MAX_LEGAL_MOVES = 256;
 inline constexpr int MAX_GAME_LENGTH = 1024;
 inline constexpr Depth MAX_SEARCH_DEPTH = 128;
-inline constexpr std::string_view STARTPOS_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+inline constexpr char STARTPOS_FEN[] = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 #pragma endregion
 
 #pragma region ===== Various UCI settings limits =====

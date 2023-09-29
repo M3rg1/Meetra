@@ -107,7 +107,7 @@ private:
         Evaluator evaluator;
     };
 
-    bool chess960 = false;
+    bool chess960;
 
     BoardState state;
     std::array<BoardState, MAX_GAME_LENGTH> history;
