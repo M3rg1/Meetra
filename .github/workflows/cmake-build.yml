@@ -21,8 +21,8 @@ jobs:
           - os: ubuntu-latest
             compiler: g++
 
-          - os: macos-latest
-            compiler: g++-11
+          # - os: macos-latest
+          #   compiler: g++-11
 
           - os: windows-latest
             compiler: cl
