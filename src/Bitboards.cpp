@@ -1,6 +1,7 @@
 #include "Bitboards.h"
 #include "MagicNumbers.h"
 
+#include <algorithm>
 #include <sstream>
 #include <ranges>
 #include <functional>
