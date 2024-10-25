@@ -1,4 +1,5 @@
 #include "TranspositionTable.h"
+#include "ZobristHash.h"
 
 #include <syncstream>
 #include <iostream>

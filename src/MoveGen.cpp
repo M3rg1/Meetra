@@ -93,7 +93,7 @@ void MoveGen::NextPhase() {
 template<MoveGen::GenPhase P, Color C, MoveGen::GenType T>
 void MoveGen::GenMovesForPhase() {
     if constexpr (P == DOUBLE_CHECK) {
-        MovesForPT<KING, C>(board.Pieces(KING, C), enemy_pieces | empty_squares);
+        MovesForPT<KING>(board.Pieces(KING, C), enemy_pieces | empty_squares);
     } else if constexpr (P == PROMOTION) {
         Bitboard pawns = board.Pieces(PAWN, C);
         PawnProms<C, LEFT, T>(pawns);
@@ -111,15 +111,15 @@ void MoveGen::GenMovesForPhase() {
             CastlingMoves<C>();
         }
         Bitboard mask = P == CAPTURE ? legal_moves & enemy_pieces : legal_moves & empty_squares;
-        MovesForPT<KNIGHT, C>(board.Pieces(KNIGHT, C), mask);
-        MovesForPT<BISHOP, C>(board.Pieces(BISHOP, C), mask);
-        MovesForPT<ROOK, C>(board.Pieces(ROOK, C), mask);
-        MovesForPT<QUEEN, C>(board.Pieces(QUEEN, C), mask);
-        MovesForPT<KING, C>(board.Pieces(KING, C), P == CAPTURE ? enemy_pieces : empty_squares);
+        MovesForPT<KNIGHT>(board.Pieces(KNIGHT, C), mask);
+        MovesForPT<BISHOP>(board.Pieces(BISHOP, C), mask);
+        MovesForPT<ROOK>(board.Pieces(ROOK, C), mask);
+        MovesForPT<QUEEN>(board.Pieces(QUEEN, C), mask);
+        MovesForPT<KING>(board.Pieces(KING, C), P == CAPTURE ? enemy_pieces : empty_squares);
     }
 }
 
-template<PieceType PT, Color C, MoveGen::GenMode M>
+template<PieceType PT, MoveGen::GenMode M>
 auto MoveGen::MovesForPT(Bitboard pieces, Bitboard legality_mask, Move to_validate) {
     while (pieces) {
         Square origin_s = Bitboards::PopLsb(pieces);
@@ -281,9 +281,7 @@ bool MoveGen::IsPseudoLegal(Move m) {
 
     if (double_check) {
         if (TypeOfPiece(moved_piece) != KING) return false;
-        return my_color == WHITE ?
-               MovesForPT<KING, WHITE, VALIDATE>(SqToBB(FromSquare(m)), empty_squares | enemy_pieces, m) :
-               MovesForPT<KING, BLACK, VALIDATE>(SqToBB(FromSquare(m)), empty_squares | enemy_pieces, m);
+        return MovesForPT<KING, VALIDATE>(SqToBB(FromSquare(m)), empty_squares | enemy_pieces, m);
     }
 
     if (TypeOfMove(m) == NO_FLAG) {
@@ -331,11 +329,11 @@ bool MoveGen::NormalMoveIsPseudoLegal(Move m) {
     }
 
     Bitboard mask = (empty_squares | enemy_pieces) & legal_moves;
-    return moved_pt == KNIGHT ? MovesForPT<KNIGHT, C, VALIDATE>(pos, mask, m) :
-           moved_pt == BISHOP ? MovesForPT<BISHOP, C, VALIDATE>(pos, mask, m) :
-           moved_pt == ROOK ? MovesForPT<ROOK, C, VALIDATE>(pos, mask, m) :
-           moved_pt == QUEEN ? MovesForPT<QUEEN, C, VALIDATE>(pos, mask, m) :
-           moved_pt == KING && MovesForPT<KING, C, VALIDATE>(pos, empty_squares | enemy_pieces, m);
+    return moved_pt == KNIGHT ? MovesForPT<KNIGHT, VALIDATE>(pos, mask, m) :
+           moved_pt == BISHOP ? MovesForPT<BISHOP, VALIDATE>(pos, mask, m) :
+           moved_pt == ROOK ? MovesForPT<ROOK, VALIDATE>(pos, mask, m) :
+           moved_pt == QUEEN ? MovesForPT<QUEEN, VALIDATE>(pos, mask, m) :
+           moved_pt == KING && MovesForPT<KING, VALIDATE>(pos, empty_squares | enemy_pieces, m);
 }
 
 bool MoveGen::ValidatePromMove(Move m, Move to_validate) {

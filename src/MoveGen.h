@@ -94,7 +94,7 @@ private:
     template<GenPhase P, Color C, GenType T>
     void GenMovesForPhase();
 
-    template<PieceType PT, Color C, GenMode M = GENERATE>
+    template<PieceType PT, GenMode M = GENERATE>
     auto MovesForPT(Bitboard pieces, Bitboard legality_mask, Move to_validate = {});
 
     template<Color C, GenMode M = GENERATE>
@@ -124,7 +124,7 @@ private:
     template<Color C>
     [[nodiscard]] bool NormalMoveIsPseudoLegal(Move m);
 
-    [[nodiscard]] bool ValidatePromMove(Move m, Move to_validate);
+    [[nodiscard]] static bool ValidatePromMove(Move m, Move to_validate);
 
     template<Color C, PawnMoveDir DIR>
     static constexpr Direction PawnMove() {
