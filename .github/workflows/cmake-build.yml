@@ -22,7 +22,7 @@ jobs:
             compiler: g++
 
           - os: macos-latest
-            compiler: g++
+            compiler: g++-14
 
           - os: windows-latest
             compiler: cl
