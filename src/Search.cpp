@@ -78,10 +78,10 @@ namespace Search {
         tt.Init();
     }
 
-    void StartSearch(const Settings& s, const Board &board) {
+    void StartSearch(const Settings& settings, const Board &board) {
 
         run = true;
-        InitNewSearch(s, board);
+        InitNewSearch(settings, board);
 
         if (use_book
             && !IsSearchLimited()

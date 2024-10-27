@@ -31,11 +31,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Update compiler
-        if: ${{ matrix.os == 'ubuntu-latest' }}
-        run: |
-          sudo apt update
-          sudo apt install ${{ matrix.compiler }}
+      #- name: Update compiler
+      #  if: ${{ matrix.os == 'ubuntu-latest' }}
+      #  run: |
+      #    sudo apt update
+      #    sudo apt install ${{ matrix.compiler }}
 
       - name: Build
         run: cmake -B ${{ github.workspace }}/build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}

@@ -1,7 +1,6 @@
 #ifndef MEETRA_TRANSPOSITIONTABLE_H
 #define MEETRA_TRANSPOSITIONTABLE_H
 
-#include "Board.h"
 #include "Defs.h"
 #include "Config.h"
 

@@ -437,8 +437,8 @@ namespace Search {
         }
     }
 
-    SearchThread::SearchThread(int i) :
-            id(i),
+    SearchThread::SearchThread(int id) :
+            id(id),
             active(true),
             thread(std::bind_front(&SearchThread::InitThread, this)) {}
 

@@ -573,20 +573,20 @@ std::string Board::Fen() const {
            + std::to_string(FullMoveClock());
 }
 
-std::ostream &operator<<(std::ostream &os, const Board &b) {
+std::ostream &operator<<(std::ostream &os, const Board &board) {
 
     for (Rank r: Ranks | std::views::reverse) {
         os << r + 1 << " |";
         for (File f: Files) {
-            os << ' ' << PieceToChar(b.PieceOnSquare(FiRaToSq(f, r))) << (f == FILE_H ? "" : " ");
+            os << ' ' << PieceToChar(board.PieceOnSquare(FiRaToSq(f, r))) << (f == FILE_H ? "" : " ");
         }
         os << '\n';
     }
     os << "---------------------------\n"
        << "  | A  B  C  D  E  F  G  H\n\n"
-       << "FEN: " << b.Fen() << '\n'
-       << "Hash: 0x" << std::hex << std::uppercase << std::setfill('0') << std::setw(16) << b.Hash();
-    if (b.chess960) {
+       << "FEN: " << board.Fen() << '\n'
+       << "Hash: 0x" << std::hex << std::uppercase << std::setfill('0') << std::setw(16) << board.Hash();
+    if (board.chess960) {
         os << "\nChess 960 board";
     }
 
